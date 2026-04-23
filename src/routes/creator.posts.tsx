@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { ImagePlus, X, DollarSign, Lock, Globe, Loader2 } from "lucide-react";
+import { ImagePlus, X, DollarSign, Lock, Globe, Loader2, Target } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
 });
 
-type Visibility = "public" | "subscribers" | "ppv";
+type Visibility = "public" | "subscribers" | "ppv" | "goal";
 
 function CreatorPostsPage() {
   const { user, isCreator, loading } = useAuth();
@@ -22,6 +22,8 @@ function CreatorPostsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [priceReais, setPriceReais] = useState("");
+  const [goalTargetReais, setGoalTargetReais] = useState("");
+  const [goalUnlockReais, setGoalUnlockReais] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,6 +52,19 @@ function CreatorPostsPage() {
       return;
     }
 
+    const goalTargetCents = Math.round(parseFloat(goalTargetReais || "0") * 100);
+    const goalUnlockCents = Math.round(parseFloat(goalUnlockReais || "0") * 100);
+    if (visibility === "goal") {
+      if (goalTargetCents < 100) {
+        toast.error("Meta mínima: R$ 1,00");
+        return;
+      }
+      if (goalUnlockCents < 100) {
+        toast.error("Contribuição mínima: R$ 1,00");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const { data: post, error: pe } = await supabase
@@ -63,6 +78,15 @@ function CreatorPostsPage() {
         .select()
         .single();
       if (pe || !post) throw pe ?? new Error("Falha ao criar post");
+
+      if (visibility === "goal") {
+        const { error: ge } = await supabase.from("post_goals").insert({
+          post_id: post.id,
+          target_cents: goalTargetCents,
+          unlock_price_cents: goalUnlockCents,
+        });
+        if (ge) throw ge;
+      }
 
       // upload mídia
       for (let i = 0; i < files.length; i++) {
@@ -88,6 +112,8 @@ function CreatorPostsPage() {
       setFiles([]);
       setVisibility("public");
       setPriceReais("");
+      setGoalTargetReais("");
+      setGoalUnlockReais("");
       nav({ to: "/feed" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao publicar");
@@ -148,13 +174,14 @@ function CreatorPostsPage() {
               <VisBtn active={visibility === "public"} onClick={() => setVisibility("public")} icon={<Globe className="h-3.5 w-3.5" />} label="Público" />
               <VisBtn active={visibility === "subscribers"} onClick={() => setVisibility("subscribers")} icon={<Lock className="h-3.5 w-3.5" />} label="Assinantes" />
               <VisBtn active={visibility === "ppv"} onClick={() => setVisibility("ppv")} icon={<DollarSign className="h-3.5 w-3.5" />} label="PPV" />
+              <VisBtn active={visibility === "goal"} onClick={() => setVisibility("goal")} icon={<Target className="h-3.5 w-3.5" />} label="Meta" />
             </div>
           </div>
 
           {visibility === "ppv" && (
             <div className="flex items-center gap-2 rounded-xl bg-background p-3">
               <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Preço (R$)</span>
+              <span className="text-xs text-muted-foreground">Preço fixo (R$)</span>
               <Input
                 type="number"
                 step="0.50"
@@ -164,6 +191,39 @@ function CreatorPostsPage() {
                 onChange={(e) => setPriceReais(e.target.value)}
                 className="ml-auto h-8 w-28 border-0 bg-card text-right"
               />
+            </div>
+          )}
+
+          {visibility === "goal" && (
+            <div className="space-y-2 rounded-xl bg-background p-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Target className="h-4 w-4 text-accent" />
+                Meta coletiva — várias pessoas contribuem para liberar
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Meta total (R$)</span>
+                <Input
+                  type="number"
+                  step="1"
+                  min="1"
+                  placeholder="500,00"
+                  value={goalTargetReais}
+                  onChange={(e) => setGoalTargetReais(e.target.value)}
+                  className="ml-auto h-8 w-28 border-0 bg-card text-right"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Cada contribuição (R$)</span>
+                <Input
+                  type="number"
+                  step="0.50"
+                  min="1"
+                  placeholder="9,90"
+                  value={goalUnlockReais}
+                  onChange={(e) => setGoalUnlockReais(e.target.value)}
+                  className="ml-auto h-8 w-28 border-0 bg-card text-right"
+                />
+              </div>
             </div>
           )}
 

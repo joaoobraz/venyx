@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown } from "lucide-react";
+import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown, Target, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,11 +14,18 @@ export interface PostMedia {
   position: number;
 }
 
+export interface PostGoal {
+  target_cents: number;
+  raised_cents: number;
+  unlock_price_cents: number;
+  is_unlocked: boolean;
+}
+
 export interface PostWithRelations {
   id: string;
   creator_id: string;
   body: string | null;
-  visibility: "public" | "subscribers" | "ppv";
+  visibility: "public" | "subscribers" | "ppv" | "goal";
   price_cents: number;
   likes_count: number;
   comments_count: number;
@@ -32,6 +39,8 @@ export interface PostWithRelations {
   media: PostMedia[];
   unlocked?: boolean;
   subscribed?: boolean;
+  goal?: PostGoal | null;
+  goal_contributed?: boolean;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -43,34 +52,32 @@ function publicUrl(path: string) {
 export function PostCard({ post, onChange }: { post: PostWithRelations; onChange?: () => void }) {
   const { user } = useAuth();
   const { t } = useI18n();
-  const [unlocking, setUnlocking] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const isOwner = user?.id === post.creator_id;
   const isPpv = post.visibility === "ppv";
   const isSubsOnly = post.visibility === "subscribers";
+  const isGoal = post.visibility === "goal";
+  const goalUnlocked = isGoal && (post.goal?.is_unlocked || post.goal_contributed);
   const locked =
     !isOwner &&
-    ((isPpv && !post.unlocked) || (isSubsOnly && !post.subscribed));
+    ((isPpv && !post.unlocked) ||
+      (isSubsOnly && !post.subscribed) ||
+      (isGoal && !goalUnlocked));
 
-  const unlock = async () => {
+  const unlockPpv = async () => {
     if (!user) return;
-    setUnlocking(true);
+    setBusy(true);
     try {
-      // MOCK: cria transação paga + unlock direto.
-      // Quando o gateway real for plugado, o webhook é quem cria o unlock.
-      const { data: tx, error: te } = await supabase
-        .from("transactions")
-        .insert({
-          payer_id: user.id,
-          payee_id: post.creator_id,
-          type: "ppv",
-          status: "paid",
-          amount_cents: post.price_cents,
-          reference_id: post.id,
-          gateway: "mock",
-        })
-        .select()
-        .single();
+      const { error: te } = await supabase.from("transactions").insert({
+        payer_id: user.id,
+        payee_id: post.creator_id,
+        type: "ppv",
+        status: "paid",
+        amount_cents: post.price_cents,
+        reference_id: post.id,
+        gateway: "mock",
+      });
       if (te) throw te;
 
       const { error: ue } = await supabase
@@ -80,8 +87,6 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
       toast.success("Conteúdo desbloqueado!");
       onChange?.();
-      // Use tx for future ref
-      void tx;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro";
       if (msg.includes("duplicate")) {
@@ -91,11 +96,51 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         toast.error(msg);
       }
     } finally {
-      setUnlocking(false);
+      setBusy(false);
+    }
+  };
+
+  const contributeGoal = async () => {
+    if (!user || !post.goal) return;
+    setBusy(true);
+    try {
+      const amount = post.goal.unlock_price_cents;
+      const { error: te } = await supabase.from("transactions").insert({
+        payer_id: user.id,
+        payee_id: post.creator_id,
+        type: "ppv",
+        status: "paid",
+        amount_cents: amount,
+        reference_id: post.id,
+        gateway: "mock",
+        metadata: { kind: "goal_contribution" },
+      });
+      if (te) throw te;
+
+      const { error: ce } = await supabase
+        .from("post_goal_contributions")
+        .insert({ user_id: user.id, post_id: post.id, amount_cents: amount });
+      if (ce) throw ce;
+
+      toast.success("Você contribuiu para a meta!");
+      onChange?.();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro";
+      if (msg.includes("duplicate")) {
+        toast.info("Você já contribuiu para esta meta");
+        onChange?.();
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
   const firstMedia = post.media[0];
+  const goalPct = post.goal
+    ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
+    : 0;
 
   return (
     <article className="overflow-hidden rounded-2xl bg-gradient-card shadow-card">
@@ -126,6 +171,11 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         {isSubsOnly && (
           <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">VIP</span>
         )}
+        {isGoal && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
+            <Target className="h-3 w-3" /> META
+          </span>
+        )}
       </header>
 
       {post.body && <p className="px-4 pb-3 text-sm text-foreground whitespace-pre-wrap">{post.body}</p>}
@@ -146,22 +196,43 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
             />
           )}
           {locked && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 backdrop-blur-sm">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 p-4 backdrop-blur-sm">
               <Lock className="h-8 w-8 text-primary" />
-              {isPpv ? (
+              {isPpv && (
                 <Button
-                  onClick={unlock}
-                  disabled={unlocking}
+                  onClick={unlockPpv}
+                  disabled={busy}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : `${t("feed.unlock")} R$ ${(post.price_cents / 100).toFixed(2)}`}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `${t("feed.unlock")} R$ ${(post.price_cents / 100).toFixed(2)}`}
                 </Button>
-              ) : (
+              )}
+              {isSubsOnly && (
                 <Link to="/profile/$username" params={{ username: post.author.username }}>
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                     {t("feed.subscribers")}
                   </Button>
                 </Link>
+              )}
+              {isGoal && post.goal && (
+                <div className="w-full max-w-xs space-y-2">
+                  <div className="flex items-center justify-between text-xs text-white">
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="h-3 w-3" /> R$ {(post.goal.raised_cents / 100).toFixed(2)} / R$ {(post.goal.target_cents / 100).toFixed(2)}
+                    </span>
+                    <span className="font-semibold">{goalPct}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/20">
+                    <div className="h-full bg-accent transition-all" style={{ width: `${goalPct}%` }} />
+                  </div>
+                  <Button
+                    onClick={contributeGoal}
+                    disabled={busy}
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Contribuir R$ ${(post.goal.unlock_price_cents / 100).toFixed(2)}`}
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -170,6 +241,21 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
               +{post.media.length - 1}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Barra de meta visível também quando desbloqueado/sem mídia */}
+      {isGoal && post.goal && !locked && (
+        <div className="px-4 pb-2">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Target className="h-3 w-3 text-accent" /> Meta {post.goal.is_unlocked ? "atingida" : "em andamento"}
+            </span>
+            <span>{goalPct}%</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-accent" style={{ width: `${goalPct}%` }} />
+          </div>
         </div>
       )}
 

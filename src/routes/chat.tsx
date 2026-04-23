@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Circle } from "lucide-react";
+import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Circle, Crown } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -27,26 +27,27 @@ interface Msg {
   fromMe: boolean;
   text?: string;
   ppvCents?: number;
+  subscribersOnly?: boolean;
   image?: string;
   unlocked?: boolean;
   time: string;
 }
 
-const CONVS: Conv[] = [
-  { id: "1", name: "Aline", username: "aline", avatar: "https://i.pravatar.cc/100?img=47", online: true, lastMsg: "Te mando agora ❤", lastTime: "12:04", unread: 2 },
-  { id: "2", name: "Lara", username: "lara", avatar: "https://i.pravatar.cc/100?img=32", online: true, lastMsg: "Adorei seu mimo!", lastTime: "11:20", unread: 0 },
-  { id: "3", name: "Bia", username: "bia", avatar: "https://i.pravatar.cc/100?img=20", online: false, lastMsg: "Vídeo PPV liberado 🎬", lastTime: "Ontem", unread: 0 },
+const CONVS: (Conv & { subscribed: boolean })[] = [
+  { id: "1", name: "Aline", username: "aline", avatar: "https://i.pravatar.cc/100?img=47", online: true, lastMsg: "Te mando agora ❤", lastTime: "12:04", unread: 2, subscribed: true },
+  { id: "2", name: "Lara", username: "lara", avatar: "https://i.pravatar.cc/100?img=32", online: true, lastMsg: "Adorei seu mimo!", lastTime: "11:20", unread: 0, subscribed: false },
+  { id: "3", name: "Bia", username: "bia", avatar: "https://i.pravatar.cc/100?img=20", online: false, lastMsg: "Vídeo PPV liberado 🎬", lastTime: "Ontem", unread: 0, subscribed: true },
 ];
 
 const MESSAGES: Record<string, Msg[]> = {
   "1": [
     { id: "a", fromMe: false, text: "Oi amor 😘", time: "12:00" },
     { id: "b", fromMe: true, text: "Oii, tudo bem?", time: "12:01" },
-    { id: "c", fromMe: false, text: "Te mando uma surpresa", time: "12:03" },
+    { id: "c", fromMe: false, subscribersOnly: true, image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600", text: "Foto exclusiva pra assinantes 💎", time: "12:02" },
     { id: "d", fromMe: false, ppvCents: 990, image: "https://images.unsplash.com/photo-1488161628813-04466f872be2?w=600", time: "12:04" },
   ],
   "2": [{ id: "a", fromMe: false, text: "Adorei seu mimo!", time: "11:20" }],
-  "3": [{ id: "a", fromMe: false, text: "Vídeo PPV liberado 🎬", time: "Ontem" }],
+  "3": [{ id: "a", fromMe: false, subscribersOnly: true, image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600", text: "Vídeo VIP 🎬", time: "Ontem" }],
 };
 
 function ChatPage() {
@@ -155,8 +156,15 @@ function ChatPage() {
             <>
               <header className="flex items-center gap-3 border-b border-border px-4 py-3">
                 <img src={active.avatar} alt="" className="h-9 w-9 rounded-full" />
-                <div>
-                  <div className="text-sm font-semibold text-foreground">{active.name}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    {active.name}
+                    {active.subscribed && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        <Crown className="h-3 w-3" /> Assinante ativo
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {active.online ? t("chat.online") : "@" + active.username}
                   </div>
@@ -164,7 +172,7 @@ function ChatPage() {
               </header>
               <div className="flex-1 space-y-2 overflow-y-auto bg-background/30 p-4">
                 {thread.map((m) => (
-                  <MsgBubble key={m.id} msg={m} />
+                  <MsgBubble key={m.id} msg={m} subscribed={active.subscribed} />
                 ))}
                 <div ref={endRef} />
               </div>
@@ -198,11 +206,37 @@ function ChatPage() {
   );
 }
 
-function MsgBubble({ msg }: { msg: Msg }) {
+function MsgBubble({ msg, subscribed }: { msg: Msg; subscribed: boolean }) {
   const { t } = useI18n();
   const cls = msg.fromMe
     ? "ml-auto bg-primary text-primary-foreground"
     : "bg-card text-foreground";
+
+  // Conteúdo só para assinantes — auto-libera se viewer está com assinatura ativa
+  if (msg.subscribersOnly && msg.image) {
+    const unlocked = subscribed;
+    return (
+      <div className={`max-w-[78%] overflow-hidden rounded-2xl shadow-card ${msg.fromMe ? "ml-auto" : ""}`}>
+        <div className="relative">
+          <img
+            src={msg.image}
+            alt=""
+            className={`aspect-square w-72 max-w-full object-cover ${unlocked ? "" : "scale-110 blur-2xl"}`}
+          />
+          {!unlocked && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+              <Lock className="h-7 w-7 text-primary" />
+              <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-primary-foreground">
+                Apenas assinantes
+              </span>
+            </div>
+          )}
+        </div>
+        {msg.text && <div className="px-3 py-2 text-sm text-foreground">{msg.text}</div>}
+        <div className="px-3 pb-1.5 text-[10px] text-muted-foreground">{msg.time}</div>
+      </div>
+    );
+  }
 
   if (msg.ppvCents && msg.image && !msg.unlocked) {
     return (
