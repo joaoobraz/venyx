@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+        }
+        Relationships: []
+      }
       kyc_requests: {
         Row: {
           created_at: string
@@ -58,6 +76,112 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      post_media: {
+        Row: {
+          created_at: string
+          id: string
+          mime_type: string
+          position: number
+          post_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mime_type: string
+          position?: number
+          post_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mime_type?: string
+          position?: number
+          post_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          body: string | null
+          comments_count: number
+          created_at: string
+          creator_id: string
+          id: string
+          likes_count: number
+          price_cents: number
+          unlocks_count: number
+          updated_at: string
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }
+        Insert: {
+          body?: string | null
+          comments_count?: number
+          created_at?: string
+          creator_id: string
+          id?: string
+          likes_count?: number
+          price_cents?: number
+          unlocks_count?: number
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
+        }
+        Update: {
+          body?: string | null
+          comments_count?: number
+          created_at?: string
+          creator_id?: string
+          id?: string
+          likes_count?: number
+          price_cents?: number
+          unlocks_count?: number
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
+        }
+        Relationships: []
+      }
+      ppv_unlocks: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppv_unlocks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -110,6 +234,84 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          creator_id: string
+          current_period_end: string | null
+          id: string
+          price_cents: number
+          status: Database["public"]["Enums"]["subscription_status"]
+          subscriber_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          current_period_end?: string | null
+          id?: string
+          price_cents: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          subscriber_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string | null
+          id?: string
+          price_cents?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          subscriber_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          gateway: string | null
+          gateway_ref: string | null
+          id: string
+          metadata: Json | null
+          payee_id: string | null
+          payer_id: string | null
+          reference_id: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          type: Database["public"]["Enums"]["tx_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          gateway?: string | null
+          gateway_ref?: string | null
+          id?: string
+          metadata?: Json | null
+          payee_id?: string | null
+          payer_id?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          type: Database["public"]["Enums"]["tx_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          gateway?: string | null
+          gateway_ref?: string | null
+          id?: string
+          metadata?: Json | null
+          payee_id?: string | null
+          payer_id?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          type?: Database["public"]["Enums"]["tx_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -147,6 +349,10 @@ export type Database = {
     Enums: {
       app_role: "subscriber" | "creator" | "admin"
       kyc_status: "pending" | "approved" | "rejected"
+      post_visibility: "public" | "subscribers" | "ppv"
+      subscription_status: "active" | "canceled" | "expired"
+      tx_status: "pending" | "paid" | "failed" | "refunded"
+      tx_type: "ppv" | "subscription" | "tip" | "withdrawal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -276,6 +482,10 @@ export const Constants = {
     Enums: {
       app_role: ["subscriber", "creator", "admin"],
       kyc_status: ["pending", "approved", "rejected"],
+      post_visibility: ["public", "subscribers", "ppv"],
+      subscription_status: ["active", "canceled", "expired"],
+      tx_status: ["pending", "paid", "failed", "refunded"],
+      tx_type: ["ppv", "subscription", "tip", "withdrawal"],
     },
   },
 } as const

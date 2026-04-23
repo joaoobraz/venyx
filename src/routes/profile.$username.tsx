@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, MapPin, MessageCircle, DollarSign } from "lucide-react";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BecomeCreatorBanner } from "@/components/BecomeCreatorBanner";
 import { useI18n } from "@/lib/i18n";
@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { PostCard, type PostWithRelations } from "@/components/PostCard";
+import { fetchPosts } from "@/lib/posts";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -16,10 +18,11 @@ export const Route = createFileRoute("/profile/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const { t } = useI18n();
-  const { user, profile: myProfile } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"posts" | "media" | "about">("posts");
+  const [posts, setPosts] = useState<PostWithRelations[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -34,7 +37,13 @@ function ProfilePage() {
       });
   }, [username]);
 
+  useEffect(() => {
+    if (!profile) return;
+    fetchPosts({ creatorId: profile.user_id, viewerId: user?.id ?? null }).then(setPosts);
+  }, [profile, user?.id]);
+
   const isMe = user && profile && user.id === profile.user_id;
+  const mediaPosts = posts.filter((p) => p.media.length > 0);
 
   return (
     <AppShell>
@@ -85,10 +94,8 @@ function ProfilePage() {
             </div>
           </div>
 
-          {/* Banner Torne-se Criadora — só no próprio perfil */}
           {isMe && <BecomeCreatorBanner />}
 
-          {/* Tabs */}
           <div className="flex gap-1 rounded-xl bg-card p-1">
             {(["posts", "media", "about"] as const).map((k) => (
               <button
@@ -103,9 +110,29 @@ function ProfilePage() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-            {tab === "about" ? (profile.bio ?? "Sem bio") : "Nenhum conteúdo ainda."}
-          </div>
+          {tab === "about" ? (
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              {profile.bio ?? "Sem bio"}
+            </div>
+          ) : tab === "media" ? (
+            mediaPosts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                Nenhuma mídia ainda.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {mediaPosts.map((p) => <PostCard key={p.id} post={p} />)}
+              </div>
+            )
+          ) : posts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              Nenhum post ainda.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((p) => <PostCard key={p.id} post={p} />)}
+            </div>
+          )}
         </div>
       )}
     </AppShell>

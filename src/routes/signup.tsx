@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,10 +44,15 @@ function SignupPage() {
   };
 
   const onGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/feed` },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    if (result.redirected) return;
+    navigate({ to: "/feed" });
   };
 
   return (

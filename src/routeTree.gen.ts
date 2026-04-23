@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 
 const SignupRoute = SignupRouteImport.update({
@@ -89,6 +90,11 @@ const CreatorWalletRoute = CreatorWalletRouteImport.update({
   path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorPostsRoute = CreatorPostsRouteImport.update({
+  id: '/creator/posts',
+  path: '/creator/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/admin/kyc',
   path: '/admin/kyc',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/creator/posts': typeof CreatorPostsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/creator/posts': typeof CreatorPostsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/creator/posts': typeof CreatorPostsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/admin/kyc'
+    | '/creator/posts'
     | '/creator/wallet'
     | '/profile/$username'
     | '/settings/profile'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/admin/kyc'
+    | '/creator/posts'
     | '/creator/wallet'
     | '/profile/$username'
     | '/settings/profile'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/admin/kyc'
+    | '/creator/posts'
     | '/creator/wallet'
     | '/profile/$username'
     | '/settings/profile'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   AdminKycRoute: typeof AdminKycRoute
+  CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
@@ -305,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/posts': {
+      id: '/creator/posts'
+      path: '/creator/posts'
+      fullPath: '/creator/posts'
+      preLoaderRoute: typeof CreatorPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/kyc': {
       id: '/admin/kyc'
       path: '/admin/kyc'
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   AdminKycRoute: AdminKycRoute,
+  CreatorPostsRoute: CreatorPostsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   SettingsProfileRoute: SettingsProfileRoute,
@@ -334,12 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
