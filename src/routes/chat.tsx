@@ -206,11 +206,37 @@ function ChatPage() {
   );
 }
 
-function MsgBubble({ msg }: { msg: Msg }) {
+function MsgBubble({ msg, subscribed }: { msg: Msg; subscribed: boolean }) {
   const { t } = useI18n();
   const cls = msg.fromMe
     ? "ml-auto bg-primary text-primary-foreground"
     : "bg-card text-foreground";
+
+  // Conteúdo só para assinantes — auto-libera se viewer está com assinatura ativa
+  if (msg.subscribersOnly && msg.image) {
+    const unlocked = subscribed;
+    return (
+      <div className={`max-w-[78%] overflow-hidden rounded-2xl shadow-card ${msg.fromMe ? "ml-auto" : ""}`}>
+        <div className="relative">
+          <img
+            src={msg.image}
+            alt=""
+            className={`aspect-square w-72 max-w-full object-cover ${unlocked ? "" : "scale-110 blur-2xl"}`}
+          />
+          {!unlocked && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+              <Lock className="h-7 w-7 text-primary" />
+              <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-primary-foreground">
+                Apenas assinantes
+              </span>
+            </div>
+          )}
+        </div>
+        {msg.text && <div className="px-3 py-2 text-sm text-foreground">{msg.text}</div>}
+        <div className="px-3 pb-1.5 text-[10px] text-muted-foreground">{msg.time}</div>
+      </div>
+    );
+  }
 
   if (msg.ppvCents && msg.image && !msg.unlocked) {
     return (
