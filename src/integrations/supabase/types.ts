@@ -77,6 +77,82 @@ export type Database = {
         }
         Relationships: []
       }
+      post_goal_contributions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_goal_contributions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_goals: {
+        Row: {
+          created_at: string
+          id: string
+          is_unlocked: boolean
+          post_id: string
+          raised_cents: number
+          target_cents: number
+          unlock_price_cents: number
+          unlocked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_unlocked?: boolean
+          post_id: string
+          raised_cents?: number
+          target_cents: number
+          unlock_price_cents: number
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_unlocked?: boolean
+          post_id?: string
+          raised_cents?: number
+          target_cents?: number
+          unlock_price_cents?: number
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_goals_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_media: {
         Row: {
           created_at: string
@@ -349,7 +425,7 @@ export type Database = {
     Enums: {
       app_role: "subscriber" | "creator" | "admin"
       kyc_status: "pending" | "approved" | "rejected"
-      post_visibility: "public" | "subscribers" | "ppv"
+      post_visibility: "public" | "subscribers" | "ppv" | "goal"
       subscription_status: "active" | "canceled" | "expired"
       tx_status: "pending" | "paid" | "failed" | "refunded"
       tx_type: "ppv" | "subscription" | "tip" | "withdrawal"
@@ -482,7 +558,7 @@ export const Constants = {
     Enums: {
       app_role: ["subscriber", "creator", "admin"],
       kyc_status: ["pending", "approved", "rejected"],
-      post_visibility: ["public", "subscribers", "ppv"],
+      post_visibility: ["public", "subscribers", "ppv", "goal"],
       subscription_status: ["active", "canceled", "expired"],
       tx_status: ["pending", "paid", "failed", "refunded"],
       tx_type: ["ppv", "subscription", "tip", "withdrawal"],
