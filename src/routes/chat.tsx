@@ -156,8 +156,15 @@ function ChatPage() {
             <>
               <header className="flex items-center gap-3 border-b border-border px-4 py-3">
                 <img src={active.avatar} alt="" className="h-9 w-9 rounded-full" />
-                <div>
-                  <div className="text-sm font-semibold text-foreground">{active.name}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    {active.name}
+                    {active.subscribed && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        <Crown className="h-3 w-3" /> Assinante ativo
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {active.online ? t("chat.online") : "@" + active.username}
                   </div>
@@ -165,7 +172,7 @@ function ChatPage() {
               </header>
               <div className="flex-1 space-y-2 overflow-y-auto bg-background/30 p-4">
                 {thread.map((m) => (
-                  <MsgBubble key={m.id} msg={m} />
+                  <MsgBubble key={m.id} msg={m} subscribed={active.subscribed} />
                 ))}
                 <div ref={endRef} />
               </div>
