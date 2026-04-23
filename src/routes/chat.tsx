@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Circle } from "lucide-react";
+import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Circle, Crown } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
