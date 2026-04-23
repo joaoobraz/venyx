@@ -9,44 +9,38 @@ export async function fetchPosts(opts: {
   const { creatorId, viewerId, limit = 30 } = opts;
   let q = supabase
     .from("posts")
-    .select(
-      `
-      id, creator_id, body, visibility, price_cents,
-      likes_count, comments_count, created_at,
-      author:profiles!inner(username, display_name, avatar_url, is_verified, user_id),
-      media:post_media(id, storage_path, mime_type, position)
-      `
-    )
+    .select("id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (creatorId) q = q.eq("creator_id", creatorId);
 
-  // Match the implicit relation by user_id
-  const { data, error } = await q;
+  const { data: posts, error } = await q;
   if (error) throw error;
+  if (!posts || posts.length === 0) return [];
 
-  type Row = {
-    id: string;
-    creator_id: string;
-    body: string | null;
-    visibility: "public" | "subscribers" | "ppv";
-    price_cents: number;
-    likes_count: number;
-    comments_count: number;
-    created_at: string;
-    author: {
-      username: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      is_verified: boolean;
-      user_id: string;
-    } | { username: string; display_name: string | null; avatar_url: string | null; is_verified: boolean; user_id: string }[];
-    media: { id: string; storage_path: string; mime_type: string; position: number }[];
-  };
+  const ids = posts.map((p) => p.id);
+  const creatorIds = Array.from(new Set(posts.map((p) => p.creator_id)));
 
-  const rows = (data ?? []) as unknown as Row[];
+  const [{ data: media }, { data: authors }] = await Promise.all([
+    supabase
+      .from("post_media")
+      .select("id, post_id, storage_path, mime_type, position")
+      .in("post_id", ids),
+    supabase
+      .from("profiles")
+      .select("user_id, username, display_name, avatar_url, is_verified")
+      .in("user_id", creatorIds),
+  ]);
 
-  // unlocks/subs do viewer
+  const mediaByPost = new Map<string, { id: string; storage_path: string; mime_type: string; position: number }[]>();
+  (media ?? []).forEach((m) => {
+    const list = mediaByPost.get(m.post_id) ?? [];
+    list.push({ id: m.id, storage_path: m.storage_path, mime_type: m.mime_type, position: m.position });
+    mediaByPost.set(m.post_id, list);
+  });
+  const authorByUid = new Map<string, { username: string; display_name: string | null; avatar_url: string | null; is_verified: boolean }>();
+  (authors ?? []).forEach((a) => authorByUid.set(a.user_id, a));
+
   let unlocks = new Set<string>();
   let subs = new Set<string>();
   if (viewerId) {
@@ -58,28 +52,24 @@ export async function fetchPosts(opts: {
     subs = new Set((s ?? []).map((r: { creator_id: string }) => r.creator_id));
   }
 
-  return rows
-    .filter((r) => r.author && (Array.isArray(r.author) ? r.author.length > 0 : true))
-    .map((r) => {
-      const a = Array.isArray(r.author) ? r.author[0] : r.author;
+  return posts
+    .map((p) => {
+      const a = authorByUid.get(p.creator_id);
+      if (!a) return null;
       return {
-        id: r.id,
-        creator_id: r.creator_id,
-        body: r.body,
-        visibility: r.visibility,
-        price_cents: r.price_cents,
-        likes_count: r.likes_count,
-        comments_count: r.comments_count,
-        created_at: r.created_at,
-        author: {
-          username: a.username,
-          display_name: a.display_name,
-          avatar_url: a.avatar_url,
-          is_verified: a.is_verified,
-        },
-        media: (r.media ?? []).sort((m1, m2) => m1.position - m2.position),
-        unlocked: unlocks.has(r.id),
-        subscribed: subs.has(r.creator_id),
-      };
-    });
+        id: p.id,
+        creator_id: p.creator_id,
+        body: p.body,
+        visibility: p.visibility,
+        price_cents: p.price_cents,
+        likes_count: p.likes_count,
+        comments_count: p.comments_count,
+        created_at: p.created_at,
+        author: a,
+        media: (mediaByPost.get(p.id) ?? []).sort((a, b) => a.position - b.position),
+        unlocked: unlocks.has(p.id),
+        subscribed: subs.has(p.creator_id),
+      } as PostWithRelations;
+    })
+    .filter((x): x is PostWithRelations => x !== null);
 }
