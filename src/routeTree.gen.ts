@@ -9,38 +9,274 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as FeedRouteImport } from './routes/feed'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
+  id: '/become-creator',
+  path: '/become-creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
+  id: '/profile/$username',
+  path: '/profile/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorWalletRoute = CreatorWalletRouteImport.update({
+  id: '/creator/wallet',
+  path: '/creator/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/admin/kyc',
+  path: '/admin/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/become-creator': typeof BecomeCreatorRoute
+  '/chat': typeof ChatRoute
+  '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/creator/wallet': typeof CreatorWalletRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/settings/profile': typeof SettingsProfileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/become-creator': typeof BecomeCreatorRoute
+  '/chat': typeof ChatRoute
+  '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/creator/wallet': typeof CreatorWalletRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/settings/profile': typeof SettingsProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/become-creator': typeof BecomeCreatorRoute
+  '/chat': typeof ChatRoute
+  '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
+  '/signup': typeof SignupRoute
+  '/admin/kyc': typeof AdminKycRoute
+  '/creator/wallet': typeof CreatorWalletRoute
+  '/profile/$username': typeof ProfileUsernameRoute
+  '/settings/profile': typeof SettingsProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/become-creator'
+    | '/chat'
+    | '/explore'
+    | '/feed'
+    | '/login'
+    | '/notifications'
+    | '/reset-password'
+    | '/search'
+    | '/signup'
+    | '/admin/kyc'
+    | '/creator/wallet'
+    | '/profile/$username'
+    | '/settings/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/become-creator'
+    | '/chat'
+    | '/explore'
+    | '/feed'
+    | '/login'
+    | '/notifications'
+    | '/reset-password'
+    | '/search'
+    | '/signup'
+    | '/admin/kyc'
+    | '/creator/wallet'
+    | '/profile/$username'
+    | '/settings/profile'
+  id:
+    | '__root__'
+    | '/'
+    | '/become-creator'
+    | '/chat'
+    | '/explore'
+    | '/feed'
+    | '/login'
+    | '/notifications'
+    | '/reset-password'
+    | '/search'
+    | '/signup'
+    | '/admin/kyc'
+    | '/creator/wallet'
+    | '/profile/$username'
+    | '/settings/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BecomeCreatorRoute: typeof BecomeCreatorRoute
+  ChatRoute: typeof ChatRoute
+  ExploreRoute: typeof ExploreRoute
+  FeedRoute: typeof FeedRoute
+  LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SearchRoute: typeof SearchRoute
+  SignupRoute: typeof SignupRoute
+  AdminKycRoute: typeof AdminKycRoute
+  CreatorWalletRoute: typeof CreatorWalletRoute
+  ProfileUsernameRoute: typeof ProfileUsernameRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/become-creator': {
+      id: '/become-creator'
+      path: '/become-creator'
+      fullPath: '/become-creator'
+      preLoaderRoute: typeof BecomeCreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +284,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/$username': {
+      id: '/profile/$username'
+      path: '/profile/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof ProfileUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/wallet': {
+      id: '/creator/wallet'
+      path: '/creator/wallet'
+      fullPath: '/creator/wallet'
+      preLoaderRoute: typeof CreatorWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/admin/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BecomeCreatorRoute: BecomeCreatorRoute,
+  ChatRoute: ChatRoute,
+  ExploreRoute: ExploreRoute,
+  FeedRoute: FeedRoute,
+  LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SearchRoute: SearchRoute,
+  SignupRoute: SignupRoute,
+  AdminKycRoute: AdminKycRoute,
+  CreatorWalletRoute: CreatorWalletRoute,
+  ProfileUsernameRoute: ProfileUsernameRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
