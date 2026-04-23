@@ -33,9 +33,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "lust. — Plataforma de criadoras +18" },
-      { name: "description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas." },
-      { property: "og:title", content: "lust. — Plataforma de criadoras +18" },
+      { title: "Venyx — Plataforma de criadoras +18" },
+      { name: "description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Venyx." },
+      { property: "og:title", content: "Venyx — Plataforma de criadoras +18" },
       { property: "og:description", content: "Conteúdo exclusivo direto da criadora pra você." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
