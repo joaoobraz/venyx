@@ -14,9 +14,11 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-primary shadow-glow" />
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            lust<span className="text-primary">.</span>
+          <div className="relative h-8 w-8 rounded-xl bg-gradient-primary shadow-glow">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent/40 to-transparent" />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight text-foreground">
+            Ven<span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">yx</span>
           </span>
         </Link>
 
