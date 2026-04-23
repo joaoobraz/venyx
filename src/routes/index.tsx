@@ -97,7 +97,7 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} lust. — 18+
+        © {new Date().getFullYear()} Venyx — 18+
       </footer>
     </div>
   );
