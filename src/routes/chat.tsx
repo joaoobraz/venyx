@@ -124,7 +124,10 @@ function ChatPage() {
                 <div className="relative">
                   <img src={c.avatar} alt="" className="h-11 w-11 rounded-full" />
                   {c.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-green-500" />
+                    <span
+                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card"
+                      style={{ backgroundColor: "oklch(0.72 0.18 145)" }}
+                    />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
