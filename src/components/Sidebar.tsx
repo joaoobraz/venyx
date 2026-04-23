@@ -8,6 +8,7 @@ import {
   Settings,
   Wallet,
   ShieldCheck,
+  PenSquare,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -57,13 +58,22 @@ export function Sidebar() {
           </Link>
         )}
         {isCreator && (
-          <Link
-            to="/creator/wallet"
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-card hover:text-primary"
-          >
-            <Wallet className="h-5 w-5" />
-            {t("nav.wallet")}
-          </Link>
+          <>
+            <Link
+              to="/creator/posts"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-card hover:text-primary"
+            >
+              <PenSquare className="h-5 w-5" />
+              Novo post
+            </Link>
+            <Link
+              to="/creator/wallet"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-card hover:text-primary"
+            >
+              <Wallet className="h-5 w-5" />
+              {t("nav.wallet")}
+            </Link>
+          </>
         )}
         <Link
           to="/settings/profile"
