@@ -139,6 +139,12 @@ function CreatorPostsPage() {
     if (!f || !user) return;
     setSubmitting(true);
     try {
+      const mod = await moderateBeforeUpload(f, "story", user.id);
+      if (!mod.allowed) {
+        toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+        setSubmitting(false);
+        return;
+      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
