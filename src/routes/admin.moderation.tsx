@@ -14,7 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  FileDown,
+  Filter as FilterIcon,
+  ArrowLeft,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
