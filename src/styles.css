@@ -118,11 +118,11 @@
    Mantém a identidade feminina/elegante do tema claro em tons profundos.
 */
 .dark {
-  --background: oklch(0.26 0.012 18);                 /* carvão rosado quente, NÃO preto */
-  --foreground: oklch(0.96 0.010 18);                 /* rosa-linho claro */
-  --card: oklch(0.31 0.014 18);                       /* card levemente mais claro */
-  --card-foreground: oklch(0.96 0.010 18);
-  --popover: oklch(0.31 0.014 18);
+  --background: oklch(0.20 0.020 350);                /* borgonha/plum profundo elegante */
+  --foreground: oklch(0.96 0.008 350);                /* champagne rosado claro */
+  --card: oklch(0.25 0.025 350);                      /* card plum levemente mais claro */
+  --card-foreground: oklch(0.96 0.008 350);
+  --popover: oklch(0.25 0.025 350);
   --popover-foreground: oklch(0.96 0.010 18);
 
   --primary: oklch(0.78 0.060 16);                    /* rosé #DAB7B5 luminoso no dark */
