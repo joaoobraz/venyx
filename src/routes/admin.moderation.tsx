@@ -594,7 +594,13 @@ function AdminModerationPage() {
                           {l.category.toUpperCase()}
                         </Badge>
                         <Badge variant="outline">{l.surface}</Badge>
-                        <TrustBadge trust={l.trust} total={l.user_total} csam={l.user_csam} />
+                        <TrustBadge
+                          trust={l.trust}
+                          total={l.user_total}
+                          csam={l.user_csam}
+                          category={l.category}
+                          surface={l.surface}
+                        />
                         {l.mime_type && <span className="text-[11px] text-muted-foreground">{l.mime_type}</span>}
                         {l.file_size_bytes != null && (
                           <span className="text-[11px] text-muted-foreground">
@@ -603,7 +609,7 @@ function AdminModerationPage() {
                         )}
                         <DecisionBadge decision={l.decision ?? "pending"} />
                       </div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                         {l.username ? (
                           <Link
                             to="/profile/$username"
@@ -616,6 +622,22 @@ function AdminModerationPage() {
                         ) : (
                           <span className="font-mono text-xs text-muted-foreground">{l.user_id.slice(0, 8)}…</span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => drillDown(l.username, l.surface, "approved")}
+                          className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                          title={`Ver reuploads aprovados de @${l.username ?? "—"} em ${l.surface}`}
+                        >
+                          <FilterIcon className="h-2.5 w-2.5" /> Aprovados aqui
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => drillDown(l.username, l.surface, "rejected")}
+                          className="inline-flex items-center gap-1 rounded-full border border-destructive/30 px-2 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10"
+                          title={`Ver reuploads rejeitados de @${l.username ?? "—"} em ${l.surface}`}
+                        >
+                          <FilterIcon className="h-2.5 w-2.5" /> Rejeitados aqui
+                        </button>
                       </div>
                       {l.reason && (
                         <div className="rounded-md bg-background/40 px-2 py-1 text-xs text-muted-foreground">
