@@ -423,12 +423,18 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "subscriber" | "creator" | "admin"
+      app_role: "subscriber" | "creator" | "admin" | "ambassador"
       kyc_status: "pending" | "approved" | "rejected"
       post_visibility: "public" | "subscribers" | "ppv" | "goal"
       subscription_status: "active" | "canceled" | "expired"
       tx_status: "pending" | "paid" | "failed" | "refunded"
-      tx_type: "ppv" | "subscription" | "tip" | "withdrawal"
+      tx_type:
+        | "ppv"
+        | "subscription"
+        | "tip"
+        | "withdrawal"
+        | "affiliate_commission"
+        | "chat_ppv"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -556,12 +562,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["subscriber", "creator", "admin"],
+      app_role: ["subscriber", "creator", "admin", "ambassador"],
       kyc_status: ["pending", "approved", "rejected"],
       post_visibility: ["public", "subscribers", "ppv", "goal"],
       subscription_status: ["active", "canceled", "expired"],
       tx_status: ["pending", "paid", "failed", "refunded"],
-      tx_type: ["ppv", "subscription", "tip", "withdrawal"],
+      tx_type: [
+        "ppv",
+        "subscription",
+        "tip",
+        "withdrawal",
+        "affiliate_commission",
+        "chat_ppv",
+      ],
     },
   },
 } as const
