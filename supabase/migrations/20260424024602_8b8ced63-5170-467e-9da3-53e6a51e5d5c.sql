@@ -1,0 +1,1 @@
+ALTER TABLE public.creator_link_pages ADD COLUMN IF NOT EXISTS avatar_url TEXT;

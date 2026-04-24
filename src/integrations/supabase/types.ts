@@ -240,6 +240,7 @@ export type Database = {
       }
       creator_link_pages: {
         Row: {
+          avatar_url: string | null
           background_color: string | null
           bio: string | null
           button_style: string
@@ -254,6 +255,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          avatar_url?: string | null
           background_color?: string | null
           bio?: string | null
           button_style?: string
@@ -268,6 +270,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          avatar_url?: string | null
           background_color?: string | null
           bio?: string | null
           button_style?: string

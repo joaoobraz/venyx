@@ -33,6 +33,7 @@ interface PageRow {
   theme: string;
   button_style: string;
   cover_url: string | null;
+  avatar_url: string | null;
   show_avatar: boolean;
   is_published: boolean;
 }
@@ -184,9 +185,9 @@ function PublicLinksPage() {
       }}
     >
       <main style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
-        {page.show_avatar && profile.avatar_url && (
+        {page.show_avatar && (page.avatar_url || profile.avatar_url) && (
           <img
-            src={profile.avatar_url}
+            src={page.avatar_url || profile.avatar_url || ""}
             alt=""
             style={{
               width: 96,

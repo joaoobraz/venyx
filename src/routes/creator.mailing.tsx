@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import {
   Send, Tag as TagIcon, Plus, Users, UserCheck, UserX, UserMinus,
   Sparkles, Lock, Loader2, Mail, Calendar, Download, Eye, FileText, Trash2,
-  Clock, CheckCircle2, XCircle, MousePointerClick,
+  Clock, CheckCircle2, XCircle, MousePointerClick, Ban,
 } from "lucide-react";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
@@ -232,6 +232,27 @@ function MailingPage() {
   const deleteTag = async (id: string) => {
     if (!confirm("Apagar tag?")) return;
     await supabase.from("subscriber_tags").delete().eq("id", id);
+    loadAll();
+  };
+
+  const cancelCampaign = async (c: Campaign) => {
+    if (c.total_pending === 0) { toast.error("Nada pendente para cancelar"); return; }
+    if (!confirm(`Cancelar ${c.total_pending} mensagem(ns) pendente(s) desta campanha?`)) return;
+    const { error, count } = await supabase
+      .from("mass_dm_jobs")
+      .update({ status: "cancelled", processed_at: new Date().toISOString(), error_reason: "Cancelado pela criadora" }, { count: "exact" })
+      .eq("campaign_id", c.id)
+      .eq("status", "pending");
+    if (error) { toast.error(error.message); return; }
+    const cancelled = count ?? 0;
+    await supabase
+      .from("mass_dm_campaigns")
+      .update({
+        status: "cancelled",
+        total_pending: Math.max(c.total_pending - cancelled, 0),
+      })
+      .eq("id", c.id);
+    toast.success(`${cancelled} envio(s) cancelado(s)`);
     loadAll();
   };
 
@@ -590,9 +611,21 @@ function MailingPage() {
                       {c.ppv_price_cents > 0 && <Badge variant="outline">PPV R$ {(c.ppv_price_cents / 100).toFixed(0)}</Badge>}
                     </div>
                   </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
-                    {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                    </span>
+                    {c.total_pending > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => cancelCampaign(c)}
+                        className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+                      >
+                        <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar ({c.total_pending})
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
