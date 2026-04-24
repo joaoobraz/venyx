@@ -43,6 +43,7 @@ interface Message {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 function chatMediaUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path;
   return `${SUPABASE_URL}/storage/v1/object/public/chat-media/${path}`;
 }
 

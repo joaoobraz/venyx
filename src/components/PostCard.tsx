@@ -47,6 +47,7 @@ export interface PostWithRelations {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 function publicUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path;
   return `${SUPABASE_URL}/storage/v1/object/public/posts/${path}`;
 }
 

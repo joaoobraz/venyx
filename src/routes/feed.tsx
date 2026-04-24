@@ -6,6 +6,7 @@ import { BecomeCreatorBanner } from "@/components/BecomeCreatorBanner";
 import { PostCard, type PostWithRelations } from "@/components/PostCard";
 import { StoriesBar } from "@/components/StoriesBar";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { TopCreators } from "@/components/TopCreators";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { fetchPosts } from "@/lib/posts";
@@ -48,6 +49,7 @@ function FeedPage() {
       <div className="mx-auto max-w-2xl space-y-5">
         <StoriesBar />
         {isCreator && <OnboardingChecklist />}
+        <TopCreators limit={10} compact />
         <BecomeCreatorBanner />
 
         {isCreator && (
