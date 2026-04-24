@@ -185,6 +185,8 @@ function CreatorPostsPage() {
             maxLength={2000}
           />
 
+          <CaptionSuggest hint={body} onPick={(c) => setBody(c)} />
+
           {files.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {files.map((f, i) => (
