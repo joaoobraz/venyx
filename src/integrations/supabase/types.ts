@@ -633,6 +633,38 @@ export type Database = {
           },
         ]
       }
+      moderation_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: string
+          log_id: string
+          note: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          decision: string
+          log_id: string
+          note: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          log_id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_decisions_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: true
+            referencedRelation: "moderation_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_logs: {
         Row: {
           ai_response: Json | null
@@ -1241,6 +1273,23 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_feed_posts: {
+        Args: { _creator_id?: string; _limit?: number; _viewer_id?: string }
+        Returns: {
+          body: string
+          comments_count: number
+          created_at: string
+          creator_id: string
+          has_access: boolean
+          id: string
+          likes_count: number
+          media_id: string
+          media_mime: string
+          media_path: string
+          price_cents: number
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }[]
       }
       mass_send_dm: {
         Args: {
