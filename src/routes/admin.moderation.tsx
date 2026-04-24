@@ -112,7 +112,9 @@ function AdminModerationPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [sizeMin, setSizeMin] = useState<string>("");
   const [sizeMax, setSizeMax] = useState<string>("");
-  const [decisions, setDecisions] = useState<DecisionMap>(loadDecisions);
+  const [decisions, setDecisions] = useState<DecisionMap>({});
+  const recordDecisionFn = useServerFn(recordModerationDecision);
+  const listDecisionsFn = useServerFn(listModerationDecisions);
   const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
   const [decisionStage, setDecisionStage] = useState<"edit" | "review">("edit");
