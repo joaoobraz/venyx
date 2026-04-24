@@ -431,6 +431,11 @@ function ChatPage() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
+                {draft.trim().length > 3 && detectExternalContact(draft).blocked && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+                    ⚠️ Compartilhar contato externo (WhatsApp, Telegram, telefone, redes sociais) é proibido.
+                  </div>
+                )}
               </footer>
 
               <TipModal
