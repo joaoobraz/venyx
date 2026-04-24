@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2, MessageCircle, Heart, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BecomeCreatorBanner } from "@/components/BecomeCreatorBanner";
 import { useI18n } from "@/lib/i18n";
@@ -10,6 +10,8 @@ import type { Profile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { PostCard, type PostWithRelations } from "@/components/PostCard";
 import { fetchPosts } from "@/lib/posts";
+import { TipModal } from "@/components/TipModal";
+import { SubscribeModal } from "@/components/SubscribeModal";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -23,6 +25,19 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"posts" | "media" | "about">("posts");
   const [posts, setPosts] = useState<PostWithRelations[]>([]);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState(false);
+  const [ownerMfa, setOwnerMfa] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    supabase
+      .from("security_settings")
+      .select("mfa_enabled")
+      .eq("user_id", profile.user_id)
+      .maybeSingle()
+      .then(({ data }) => setOwnerMfa(!!(data as { mfa_enabled?: boolean } | null)?.mfa_enabled));
+  }, [profile]);
 
   useEffect(() => {
     setLoading(true);
@@ -72,14 +87,19 @@ function ProfilePage() {
                 </div>
                 {!isMe && (
                   <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setTipOpen(true)}>
+                      <Heart className="mr-1.5 h-4 w-4 text-primary" /> {t("profile.tip")}
+                    </Button>
                     <Button variant="outline" size="sm">
                       <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
                     </Button>
-                    {profile.subscription_price_cents && profile.subscription_price_cents > 0 ? (
-                      <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                        {t("profile.subscribe")} R$ {(profile.subscription_price_cents / 100).toFixed(2)}
-                      </Button>
-                    ) : null}
+                    <Button
+                      size="sm"
+                      onClick={() => setSubOpen(true)}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {t("profile.subscribe")}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -88,6 +108,11 @@ function ProfilePage() {
                   {profile.display_name || profile.username}
                 </h1>
                 {profile.is_verified && <CheckCircle2 className="h-5 w-5 text-primary" />}
+                {ownerMfa && (
+                  <span title="Conta protegida com 2FA" className="inline-flex items-center">
+                    <ShieldCheck className="h-5 w-5 text-accent" />
+                  </span>
+                )}
               </div>
               <div className="text-sm text-muted-foreground">@{profile.username}</div>
               {profile.bio && <p className="mt-3 text-sm text-foreground">{profile.bio}</p>}
@@ -132,6 +157,23 @@ function ProfilePage() {
             <div className="space-y-4">
               {posts.map((p) => <PostCard key={p.id} post={p} />)}
             </div>
+          )}
+          {profile && (
+            <>
+              <TipModal
+                open={tipOpen}
+                onOpenChange={setTipOpen}
+                creatorId={profile.user_id}
+                creatorName={profile.display_name || profile.username}
+              />
+              <SubscribeModal
+                open={subOpen}
+                onOpenChange={setSubOpen}
+                creatorId={profile.user_id}
+                creatorName={profile.display_name || profile.username}
+                basePriceCents={profile.subscription_price_cents ?? 0}
+              />
+            </>
           )}
         </div>
       )}

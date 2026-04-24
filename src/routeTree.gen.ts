@@ -19,11 +19,19 @@ import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
+import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
+import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
+import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
+import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -75,9 +83,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
   id: '/settings/profile',
   path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
@@ -90,14 +108,45 @@ const CreatorWalletRoute = CreatorWalletRouteImport.update({
   path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorSubscriptionPlansRoute =
+  CreatorSubscriptionPlansRouteImport.update({
+    id: '/creator/subscription-plans',
+    path: '/creator/subscription-plans',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CreatorPostsRoute = CreatorPostsRouteImport.update({
   id: '/creator/posts',
   path: '/creator/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
+  id: '/creator/dmca',
+  path: '/creator/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
+  id: '/creator/coupons',
+  path: '/creator/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
+  id: '/creator/affiliate',
+  path: '/creator/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CCodeRoute = CCodeRouteImport.update({
+  id: '/c/$code',
+  path: '/c/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminKycRoute = AdminKycRouteImport.update({
   id: '/admin/kyc',
   path: '/admin/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDmcaRoute = AdminDmcaRouteImport.update({
+  id: '/admin/dmca',
+  path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -112,11 +161,19 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/c/$code': typeof CCodeRoute
+  '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/coupons': typeof CreatorCouponsRoute
+  '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -129,11 +186,19 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/c/$code': typeof CCodeRoute
+  '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/coupons': typeof CreatorCouponsRoute
+  '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,11 +212,19 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
+  '/c/$code': typeof CCodeRoute
+  '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/coupons': typeof CreatorCouponsRoute
+  '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/profile/$username': typeof ProfileUsernameRoute
+  '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,11 +239,19 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/admin/dmca'
     | '/admin/kyc'
+    | '/c/$code'
+    | '/creator/affiliate'
+    | '/creator/coupons'
+    | '/creator/dmca'
     | '/creator/posts'
+    | '/creator/subscription-plans'
     | '/creator/wallet'
     | '/profile/$username'
+    | '/r/$code'
     | '/settings/profile'
+    | '/settings/security'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,11 +264,19 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/admin/dmca'
     | '/admin/kyc'
+    | '/c/$code'
+    | '/creator/affiliate'
+    | '/creator/coupons'
+    | '/creator/dmca'
     | '/creator/posts'
+    | '/creator/subscription-plans'
     | '/creator/wallet'
     | '/profile/$username'
+    | '/r/$code'
     | '/settings/profile'
+    | '/settings/security'
   id:
     | '__root__'
     | '/'
@@ -200,11 +289,19 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/admin/dmca'
     | '/admin/kyc'
+    | '/c/$code'
+    | '/creator/affiliate'
+    | '/creator/coupons'
+    | '/creator/dmca'
     | '/creator/posts'
+    | '/creator/subscription-plans'
     | '/creator/wallet'
     | '/profile/$username'
+    | '/r/$code'
     | '/settings/profile'
+    | '/settings/security'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,11 +315,19 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  AdminDmcaRoute: typeof AdminDmcaRoute
   AdminKycRoute: typeof AdminKycRoute
+  CCodeRoute: typeof CCodeRoute
+  CreatorAffiliateRoute: typeof CreatorAffiliateRoute
+  CreatorCouponsRoute: typeof CreatorCouponsRoute
+  CreatorDmcaRoute: typeof CreatorDmcaRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
+  CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
+  RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsSecurityRoute: typeof SettingsSecurityRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -297,11 +402,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/profile': {
       id: '/settings/profile'
       path: '/settings/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/$username': {
@@ -318,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/subscription-plans': {
+      id: '/creator/subscription-plans'
+      path: '/creator/subscription-plans'
+      fullPath: '/creator/subscription-plans'
+      preLoaderRoute: typeof CreatorSubscriptionPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/posts': {
       id: '/creator/posts'
       path: '/creator/posts'
@@ -325,11 +451,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorPostsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/dmca': {
+      id: '/creator/dmca'
+      path: '/creator/dmca'
+      fullPath: '/creator/dmca'
+      preLoaderRoute: typeof CreatorDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/coupons': {
+      id: '/creator/coupons'
+      path: '/creator/coupons'
+      fullPath: '/creator/coupons'
+      preLoaderRoute: typeof CreatorCouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/affiliate': {
+      id: '/creator/affiliate'
+      path: '/creator/affiliate'
+      fullPath: '/creator/affiliate'
+      preLoaderRoute: typeof CreatorAffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$code': {
+      id: '/c/$code'
+      path: '/c/$code'
+      fullPath: '/c/$code'
+      preLoaderRoute: typeof CCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/kyc': {
       id: '/admin/kyc'
       path: '/admin/kyc'
       fullPath: '/admin/kyc'
       preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dmca': {
+      id: '/admin/dmca'
+      path: '/admin/dmca'
+      fullPath: '/admin/dmca'
+      preLoaderRoute: typeof AdminDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -346,11 +507,19 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  AdminDmcaRoute: AdminDmcaRoute,
   AdminKycRoute: AdminKycRoute,
+  CCodeRoute: CCodeRoute,
+  CreatorAffiliateRoute: CreatorAffiliateRoute,
+  CreatorCouponsRoute: CreatorCouponsRoute,
+  CreatorDmcaRoute: CreatorDmcaRoute,
   CreatorPostsRoute: CreatorPostsRoute,
+  CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorWalletRoute: CreatorWalletRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
+  RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  SettingsSecurityRoute: SettingsSecurityRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

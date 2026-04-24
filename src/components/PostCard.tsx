@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { TipModal } from "@/components/TipModal";
 
 export interface PostMedia {
   id: string;
@@ -53,6 +54,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const { user } = useAuth();
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
 
   const isOwner = user?.id === post.creator_id;
   const isPpv = post.visibility === "ppv";
@@ -266,10 +268,20 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         <button className="flex items-center gap-1.5 hover:text-primary">
           <MessageCircle className="h-4 w-4" /> {post.comments_count}
         </button>
-        <button className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs hover:border-primary hover:text-primary">
+        <button
+          onClick={() => setTipOpen(true)}
+          className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs hover:border-primary hover:text-primary"
+        >
           <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
         </button>
       </footer>
+      <TipModal
+        open={tipOpen}
+        onOpenChange={setTipOpen}
+        creatorId={post.creator_id}
+        creatorName={post.author.display_name || post.author.username}
+        postId={post.id}
+      />
     </article>
   );
 }
