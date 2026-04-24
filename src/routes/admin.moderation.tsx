@@ -167,12 +167,21 @@ function AdminModerationPage() {
   const openDecision = (id: string, decision: "approved" | "rejected") => {
     setPendingDecision({ id, decision });
     setDecisionNote("");
+    setDecisionStage("edit");
+  };
+
+  const goReview = () => {
+    if (decisionNote.trim().length < 5) {
+      toast.error("Descreva o motivo (mínimo 5 caracteres) para manter auditoria.");
+      return;
+    }
+    setDecisionStage("review");
   };
 
   const confirmDecision = () => {
     if (!user || !pendingDecision) return;
     if (decisionNote.trim().length < 5) {
-      toast.error("Descreva o motivo (mínimo 5 caracteres) para manter auditoria.");
+      toast.error("Motivo inválido.");
       return;
     }
     const next: DecisionMap = {
@@ -189,6 +198,31 @@ function AdminModerationPage() {
     toast.success(pendingDecision.decision === "approved" ? "Reupload aprovado" : "Reupload rejeitado");
     setPendingDecision(null);
     setDecisionNote("");
+    setDecisionStage("edit");
+  };
+
+  // Drill-down: aplica filtros para mostrar apenas decisões de um usuário+surface específicos
+  const drillDown = (
+    targetUsername: string | undefined,
+    targetSurface: string,
+    targetDecision: "approved" | "rejected",
+  ) => {
+    setUsernameFilter(targetUsername ?? "");
+    setSurfaceFilter(targetSurface);
+    setDecisionFilter(targetDecision);
+    // limpar filtros conflitantes
+    setCategoryFilter("all");
+    setTrustFilter("all");
+    setQuery("");
+    toast.success(
+      `Mostrando reuploads ${targetDecision === "approved" ? "aprovados" : "rejeitados"} de @${
+        targetUsername ?? "—"
+      } em ${targetSurface}`,
+    );
+    // scroll suave para a lista
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const undo = (id: string) => {
