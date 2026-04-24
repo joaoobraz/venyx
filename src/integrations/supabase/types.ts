@@ -200,6 +200,42 @@ export type Database = {
           },
         ]
       }
+      creator_onboarding: {
+        Row: {
+          dismissed: boolean
+          has_avatar: boolean
+          has_bio: boolean
+          has_cover: boolean
+          has_first_post: boolean
+          has_price: boolean
+          has_shared_link: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          dismissed?: boolean
+          has_avatar?: boolean
+          has_bio?: boolean
+          has_cover?: boolean
+          has_first_post?: boolean
+          has_price?: boolean
+          has_shared_link?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          dismissed?: boolean
+          has_avatar?: boolean
+          has_bio?: boolean
+          has_cover?: boolean
+          has_first_post?: boolean
+          has_price?: boolean
+          has_shared_link?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dmca_reports: {
         Row: {
           admin_notes: string | null
@@ -295,6 +331,42 @@ export type Database = {
           selfie_url?: string
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      moderation_logs: {
+        Row: {
+          ai_response: Json | null
+          category: string
+          created_at: string
+          file_size_bytes: number | null
+          id: string
+          mime_type: string | null
+          reason: string | null
+          surface: string
+          user_id: string
+        }
+        Insert: {
+          ai_response?: Json | null
+          category: string
+          created_at?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          reason?: string | null
+          surface: string
+          user_id: string
+        }
+        Update: {
+          ai_response?: Json | null
+          category?: string
+          created_at?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          reason?: string | null
+          surface?: string
           user_id?: string
         }
         Relationships: []

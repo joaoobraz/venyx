@@ -13,6 +13,7 @@ import {
   Tag,
   Layers,
   ShieldAlert,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -65,6 +66,9 @@ export function Sidebar() {
             </Link>
             <Link to="/creator/wallet" className={linkCls(loc.pathname === "/creator/wallet")}>
               <Wallet className="h-5 w-5" /> {t("nav.wallet")}
+            </Link>
+            <Link to="/creator/analytics" className={linkCls(loc.pathname === "/creator/analytics")}>
+              <BarChart3 className="h-5 w-5" /> Analytics
             </Link>
             <Link to="/creator/subscription-plans" className={linkCls(loc.pathname === "/creator/subscription-plans")}>
               <Layers className="h-5 w-5" /> Planos

@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { CaptionSuggest } from "@/components/CaptionSuggest";
+import { moderateBeforeUpload } from "@/lib/moderation";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
@@ -67,6 +69,16 @@ function CreatorPostsPage() {
 
     setSubmitting(true);
     try {
+      // Moderação prévia: bloqueia CSAM em qualquer mídia
+      for (const f of files) {
+        const mod = await moderateBeforeUpload(f, "post", user.id);
+        if (!mod.allowed) {
+          toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const { data: post, error: pe } = await supabase
         .from("posts")
         .insert({
@@ -127,6 +139,12 @@ function CreatorPostsPage() {
     if (!f || !user) return;
     setSubmitting(true);
     try {
+      const mod = await moderateBeforeUpload(f, "story", user.id);
+      if (!mod.allowed) {
+        toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+        setSubmitting(false);
+        return;
+      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
@@ -166,6 +184,8 @@ function CreatorPostsPage() {
             className="min-h-28 resize-none border-0 bg-background/50 text-base"
             maxLength={2000}
           />
+
+          <CaptionSuggest hint={body} onPick={(c) => setBody(c)} />
 
           {files.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
