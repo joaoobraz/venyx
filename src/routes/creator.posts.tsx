@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { ImagePlus, X, DollarSign, Lock, Globe, Loader2, Target } from "lucide-react";
+import { ImagePlus, X, DollarSign, Lock, Globe, Loader2, Target, Zap } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,10 +122,41 @@ function CreatorPostsPage() {
     }
   };
 
+  const uploadStory = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f || !user) return;
+    setSubmitting(true);
+    try {
+      const ext = f.name.split(".").pop() || "bin";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
+      if (ue) throw ue;
+      const { error: ie } = await supabase.from("stories").insert({
+        creator_id: user.id,
+        media_path: path,
+        mime_type: f.type,
+        visibility: "public",
+      });
+      if (ie) throw ie;
+      toast.success("Story publicado! Expira em 24h.");
+      nav({ to: "/feed" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-xl font-bold text-foreground">Novo post</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground">Novo post</h1>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-glow hover:opacity-95">
+            <Zap className="h-3.5 w-3.5" /> Postar Story 24h
+            <input type="file" accept="image/*,video/*" className="hidden" onChange={uploadStory} disabled={submitting} />
+          </label>
+        </div>
 
         <div className="space-y-3 rounded-2xl bg-card p-4">
           <Textarea
