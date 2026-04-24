@@ -22,6 +22,12 @@ function validateGatewayToken(token: string, expectedAmountCents: number): boole
   return false;
 }
 
+// Sanitiza erros do banco para não vazar nomes de tabelas/colunas/constraints ao cliente.
+function safeError(internal: unknown, userMessage = "Operação falhou. Tente novamente."): Error {
+  console.error("[payments]", internal);
+  return new Error(userMessage);
+}
+
 // --------- PPV de post ---------
 const ppvSchema = z.object({
   postId: z.string().uuid(),
