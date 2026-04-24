@@ -1,4 +1,5 @@
 # Project Memory
 
 ## Core
-Tema Linen & Terracotta. Claro: fundo linho oklch(0.985 0.005 80), primary terracota oklch(0.58 0.13 35). Escuro: fundo carvão quente médio oklch(0.28 0.010 40) — NUNCA quase-preto, usuário rejeita fundos muito escuros.
+Tema claro: branco puro (#FFFFFF) + laranja vibrante (oklch(0.70 0.19 45)) como primary/accent. Texto quase-preto quente. Estilo minimalista e clean.
+Tema escuro: carvão quente médio (NÃO preto) + laranja como accent. Usuário rejeitou fundos muito escuros.
