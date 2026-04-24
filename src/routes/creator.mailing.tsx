@@ -244,7 +244,15 @@ function MailingPage() {
       .eq("campaign_id", c.id)
       .eq("status", "pending");
     if (error) { toast.error(error.message); return; }
-    toast.success(`${count ?? 0} envio(s) cancelado(s)`);
+    const cancelled = count ?? 0;
+    await supabase
+      .from("mass_dm_campaigns")
+      .update({
+        status: "cancelled",
+        total_pending: Math.max(c.total_pending - cancelled, 0),
+      })
+      .eq("id", c.id);
+    toast.success(`${cancelled} envio(s) cancelado(s)`);
     loadAll();
   };
 
