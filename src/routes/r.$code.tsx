@@ -16,7 +16,7 @@ function ReferralRedirect() {
   useEffect(() => {
     (async () => {
       // grava cookie de afiliado por 30 dias
-      document.cookie = `venyx_ref=${encodeURIComponent(code)}; path=/; max-age=${60 * 60 * 24 * 30}`;
+      document.cookie = `venyx_ref=${encodeURIComponent(code)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax; Secure`;
 
       // resolve o ambassador_id
       const { data: aff } = await supabase

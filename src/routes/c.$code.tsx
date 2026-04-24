@@ -14,7 +14,7 @@ function CouponRedirect() {
 
   useEffect(() => {
     (async () => {
-      document.cookie = `venyx_coupon=${encodeURIComponent(code)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      document.cookie = `venyx_coupon=${encodeURIComponent(code)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
 
       const { data } = await supabase
         .from("subscription_coupons")

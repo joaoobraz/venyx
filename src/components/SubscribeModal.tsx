@@ -109,7 +109,7 @@ export function SubscribeModal({
         },
       });
       if (coupon) {
-        document.cookie = "venyx_coupon=; path=/; max-age=0";
+        document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
       }
       if (res.alreadyActive) {
         toast.info("Você já assina esta criadora");

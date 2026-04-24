@@ -1,5 +1,10 @@
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
-import { requireAdminServer } from "@/server/admin.functions";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  requireAdminServer,
+  recordModerationDecision,
+  listModerationDecisions,
+} from "@/server/admin.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   ShieldAlert,
@@ -82,24 +87,10 @@ interface EnrichedLog extends ModLog {
   user_csam: number;
 }
 
-const DECISION_KEY = "venyx.moderation.decisions.v2";
 const PAGE_SIZE = 25;
 
 type DecisionEntry = { decision: "approved" | "rejected"; at: string; by: string; note: string };
 type DecisionMap = Record<string, DecisionEntry>;
-
-function loadDecisions(): DecisionMap {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(DECISION_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveDecisions(map: DecisionMap) {
-  localStorage.setItem(DECISION_KEY, JSON.stringify(map));
-}
 
 interface PendingDecision {
   id: string;
@@ -121,7 +112,9 @@ function AdminModerationPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [sizeMin, setSizeMin] = useState<string>("");
   const [sizeMax, setSizeMax] = useState<string>("");
-  const [decisions, setDecisions] = useState<DecisionMap>(loadDecisions);
+  const [decisions, setDecisions] = useState<DecisionMap>({});
+  const recordDecisionFn = useServerFn(recordModerationDecision);
+  const listDecisionsFn = useServerFn(listModerationDecisions);
   const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
   const [decisionStage, setDecisionStage] = useState<"edit" | "review">("edit");
@@ -163,9 +156,33 @@ function AdminModerationPage() {
         );
       }
       setLogs(rows.map((r) => ({ ...r, username: userMap.get(r.user_id) })));
+      // Carrega decisões do servidor (audit trail real)
+      try {
+        const res = await listDecisionsFn();
+        const map: DecisionMap = {};
+        for (const d of res.decisions as Array<{
+          log_id: string;
+          decision: string;
+          decided_at: string;
+          decided_by: string;
+          note: string;
+        }>) {
+          if (d.decision === "approved" || d.decision === "rejected") {
+            map[d.log_id] = {
+              decision: d.decision,
+              at: d.decided_at,
+              by: d.decided_by,
+              note: d.note,
+            };
+          }
+        }
+        setDecisions(map);
+      } catch (e) {
+        console.warn("Falha ao carregar decisões do servidor", e);
+      }
       setBusy(false);
     })();
-  }, [isAdmin]);
+  }, [isAdmin, listDecisionsFn]);
 
   // reset page when filters change
   useEffect(() => {
@@ -186,10 +203,22 @@ function AdminModerationPage() {
     setDecisionStage("review");
   };
 
-  const confirmDecision = () => {
+  const confirmDecision = async () => {
     if (!user || !pendingDecision) return;
     if (decisionNote.trim().length < 5) {
       toast.error("Motivo inválido.");
+      return;
+    }
+    try {
+      await recordDecisionFn({
+        data: {
+          logId: pendingDecision.id,
+          decision: pendingDecision.decision,
+          note: decisionNote.trim(),
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao registrar decisão");
       return;
     }
     const next: DecisionMap = {
@@ -202,7 +231,6 @@ function AdminModerationPage() {
       },
     };
     setDecisions(next);
-    saveDecisions(next);
     toast.success(pendingDecision.decision === "approved" ? "Reupload aprovado" : "Reupload rejeitado");
     setPendingDecision(null);
     setDecisionNote("");
@@ -234,10 +262,11 @@ function AdminModerationPage() {
   };
 
   const undo = (id: string) => {
+    // Mantém em UI apenas; a auditoria persistida no servidor não é apagada (compliance).
     const next = { ...decisions };
     delete next[id];
     setDecisions(next);
-    saveDecisions(next);
+    toast.message("Removido da visão local. O registro de auditoria permanece no servidor.");
   };
 
   // Estatísticas por usuário p/ definir confiança
