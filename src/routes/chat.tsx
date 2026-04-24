@@ -369,15 +369,21 @@ function ChatPage() {
                   return (
                     <div key={m.id} className={`max-w-[78%] overflow-hidden rounded-2xl shadow-card ${fromMe ? "ml-auto bg-primary text-primary-foreground" : "bg-card text-foreground"}`}>
                       {showMedia && m.media_path && (
-                        m.mime_type?.startsWith("video/") ? (
-                          <video src={chatMediaUrl(m.media_path)} controls className="aspect-square w-72 max-w-full object-cover" />
+                        mediaUrls[m.id] ? (
+                          m.mime_type?.startsWith("video/") ? (
+                            <video src={mediaUrls[m.id]} controls className="aspect-square w-72 max-w-full object-cover" />
+                          ) : (
+                            <img src={mediaUrls[m.id]} alt="" className="aspect-square w-72 max-w-full object-cover" />
+                          )
                         ) : (
-                          <img src={chatMediaUrl(m.media_path)} alt="" className="aspect-square w-72 max-w-full object-cover" />
+                          <div className="flex aspect-square w-72 max-w-full items-center justify-center bg-muted">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          </div>
                         )
                       )}
                       {isLockedMedia && m.media_path && (
                         <div className="relative">
-                          <img src={chatMediaUrl(m.media_path)} alt="" className="aspect-square w-72 max-w-full scale-110 object-cover blur-2xl" />
+                          <div className="aspect-square w-72 max-w-full bg-muted" />
                           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                             <Lock className="h-7 w-7 text-primary" />
                             {m.ppv_price_cents > 0 ? (
