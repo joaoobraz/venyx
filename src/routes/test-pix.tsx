@@ -34,7 +34,7 @@ function pickCharge(raw: any): Charge {
     id: d.id ?? d.transaction_id ?? d.txid,
     transaction_id: d.transaction_id ?? d.id,
     external_id: d.external_id,
-    qr_code: d.qr_code ?? d.pix_copy_paste ?? d.copy_paste,
+    qr_code: d.pix_copia_cola ?? d.qr_code ?? d.pix_copy_paste ?? d.copy_paste,
     qr_code_base64: d.qr_code_base64 ?? d.qr_code_image,
     expires_at: d.expires_at,
     status: d.status,
