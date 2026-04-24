@@ -3,6 +3,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 import { AgeGateModal } from "@/components/AgeGateModal";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -49,9 +50,14 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('theme')||'dark';var r=s==='auto'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):s;var h=document.documentElement;h.classList.remove('dark','light');h.classList.add(r);h.style.colorScheme=r;}catch(e){}})();`,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -63,12 +69,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <AgeGateModal />
-        <Outlet />
-        <Toaster />
-      </AuthProvider>
-    </I18nProvider>
+    <ThemeProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <AgeGateModal />
+          <Outlet />
+          <Toaster />
+        </AuthProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 }

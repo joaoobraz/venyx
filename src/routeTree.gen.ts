@@ -23,10 +23,12 @@ import { Route as SettingsSecurityRouteImport } from './routes/settings.security
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as LinksUsernameRouteImport } from './routes/links.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
@@ -35,6 +37,7 @@ import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
+import { Route as ApiPublicHooksProcessMailingQueueRouteImport } from './routes/api.public.hooks.process-mailing-queue'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -106,6 +109,11 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LinksUsernameRoute = LinksUsernameRouteImport.update({
+  id: '/links/$username',
+  path: '/links/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorWalletRoute = CreatorWalletRouteImport.update({
   id: '/creator/wallet',
   path: '/creator/wallet',
@@ -125,6 +133,11 @@ const CreatorPostsRoute = CreatorPostsRouteImport.update({
 const CreatorMailingRoute = CreatorMailingRouteImport.update({
   id: '/creator/mailing',
   path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLinksRoute = CreatorLinksRouteImport.update({
+  id: '/creator/links',
+  path: '/creator/links',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
@@ -167,6 +180,12 @@ const AdminDmcaRoute = AdminDmcaRouteImport.update({
   path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksProcessMailingQueueRoute =
+  ApiPublicHooksProcessMailingQueueRouteImport.update({
+    id: '/api/public/hooks/process-mailing-queue',
+    path: '/api/public/hooks/process-mailing-queue',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,14 +206,17 @@ export interface FileRoutesByFullPath {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -215,14 +237,17 @@ export interface FileRoutesByTo {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -244,14 +269,17 @@ export interface FileRoutesById {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -274,14 +302,17 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/hooks/process-mailing-queue'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -302,14 +333,17 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/hooks/process-mailing-queue'
   id:
     | '__root__'
     | '/'
@@ -330,14 +364,17 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/hooks/process-mailing-queue'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -359,14 +396,17 @@ export interface RootRouteChildren {
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
+  CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
+  LinksUsernameRoute: typeof LinksUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
+  ApiPublicHooksProcessMailingQueueRoute: typeof ApiPublicHooksProcessMailingQueueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -469,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/links/$username': {
+      id: '/links/$username'
+      path: '/links/$username'
+      fullPath: '/links/$username'
+      preLoaderRoute: typeof LinksUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/wallet': {
       id: '/creator/wallet'
       path: '/creator/wallet'
@@ -495,6 +542,13 @@ declare module '@tanstack/react-router' {
       path: '/creator/mailing'
       fullPath: '/creator/mailing'
       preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/links': {
+      id: '/creator/links'
+      path: '/creator/links'
+      fullPath: '/creator/links'
+      preLoaderRoute: typeof CreatorLinksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator/dmca': {
@@ -553,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-mailing-queue': {
+      id: '/api/public/hooks/process-mailing-queue'
+      path: '/api/public/hooks/process-mailing-queue'
+      fullPath: '/api/public/hooks/process-mailing-queue'
+      preLoaderRoute: typeof ApiPublicHooksProcessMailingQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -575,14 +636,18 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
+  CreatorLinksRoute: CreatorLinksRoute,
   CreatorMailingRoute: CreatorMailingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorWalletRoute: CreatorWalletRoute,
+  LinksUsernameRoute: LinksUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
+  ApiPublicHooksProcessMailingQueueRoute:
+    ApiPublicHooksProcessMailingQueueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

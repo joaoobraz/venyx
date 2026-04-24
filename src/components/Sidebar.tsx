@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   BarChart3,
   Mail,
+  Link2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -81,6 +82,9 @@ export function Sidebar() {
             </Link>
             <Link to="/creator/mailing" className={linkCls(loc.pathname === "/creator/mailing")}>
               <Mail className="h-5 w-5" /> Mailing
+            </Link>
+            <Link to="/creator/links" className={linkCls(loc.pathname === "/creator/links")}>
+              <Link2 className="h-5 w-5" /> Árvore de Links
             </Link>
             <Link to="/creator/dmca" className={linkCls(loc.pathname === "/creator/dmca")}>
               <ShieldAlert className="h-5 w-5" /> DMCA

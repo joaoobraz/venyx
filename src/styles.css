@@ -50,73 +50,74 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Venyx — Champagne Velvet: dourado champanhe + bordô profundo sobre preto-vinho. */
+/* Venyx — Champagne Velvet
+   :root = TEMA CLARO (creme/champanhe, texto escuro)
+   .dark  = TEMA ESCURO (preto-vinho)
+*/
 :root {
   --radius: 0.875rem;
 
-  /* Preto-vinho (#120608) */
-  --background: oklch(0.13 0.025 18);
-  --foreground: oklch(0.97 0.012 75);
+  /* Tema CLARO — fundo creme champanhe, texto marrom escuro */
+  --background: oklch(0.97 0.018 80);                 /* creme #F7EFE2 */
+  --foreground: oklch(0.22 0.04 22);                  /* marrom escuro #2A1A14 */
 
-  /* Card #1C0D11 */
-  --card: oklch(0.18 0.03 18);
-  --card-foreground: oklch(0.97 0.012 75);
-  --popover: oklch(0.18 0.03 18);
-  --popover-foreground: oklch(0.97 0.012 75);
+  --card: oklch(0.99 0.012 82);                       /* off-white quente */
+  --card-foreground: oklch(0.22 0.04 22);
+  --popover: oklch(0.99 0.012 82);
+  --popover-foreground: oklch(0.22 0.04 22);
 
-  /* Dourado champanhe #E8B86D */
-  --primary: oklch(0.81 0.11 78);
-  --primary-foreground: oklch(0.16 0.025 18);
-  --primary-glow: oklch(0.88 0.09 80);
+  /* Dourado champanhe mais profundo no claro p/ contraste */
+  --primary: oklch(0.62 0.13 70);                     /* champagne dourado #B8893E */
+  --primary-foreground: oklch(0.99 0.005 90);
+  --primary-glow: oklch(0.78 0.12 78);
 
-  --secondary: oklch(0.22 0.035 15);
-  --secondary-foreground: oklch(0.97 0.012 75);
+  --secondary: oklch(0.93 0.02 78);
+  --secondary-foreground: oklch(0.22 0.04 22);
 
-  --muted: oklch(0.21 0.03 18);
-  --muted-foreground: oklch(0.7 0.025 60);
+  --muted: oklch(0.93 0.018 78);
+  --muted-foreground: oklch(0.42 0.04 25);
 
-  /* Bordô profundo #7A1733 */
-  --accent: oklch(0.4 0.13 12);
-  --accent-foreground: oklch(0.97 0.012 75);
+  /* Bordô profundo */
+  --accent: oklch(0.42 0.14 12);
+  --accent-foreground: oklch(0.99 0.005 90);
 
-  --destructive: oklch(0.6 0.22 25);
+  --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 90);
 
-  --border: oklch(0.81 0.11 78 / 12%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.81 0.11 78 / 60%);
+  --border: oklch(0.62 0.13 70 / 22%);
+  --input: oklch(0.22 0.04 22 / 12%);
+  --ring: oklch(0.62 0.13 70 / 55%);
 
-  --chart-1: oklch(0.81 0.11 78);
-  --chart-2: oklch(0.4 0.13 12);
-  --chart-3: oklch(0.88 0.09 80);
+  --chart-1: oklch(0.62 0.13 70);
+  --chart-2: oklch(0.42 0.14 12);
+  --chart-3: oklch(0.78 0.12 78);
   --chart-4: oklch(0.55 0.15 18);
-  --chart-5: oklch(0.7 0.08 70);
+  --chart-5: oklch(0.5 0.08 70);
 
-  --sidebar: oklch(0.15 0.025 18);
-  --sidebar-foreground: oklch(0.97 0.012 75);
-  --sidebar-primary: oklch(0.81 0.11 78);
-  --sidebar-primary-foreground: oklch(0.16 0.025 18);
-  --sidebar-accent: oklch(0.21 0.03 18);
-  --sidebar-accent-foreground: oklch(0.81 0.11 78);
-  --sidebar-border: oklch(0.81 0.11 78 / 8%);
-  --sidebar-ring: oklch(0.81 0.11 78);
+  --sidebar: oklch(0.95 0.02 80);
+  --sidebar-foreground: oklch(0.22 0.04 22);
+  --sidebar-primary: oklch(0.62 0.13 70);
+  --sidebar-primary-foreground: oklch(0.99 0.005 90);
+  --sidebar-accent: oklch(0.93 0.018 78);
+  --sidebar-accent-foreground: oklch(0.62 0.13 70);
+  --sidebar-border: oklch(0.62 0.13 70 / 18%);
+  --sidebar-ring: oklch(0.62 0.13 70);
 
-  /* Gradients & shadows — champagne → bordeaux */
-  --gradient-primary: linear-gradient(135deg, oklch(0.88 0.09 80) 0%, oklch(0.81 0.11 78) 50%, oklch(0.4 0.13 12) 100%);
-  --gradient-hero: radial-gradient(ellipse at top, oklch(0.4 0.13 12 / 0.45) 0%, oklch(0.13 0.025 18) 65%);
-  --gradient-card: linear-gradient(160deg, oklch(0.2 0.035 18) 0%, oklch(0.14 0.025 18) 100%);
-  --gradient-gold: linear-gradient(135deg, oklch(0.88 0.09 80) 0%, oklch(0.75 0.13 70) 100%);
-  --shadow-glow: 0 10px 40px -12px oklch(0.81 0.11 78 / 0.45);
-  --shadow-card: 0 4px 24px -8px oklch(0 0 0 / 0.7);
-  --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.8), 0 0 0 1px oklch(0.81 0.11 78 / 0.06);
+  --gradient-primary: linear-gradient(135deg, oklch(0.78 0.12 78) 0%, oklch(0.62 0.13 70) 50%, oklch(0.42 0.14 12) 100%);
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.78 0.12 78 / 0.35) 0%, oklch(0.97 0.018 80) 65%);
+  --gradient-card: linear-gradient(160deg, oklch(0.99 0.012 82) 0%, oklch(0.95 0.02 80) 100%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.78 0.12 78) 0%, oklch(0.62 0.13 70) 100%);
+  --shadow-glow: 0 10px 40px -12px oklch(0.62 0.13 70 / 0.35);
+  --shadow-card: 0 4px 24px -8px oklch(0.22 0.04 22 / 0.18);
+  --shadow-elegant: 0 20px 60px -20px oklch(0.22 0.04 22 / 0.25), 0 0 0 1px oklch(0.62 0.13 70 / 0.08);
 
-  /* Motion tokens */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 150ms;
   --duration-base: 240ms;
   --duration-slow: 420ms;
 }
 
+/* TEMA ESCURO — Champagne Velvet original */
 .dark {
   --background: oklch(0.13 0.025 18);
   --foreground: oklch(0.97 0.012 75);
@@ -146,6 +147,14 @@
   --sidebar-accent-foreground: oklch(0.81 0.11 78);
   --sidebar-border: oklch(0.81 0.11 78 / 8%);
   --sidebar-ring: oklch(0.81 0.11 78);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.88 0.09 80) 0%, oklch(0.81 0.11 78) 50%, oklch(0.4 0.13 12) 100%);
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.4 0.13 12 / 0.45) 0%, oklch(0.13 0.025 18) 65%);
+  --gradient-card: linear-gradient(160deg, oklch(0.2 0.035 18) 0%, oklch(0.14 0.025 18) 100%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.88 0.09 80) 0%, oklch(0.75 0.13 70) 100%);
+  --shadow-glow: 0 10px 40px -12px oklch(0.81 0.11 78 / 0.45);
+  --shadow-card: 0 4px 24px -8px oklch(0 0 0 / 0.7);
+  --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.8), 0 0 0 1px oklch(0.81 0.11 78 / 0.06);
 }
 
 @layer base {
