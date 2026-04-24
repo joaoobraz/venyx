@@ -1274,6 +1274,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_feed_posts: {
+        Args: { _creator_id?: string; _limit?: number; _viewer_id?: string }
+        Returns: {
+          body: string
+          comments_count: number
+          created_at: string
+          creator_id: string
+          has_access: boolean
+          id: string
+          likes_count: number
+          media_id: string
+          media_mime: string
+          media_path: string
+          price_cents: number
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }[]
+      }
       mass_send_dm: {
         Args: {
           _body: string
