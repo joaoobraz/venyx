@@ -47,6 +47,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/moderation")({
+  beforeLoad: async () => {
+    try {
+      await requireAdminServer();
+    } catch {
+      throw redirect({ to: "/feed" });
+    }
+  },
   component: AdminModerationPage,
 });
 
