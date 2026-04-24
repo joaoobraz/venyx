@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
+import { requireAdminServer } from "@/server/admin.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   ShieldAlert,
@@ -46,6 +47,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin/moderation")({
+  beforeLoad: async () => {
+    try {
+      await requireAdminServer();
+    } catch {
+      throw redirect({ to: "/feed" });
+    }
+  },
   component: AdminModerationPage,
 });
 
