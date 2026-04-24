@@ -37,7 +37,6 @@ import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
-import { Route as ApiPublicHooksProcessMailingQueueRouteImport } from './routes/api.public.hooks.process-mailing-queue'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -180,12 +179,6 @@ const AdminDmcaRoute = AdminDmcaRouteImport.update({
   path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksProcessMailingQueueRoute =
-  ApiPublicHooksProcessMailingQueueRouteImport.update({
-    id: '/api/public/hooks/process-mailing-queue',
-    path: '/api/public/hooks/process-mailing-queue',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -216,7 +209,6 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
-  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -247,7 +239,6 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
-  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -279,7 +270,6 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
-  '/api/public/hooks/process-mailing-queue': typeof ApiPublicHooksProcessMailingQueueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -312,7 +302,6 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
-    | '/api/public/hooks/process-mailing-queue'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -343,7 +332,6 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
-    | '/api/public/hooks/process-mailing-queue'
   id:
     | '__root__'
     | '/'
@@ -374,7 +362,6 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
-    | '/api/public/hooks/process-mailing-queue'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -406,7 +393,6 @@ export interface RootRouteChildren {
   RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
-  ApiPublicHooksProcessMailingQueueRoute: typeof ApiPublicHooksProcessMailingQueueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -607,13 +593,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/process-mailing-queue': {
-      id: '/api/public/hooks/process-mailing-queue'
-      path: '/api/public/hooks/process-mailing-queue'
-      fullPath: '/api/public/hooks/process-mailing-queue'
-      preLoaderRoute: typeof ApiPublicHooksProcessMailingQueueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -646,8 +625,6 @@ const rootRouteChildren: RootRouteChildren = {
   RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
-  ApiPublicHooksProcessMailingQueueRoute:
-    ApiPublicHooksProcessMailingQueueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
