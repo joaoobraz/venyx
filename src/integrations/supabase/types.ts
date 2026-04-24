@@ -1331,6 +1331,15 @@ export type Database = {
           sent: number
         }[]
       }
+      validate_coupon: {
+        Args: { _code: string; _creator_id: string }
+        Returns: {
+          discount_pct: number
+          duration_months: number
+          id: string
+          trial_days: number
+        }[]
+      }
     }
     Enums: {
       app_role: "subscriber" | "creator" | "admin" | "ambassador"
