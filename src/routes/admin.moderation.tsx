@@ -725,40 +725,78 @@ function AdminModerationPage() {
         )}
       </div>
 
-      {/* Confirmação com motivo da decisão */}
+      {/* Confirmação com motivo da decisão (2 etapas: editar → revisar → salvar) */}
       <AlertDialog
         open={pendingDecision !== null}
         onOpenChange={(open) => {
           if (!open) {
             setPendingDecision(null);
             setDecisionNote("");
+            setDecisionStage("edit");
           }
         }}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {pendingDecision?.decision === "approved" ? "Aprovar reupload?" : "Rejeitar reupload?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Descreva o motivo da decisão. Esta nota fica registrada no histórico de auditoria e aparece no CSV exportado.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={decisionNote}
-            onChange={(e) => setDecisionNote(e.target.value)}
-            placeholder="Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou contexto…"
-            rows={4}
-            className="resize-none"
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDecision}>
-              Confirmar {pendingDecision?.decision === "approved" ? "aprovação" : "rejeição"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {decisionStage === "edit" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {pendingDecision?.decision === "approved" ? "Aprovar reupload?" : "Rejeitar reupload?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Descreva o motivo da decisão. Você poderá revisar a nota antes de salvar no histórico de auditoria.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Textarea
+                value={decisionNote}
+                onChange={(e) => setDecisionNote(e.target.value)}
+                placeholder="Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou contexto…"
+                rows={4}
+                className="resize-none"
+                autoFocus
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {decisionNote.trim().length}/5 caracteres mínimos
+              </p>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <Button onClick={goReview} disabled={decisionNote.trim().length < 5}>
+                  Revisar antes de salvar
+                </Button>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirme a decisão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Revise o motivo abaixo. Após salvar, ele será registrado permanentemente no histórico de auditoria
+                  (incluindo CSV exportado).
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2 rounded-lg border border-border bg-background/50 p-3 text-sm">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Decisão</span>
+                  <DecisionBadge decision={pendingDecision?.decision ?? "pending"} />
+                </div>
+                <div className="border-t border-border pt-2">
+                  <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Motivo</div>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{decisionNote.trim()}</p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <Button variant="ghost" onClick={() => setDecisionStage("edit")}>
+                  <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Editar motivo
+                </Button>
+                <AlertDialogAction onClick={confirmDecision}>
+                  Salvar {pendingDecision?.decision === "approved" ? "aprovação" : "rejeição"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
+      </TooltipProvider>
     </AppShell>
   );
 }
