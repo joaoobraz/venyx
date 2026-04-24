@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+import { tipServer } from "@/server/payments.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export function TipModal({
   postId?: string;
 }) {
   const { user } = useAuth();
+  const tipFn = useServerFn(tipServer);
   const [amount, setAmount] = useState<number>(1000);
   const [custom, setCustom] = useState("");
   const [msg, setMsg] = useState("");
@@ -38,17 +40,15 @@ export function TipModal({
     }
     setBusy(true);
     try {
-      const { error } = await supabase.from("transactions").insert({
-        payer_id: user.id,
-        payee_id: creatorId,
-        type: "tip",
-        status: "paid",
-        amount_cents: finalCents,
-        reference_id: postId ?? null,
-        gateway: "mock",
-        metadata: { message: msg || null },
+      await tipFn({
+        data: {
+          creatorId,
+          amountCents: finalCents,
+          postId: postId ?? null,
+          message: msg || null,
+          gatewayToken: `mock_${Date.now()}`,
+        },
       });
-      if (error) throw error;
       toast.success(`Gorjeta de R$ ${(finalCents / 100).toFixed(2)} enviada para ${creatorName}!`);
       onOpenChange(false);
       setMsg("");
