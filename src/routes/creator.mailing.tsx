@@ -611,9 +611,21 @@ function MailingPage() {
                       {c.ppv_price_cents > 0 && <Badge variant="outline">PPV R$ {(c.ppv_price_cents / 100).toFixed(0)}</Badge>}
                     </div>
                   </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
-                    {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                    </span>
+                    {c.total_pending > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => cancelCampaign(c)}
+                        className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+                      >
+                        <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar ({c.total_pending})
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
