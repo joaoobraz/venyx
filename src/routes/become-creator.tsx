@@ -104,10 +104,16 @@ function KycForm({ onDone }: { onDone: () => void }) {
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const MAX_SIZE = 8 * 1024 * 1024; // 8MB
+  const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+
   const upload = async (file: File, name: string) => {
     if (!user) throw new Error("no user");
-    const path = `${user.id}/${Date.now()}-${name}`;
-    const { error } = await supabase.storage.from("kyc").upload(path, file, { upsert: true });
+    if (file.size > MAX_SIZE) throw new Error(`${name}: arquivo maior que 8MB`);
+    if (!ALLOWED.includes(file.type)) throw new Error(`${name}: formato não aceito (use JPG/PNG/WEBP)`);
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${user.id}/${Date.now()}-${name}.${ext}`;
+    const { error } = await supabase.storage.from("kyc").upload(path, file, { upsert: false, contentType: file.type });
     if (error) throw error;
     return path;
   };
