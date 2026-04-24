@@ -3,6 +3,7 @@ import { Bell, MessageCircle, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle } from "@/components/LangToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
@@ -35,6 +36,7 @@ export function Header() {
         )}
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LangToggle />
           {user ? (
             <>
