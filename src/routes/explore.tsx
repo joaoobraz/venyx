@@ -25,7 +25,8 @@ function ExplorePage() {
         <TopCreators limit={50} />
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <TrendingUp className="h-5 w-5 text-primary" /> {t("explore.trending")}
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <span>{t("explore.trending")}</span>
           </h2>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -53,7 +54,8 @@ function ExplorePage() {
 
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <Sparkles className="h-5 w-5 text-primary" /> {t("explore.new")}
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span>{t("explore.new")}</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {TRENDING.slice().reverse().map((c) => (
@@ -73,7 +75,8 @@ function ExplorePage() {
 
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <Tag className="h-5 w-5 text-primary" /> {t("explore.categories")}
+            <Tag className="h-5 w-5 text-primary" />
+            <span>{t("explore.categories")}</span>
           </h2>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((cat) => (
