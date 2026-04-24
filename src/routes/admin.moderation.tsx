@@ -203,10 +203,22 @@ function AdminModerationPage() {
     setDecisionStage("review");
   };
 
-  const confirmDecision = () => {
+  const confirmDecision = async () => {
     if (!user || !pendingDecision) return;
     if (decisionNote.trim().length < 5) {
       toast.error("Motivo inválido.");
+      return;
+    }
+    try {
+      await recordDecisionFn({
+        data: {
+          logId: pendingDecision.id,
+          decision: pendingDecision.decision,
+          note: decisionNote.trim(),
+        },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao registrar decisão");
       return;
     }
     const next: DecisionMap = {
@@ -219,7 +231,6 @@ function AdminModerationPage() {
       },
     };
     setDecisions(next);
-    saveDecisions(next);
     toast.success(pendingDecision.decision === "approved" ? "Reupload aprovado" : "Reupload rejeitado");
     setPendingDecision(null);
     setDecisionNote("");
