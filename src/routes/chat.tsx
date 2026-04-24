@@ -169,12 +169,28 @@ function ChatPage() {
 
   const send = async () => {
     if (!user || !active || !draft.trim()) return;
+    const body = draft.trim();
+
+    // Bloqueio anti-bypass: detectar telefone, WhatsApp, Telegram, redes sociais, etc.
+    const detection = detectExternalContact(body);
+    if (detection.blocked) {
+      toast.error(contactBlockMessage(detection), { duration: 6000 });
+      // registrar tentativa para auditoria do admin
+      await supabase.from("moderation_logs").insert({
+        user_id: user.id,
+        surface: "chat",
+        category: "contact_share",
+        reason: detection.matches.map((m) => `${m.label}: ${m.sample}`).join(" | ").slice(0, 500),
+      });
+      return;
+    }
+
     setBusy(true);
     try {
       const { error } = await supabase.from("chat_messages").insert({
         thread_id: active.id,
         sender_id: user.id,
-        body: draft.trim(),
+        body,
       });
       if (error) throw error;
       setDraft("");
