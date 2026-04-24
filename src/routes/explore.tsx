@@ -22,9 +22,9 @@ function ExplorePage() {
   return (
     <AppShell>
       <div className="space-y-10">
+        <TopCreators limit={50} />
         <section>
-          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <TrendingUp className="h-5 w-5 text-primary" /> {t("explore.trending")}
+
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {TRENDING.map((c) => (
