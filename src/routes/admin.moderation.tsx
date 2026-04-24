@@ -127,13 +127,13 @@ function AdminModerationPage() {
     saveDecisions(next);
   };
 
-  const enriched = useMemo(
+  const enriched = useMemo<EnrichedLog[]>(
     () =>
       logs.map((l) => {
         const d = decisions[l.id];
         return {
           ...l,
-          decision: d?.decision ?? ("pending" as const),
+          decision: (d?.decision ?? "pending") as Decision,
           decision_at: d?.at,
           decided_by: d?.by,
         };
