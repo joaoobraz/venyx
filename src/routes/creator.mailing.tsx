@@ -235,6 +235,19 @@ function MailingPage() {
     loadAll();
   };
 
+  const cancelCampaign = async (c: Campaign) => {
+    if (c.total_pending === 0) { toast.error("Nada pendente para cancelar"); return; }
+    if (!confirm(`Cancelar ${c.total_pending} mensagem(ns) pendente(s) desta campanha?`)) return;
+    const { error, count } = await supabase
+      .from("mass_dm_jobs")
+      .update({ status: "cancelled", processed_at: new Date().toISOString(), error_reason: "Cancelado pela criadora" }, { count: "exact" })
+      .eq("campaign_id", c.id)
+      .eq("status", "pending");
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${count ?? 0} envio(s) cancelado(s)`);
+    loadAll();
+  };
+
   const send = async () => {
     if (contactWarn) { toast.error("Mensagem contém contato externo"); return; }
     if (!body.trim()) { toast.error("Escreva uma mensagem"); return; }
