@@ -87,24 +87,8 @@ interface EnrichedLog extends ModLog {
   user_csam: number;
 }
 
-const DECISION_KEY = "venyx.moderation.decisions.v2";
-const PAGE_SIZE = 25;
-
 type DecisionEntry = { decision: "approved" | "rejected"; at: string; by: string; note: string };
 type DecisionMap = Record<string, DecisionEntry>;
-
-function loadDecisions(): DecisionMap {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(DECISION_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveDecisions(map: DecisionMap) {
-  localStorage.setItem(DECISION_KEY, JSON.stringify(map));
-}
 
 interface PendingDecision {
   id: string;
