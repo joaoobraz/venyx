@@ -14,6 +14,228 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_codes: {
+        Row: {
+          code: string
+          commission_pct: number
+          created_at: string
+          id: string
+          total_clicks: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          total_clicks?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          total_clicks?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      affiliate_referrals: {
+        Row: {
+          ambassador_id: string
+          code: string
+          commission_cents: number
+          converted_at: string | null
+          created_at: string
+          id: string
+          referred_user_id: string
+        }
+        Insert: {
+          ambassador_id: string
+          code: string
+          commission_cents?: number
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id: string
+        }
+        Update: {
+          ambassador_id?: string
+          code?: string
+          commission_cents?: number
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referred_user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          media_path: string | null
+          mime_type: string | null
+          ppv_price_cents: number
+          read_at: string | null
+          sender_id: string
+          subscribers_only: boolean
+          thread_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          read_at?: string | null
+          sender_id: string
+          subscribers_only?: boolean
+          thread_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          read_at?: string | null
+          sender_id?: string
+          subscribers_only?: boolean
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_ppv_unlocks: {
+        Row: {
+          amount_cents: number
+          message_id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          message_id: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          message_id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_ppv_unlocks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string
+          id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dmca_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          evidence_path: string | null
+          id: string
+          leaked_url: string
+          status: Database["public"]["Enums"]["dmca_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          evidence_path?: string | null
+          id?: string
+          leaked_url: string
+          status?: Database["public"]["Enums"]["dmca_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          evidence_path?: string | null
+          id?: string
+          leaked_url?: string
+          status?: Database["public"]["Enums"]["dmca_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -310,6 +532,161 @@ export type Database = {
         }
         Relationships: []
       }
+      security_settings: {
+        Row: {
+          backup_codes_hash: string[] | null
+          mfa_enabled: boolean
+          mfa_required_for_withdraw: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes_hash?: string[] | null
+          mfa_enabled?: boolean
+          mfa_required_for_withdraw?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes_hash?: string[] | null
+          mfa_enabled?: boolean
+          mfa_required_for_withdraw?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          media_path: string
+          mime_type: string
+          views_count: number
+          visibility: Database["public"]["Enums"]["story_visibility"]
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          expires_at?: string
+          id?: string
+          media_path: string
+          mime_type: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["story_visibility"]
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          media_path?: string
+          mime_type?: string
+          views_count?: number
+          visibility?: Database["public"]["Enums"]["story_visibility"]
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_coupons: {
+        Row: {
+          code: string
+          created_at: string
+          creator_id: string
+          discount_pct: number | null
+          duration_months: number
+          id: string
+          is_active: boolean
+          max_uses: number
+          trial_days: number | null
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          creator_id: string
+          discount_pct?: number | null
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          trial_days?: number | null
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          creator_id?: string
+          discount_pct?: number | null
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          trial_days?: number | null
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          creator_id: string
+          discount_pct: number
+          id: string
+          is_active: boolean
+          months: number
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          discount_pct?: number
+          id?: string
+          is_active?: boolean
+          months: number
+          price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          discount_pct?: number
+          id?: string
+          is_active?: boolean
+          months?: number
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -424,8 +801,10 @@ export type Database = {
     }
     Enums: {
       app_role: "subscriber" | "creator" | "admin" | "ambassador"
+      dmca_status: "pending" | "notified" | "resolved" | "rejected"
       kyc_status: "pending" | "approved" | "rejected"
       post_visibility: "public" | "subscribers" | "ppv" | "goal"
+      story_visibility: "public" | "subscribers"
       subscription_status: "active" | "canceled" | "expired"
       tx_status: "pending" | "paid" | "failed" | "refunded"
       tx_type:
@@ -563,8 +942,10 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["subscriber", "creator", "admin", "ambassador"],
+      dmca_status: ["pending", "notified", "resolved", "rejected"],
       kyc_status: ["pending", "approved", "rejected"],
       post_visibility: ["public", "subscribers", "ppv", "goal"],
+      story_visibility: ["public", "subscribers"],
       subscription_status: ["active", "canceled", "expired"],
       tx_status: ["pending", "paid", "failed", "refunded"],
       tx_type: [
