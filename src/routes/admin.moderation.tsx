@@ -316,7 +316,7 @@ function AdminModerationPage() {
   const cursorStart = filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1;
   const cursorEnd = Math.min(filtered.length, (safePage + 1) * PAGE_SIZE);
 
-  const downloadCsv = () => {
+  const downloadCsv = (scope: "filtered" | "page" = "filtered") => {
     const header = [
       "id",
       "created_at",
@@ -337,8 +337,9 @@ function AdminModerationPage() {
       const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
+    const rows = scope === "page" ? pageItems : filtered;
     const lines = [header.join(",")];
-    for (const l of filtered) {
+    for (const l of rows) {
       lines.push(
         [
           l.id,
@@ -364,9 +365,11 @@ function AdminModerationPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `moderation-decisions-${new Date().toISOString().slice(0, 10)}.csv`;
+    const suffix = scope === "page" ? `page-${safePage + 1}` : "filtered";
+    a.download = `moderation-${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exportadas ${rows.length} linhas (${scope === "page" ? "página atual" : "todos os filtros"})`);
   };
 
   if (loading || !isAdmin) return null;
