@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
 import { TranslateButton } from "@/components/TranslateButton";
+import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
 export const Route = createFileRoute("/chat")({
   component: ChatPage,
@@ -168,12 +169,28 @@ function ChatPage() {
 
   const send = async () => {
     if (!user || !active || !draft.trim()) return;
+    const body = draft.trim();
+
+    // Bloqueio anti-bypass: detectar telefone, WhatsApp, Telegram, redes sociais, etc.
+    const detection = detectExternalContact(body);
+    if (detection.blocked) {
+      toast.error(contactBlockMessage(detection), { duration: 6000 });
+      // registrar tentativa para auditoria do admin
+      await supabase.from("moderation_logs").insert({
+        user_id: user.id,
+        surface: "chat",
+        category: "contact_share",
+        reason: detection.matches.map((m) => `${m.label}: ${m.sample}`).join(" | ").slice(0, 500),
+      });
+      return;
+    }
+
     setBusy(true);
     try {
       const { error } = await supabase.from("chat_messages").insert({
         thread_id: active.id,
         sender_id: user.id,
-        body: draft.trim(),
+        body,
       });
       if (error) throw error;
       setDraft("");
@@ -414,6 +431,11 @@ function ChatPage() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
+                {draft.trim().length > 3 && detectExternalContact(draft).blocked && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+                    ⚠️ Compartilhar contato externo (WhatsApp, Telegram, telefone, redes sociais) é proibido.
+                  </div>
+                )}
               </footer>
 
               <TipModal
