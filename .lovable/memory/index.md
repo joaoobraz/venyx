@@ -1,4 +1,4 @@
 # Project Memory
 
 ## Core
-Tema Editorial Mono: branco puro + preto suave + acento índigo elétrico oklch(0.48 0.22 270). Estilo minimalista Stripe/Linear. Dark = carvão médio oklch(0.22 0.006 270), NUNCA quase-preto. Manter site completo (todas features), apenas paleta minimalista.
+Tema Linen & Terracotta. Claro: fundo linho oklch(0.985 0.005 80), primary terracota oklch(0.58 0.13 35). Escuro: fundo carvão quente médio oklch(0.28 0.010 40) — NUNCA quase-preto, usuário rejeita fundos muito escuros.
