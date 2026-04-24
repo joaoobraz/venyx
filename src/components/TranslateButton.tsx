@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Languages, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,35 +14,79 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Botão de tradução com confirmação prévia, estado de loading
- * e mensagem clara quando o provedor está rate-limited (429) ou sem créditos (402).
+ * Botão de tradução com confirmação prévia, estado de loading,
+ * e auto-retry com contagem regressiva quando o provedor responde 429 (rate-limit).
+ *
+ * Backoff: 5s → 10s → 20s → 40s (máx). Após 4 tentativas, aguarda decisão manual.
  */
+const RETRY_DELAYS = [5, 10, 20, 40];
+
 export function TranslateButton({ text, target = "pt-BR" }: { text: string; target?: string }) {
   const [translated, setTranslated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [retryIn, setRetryIn] = useState<number | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Limpa qualquer timer pendente.
+  const clearTimer = () => {
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+  };
+  useEffect(() => () => clearTimer(), []);
 
   const reset = () => {
     setError(null);
     setRateLimited(false);
+    setRetryIn(null);
+    setRetryAttempt(0);
+    clearTimer();
   };
 
-  const doTranslate = async () => {
-    reset();
+  const scheduleRetry = (attempt: number) => {
+    const delay = RETRY_DELAYS[Math.min(attempt, RETRY_DELAYS.length - 1)];
+    setRetryIn(delay);
+    clearTimer();
+    tickRef.current = setInterval(() => {
+      setRetryIn((s) => {
+        if (s == null) return null;
+        if (s <= 1) {
+          clearTimer();
+          // dispara nova tentativa
+          void doTranslate(attempt + 1);
+          return null;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const doTranslate = async (attempt = 0) => {
+    setError(null);
+    setRateLimited(false);
+    setRetryIn(null);
     setLoading(true);
+    setRetryAttempt(attempt);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("translate-message", {
         body: { text, target },
       });
 
-      // Edge function returned an HTTP error (status code surfaced via FunctionsHttpError)
       if (fnError) {
         const status = (fnError as { context?: { status?: number } })?.context?.status;
         if (status === 429) {
           setRateLimited(true);
-          setError("A IA está sobrecarregada agora. Tente novamente em alguns segundos.");
+          if (attempt < RETRY_DELAYS.length) {
+            setError(`IA sobrecarregada. Nova tentativa automática em alguns segundos…`);
+            scheduleRetry(attempt);
+          } else {
+            setError("IA continua sobrecarregada. Tente novamente manualmente.");
+          }
           return;
         }
         if (status === 402) {
@@ -54,10 +98,9 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
 
       const payload = data as { translation?: string; error?: string } | null;
       const t = payload?.translation;
-      if (!t) {
-        throw new Error(payload?.error || "Sem resposta do tradutor");
-      }
+      if (!t) throw new Error(payload?.error || "Sem resposta do tradutor");
       setTranslated(t);
+      setRetryAttempt(0);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Falha ao traduzir";
       setError(msg);
@@ -67,15 +110,27 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
     }
   };
 
+  const cancelRetry = () => {
+    clearTimer();
+    setRetryIn(null);
+    setError("Auto-retry cancelado. Toque para tentar novamente.");
+  };
+
   const onClick = () => {
     if (translated) {
       setTranslated(null);
       reset();
       return;
     }
+    if (retryIn != null) {
+      // usuário clicou durante a espera → tenta agora
+      clearTimer();
+      setRetryIn(null);
+      void doTranslate(retryAttempt + 1);
+      return;
+    }
     if (error || rateLimited) {
-      // permite re-tentar direto sem reabrir o confirm
-      doTranslate();
+      void doTranslate(0);
       return;
     }
     setConfirmOpen(true);
@@ -93,6 +148,11 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
           <>
             <Loader2 className="h-3 w-3 animate-spin" />
             Traduzindo…
+          </>
+        ) : retryIn != null ? (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+            Nova tentativa em {retryIn}s · tocar p/ tentar agora
           </>
         ) : rateLimited || error ? (
           <>
@@ -114,7 +174,19 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
       {error && !translated && (
         <div className="flex items-start gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-          <span>{error}</span>
+          <span className="flex-1">{error}</span>
+          {retryIn != null && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelRetry();
+              }}
+              className="text-[10px] underline opacity-80 hover:opacity-100"
+            >
+              cancelar
+            </button>
+          )}
         </div>
       )}
 
@@ -132,7 +204,7 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
             <AlertDialogAction
               onClick={() => {
                 setConfirmOpen(false);
-                doTranslate();
+                void doTranslate(0);
               }}
             >
               Traduzir
