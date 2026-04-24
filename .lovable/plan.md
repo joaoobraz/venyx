@@ -1,54 +1,65 @@
+# O que ainda falta antes de lançar
 
+Comparando o estado atual com a varredura mais recente, a maior parte do bloco P0 original já foi resolvida (RLS de posts, recursão, server functions de pagamento, middleware admin, webhook de mailing, mídia de chat). Mas a varredura ainda aponta **2 erros críticos** e **8 avisos**, mais alguns itens operacionais/legais que faltam para abrir ao público.
 
-# Diagnóstico: o sistema NÃO está pronto para lançamento
+## P0 — Bloqueadores que ainda existem
 
-A varredura de segurança encontrou **20 problemas**, sendo **6 críticos (error)** que permitem fraude e vazamento. Antes de abrir ao público, é obrigatório corrigir o bloco P0. Recomendo uma rodada estruturada em 3 prioridades.
+1. **Pagamento ainda é mock (CRÍTICO)**
+   `validateGatewayToken` em `src/server/payments.functions.ts` aceita qualquer token que comece com `mock_`. O front envia `mock_${Date.now()}` e o servidor grava `status: 'paid'`. Hoje qualquer pessoa consegue desbloquear PPV, gorjetas e assinaturas de graça.
+   → Decisão necessária: integrar Stripe ou Paddle (ambos têm conector nativo no Lovable). Sem gateway real, não dá para abrir vendas.
 
-## P0 — Bloqueadores críticos (impedem lançamento)
-
-1. **Fraude de pagamento (CRÍTICO)** — Hoje o navegador insere direto na tabela `transactions` com `status='paid'`. Qualquer usuário pode creditar valores arbitrários para si ou desbloquear PPV/gorjetas/metas sem pagar. Precisa migrar `unlock`, `unlockPpv`, `contributeGoal` e `tip` para server functions (`createServerFn`) que validam o gateway antes de gravar.
-
-2. **Conteúdo pago vazando** — A policy de SELECT em `posts` e `post_media` é `USING true`. Qualquer pessoa (até deslogada) lê o corpo e o caminho da mídia de posts PPV e "subscribers only". Reescrever policies para filtrar por `visibility` + assinatura ativa + unlock pago.
-
-3. **Bucket `posts` sem proteção real** — Mesmo com policies corrigidas, qualquer autenticado baixa qualquer arquivo do bucket. Trocar para bucket privado + URLs assinadas geradas em server function que checa assinatura/unlock.
-
-4. **Escalada de privilégio em `user_roles`** — Falta policy de INSERT explícita. Risco de qualquer usuário se promover a admin/creator. Adicionar policy WITH CHECK exigindo admin.
-
-5. **Realtime aberto** — Sem RLS em `realtime.messages`, qualquer autenticado escuta qualquer thread privada. Adicionar policy restringindo subscrição a `user_a`/`user_b` da thread.
-
-6. **Webhook de mailing sem auth** — `/api/public/hooks/process-mailing-queue` usa service-role sem checar segredo. Qualquer um na internet dispara DMs em massa. Adicionar verificação `Authorization: Bearer ${CRON_SECRET}` e configurar segredo no pg_cron.
-
-7. **Rotas admin sem guarda no servidor** — `admin.kyc`, `admin.dmca`, `admin.moderation` checam `isAdmin` só no React. Adicionar `beforeLoad` chamando server function que revalida o role.
-
-8. **Mídia de chat invisível ao destinatário** — Policy do bucket `chat-media` só libera para o sender. Recipiente não consegue ver o que recebeu. Adicionar policy de SELECT para o outro participante da thread.
+2. **Stories vazando para anônimos (CRÍTICO)**
+   A policy de SELECT em `stories` só checa `expires_at > now()`, ignorando o campo `visibility`. Bucket `stories` é público também. Qualquer um lê stories "subscribers only".
+   → Reescrever a policy considerando `visibility` + assinatura ativa, e migrar bucket para privado com URLs assinadas.
 
 ## P1 — Importantes antes de escalar
 
-9. Decisões de moderação salvas em `localStorage` — criar tabela `moderation_decisions` com server function de persistência e auditoria.
-10. Mailing em massa: envolver `enqueue_mass_dm` em server function com rate limit e revalidação de role.
-11. `affiliate_codes`, `subscription_coupons`, `follows` com SELECT público total — restringir.
-12. Headers de segurança ausentes — adicionar middleware com CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS.
+3. **Realtime com ELSE permissivo**
+   Policy de `realtime.messages` libera qualquer canal que não comece com `thread:%` para qualquer autenticado. Se amanhã criarmos canais `notifications:%` ou `campaign:%`, vazam. Trocar o ELSE por WHEN explícitos.
 
-## P2 — Polimento
+4. **Buckets públicos permitem listagem** (3 avisos do linter)
+   `avatars`, `covers`, `posts` (e provavelmente `stories`) têm SELECT amplo em `storage.objects`. Restringir para leitura por path conhecido, sem listagem.
 
-13. Listing público dos buckets `avatars/covers/posts/stories` — restringir SELECT em `storage.objects` à leitura por path conhecido, sem listagem.
-14. Mover extensões do schema `public` para `extensions`.
-15. Limpar a função antiga `mass_send_dm` (substituída por `enqueue_mass_dm` + fila), evitando duas APIs paralelas.
-16. Verificação de e-mail real no signup (hoje pode estar com auto-confirm dependendo da config) e fluxo de "esqueci senha" testado de ponta a ponta.
-17. Termos de uso, política de privacidade, fluxo de KYC obrigatório para criadoras antes de receber pagamentos, e fluxo de DMCA acessível publicamente — itens legais obrigatórios para plataforma adulta.
-18. Testes manuais finais: signup → verificação → onboarding → assinatura → PPV → saque → cancelamento.
+5. **Mensagens de erro do banco vazando**
+   `payments.functions.ts` e `admin.functions.ts` fazem `throw new Error(error.message)`, expondo nomes de tabelas/colunas/constraints. Trocar por mensagens neutras + log server-side.
 
-## Plano de execução proposto
+6. **Headers de segurança ausentes**
+   Não existe middleware global do TanStack Start setando CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS. Em plataforma adulta, qualquer XSS vira roubo de sessão.
 
-Sugiro fazer em **uma rodada P0 completa** (8 correções acima, todas ligadas a segurança/fraude). Sem isso o lançamento expõe você a prejuízo financeiro direto e a vazamento de conteúdo pago dos criadores.
+7. **Moderação CSAM "fail-open"**
+   `moderate-media` retorna `{ allowed: true }` quando a IA falha. Para CSAM o padrão deve ser **bloquear** e mandar para revisão manual. Mudar para fail-closed + fila.
 
-Detalhes técnicos:
-- Novas server functions: `processPayment`, `unlockPpvServer`, `tipServer`, `contributeGoalServer`, `getSignedPostMedia`, `requireAdmin`.
-- Migração SQL: reescrever 6 policies (posts, post_media, user_roles INSERT, realtime.messages, storage.objects para `posts` e `chat-media`).
-- Novo segredo: `CRON_SECRET` + atualização do job `pg_cron` para enviar o header.
-- `beforeLoad` server-side em todas as rotas `admin.*` usando middleware de auth já existente em `src/integrations/supabase/auth-middleware.ts`.
+8. **Extensões no schema `public`**
+   Mover para schema `extensions` (warning do linter).
 
-## Resposta direta à sua pergunta
+## Itens operacionais / legais (fora da varredura, mas obrigatórios)
 
-**Não lance ainda.** Funcionalmente está rico (feed, chat, PPV, mailing, linktree, temas), mas a camada de segurança/pagamento tem buracos que seriam explorados em horas após ir ao ar. Aprova que eu execute o **bloco P0 completo** na próxima rodada?
+9. **Verificação de e-mail**: confirmar que auto-confirm está desligado no Auth e testar fluxo signup → e-mail → login.
+10. **Reset de senha**: testar fluxo ponta a ponta.
+11. **Termos de Uso e Política de Privacidade**: as páginas existem (`/terms`, `/privacy`), mas precisam de conteúdo jurídico real para plataforma adulta brasileira (LGPD, idade mínima, direitos autorais).
+12. **KYC obrigatório para criadoras antes de saque**: a tela `admin.kyc` existe; falta bloquear saque na `creator.wallet` enquanto KYC não estiver `approved`.
+13. **DMCA público**: `/dmca` precisa estar acessível sem login e linkado no rodapé.
+14. **Teste manual ponta a ponta**: signup → verificação → onboarding → assinatura paga real → PPV → saque → cancelamento.
 
+## Plano de execução sugerido (ordem)
+
+**Rodada A — Pagamento real** (decisão sua antes de eu mexer)
+- Pergunta: **Stripe ou Paddle?** Stripe é mais comum no Brasil; Paddle resolve impostos globais. Ambos têm conector pronto.
+- Implementar webhook `/api/public/hooks/payment` com verificação de assinatura.
+- Trocar `validateGatewayToken` por `stripe.paymentIntents.retrieve(token)` (ou equivalente Paddle).
+
+**Rodada B — Resto da segurança** (uma migration + um middleware)
+- Migration: corrigir RLS de `stories`, `realtime.messages`, listagem de buckets, mover extensões.
+- Bucket `stories` privado + server function `getSignedStoryUrl`.
+- Middleware global em `src/router.tsx` com CSP + headers.
+- Sanitizar erros em `payments.functions.ts` e `admin.functions.ts`.
+- `moderate-media`: fail-closed + tabela `moderation_queue`.
+
+**Rodada C — Legal e operacional**
+- Conteúdo de Termos / Privacidade / DMCA (posso gerar minutas em pt-BR).
+- Bloqueio de saque sem KYC aprovado.
+- Configuração de Auth (verificação de e-mail) e teste do reset.
+
+## Pergunta para destravar a Rodada A
+
+Qual gateway de pagamento usar — **Stripe** (recomendado para Brasil) ou **Paddle** (melhor para vendas internacionais com impostos automáticos)? Sem essa decisão, o item #1 fica travado e não dá para lançar com cobrança real.
