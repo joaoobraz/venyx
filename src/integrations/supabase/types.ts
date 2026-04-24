@@ -1291,6 +1291,13 @@ export type Database = {
           visibility: Database["public"]["Enums"]["post_visibility"]
         }[]
       }
+      lookup_affiliate_code: {
+        Args: { _code: string }
+        Returns: {
+          commission_pct: number
+          user_id: string
+        }[]
+      }
       mass_send_dm: {
         Args: {
           _body: string
