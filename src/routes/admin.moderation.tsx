@@ -1,5 +1,10 @@
 import { createFileRoute, useNavigate, Link, redirect } from "@tanstack/react-router";
-import { requireAdminServer } from "@/server/admin.functions";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  requireAdminServer,
+  recordModerationDecision,
+  listModerationDecisions,
+} from "@/server/admin.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   ShieldAlert,
