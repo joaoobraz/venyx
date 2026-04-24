@@ -76,8 +76,12 @@ Deno.serve(async (req) => {
     if (!aiRes.ok) {
       const txt = await aiRes.text();
       console.error("AI error", aiRes.status, txt);
-      // Em caso de falha da IA, liberamos para não travar o produto, mas logamos.
-      return json({ allowed: true, error: "ai_unavailable" });
+      // FAIL-CLOSED: para CSAM, na dúvida bloqueamos e mandamos para revisão manual.
+      return json({
+        allowed: false,
+        category: "review_required",
+        reason: "Moderação automática indisponível — enviado para revisão manual",
+      });
     }
 
     const aiJson = await aiRes.json();
