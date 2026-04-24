@@ -145,7 +145,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     : 0;
 
   return (
-    <article className="overflow-hidden rounded-2xl bg-gradient-card shadow-card">
+    <article className="group overflow-hidden rounded-2xl border border-border/40 bg-gradient-card shadow-card transition-all duration-300 hover:border-primary/30 hover:shadow-elegant animate-fade-in-up">
       <header className="flex items-center gap-3 p-4">
         <Link
           to="/profile/$username"
@@ -262,15 +262,15 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
       )}
 
       <footer className="flex items-center gap-4 px-4 py-3 text-sm text-muted-foreground">
-        <button className="flex items-center gap-1.5 hover:text-primary">
-          <Heart className="h-4 w-4" /> {post.likes_count}
+        <button className="group/btn flex items-center gap-1.5 transition-colors hover:text-accent">
+          <Heart className="h-4 w-4 transition-transform group-hover/btn:scale-125" /> {post.likes_count}
         </button>
-        <button className="flex items-center gap-1.5 hover:text-primary">
-          <MessageCircle className="h-4 w-4" /> {post.comments_count}
+        <button className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary">
+          <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" /> {post.comments_count}
         </button>
         <button
           onClick={() => setTipOpen(true)}
-          className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs hover:border-primary hover:text-primary"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-glow"
         >
           <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
         </button>

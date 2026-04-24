@@ -32,8 +32,10 @@ export function Sidebar() {
   ];
 
   const linkCls = (active: boolean) =>
-    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-      active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-card hover:text-primary"
+    `group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+      active
+        ? "bg-primary/10 text-primary shadow-[inset_2px_0_0_var(--primary)]"
+        : "text-foreground/80 hover:bg-card/70 hover:text-primary hover:translate-x-0.5"
     }`;
 
   return (
