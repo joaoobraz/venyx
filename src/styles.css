@@ -65,17 +65,17 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0 0);
 
-  --primary: oklch(0.86 0.18 95);                      /* amarelo vibrante */
+  --primary: oklch(0.92 0.09 98);                      /* amarelo pastel */
   --primary-foreground: oklch(0.18 0 0);
-  --primary-glow: oklch(0.92 0.16 100);                /* amarelo claro */
+  --primary-glow: oklch(0.95 0.07 100);                /* pastel mais claro */
 
-  --secondary: oklch(0.96 0.04 100);                   /* amarelo bem suave */
+  --secondary: oklch(0.97 0.03 100);                   /* creme suave */
   --secondary-foreground: oklch(0.18 0 0);
 
-  --muted: oklch(0.97 0.005 95);
+  --muted: oklch(0.98 0.015 95);
   --muted-foreground: oklch(0.45 0 0);                 /* #555 */
 
-  --accent: oklch(0.86 0.18 95);                       /* amarelo CTA */
+  --accent: oklch(0.92 0.09 98);                       /* amarelo pastel */
   --accent-foreground: oklch(0.18 0 0);
 
   --destructive: oklch(0.55 0.22 25);
