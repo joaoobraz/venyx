@@ -71,12 +71,12 @@ export const unlockPpvServer = createServerFn({ method: "POST" })
       gateway: "mock",
       gateway_ref: data.gatewayToken,
     });
-    if (te) throw new Error(te.message);
+    if (te) throw safeError(te);
 
     const { error: ue } = await supabaseAdmin
       .from("ppv_unlocks")
       .insert({ user_id: userId, post_id: post.id, amount_cents: post.price_cents });
-    if (ue) throw new Error(ue.message);
+    if (ue) throw safeError(ue);
 
     await supabaseAdmin
       .from("posts")
@@ -115,7 +115,7 @@ export const tipServer = createServerFn({ method: "POST" })
       gateway_ref: data.gatewayToken,
       metadata: { message: data.message ?? null },
     });
-    if (error) throw new Error(error.message);
+    if (error) throw safeError(error);
     return { ok: true };
   });
 
@@ -160,7 +160,7 @@ export const contributeGoalServer = createServerFn({ method: "POST" })
       gateway_ref: data.gatewayToken,
       metadata: { kind: "goal_contribution" },
     });
-    if (te) throw new Error(te.message);
+    if (te) throw safeError(te);
 
     const { error: ce } = await supabaseAdmin
       .from("post_goal_contributions")
@@ -169,7 +169,7 @@ export const contributeGoalServer = createServerFn({ method: "POST" })
         post_id: post.id,
         amount_cents: goal.unlock_price_cents,
       });
-    if (ce && !ce.message.includes("duplicate")) throw new Error(ce.message);
+    if (ce && !ce.message.includes("duplicate")) throw safeError(ce);
 
     return { ok: true };
   });
@@ -241,7 +241,7 @@ export const subscribeServer = createServerFn({ method: "POST" })
       .single();
     if (se) {
       if (se.message.includes("duplicate")) return { ok: true, alreadyActive: true };
-      throw new Error(se.message);
+      throw safeError(se);
     }
 
     if (charged > 0) {
@@ -256,7 +256,7 @@ export const subscribeServer = createServerFn({ method: "POST" })
         gateway_ref: data.gatewayToken,
         metadata: { months: data.months, coupon: data.couponCode ?? null },
       });
-      if (te) throw new Error(te.message);
+      if (te) throw safeError(te);
     }
 
     if (couponId) {
@@ -323,12 +323,12 @@ export const unlockChatPpvServer = createServerFn({ method: "POST" })
       gateway: "mock",
       gateway_ref: data.gatewayToken,
     });
-    if (te) throw new Error(te.message);
+    if (te) throw safeError(te);
 
     const { error: ue } = await supabaseAdmin
       .from("chat_ppv_unlocks")
       .insert({ message_id: msg.id, user_id: userId, amount_cents: msg.ppv_price_cents });
-    if (ue) throw new Error(ue.message);
+    if (ue) throw safeError(ue);
 
     await supabaseAdmin.from("chat_link_clicks").insert({
       message_id: msg.id,

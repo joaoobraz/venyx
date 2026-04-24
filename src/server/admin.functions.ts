@@ -52,7 +52,10 @@ export const recordModerationDecision = createServerFn({ method: "POST" })
         },
         { onConflict: "log_id" }
       );
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[admin.recordModerationDecision]", error);
+      throw new Error("Não foi possível registrar a decisão. Tente novamente.");
+    }
     return { ok: true };
   });
 
