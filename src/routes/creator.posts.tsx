@@ -69,6 +69,16 @@ function CreatorPostsPage() {
 
     setSubmitting(true);
     try {
+      // Moderação prévia: bloqueia CSAM em qualquer mídia
+      for (const f of files) {
+        const mod = await moderateBeforeUpload(f, "post", user.id);
+        if (!mod.allowed) {
+          toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const { data: post, error: pe } = await supabase
         .from("posts")
         .insert({
