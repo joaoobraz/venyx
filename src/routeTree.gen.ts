@@ -14,6 +14,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PalettePreviewRouteImport } from './routes/palette-preview'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeedRouteImport } from './routes/feed'
@@ -64,6 +65,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PalettePreviewRoute = PalettePreviewRouteImport.update({
+  id: '/palette-preview',
+  path: '/palette-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   FeedRoute: typeof FeedRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
+  PalettePreviewRoute: typeof PalettePreviewRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/palette-preview': {
+      id: '/palette-preview'
+      path: '/palette-preview'
+      fullPath: '/palette-preview'
+      preLoaderRoute: typeof PalettePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -665,6 +685,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedRoute: FeedRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
+  PalettePreviewRoute: PalettePreviewRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
