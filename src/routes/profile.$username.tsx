@@ -208,10 +208,10 @@ function ProfilePage() {
                 </div>
               )}
 
-              {profile.location && (
+              {(profile as Profile & { location?: string | null }).location && (
                 <div className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>{profile.location}</span>
+                  <span>{(profile as Profile & { location?: string | null }).location}</span>
                 </div>
               )}
 
