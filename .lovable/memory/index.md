@@ -1,5 +1,5 @@
 # Project Memory
 
 ## Core
-Paleta tema CLARO: branco #FFFFFF + secundário #F5F5F5 + bordas #E0E0E0. Primary vinho #7B1E3A, secondary rosa #C44569, accent/CTA pink #FF2E63 (hover #E02658). Texto #111/#555/#888.
-Tema escuro: carvão quente médio (NÃO preto, usuário rejeitou fundos muito escuros) — manter identidade vinho/rosa/pink.
+Tema CLARO escolhido: Velvet — fundo creme #FBF8F4 + primary vinho #7B1E3A + accent rosa #C44569. Texto vinho profundo #2D2424. Cards em branco puro sobre o creme.
+Tema escuro: carvão quente médio (NÃO preto, usuário rejeitou fundos muito escuros).
