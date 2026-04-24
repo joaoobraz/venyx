@@ -100,6 +100,9 @@ export function Sidebar() {
             <Link to="/admin/dmca" className={linkCls(loc.pathname === "/admin/dmca")}>
               <ShieldAlert className="h-5 w-5" /> Admin DMCA
             </Link>
+            <Link to="/admin/moderation" className={linkCls(loc.pathname === "/admin/moderation")}>
+              <ShieldAlert className="h-5 w-5 text-destructive" /> Admin Moderação
+            </Link>
           </>
         )}
         <div className="pt-4">
