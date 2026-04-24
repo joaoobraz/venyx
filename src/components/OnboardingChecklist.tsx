@@ -86,7 +86,13 @@ export function OnboardingChecklist() {
           has_shared_link: derived.has_shared_link,
         });
       } else {
-        const patch: Record<string, boolean> = {};
+        const patch: Partial<{
+          has_avatar: boolean;
+          has_cover: boolean;
+          has_bio: boolean;
+          has_price: boolean;
+          has_first_post: boolean;
+        }> = {};
         (["has_avatar", "has_cover", "has_bio", "has_price", "has_first_post"] as const).forEach((k) => {
           if (row[k] !== derived[k]) patch[k] = derived[k];
         });

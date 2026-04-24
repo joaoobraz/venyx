@@ -20,6 +20,8 @@ export const Route = createFileRoute("/admin/moderation")({
   component: AdminModerationPage,
 });
 
+type Decision = "pending" | "approved" | "rejected";
+
 interface ModLog {
   id: string;
   user_id: string;
@@ -30,11 +32,13 @@ interface ModLog {
   file_size_bytes: number | null;
   ai_response: unknown;
   created_at: string;
-  // augmented client-side
-  decision?: "pending" | "approved" | "rejected";
+  username?: string;
+}
+
+interface EnrichedLog extends ModLog {
+  decision: Decision;
   decision_at?: string;
   decided_by?: string;
-  username?: string;
 }
 
 const DECISION_KEY = "venyx.moderation.decisions.v1";
