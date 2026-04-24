@@ -49,6 +49,7 @@ function FeedPage() {
       <div className="mx-auto max-w-2xl space-y-5">
         <StoriesBar />
         {isCreator && <OnboardingChecklist />}
+        <TopCreators limit={10} compact />
         <BecomeCreatorBanner />
 
         {isCreator && (
