@@ -118,55 +118,55 @@
    Mantém a identidade feminina/elegante do tema claro em tons profundos.
 */
 .dark {
-  --background: oklch(0.26 0.012 18);                 /* carvão rosado quente, NÃO preto */
-  --foreground: oklch(0.96 0.010 18);                 /* rosa-linho claro */
-  --card: oklch(0.31 0.014 18);                       /* card levemente mais claro */
-  --card-foreground: oklch(0.96 0.010 18);
-  --popover: oklch(0.31 0.014 18);
-  --popover-foreground: oklch(0.96 0.010 18);
+  --background: oklch(0.20 0.020 350);                /* borgonha/plum profundo elegante */
+  --foreground: oklch(0.96 0.008 350);                /* champagne rosado claro */
+  --card: oklch(0.25 0.025 350);                      /* card plum levemente mais claro */
+  --card-foreground: oklch(0.96 0.008 350);
+  --popover: oklch(0.25 0.025 350);
+  --popover-foreground: oklch(0.96 0.008 350);
 
-  --primary: oklch(0.78 0.060 16);                    /* rosé #DAB7B5 luminoso no dark */
-  --primary-foreground: oklch(0.22 0.015 18);
-  --primary-glow: oklch(0.86 0.045 18);               /* rosé claro #E2C8C7 */
+  --primary: oklch(0.80 0.055 18);                    /* rosé luminoso destaca no plum */
+  --primary-foreground: oklch(0.20 0.020 350);
+  --primary-glow: oklch(0.88 0.040 18);
 
-  --secondary: oklch(0.36 0.018 18);                  /* rosa pó escurecido */
-  --secondary-foreground: oklch(0.96 0.010 18);
+  --secondary: oklch(0.30 0.025 350);                 /* plum médio */
+  --secondary-foreground: oklch(0.96 0.008 350);
 
-  --muted: oklch(0.33 0.014 18);
-  --muted-foreground: oklch(0.74 0.018 18);
+  --muted: oklch(0.27 0.022 350);
+  --muted-foreground: oklch(0.76 0.015 18);
 
-  --accent: oklch(0.70 0.12 12);                      /* rosé saturado p/ destaques */
+  --accent: oklch(0.72 0.11 12);                      /* rosé saturado p/ destaques */
   --accent-foreground: oklch(0.99 0.005 90);
 
   --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 90);
 
-  --border: oklch(0.86 0.045 18 / 14%);               /* borda em rosé translúcido */
-  --input: oklch(0.86 0.045 18 / 10%);
-  --ring: oklch(0.70 0.12 12 / 55%);
+  --border: oklch(0.88 0.040 18 / 12%);
+  --input: oklch(0.88 0.040 18 / 9%);
+  --ring: oklch(0.72 0.11 12 / 55%);
 
-  --chart-1: oklch(0.78 0.060 16);
-  --chart-2: oklch(0.86 0.045 18);
-  --chart-3: oklch(0.70 0.12 12);
-  --chart-4: oklch(0.36 0.018 18);
-  --chart-5: oklch(0.74 0.018 18);
+  --chart-1: oklch(0.80 0.055 18);
+  --chart-2: oklch(0.88 0.040 18);
+  --chart-3: oklch(0.72 0.11 12);
+  --chart-4: oklch(0.30 0.025 350);
+  --chart-5: oklch(0.76 0.015 18);
 
-  --sidebar: oklch(0.29 0.013 18);
-  --sidebar-foreground: oklch(0.96 0.010 18);
-  --sidebar-primary: oklch(0.70 0.12 12);
+  --sidebar: oklch(0.23 0.022 350);
+  --sidebar-foreground: oklch(0.96 0.008 350);
+  --sidebar-primary: oklch(0.72 0.11 12);
   --sidebar-primary-foreground: oklch(0.99 0.005 90);
-  --sidebar-accent: oklch(0.34 0.016 18);
-  --sidebar-accent-foreground: oklch(0.86 0.045 18);
-  --sidebar-border: oklch(0.86 0.045 18 / 10%);
-  --sidebar-ring: oklch(0.70 0.12 12);
+  --sidebar-accent: oklch(0.28 0.024 350);
+  --sidebar-accent-foreground: oklch(0.88 0.040 18);
+  --sidebar-border: oklch(0.88 0.040 18 / 9%);
+  --sidebar-ring: oklch(0.72 0.11 12);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.86 0.045 18) 0%, oklch(0.78 0.060 16) 100%);
-  --gradient-hero: radial-gradient(ellipse at top, oklch(0.70 0.12 12 / 0.22) 0%, oklch(0.26 0.012 18) 65%);
-  --gradient-card: linear-gradient(160deg, oklch(0.31 0.014 18) 0%, oklch(0.26 0.012 18) 100%);
-  --gradient-gold: linear-gradient(135deg, oklch(0.86 0.045 18) 0%, oklch(0.70 0.12 12) 100%);
-  --shadow-glow: 0 10px 40px -12px oklch(0.70 0.12 12 / 0.40);
+  --gradient-primary: linear-gradient(135deg, oklch(0.88 0.040 18) 0%, oklch(0.80 0.055 18) 100%);
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.72 0.11 12 / 0.22) 0%, oklch(0.20 0.020 350) 65%);
+  --gradient-card: linear-gradient(160deg, oklch(0.25 0.025 350) 0%, oklch(0.20 0.020 350) 100%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.88 0.040 18) 0%, oklch(0.72 0.11 12) 100%);
+  --shadow-glow: 0 10px 40px -12px oklch(0.72 0.11 12 / 0.40);
   --shadow-card: 0 4px 24px -8px oklch(0 0 0 / 0.5);
-  --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.86 0.045 18 / 0.08);
+  --shadow-elegant: 0 20px 60px -20px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.88 0.040 18 / 0.08);
 }
 
 @layer base {
