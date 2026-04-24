@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "subscriber" | "creator" | "admin";
+export type AppRole = "subscriber" | "creator" | "admin" | "ambassador";
 
 export interface Profile {
   id: string;
@@ -31,6 +31,8 @@ interface AuthCtx {
   loading: boolean;
   isCreator: boolean;
   isAdmin: boolean;
+  isAmbassador: boolean;
+  mfaEnabled: boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -43,10 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [kyc, setKyc] = useState<KycRequest | null>(null);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadUserData = async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: kycRow }] = await Promise.all([
+    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: sec }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
@@ -56,19 +59,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase.from("security_settings").select("mfa_enabled").eq("user_id", uid).maybeSingle(),
     ]);
     setProfile((prof as Profile) ?? null);
     setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
     setKyc((kycRow as KycRequest) ?? null);
+    setMfaEnabled(!!(sec as { mfa_enabled?: boolean } | null)?.mfa_enabled);
   };
 
   useEffect(() => {
-    // Listener FIRST (rule)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // defer to avoid deadlock
         setTimeout(() => {
           loadUserData(sess.user.id);
         }, 0);
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setRoles([]);
         setKyc(null);
+        setMfaEnabled(false);
       }
     });
 
@@ -111,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isCreator: roles.includes("creator"),
         isAdmin: roles.includes("admin"),
+        isAmbassador: roles.includes("ambassador"),
+        mfaEnabled,
         signOut,
         refresh,
       }}
