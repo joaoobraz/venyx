@@ -292,6 +292,52 @@ function CreatorLinksPage() {
       {page && (
         <Card className="space-y-4 p-5">
           <h2 className="text-lg font-semibold">Página pública</h2>
+
+          {/* Avatar do linktree (separado do perfil) */}
+          <div className="flex items-start gap-4 rounded-xl border border-dashed bg-muted/20 p-4">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-muted ring-2 ring-primary/30">
+              {(page.avatar_url ?? profile?.avatar_url) ? (
+                <img src={page.avatar_url ?? profile?.avatar_url ?? ""} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-primary">
+                  {profile?.username?.[0]?.toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <Label className="block">Foto da árvore de links</Label>
+              <p className="text-xs text-muted-foreground">
+                {page.avatar_url
+                  ? "Foto exclusiva do linktree (separada do perfil)."
+                  : "Usando a foto do perfil. Envie uma específica para o linktree, se quiser."}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={uploadAvatar}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar
+                    ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Enviando…</>
+                    : <><Upload className="mr-1.5 h-3.5 w-3.5" /> {page.avatar_url ? "Trocar" : "Enviar foto"}</>}
+                </Button>
+                {page.avatar_url && (
+                  <Button size="sm" variant="ghost" onClick={removeLinktreeAvatar} className="text-destructive">
+                    <XIcon className="mr-1 h-3.5 w-3.5" /> Usar foto do perfil
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Bio (aparece no topo)</Label>
             <Textarea
