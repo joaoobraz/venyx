@@ -791,26 +791,76 @@ function DecisionBadge({ decision }: { decision: "pending" | "approved" | "rejec
   return <Badge variant="outline">Pendente</Badge>;
 }
 
-function TrustBadge({ trust, total, csam }: { trust: "trusted" | "suspicious" | "neutral"; total: number; csam: number }) {
-  const title = `Usuário tem ${total} bloqueio(s) — ${csam} CSAM`;
-  if (trust === "suspicious")
-    return (
-      <Badge className="gap-1 bg-destructive/15 text-destructive hover:bg-destructive/20" title={title}>
+function TrustBadge({
+  trust,
+  total,
+  csam,
+  category,
+  surface,
+}: {
+  trust: "trusted" | "suspicious" | "neutral";
+  total: number;
+  csam: number;
+  category: string;
+  surface: string;
+}) {
+  // Sinais legíveis
+  const signals: { label: string; tone: "danger" | "warning" | "info" | "ok" }[] = [];
+  if (csam > 0) signals.push({ label: `Histórico de CSAM (${csam})`, tone: "danger" });
+  if (total >= 5) signals.push({ label: `Muitos bloqueios (${total})`, tone: "warning" });
+  if (total > 1 && total < 5) signals.push({ label: `${total} bloqueios anteriores`, tone: "info" });
+  if (total === 1 && csam === 0) signals.push({ label: "Primeira ocorrência", tone: "ok" });
+  if (category === "csam") signals.push({ label: "Categoria atual: CSAM", tone: "danger" });
+  signals.push({ label: `Surface atual: ${surface}`, tone: "info" });
+
+  const heuristic =
+    trust === "suspicious"
+      ? "Marcado como SUSPEITO porque tem CSAM no histórico ou já acumulou ≥5 bloqueios."
+      : trust === "trusted"
+        ? "Marcado como CONFIÁVEL porque é a primeira ocorrência e não envolve CSAM."
+        : "Marcado como NEUTRO: nem confiável, nem suspeito ainda — aguardar mais sinais.";
+
+  const badge =
+    trust === "suspicious" ? (
+      <Badge className="cursor-help gap-1 bg-destructive/15 text-destructive hover:bg-destructive/20">
         <ShieldX className="h-3 w-3" /> Suspeito
       </Badge>
-    );
-  if (trust === "trusted")
-    return (
-      <Badge
-        className="gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
-        title={title}
-      >
+    ) : trust === "trusted" ? (
+      <Badge className="cursor-help gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400">
         <ShieldCheck className="h-3 w-3" /> Confiável
       </Badge>
+    ) : (
+      <Badge variant="outline" className="cursor-help gap-1">
+        <ShieldAlert className="h-3 w-3" /> Neutro
+      </Badge>
     );
+
   return (
-    <Badge variant="outline" className="gap-1" title={title}>
-      <ShieldAlert className="h-3 w-3" /> Neutro
-    </Badge>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{badge}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs space-y-1.5 p-3">
+        <p className="text-xs font-semibold">{heuristic}</p>
+        <ul className="space-y-0.5">
+          {signals.map((s, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-[11px]">
+              <span
+                className={
+                  s.tone === "danger"
+                    ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
+                    : s.tone === "warning"
+                      ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+                      : s.tone === "ok"
+                        ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+                        : "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground"
+                }
+              />
+              <span>{s.label}</span>
+            </li>
+          ))}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
   );
 }
