@@ -262,10 +262,11 @@ function AdminModerationPage() {
   };
 
   const undo = (id: string) => {
+    // Mantém em UI apenas; a auditoria persistida no servidor não é apagada (compliance).
     const next = { ...decisions };
     delete next[id];
     setDecisions(next);
-    saveDecisions(next);
+    toast.message("Removido da visão local. O registro de auditoria permanece no servidor.");
   };
 
   // Estatísticas por usuário p/ definir confiança
