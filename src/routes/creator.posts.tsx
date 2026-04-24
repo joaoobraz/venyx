@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { CaptionSuggest } from "@/components/CaptionSuggest";
+import { moderateBeforeUpload } from "@/lib/moderation";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,

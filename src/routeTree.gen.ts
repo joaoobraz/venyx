@@ -28,6 +28,7 @@ import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.s
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
+import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
 import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
 import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
@@ -129,6 +130,11 @@ const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
   path: '/creator/coupons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorAnalyticsRoute = CreatorAnalyticsRouteImport.update({
+  id: '/creator/analytics',
+  path: '/creator/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
   id: '/creator/affiliate',
   path: '/creator/affiliate',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AdminKycRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AdminKycRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/admin/kyc': typeof AdminKycRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
+  '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/c/$code'
     | '/creator/affiliate'
+    | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/posts'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/c/$code'
     | '/creator/affiliate'
+    | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/posts'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/c/$code'
     | '/creator/affiliate'
+    | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/posts'
@@ -319,6 +331,7 @@ export interface RootRouteChildren {
   AdminKycRoute: typeof AdminKycRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
+  CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
@@ -465,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorCouponsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/analytics': {
+      id: '/creator/analytics'
+      path: '/creator/analytics'
+      fullPath: '/creator/analytics'
+      preLoaderRoute: typeof CreatorAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/affiliate': {
       id: '/creator/affiliate'
       path: '/creator/affiliate'
@@ -511,6 +531,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKycRoute: AdminKycRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
+  CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
   CreatorPostsRoute: CreatorPostsRoute,
