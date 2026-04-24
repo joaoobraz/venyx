@@ -381,6 +381,7 @@ function AdminModerationPage() {
 
   return (
     <AppShell>
+      <TooltipProvider delayDuration={200}>
       <div className="space-y-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
