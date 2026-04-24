@@ -156,9 +156,33 @@ function AdminModerationPage() {
         );
       }
       setLogs(rows.map((r) => ({ ...r, username: userMap.get(r.user_id) })));
+      // Carrega decisões do servidor (audit trail real)
+      try {
+        const res = await listDecisionsFn();
+        const map: DecisionMap = {};
+        for (const d of res.decisions as Array<{
+          log_id: string;
+          decision: string;
+          decided_at: string;
+          decided_by: string;
+          note: string;
+        }>) {
+          if (d.decision === "approved" || d.decision === "rejected") {
+            map[d.log_id] = {
+              decision: d.decision,
+              at: d.decided_at,
+              by: d.decided_by,
+              note: d.note,
+            };
+          }
+        }
+        setDecisions(map);
+      } catch (e) {
+        console.warn("Falha ao carregar decisões do servidor", e);
+      }
       setBusy(false);
     })();
-  }, [isAdmin]);
+  }, [isAdmin, listDecisionsFn]);
 
   // reset page when filters change
   useEffect(() => {
