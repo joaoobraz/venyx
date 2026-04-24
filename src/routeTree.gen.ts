@@ -9,13 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
 import { Route as IndexRouteImport } from './routes/index'
@@ -38,6 +41,11 @@ import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -51,6 +59,11 @@ const SearchRoute = SearchRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -71,6 +84,11 @@ const FeedRoute = FeedRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DmcaRoute = DmcaRouteImport.update({
+  id: '/dmca',
+  path: '/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -184,13 +202,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
+  '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -214,13 +235,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
+  '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -245,13 +269,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
+  '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
@@ -277,13 +304,16 @@ export interface FileRouteTypes {
     | '/'
     | '/become-creator'
     | '/chat'
+    | '/dmca'
     | '/explore'
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/terms'
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
@@ -307,13 +337,16 @@ export interface FileRouteTypes {
     | '/'
     | '/become-creator'
     | '/chat'
+    | '/dmca'
     | '/explore'
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/terms'
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
@@ -337,13 +370,16 @@ export interface FileRouteTypes {
     | '/'
     | '/become-creator'
     | '/chat'
+    | '/dmca'
     | '/explore'
     | '/feed'
     | '/login'
     | '/notifications'
+    | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
+    | '/terms'
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
@@ -368,13 +404,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BecomeCreatorRoute: typeof BecomeCreatorRoute
   ChatRoute: typeof ChatRoute
+  DmcaRoute: typeof DmcaRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   AdminDmcaRoute: typeof AdminDmcaRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
@@ -397,6 +436,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -416,6 +462,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -444,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dmca': {
+      id: '/dmca'
+      path: '/dmca'
+      fullPath: '/dmca'
+      preLoaderRoute: typeof DmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -600,13 +660,16 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BecomeCreatorRoute: BecomeCreatorRoute,
   ChatRoute: ChatRoute,
+  DmcaRoute: DmcaRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   AdminDmcaRoute: AdminDmcaRoute,
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
