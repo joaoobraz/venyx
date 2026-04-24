@@ -87,6 +87,8 @@ interface EnrichedLog extends ModLog {
   user_csam: number;
 }
 
+const PAGE_SIZE = 25;
+
 type DecisionEntry = { decision: "approved" | "rejected"; at: string; by: string; note: string };
 type DecisionMap = Record<string, DecisionEntry>;
 
