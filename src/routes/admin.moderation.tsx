@@ -116,6 +116,7 @@ function AdminModerationPage() {
   const [decisions, setDecisions] = useState<DecisionMap>(loadDecisions);
   const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
+  const [decisionStage, setDecisionStage] = useState<"edit" | "review">("edit");
   const [page, setPage] = useState(0);
 
   useEffect(() => {
