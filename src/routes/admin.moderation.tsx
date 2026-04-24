@@ -394,9 +394,20 @@ function AdminModerationPage() {
               </p>
             </div>
           </div>
-          <Button variant="outline" onClick={downloadCsv} disabled={!filtered.length}>
-            <Download className="mr-2 h-4 w-4" /> Baixar CSV ({filtered.length})
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadCsv("page")}
+              disabled={!pageItems.length}
+              title="Exporta apenas os itens visíveis na página atual"
+            >
+              <FileDown className="mr-2 h-4 w-4" /> CSV da página ({pageItems.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadCsv("filtered")} disabled={!filtered.length}>
+              <Download className="mr-2 h-4 w-4" /> CSV filtrado ({filtered.length})
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
