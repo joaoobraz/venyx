@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import {
   Send, Tag as TagIcon, Plus, Users, UserCheck, UserX, UserMinus,
   Sparkles, Lock, Loader2, Mail, Calendar, Download, Eye, FileText, Trash2,
-  Clock, CheckCircle2, XCircle, MousePointerClick,
+  Clock, CheckCircle2, XCircle, MousePointerClick, Ban,
 } from "lucide-react";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
