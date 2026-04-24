@@ -245,10 +245,10 @@ function MailingPage() {
     setSending(true);
     const { data, error } = await supabase.rpc("mass_send_dm", {
       _segment: segment,
-      _tag_id: segment === "tag" ? tagId : null,
+      _tag_id: (segment === "tag" ? tagId : null) as unknown as string,
       _body: body,
-      _media_path: null,
-      _mime_type: null,
+      _media_path: null as unknown as string,
+      _mime_type: null as unknown as string,
       _ppv_price_cents: parseInt(ppvPrice || "0", 10) * 100,
     });
     setSending(false);
