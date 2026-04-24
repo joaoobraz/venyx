@@ -75,7 +75,8 @@ function ExplorePage() {
 
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <Tag className="h-5 w-5 text-primary" /> {t("explore.categories")}
+            <Tag className="h-5 w-5 text-primary" />
+            <span>{t("explore.categories")}</span>
           </h2>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((cat) => (
