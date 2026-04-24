@@ -633,6 +633,38 @@ export type Database = {
           },
         ]
       }
+      moderation_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: string
+          log_id: string
+          note: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          decision: string
+          log_id: string
+          note: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          log_id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_decisions_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: true
+            referencedRelation: "moderation_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_logs: {
         Row: {
           ai_response: Json | null
