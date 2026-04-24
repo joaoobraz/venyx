@@ -14,7 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  FileDown,
+  Filter as FilterIcon,
+  ArrowLeft,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
@@ -112,6 +116,7 @@ function AdminModerationPage() {
   const [decisions, setDecisions] = useState<DecisionMap>(loadDecisions);
   const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
   const [decisionNote, setDecisionNote] = useState("");
+  const [decisionStage, setDecisionStage] = useState<"edit" | "review">("edit");
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -162,12 +167,21 @@ function AdminModerationPage() {
   const openDecision = (id: string, decision: "approved" | "rejected") => {
     setPendingDecision({ id, decision });
     setDecisionNote("");
+    setDecisionStage("edit");
+  };
+
+  const goReview = () => {
+    if (decisionNote.trim().length < 5) {
+      toast.error("Descreva o motivo (mínimo 5 caracteres) para manter auditoria.");
+      return;
+    }
+    setDecisionStage("review");
   };
 
   const confirmDecision = () => {
     if (!user || !pendingDecision) return;
     if (decisionNote.trim().length < 5) {
-      toast.error("Descreva o motivo (mínimo 5 caracteres) para manter auditoria.");
+      toast.error("Motivo inválido.");
       return;
     }
     const next: DecisionMap = {
@@ -184,6 +198,31 @@ function AdminModerationPage() {
     toast.success(pendingDecision.decision === "approved" ? "Reupload aprovado" : "Reupload rejeitado");
     setPendingDecision(null);
     setDecisionNote("");
+    setDecisionStage("edit");
+  };
+
+  // Drill-down: aplica filtros para mostrar apenas decisões de um usuário+surface específicos
+  const drillDown = (
+    targetUsername: string | undefined,
+    targetSurface: string,
+    targetDecision: "approved" | "rejected",
+  ) => {
+    setUsernameFilter(targetUsername ?? "");
+    setSurfaceFilter(targetSurface);
+    setDecisionFilter(targetDecision);
+    // limpar filtros conflitantes
+    setCategoryFilter("all");
+    setTrustFilter("all");
+    setQuery("");
+    toast.success(
+      `Mostrando reuploads ${targetDecision === "approved" ? "aprovados" : "rejeitados"} de @${
+        targetUsername ?? "—"
+      } em ${targetSurface}`,
+    );
+    // scroll suave para a lista
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const undo = (id: string) => {
@@ -277,7 +316,7 @@ function AdminModerationPage() {
   const cursorStart = filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1;
   const cursorEnd = Math.min(filtered.length, (safePage + 1) * PAGE_SIZE);
 
-  const downloadCsv = () => {
+  const downloadCsv = (scope: "filtered" | "page" = "filtered") => {
     const header = [
       "id",
       "created_at",
@@ -298,8 +337,9 @@ function AdminModerationPage() {
       const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
+    const rows = scope === "page" ? pageItems : filtered;
     const lines = [header.join(",")];
-    for (const l of filtered) {
+    for (const l of rows) {
       lines.push(
         [
           l.id,
@@ -325,9 +365,11 @@ function AdminModerationPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `moderation-decisions-${new Date().toISOString().slice(0, 10)}.csv`;
+    const suffix = scope === "page" ? `page-${safePage + 1}` : "filtered";
+    a.download = `moderation-${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exportadas ${rows.length} linhas (${scope === "page" ? "página atual" : "todos os filtros"})`);
   };
 
   if (loading || !isAdmin) return null;
@@ -339,6 +381,7 @@ function AdminModerationPage() {
 
   return (
     <AppShell>
+      <TooltipProvider delayDuration={200}>
       <div className="space-y-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -352,9 +395,20 @@ function AdminModerationPage() {
               </p>
             </div>
           </div>
-          <Button variant="outline" onClick={downloadCsv} disabled={!filtered.length}>
-            <Download className="mr-2 h-4 w-4" /> Baixar CSV ({filtered.length})
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadCsv("page")}
+              disabled={!pageItems.length}
+              title="Exporta apenas os itens visíveis na página atual"
+            >
+              <FileDown className="mr-2 h-4 w-4" /> CSV da página ({pageItems.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadCsv("filtered")} disabled={!filtered.length}>
+              <Download className="mr-2 h-4 w-4" /> CSV filtrado ({filtered.length})
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -541,7 +595,13 @@ function AdminModerationPage() {
                           {l.category.toUpperCase()}
                         </Badge>
                         <Badge variant="outline">{l.surface}</Badge>
-                        <TrustBadge trust={l.trust} total={l.user_total} csam={l.user_csam} />
+                        <TrustBadge
+                          trust={l.trust}
+                          total={l.user_total}
+                          csam={l.user_csam}
+                          category={l.category}
+                          surface={l.surface}
+                        />
                         {l.mime_type && <span className="text-[11px] text-muted-foreground">{l.mime_type}</span>}
                         {l.file_size_bytes != null && (
                           <span className="text-[11px] text-muted-foreground">
@@ -550,7 +610,7 @@ function AdminModerationPage() {
                         )}
                         <DecisionBadge decision={l.decision ?? "pending"} />
                       </div>
-                      <div className="text-sm font-semibold text-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                         {l.username ? (
                           <Link
                             to="/profile/$username"
@@ -563,6 +623,22 @@ function AdminModerationPage() {
                         ) : (
                           <span className="font-mono text-xs text-muted-foreground">{l.user_id.slice(0, 8)}…</span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => drillDown(l.username, l.surface, "approved")}
+                          className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                          title={`Ver reuploads aprovados de @${l.username ?? "—"} em ${l.surface}`}
+                        >
+                          <FilterIcon className="h-2.5 w-2.5" /> Aprovados aqui
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => drillDown(l.username, l.surface, "rejected")}
+                          className="inline-flex items-center gap-1 rounded-full border border-destructive/30 px-2 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10"
+                          title={`Ver reuploads rejeitados de @${l.username ?? "—"} em ${l.surface}`}
+                        >
+                          <FilterIcon className="h-2.5 w-2.5" /> Rejeitados aqui
+                        </button>
                       </div>
                       {l.reason && (
                         <div className="rounded-md bg-background/40 px-2 py-1 text-xs text-muted-foreground">
@@ -649,40 +725,78 @@ function AdminModerationPage() {
         )}
       </div>
 
-      {/* Confirmação com motivo da decisão */}
+      {/* Confirmação com motivo da decisão (2 etapas: editar → revisar → salvar) */}
       <AlertDialog
         open={pendingDecision !== null}
         onOpenChange={(open) => {
           if (!open) {
             setPendingDecision(null);
             setDecisionNote("");
+            setDecisionStage("edit");
           }
         }}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {pendingDecision?.decision === "approved" ? "Aprovar reupload?" : "Rejeitar reupload?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Descreva o motivo da decisão. Esta nota fica registrada no histórico de auditoria e aparece no CSV exportado.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={decisionNote}
-            onChange={(e) => setDecisionNote(e.target.value)}
-            placeholder="Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou contexto…"
-            rows={4}
-            className="resize-none"
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDecision}>
-              Confirmar {pendingDecision?.decision === "approved" ? "aprovação" : "rejeição"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {decisionStage === "edit" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {pendingDecision?.decision === "approved" ? "Aprovar reupload?" : "Rejeitar reupload?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Descreva o motivo da decisão. Você poderá revisar a nota antes de salvar no histórico de auditoria.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Textarea
+                value={decisionNote}
+                onChange={(e) => setDecisionNote(e.target.value)}
+                placeholder="Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou contexto…"
+                rows={4}
+                className="resize-none"
+                autoFocus
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {decisionNote.trim().length}/5 caracteres mínimos
+              </p>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <Button onClick={goReview} disabled={decisionNote.trim().length < 5}>
+                  Revisar antes de salvar
+                </Button>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirme a decisão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Revise o motivo abaixo. Após salvar, ele será registrado permanentemente no histórico de auditoria
+                  (incluindo CSV exportado).
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2 rounded-lg border border-border bg-background/50 p-3 text-sm">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Decisão</span>
+                  <DecisionBadge decision={pendingDecision?.decision ?? "pending"} />
+                </div>
+                <div className="border-t border-border pt-2">
+                  <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Motivo</div>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{decisionNote.trim()}</p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <Button variant="ghost" onClick={() => setDecisionStage("edit")}>
+                  <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Editar motivo
+                </Button>
+                <AlertDialogAction onClick={confirmDecision}>
+                  Salvar {pendingDecision?.decision === "approved" ? "aprovação" : "rejeição"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
+      </TooltipProvider>
     </AppShell>
   );
 }
@@ -716,26 +830,76 @@ function DecisionBadge({ decision }: { decision: "pending" | "approved" | "rejec
   return <Badge variant="outline">Pendente</Badge>;
 }
 
-function TrustBadge({ trust, total, csam }: { trust: "trusted" | "suspicious" | "neutral"; total: number; csam: number }) {
-  const title = `Usuário tem ${total} bloqueio(s) — ${csam} CSAM`;
-  if (trust === "suspicious")
-    return (
-      <Badge className="gap-1 bg-destructive/15 text-destructive hover:bg-destructive/20" title={title}>
+function TrustBadge({
+  trust,
+  total,
+  csam,
+  category,
+  surface,
+}: {
+  trust: "trusted" | "suspicious" | "neutral";
+  total: number;
+  csam: number;
+  category: string;
+  surface: string;
+}) {
+  // Sinais legíveis
+  const signals: { label: string; tone: "danger" | "warning" | "info" | "ok" }[] = [];
+  if (csam > 0) signals.push({ label: `Histórico de CSAM (${csam})`, tone: "danger" });
+  if (total >= 5) signals.push({ label: `Muitos bloqueios (${total})`, tone: "warning" });
+  if (total > 1 && total < 5) signals.push({ label: `${total} bloqueios anteriores`, tone: "info" });
+  if (total === 1 && csam === 0) signals.push({ label: "Primeira ocorrência", tone: "ok" });
+  if (category === "csam") signals.push({ label: "Categoria atual: CSAM", tone: "danger" });
+  signals.push({ label: `Surface atual: ${surface}`, tone: "info" });
+
+  const heuristic =
+    trust === "suspicious"
+      ? "Marcado como SUSPEITO porque tem CSAM no histórico ou já acumulou ≥5 bloqueios."
+      : trust === "trusted"
+        ? "Marcado como CONFIÁVEL porque é a primeira ocorrência e não envolve CSAM."
+        : "Marcado como NEUTRO: nem confiável, nem suspeito ainda — aguardar mais sinais.";
+
+  const badge =
+    trust === "suspicious" ? (
+      <Badge className="cursor-help gap-1 bg-destructive/15 text-destructive hover:bg-destructive/20">
         <ShieldX className="h-3 w-3" /> Suspeito
       </Badge>
-    );
-  if (trust === "trusted")
-    return (
-      <Badge
-        className="gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
-        title={title}
-      >
+    ) : trust === "trusted" ? (
+      <Badge className="cursor-help gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400">
         <ShieldCheck className="h-3 w-3" /> Confiável
       </Badge>
+    ) : (
+      <Badge variant="outline" className="cursor-help gap-1">
+        <ShieldAlert className="h-3 w-3" /> Neutro
+      </Badge>
     );
+
   return (
-    <Badge variant="outline" className="gap-1" title={title}>
-      <ShieldAlert className="h-3 w-3" /> Neutro
-    </Badge>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{badge}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs space-y-1.5 p-3">
+        <p className="text-xs font-semibold">{heuristic}</p>
+        <ul className="space-y-0.5">
+          {signals.map((s, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-[11px]">
+              <span
+                className={
+                  s.tone === "danger"
+                    ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
+                    : s.tone === "warning"
+                      ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+                      : s.tone === "ok"
+                        ? "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+                        : "mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground"
+                }
+              />
+              <span>{s.label}</span>
+            </li>
+          ))}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
   );
 }

@@ -172,20 +172,36 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
       )}
 
       {error && !translated && (
-        <div className="flex items-start gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
-          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-          <span className="flex-1">{error}</span>
+        <div className="flex flex-col gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
+          <div className="flex items-start gap-1.5">
+            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+            <span className="flex-1">{error}</span>
+          </div>
           {retryIn != null && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                cancelRetry();
-              }}
-              className="text-[10px] underline opacity-80 hover:opacity-100"
-            >
-              cancelar
-            </button>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cancelRetry();
+                }}
+                className="text-[10px] underline opacity-80 hover:opacity-100"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearTimer();
+                  setRetryIn(null);
+                  void doTranslate(retryAttempt + 1);
+                }}
+                className="rounded-md bg-destructive px-2 py-0.5 text-[10px] font-medium text-destructive-foreground hover:opacity-90"
+              >
+                Tentar agora
+              </button>
+            </div>
           )}
         </div>
       )}
