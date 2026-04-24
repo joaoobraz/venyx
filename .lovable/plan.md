@@ -1,71 +1,54 @@
 
 
-# Nova paleta — OnlyFans Blue × Privacy Orange
+# Diagnóstico: o sistema NÃO está pronto para lançamento
 
-Vou repaginar o tema da Venyx fundindo o **azul OnlyFans** (#00AFF0) com o **laranja Privacy** (#FF6B1A) sobre o fundo escuro premium que já temos. Apresento 3 direções — me diga qual prefere antes de eu codar.
+A varredura de segurança encontrou **20 problemas**, sendo **6 críticos (error)** que permitem fraude e vazamento. Antes de abrir ao público, é obrigatório corrigir o bloco P0. Recomendo uma rodada estruturada em 3 prioridades.
 
----
+## P0 — Bloqueadores críticos (impedem lançamento)
 
-## Opção A — Fusion (recomendada)
+1. **Fraude de pagamento (CRÍTICO)** — Hoje o navegador insere direto na tabela `transactions` com `status='paid'`. Qualquer usuário pode creditar valores arbitrários para si ou desbloquear PPV/gorjetas/metas sem pagar. Precisa migrar `unlock`, `unlockPpv`, `contributeGoal` e `tip` para server functions (`createServerFn`) que validam o gateway antes de gravar.
 
-Azul como **primary** (marca/CTAs principais) + laranja como **accent** (destaque, badges PPV, "subscribe", preço). Combinação clássica complementar, alto contraste, vibe energética sem perder sofisticação.
+2. **Conteúdo pago vazando** — A policy de SELECT em `posts` e `post_media` é `USING true`. Qualquer pessoa (até deslogada) lê o corpo e o caminho da mídia de posts PPV e "subscribers only". Reescrever policies para filtrar por `visibility` + assinatura ativa + unlock pago.
 
-```text
-Background     #0A1420  (azul-noite quase preto)
-Card           #111E2E
-Primary        #00AFF0  (OnlyFans blue)
-Primary glow   #38C6FF
-Accent         #FF6B1A  (Privacy orange)
-Accent glow    #FF8A4C
-Destructive    #FF3B30
-Texto          #F5F7FA
-```
+3. **Bucket `posts` sem proteção real** — Mesmo com policies corrigidas, qualquer autenticado baixa qualquer arquivo do bucket. Trocar para bucket privado + URLs assinadas geradas em server function que checa assinatura/unlock.
 
-**Uso:**
-- Botões principais, links, badges de assinatura → azul
-- CTAs de monetização (Tip, PPV, Bundle, "Assinar agora") → laranja
-- Gradiente hero → azul → laranja diagonal
+4. **Escalada de privilégio em `user_roles`** — Falta policy de INSERT explícita. Risco de qualquer usuário se promover a admin/creator. Adicionar policy WITH CHECK exigindo admin.
 
----
+5. **Realtime aberto** — Sem RLS em `realtime.messages`, qualquer autenticado escuta qualquer thread privada. Adicionar policy restringindo subscrição a `user_a`/`user_b` da thread.
 
-## Opção B — Inverted
+6. **Webhook de mailing sem auth** — `/api/public/hooks/process-mailing-queue` usa service-role sem checar segredo. Qualquer um na internet dispara DMs em massa. Adicionar verificação `Authorization: Bearer ${CRON_SECRET}` e configurar segredo no pg_cron.
 
-Laranja como **primary** (marca quente, +18, calor) + azul como **accent** (confiança, verificado, links). Mais "Privacy-forward".
+7. **Rotas admin sem guarda no servidor** — `admin.kyc`, `admin.dmca`, `admin.moderation` checam `isAdmin` só no React. Adicionar `beforeLoad` chamando server function que revalida o role.
 
-```text
-Primary        #FF6B1A  (laranja)
-Accent         #00AFF0  (azul)
-Background     #1A0F08  (marrom-noite)
-```
+8. **Mídia de chat invisível ao destinatário** — Policy do bucket `chat-media` só libera para o sender. Recipiente não consegue ver o que recebeu. Adicionar policy de SELECT para o outro participante da thread.
 
----
+## P1 — Importantes antes de escalar
 
-## Opção C — Sugestão alternativa minha: "Sunset Premium"
+9. Decisões de moderação salvas em `localStorage` — criar tabela `moderation_decisions` com server function de persistência e auditoria.
+10. Mailing em massa: envolver `enqueue_mass_dm` em server function com rate limit e revalidação de role.
+11. `affiliate_codes`, `subscription_coupons`, `follows` com SELECT público total — restringir.
+12. Headers de segurança ausentes — adicionar middleware com CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS.
 
-Em vez do azul OnlyFans cru (que é meio corporativo/genérico), trocar por um **roxo-magenta vibrante** + laranja. Mais original, foge do "clone óbvio", mantém a vibe sensual/+18 e fica único no mercado BR.
+## P2 — Polimento
 
-```text
-Primary        #E91E63  (magenta vibrante)
-Accent         #FF6B1A  (laranja Privacy)
-Background     #14080F
-Gradient       magenta → laranja (pôr-do-sol)
-```
+13. Listing público dos buckets `avatars/covers/posts/stories` — restringir SELECT em `storage.objects` à leitura por path conhecido, sem listagem.
+14. Mover extensões do schema `public` para `extensions`.
+15. Limpar a função antiga `mass_send_dm` (substituída por `enqueue_mass_dm` + fila), evitando duas APIs paralelas.
+16. Verificação de e-mail real no signup (hoje pode estar com auto-confirm dependendo da config) e fluxo de "esqueci senha" testado de ponta a ponta.
+17. Termos de uso, política de privacidade, fluxo de KYC obrigatório para criadoras antes de receber pagamentos, e fluxo de DMCA acessível publicamente — itens legais obrigatórios para plataforma adulta.
+18. Testes manuais finais: signup → verificação → onboarding → assinatura → PPV → saque → cancelamento.
 
----
+## Plano de execução proposto
 
-## O que vou alterar (técnico)
+Sugiro fazer em **uma rodada P0 completa** (8 correções acima, todas ligadas a segurança/fraude). Sem isso o lançamento expõe você a prejuízo financeiro direto e a vazamento de conteúdo pago dos criadores.
 
-Apenas **`src/styles.css`**:
-- Tokens `:root` e `.dark` (background, card, primary, primary-glow, accent, secondary, muted, border, ring, sidebar-*)
-- Tokens de chart (`--chart-1..5`)
-- Gradientes (`--gradient-primary`, `--gradient-hero`, `--gradient-card`)
-- Sombra glow (`--shadow-glow`) na cor do primary novo
+Detalhes técnicos:
+- Novas server functions: `processPayment`, `unlockPpvServer`, `tipServer`, `contributeGoalServer`, `getSignedPostMedia`, `requireAdmin`.
+- Migração SQL: reescrever 6 policies (posts, post_media, user_roles INSERT, realtime.messages, storage.objects para `posts` e `chat-media`).
+- Novo segredo: `CRON_SECRET` + atualização do job `pg_cron` para enviar o header.
+- `beforeLoad` server-side em todas as rotas `admin.*` usando middleware de auth já existente em `src/integrations/supabase/auth-middleware.ts`.
 
-Todos os componentes (Header, Sidebar, PostCard, Botões, Modais, Stories, Chat, Analytics) já consomem esses tokens via Tailwind (`bg-primary`, `text-accent`, etc.), então **mudam automaticamente** sem tocar em nenhum outro arquivo.
+## Resposta direta à sua pergunta
 
----
-
-## Próximo passo
-
-Me responda com **A**, **B** ou **C** (ou peça uma 4ª variação) e eu aplico na próxima mensagem. Se quiser, também posso gerar um screenshot de cada antes — mas o mais rápido é escolher uma e aplicar direto.
+**Não lance ainda.** Funcionalmente está rico (feed, chat, PPV, mailing, linktree, temas), mas a camada de segurança/pagamento tem buracos que seriam explorados em horas após ir ao ar. Aprova que eu execute o **bloco P0 completo** na próxima rodada?
 
