@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ShieldCheck, Check, X } from "lucide-react";
@@ -6,8 +6,16 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { requireAdminServer } from "@/server/admin.functions";
 
 export const Route = createFileRoute("/admin/kyc")({
+  beforeLoad: async () => {
+    try {
+      await requireAdminServer();
+    } catch {
+      throw redirect({ to: "/feed" });
+    }
+  },
   component: AdminKycPage,
 });
 
