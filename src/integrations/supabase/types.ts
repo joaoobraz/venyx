@@ -1249,6 +1249,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_post: {
+        Args: { _post_id: string; _viewer_id: string }
+        Returns: boolean
+      }
       enqueue_mass_dm: {
         Args: {
           _body: string
