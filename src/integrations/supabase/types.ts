@@ -71,9 +71,45 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_link_clicks: {
+        Row: {
+          click_type: string
+          clicked_at: string
+          creator_id: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          click_type?: string
+          clicked_at?: string
+          creator_id: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          click_type?: string
+          clicked_at?: string
+          creator_id?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_link_clicks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           body: string | null
+          campaign_id: string | null
           created_at: string
           id: string
           media_path: string | null
@@ -86,6 +122,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          campaign_id?: string | null
           created_at?: string
           id?: string
           media_path?: string | null
@@ -98,6 +135,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          campaign_id?: string | null
           created_at?: string
           id?: string
           media_path?: string | null
@@ -200,6 +238,93 @@ export type Database = {
           },
         ]
       }
+      creator_link_pages: {
+        Row: {
+          background_color: string | null
+          bio: string | null
+          button_style: string
+          cover_url: string | null
+          created_at: string
+          is_published: boolean
+          show_avatar: boolean
+          text_color: string | null
+          theme: string
+          updated_at: string
+          user_id: string
+          views_count: number
+        }
+        Insert: {
+          background_color?: string | null
+          bio?: string | null
+          button_style?: string
+          cover_url?: string | null
+          created_at?: string
+          is_published?: boolean
+          show_avatar?: boolean
+          text_color?: string | null
+          theme?: string
+          updated_at?: string
+          user_id: string
+          views_count?: number
+        }
+        Update: {
+          background_color?: string | null
+          bio?: string | null
+          button_style?: string
+          cover_url?: string | null
+          created_at?: string
+          is_published?: boolean
+          show_avatar?: boolean
+          text_color?: string | null
+          theme?: string
+          updated_at?: string
+          user_id?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
+      creator_links: {
+        Row: {
+          clicks_count: number
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          position: number
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          clicks_count?: number
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          position?: number
+          title: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          clicks_count?: number
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          position?: number
+          title?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       creator_onboarding: {
         Row: {
           dismissed: boolean
@@ -233,6 +358,39 @@ export type Database = {
           has_shared_link?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      dm_templates: {
+        Row: {
+          body: string
+          created_at: string
+          creator_id: string
+          default_ppv_price_cents: number
+          id: string
+          name: string
+          updated_at: string
+          uses_count: number
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          creator_id: string
+          default_ppv_price_cents?: number
+          id?: string
+          name: string
+          updated_at?: string
+          uses_count?: number
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          creator_id?: string
+          default_ppv_price_cents?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          uses_count?: number
         }
         Relationships: []
       }
@@ -340,43 +498,61 @@ export type Database = {
           body: string | null
           created_at: string
           creator_id: string
+          filter_last_chat_within_hours: number | null
+          filter_link_clicked: boolean
           id: string
           media_path: string | null
           mime_type: string | null
           ppv_price_cents: number
           recipients_count: number
+          scheduled_at: string | null
           segment: Database["public"]["Enums"]["mass_dm_segment"]
           sent_count: number
           status: string
           tag_id: string | null
+          template_id: string | null
+          total_failed: number
+          total_pending: number
         }
         Insert: {
           body?: string | null
           created_at?: string
           creator_id: string
+          filter_last_chat_within_hours?: number | null
+          filter_link_clicked?: boolean
           id?: string
           media_path?: string | null
           mime_type?: string | null
           ppv_price_cents?: number
           recipients_count?: number
+          scheduled_at?: string | null
           segment: Database["public"]["Enums"]["mass_dm_segment"]
           sent_count?: number
           status?: string
           tag_id?: string | null
+          template_id?: string | null
+          total_failed?: number
+          total_pending?: number
         }
         Update: {
           body?: string | null
           created_at?: string
           creator_id?: string
+          filter_last_chat_within_hours?: number | null
+          filter_link_clicked?: boolean
           id?: string
           media_path?: string | null
           mime_type?: string | null
           ppv_price_cents?: number
           recipients_count?: number
+          scheduled_at?: string | null
           segment?: Database["public"]["Enums"]["mass_dm_segment"]
           sent_count?: number
           status?: string
           tag_id?: string | null
+          template_id?: string | null
+          total_failed?: number
+          total_pending?: number
         }
         Relationships: [
           {
@@ -384,6 +560,72 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "subscriber_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mass_dm_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "dm_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mass_dm_jobs: {
+        Row: {
+          attempts: number
+          body: string | null
+          campaign_id: string
+          created_at: string
+          creator_id: string
+          error_reason: string | null
+          id: string
+          media_path: string | null
+          mime_type: string | null
+          ppv_price_cents: number
+          processed_at: string | null
+          recipient_id: string
+          scheduled_at: string
+          status: Database["public"]["Enums"]["mass_dm_job_status"]
+        }
+        Insert: {
+          attempts?: number
+          body?: string | null
+          campaign_id: string
+          created_at?: string
+          creator_id: string
+          error_reason?: string | null
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          processed_at?: string | null
+          recipient_id: string
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["mass_dm_job_status"]
+        }
+        Update: {
+          attempts?: number
+          body?: string | null
+          campaign_id?: string
+          created_at?: string
+          creator_id?: string
+          error_reason?: string | null
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          processed_at?: string | null
+          recipient_id?: string
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["mass_dm_job_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mass_dm_jobs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "mass_dm_campaigns"
             referencedColumns: ["id"]
           },
         ]
@@ -972,6 +1214,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_mass_dm: {
+        Args: {
+          _body: string
+          _filter_hours: number
+          _filter_link_clicked: boolean
+          _media_path: string
+          _mime_type: string
+          _ppv_price_cents: number
+          _scheduled_at: string
+          _segment: Database["public"]["Enums"]["mass_dm_segment"]
+          _tag_id: string
+          _template_id: string
+        }
+        Returns: {
+          campaign_id: string
+          recipients: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -993,11 +1253,43 @@ export type Database = {
           sent: number
         }[]
       }
+      preview_mass_dm_recipients: {
+        Args: {
+          _filter_hours: number
+          _filter_link_clicked: boolean
+          _segment: Database["public"]["Enums"]["mass_dm_segment"]
+          _tag_id: string
+        }
+        Returns: {
+          display_name: string
+          has_thread: boolean
+          is_active_sub: boolean
+          is_expired_sub: boolean
+          last_chat_at: string
+          tags: string[]
+          user_id: string
+          username: string
+        }[]
+      }
+      process_mass_dm_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          failed: number
+          processed: number
+          sent: number
+        }[]
+      }
     }
     Enums: {
       app_role: "subscriber" | "creator" | "admin" | "ambassador"
       dmca_status: "pending" | "notified" | "resolved" | "rejected"
       kyc_status: "pending" | "approved" | "rejected"
+      mass_dm_job_status:
+        | "pending"
+        | "processing"
+        | "sent"
+        | "failed"
+        | "cancelled"
       mass_dm_segment:
         | "active_subscribers"
         | "expired_subscribers"
@@ -1145,6 +1437,13 @@ export const Constants = {
       app_role: ["subscriber", "creator", "admin", "ambassador"],
       dmca_status: ["pending", "notified", "resolved", "rejected"],
       kyc_status: ["pending", "approved", "rejected"],
+      mass_dm_job_status: [
+        "pending",
+        "processing",
+        "sent",
+        "failed",
+        "cancelled",
+      ],
       mass_dm_segment: [
         "active_subscribers",
         "expired_subscribers",
