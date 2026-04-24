@@ -111,48 +111,54 @@ export const getChatMediaUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => chatMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { data: msg } = await supabaseAdmin
-      .from("chat_messages")
-      .select("id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id")
-      .eq("id", data.messageId)
-      .maybeSingle();
-    if (!msg || !msg.media_path) throw new Error("Mídia não encontrada");
-
-    const { data: thread } = await supabaseAdmin
-      .from("chat_threads")
-      .select("user_a, user_b")
-      .eq("id", msg.thread_id)
-      .maybeSingle();
-    if (!thread || (thread.user_a !== userId && thread.user_b !== userId)) {
-      throw new Error("Sem acesso a esta conversa");
-    }
-
-    if (msg.sender_id !== userId) {
-      // Destinatário: só vê se for grátis, se tiver desbloqueado o PPV, ou se for subs-only e for assinante.
-      if (msg.ppv_price_cents > 0) {
-        const { data: u } = await supabaseAdmin
-          .from("chat_ppv_unlocks")
-          .select("message_id")
-          .eq("message_id", msg.id)
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (!u) throw new Error("Mídia bloqueada (PPV não desbloqueado)");
+    try {
+      const { userId } = context;
+      const { data: msg } = await supabaseAdmin
+        .from("chat_messages")
+        .select("id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id")
+        .eq("id", data.messageId)
+        .maybeSingle();
+      if (!msg || !msg.media_path) {
+        return { url: "", error: "NOT_FOUND" as const };
       }
-      if (msg.subscribers_only) {
-        const { data: s } = await supabaseAdmin
-          .from("subscriptions")
-          .select("id")
-          .eq("creator_id", msg.sender_id)
-          .eq("subscriber_id", userId)
-          .eq("status", "active")
-          .maybeSingle();
-        if (!s) throw new Error("Mídia bloqueada (apenas assinantes)");
-      }
-    }
 
-    const { data: signed } = await supabaseAdmin.storage
-      .from("chat-media")
-      .createSignedUrl(msg.media_path, 60 * 60);
-    return { url: signed?.signedUrl ?? "" };
+      const { data: thread } = await supabaseAdmin
+        .from("chat_threads")
+        .select("user_a, user_b")
+        .eq("id", msg.thread_id)
+        .maybeSingle();
+      if (!thread || (thread.user_a !== userId && thread.user_b !== userId)) {
+        return { url: "", error: "FORBIDDEN" as const };
+      }
+
+      if (msg.sender_id !== userId) {
+        if (msg.ppv_price_cents > 0) {
+          const { data: u } = await supabaseAdmin
+            .from("chat_ppv_unlocks")
+            .select("message_id")
+            .eq("message_id", msg.id)
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (!u) return { url: "", error: "PPV_LOCKED" as const };
+        }
+        if (msg.subscribers_only) {
+          const { data: s } = await supabaseAdmin
+            .from("subscriptions")
+            .select("id")
+            .eq("creator_id", msg.sender_id)
+            .eq("subscriber_id", userId)
+            .eq("status", "active")
+            .maybeSingle();
+          if (!s) return { url: "", error: "SUBSCRIBERS_ONLY" as const };
+        }
+      }
+
+      const { data: signed } = await supabaseAdmin.storage
+        .from("chat-media")
+        .createSignedUrl(msg.media_path, 60 * 60);
+      return { url: signed?.signedUrl ?? "", error: null };
+    } catch (e) {
+      console.error("getChatMediaUrl failed:", e);
+      return { url: "", error: "INTERNAL" as const };
+    }
   });
