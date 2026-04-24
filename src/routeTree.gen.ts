@@ -26,6 +26,7 @@ import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
+import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
@@ -121,6 +122,11 @@ const CreatorPostsRoute = CreatorPostsRouteImport.update({
   path: '/creator/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorMailingRoute = CreatorMailingRouteImport.update({
+  id: '/creator/mailing',
+  path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
   id: '/creator/dmca',
   path: '/creator/dmca',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
+  CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
@@ -477,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorPostsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/mailing': {
+      id: '/creator/mailing'
+      path: '/creator/mailing'
+      fullPath: '/creator/mailing'
+      preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/dmca': {
       id: '/creator/dmca'
       path: '/creator/dmca'
@@ -555,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
+  CreatorMailingRoute: CreatorMailingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorWalletRoute: CreatorWalletRoute,

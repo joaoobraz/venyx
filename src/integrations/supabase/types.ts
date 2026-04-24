@@ -335,6 +335,59 @@ export type Database = {
         }
         Relationships: []
       }
+      mass_dm_campaigns: {
+        Row: {
+          body: string | null
+          created_at: string
+          creator_id: string
+          id: string
+          media_path: string | null
+          mime_type: string | null
+          ppv_price_cents: number
+          recipients_count: number
+          segment: Database["public"]["Enums"]["mass_dm_segment"]
+          sent_count: number
+          status: string
+          tag_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          creator_id: string
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          recipients_count?: number
+          segment: Database["public"]["Enums"]["mass_dm_segment"]
+          sent_count?: number
+          status?: string
+          tag_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          creator_id?: string
+          id?: string
+          media_path?: string | null
+          mime_type?: string | null
+          ppv_price_cents?: number
+          recipients_count?: number
+          segment?: Database["public"]["Enums"]["mass_dm_segment"]
+          sent_count?: number
+          status?: string
+          tag_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mass_dm_campaigns_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "subscriber_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moderation_logs: {
         Row: {
           ai_response: Json | null
@@ -687,6 +740,33 @@ export type Database = {
           },
         ]
       }
+      subscriber_tags: {
+        Row: {
+          color: string
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       subscription_coupons: {
         Row: {
           code: string
@@ -858,6 +938,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_tag_assignments: {
+        Row: {
+          assigned_at: string
+          creator_id: string
+          tag_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          creator_id: string
+          tag_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          creator_id?: string
+          tag_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "subscriber_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -870,11 +979,31 @@ export type Database = {
         }
         Returns: boolean
       }
+      mass_send_dm: {
+        Args: {
+          _body: string
+          _media_path: string
+          _mime_type: string
+          _ppv_price_cents: number
+          _segment: Database["public"]["Enums"]["mass_dm_segment"]
+          _tag_id: string
+        }
+        Returns: {
+          campaign_id: string
+          sent: number
+        }[]
+      }
     }
     Enums: {
       app_role: "subscriber" | "creator" | "admin" | "ambassador"
       dmca_status: "pending" | "notified" | "resolved" | "rejected"
       kyc_status: "pending" | "approved" | "rejected"
+      mass_dm_segment:
+        | "active_subscribers"
+        | "expired_subscribers"
+        | "non_subscribers"
+        | "all_contacts"
+        | "tag"
       post_visibility: "public" | "subscribers" | "ppv" | "goal"
       story_visibility: "public" | "subscribers"
       subscription_status: "active" | "canceled" | "expired"
@@ -1016,6 +1145,13 @@ export const Constants = {
       app_role: ["subscriber", "creator", "admin", "ambassador"],
       dmca_status: ["pending", "notified", "resolved", "rejected"],
       kyc_status: ["pending", "approved", "rejected"],
+      mass_dm_segment: [
+        "active_subscribers",
+        "expired_subscribers",
+        "non_subscribers",
+        "all_contacts",
+        "tag",
+      ],
       post_visibility: ["public", "subscribers", "ppv", "goal"],
       story_visibility: ["public", "subscribers"],
       subscription_status: ["active", "canceled", "expired"],
