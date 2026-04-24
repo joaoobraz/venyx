@@ -87,6 +87,45 @@ function CreatorLinksPage() {
   const [newUrl, setNewUrl] = useState("");
   const [newIcon, setNewIcon] = useState("globe");
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f || !user) return;
+    if (!f.type.startsWith("image/")) {
+      toast.error("Apenas imagens");
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      toast.error("Máx 5MB");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = f.name.split(".").pop() || "jpg";
+      const path = `${user.id}/linktree-${Date.now()}.${ext}`;
+      const { error: ue } = await supabase.storage.from("avatars").upload(path, f, {
+        contentType: f.type,
+        upsert: true,
+      });
+      if (ue) throw ue;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await updatePage({ avatar_url: pub.publicUrl });
+      toast.success("Avatar do linktree atualizado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro no upload");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
+  const removeLinktreeAvatar = async () => {
+    if (!confirm("Voltar a usar a foto do perfil?")) return;
+    await updatePage({ avatar_url: null });
+    toast.success("Removido — usando avatar do perfil");
+  };
 
   const load = async () => {
     if (!user) return;
