@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { TranslateButton } from "@/components/TranslateButton";
 
 export const Route = createFileRoute("/chat")({
   component: ChatPage,
@@ -360,6 +361,11 @@ function ChatPage() {
                         </div>
                       )}
                       {m.body && <div className={`px-4 py-2 text-sm ${fromMe ? "" : "text-foreground"}`}>{m.body}</div>}
+                      {m.body && !fromMe && (
+                        <div className="px-4 pb-1">
+                          <TranslateButton text={m.body} />
+                        </div>
+                      )}
                       <div className={`px-3 pb-1.5 text-[10px] ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                         {new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                       </div>
