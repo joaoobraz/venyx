@@ -2,10 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Crown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { unlockChatPpvServer } from "@/server/payments.functions";
+import { getChatMediaUrl } from "@/server/media.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
@@ -41,20 +44,16 @@ interface Message {
   created_at: string;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
-function chatMediaUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/chat-media/${path}`;
-}
-
 function ChatPage() {
   const { user, loading } = useAuth();
   const { t } = useI18n();
   const nav = useNavigate();
+  const unlockChatFn = useServerFn(unlockChatPpvServer);
+  const chatMediaFn = useServerFn(getChatMediaUrl);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [tipOpen, setTipOpen] = useState(false);
@@ -234,37 +233,50 @@ function ChatPage() {
     if (!user || !active) return;
     setBusy(true);
     try {
-      const { error: te } = await supabase.from("transactions").insert({
-        payer_id: user.id,
-        payee_id: active.other_id,
-        type: "chat_ppv",
-        status: "paid",
-        amount_cents: m.ppv_price_cents,
-        reference_id: m.id,
-        gateway: "mock",
+      const res = await unlockChatFn({
+        data: { messageId: m.id, gatewayToken: `mock_${Date.now()}` },
       });
-      if (te) throw te;
-      const { error: ue } = await supabase
-        .from("chat_ppv_unlocks")
-        .insert({ message_id: m.id, user_id: user.id, amount_cents: m.ppv_price_cents });
-      if (ue) throw ue;
-      // registra clique/abertura de PPV para filtro de mailing "já clicou em link/PPV"
-      await supabase.from("chat_link_clicks").insert({
-        message_id: m.id,
-        user_id: user.id,
-        creator_id: active.other_id,
-        click_type: "ppv_unlock",
-      });
-      toast.success("Mídia desbloqueada!");
+      toast.success(res.alreadyUnlocked ? "Já desbloqueado" : "Mídia desbloqueada!");
       loadMessages(active.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro";
-      if (msg.includes("duplicate")) loadMessages(active.id);
-      else toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
       setBusy(false);
     }
   };
+
+  // Buscar URLs assinadas para as mídias visíveis
+  useEffect(() => {
+    if (!user) return;
+    const toFetch = messages.filter(
+      (m) => m.media_path && !mediaUrls[m.id] && (m.sender_id === user.id || m.unlocked || (m.subscribers_only && active?.subscribed)),
+    );
+    if (toFetch.length === 0) return;
+    let cancel = false;
+    Promise.all(
+      toFetch.map(async (m) => {
+        try {
+          const r = await chatMediaFn({ data: { messageId: m.id } });
+          return [m.id, r.url] as const;
+        } catch {
+          return [m.id, ""] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (cancel) return;
+      setMediaUrls((prev) => {
+        const next = { ...prev };
+        entries.forEach(([id, url]) => {
+          if (url) next[id] = url;
+        });
+        return next;
+      });
+    });
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, user, active]);
 
   const filtered = threads.filter((t) =>
     query ? t.other_name.toLowerCase().includes(query.toLowerCase()) : true,
