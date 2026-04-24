@@ -1,1 +1,10 @@
 project_id = "lsiwbxgixcgnsyzdbmkx"
+
+[functions.moderate-media]
+verify_jwt = true
+
+[functions.translate-message]
+verify_jwt = true
+
+[functions.suggest-caption]
+verify_jwt = true
