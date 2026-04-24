@@ -23,10 +23,12 @@ import { Route as SettingsSecurityRouteImport } from './routes/settings.security
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as LinksUsernameRouteImport } from './routes/links.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
@@ -107,6 +109,11 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LinksUsernameRoute = LinksUsernameRouteImport.update({
+  id: '/links/$username',
+  path: '/links/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorWalletRoute = CreatorWalletRouteImport.update({
   id: '/creator/wallet',
   path: '/creator/wallet',
@@ -126,6 +133,11 @@ const CreatorPostsRoute = CreatorPostsRouteImport.update({
 const CreatorMailingRoute = CreatorMailingRouteImport.update({
   id: '/creator/mailing',
   path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLinksRoute = CreatorLinksRouteImport.update({
+  id: '/creator/links',
+  path: '/creator/links',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
@@ -194,10 +206,12 @@ export interface FileRoutesByFullPath {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -223,10 +237,12 @@ export interface FileRoutesByTo {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -253,10 +269,12 @@ export interface FileRoutesById {
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/links': typeof CreatorLinksRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -284,10 +302,12 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
@@ -313,10 +333,12 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
@@ -342,10 +364,12 @@ export interface FileRouteTypes {
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/links'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/wallet'
+    | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
     | '/settings/profile'
@@ -372,10 +396,12 @@ export interface RootRouteChildren {
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
+  CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
+  LinksUsernameRoute: typeof LinksUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
@@ -483,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/links/$username': {
+      id: '/links/$username'
+      path: '/links/$username'
+      fullPath: '/links/$username'
+      preLoaderRoute: typeof LinksUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/wallet': {
       id: '/creator/wallet'
       path: '/creator/wallet'
@@ -509,6 +542,13 @@ declare module '@tanstack/react-router' {
       path: '/creator/mailing'
       fullPath: '/creator/mailing'
       preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/links': {
+      id: '/creator/links'
+      path: '/creator/links'
+      fullPath: '/creator/links'
+      preLoaderRoute: typeof CreatorLinksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator/dmca': {
@@ -596,10 +636,12 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
+  CreatorLinksRoute: CreatorLinksRoute,
   CreatorMailingRoute: CreatorMailingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorWalletRoute: CreatorWalletRoute,
+  LinksUsernameRoute: LinksUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
