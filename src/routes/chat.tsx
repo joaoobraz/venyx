@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
 import { TranslateButton } from "@/components/TranslateButton";
+import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
 export const Route = createFileRoute("/chat")({
   component: ChatPage,
