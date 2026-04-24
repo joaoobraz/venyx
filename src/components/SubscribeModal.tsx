@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Crown, Loader2, Gift, Tag } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeServer } from "@/server/payments.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -45,6 +47,7 @@ export function SubscribeModal({
   onSubscribed?: () => void;
 }) {
   const { user } = useAuth();
+  const subscribeFn = useServerFn(subscribeServer);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selected, setSelected] = useState<number>(1);
   const [coupon, setCoupon] = useState<CouponInfo | null>(null);
@@ -61,7 +64,6 @@ export function SubscribeModal({
       .then(({ data }) => {
         const list = (data as Plan[]) ?? [];
         if (list.length === 0 && basePriceCents > 0) {
-          // fallback: 1 mês ao preço do perfil
           setPlans([{ id: "default", months: 1, price_cents: basePriceCents, discount_pct: 0 }]);
         } else {
           setPlans(list);
@@ -97,62 +99,27 @@ export function SubscribeModal({
     if (!user || !plan) return;
     setBusy(true);
     try {
-      const charged = isTrial ? 0 : discountedCents;
-      const periodEnd = new Date();
-      periodEnd.setMonth(periodEnd.getMonth() + plan.months);
-      if (isTrial && coupon?.trial_days) {
-        const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + coupon.trial_days);
-        if (trialEnd > periodEnd) periodEnd.setTime(trialEnd.getTime());
-      }
-
-      const { data: sub, error: se } = await supabase
-        .from("subscriptions")
-        .insert({
-          subscriber_id: user.id,
-          creator_id: creatorId,
-          price_cents: plan.price_cents,
-          status: "active",
-          current_period_end: periodEnd.toISOString(),
-        })
-        .select()
-        .single();
-      if (se) throw se;
-
-      if (charged > 0) {
-        const { error: te } = await supabase.from("transactions").insert({
-          payer_id: user.id,
-          payee_id: creatorId,
-          type: "subscription",
-          status: "paid",
-          amount_cents: charged,
-          reference_id: sub.id,
-          gateway: "mock",
-          metadata: { months: plan.months, coupon: coupon?.code ?? null },
-        });
-        if (te) throw te;
-      }
-
+      const res = await subscribeFn({
+        data: {
+          creatorId,
+          months: plan.months,
+          pricePerMonthCents: plan.price_cents,
+          couponCode: coupon?.code ?? null,
+          gatewayToken: `mock_${Date.now()}`,
+        },
+      });
       if (coupon) {
-        await supabase.from("coupon_redemptions").insert({ coupon_id: coupon.id, user_id: user.id });
-        await supabase
-          .from("subscription_coupons")
-          .update({ uses_count: coupon.uses_count + 1 })
-          .eq("id", coupon.id);
         document.cookie = "venyx_coupon=; path=/; max-age=0";
       }
-
-      toast.success(isTrial ? `Trial de ${coupon?.trial_days} dias ativado!` : "Assinatura ativada!");
+      if (res.alreadyActive) {
+        toast.info("Você já assina esta criadora");
+      } else {
+        toast.success(res.isTrial ? `Trial de ${res.trialDays} dias ativado!` : "Assinatura ativada!");
+      }
       onSubscribed?.();
       onOpenChange(false);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro";
-      if (msg.includes("duplicate")) {
-        toast.info("Você já assina esta criadora");
-        onOpenChange(false);
-      } else {
-        toast.error(msg);
-      }
+      toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
       setBusy(false);
     }

@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown, Target, Users } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
+import { unlockPpvServer, contributeGoalServer } from "@/server/payments.functions";
+import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
 
@@ -44,18 +46,16 @@ export interface PostWithRelations {
   goal_contributed?: boolean;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
-function publicUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/posts/${path}`;
-}
-
 export function PostCard({ post, onChange }: { post: PostWithRelations; onChange?: () => void }) {
   const { user } = useAuth();
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  const unlockFn = useServerFn(unlockPpvServer);
+  const goalFn = useServerFn(contributeGoalServer);
+  const mediaFn = useServerFn(getPostMediaUrls);
 
   const isOwner = user?.id === post.creator_id;
   const isPpv = post.visibility === "ppv";
@@ -68,36 +68,38 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
       (isSubsOnly && !post.subscribed) ||
       (isGoal && !goalUnlocked));
 
+  // Pega URLs assinadas para a mídia (só se houver acesso, server decide)
+  useEffect(() => {
+    let cancel = false;
+    if (locked || post.media.length === 0) return;
+    mediaFn({ data: { postId: post.id } })
+      .then((res) => {
+        if (cancel) return;
+        const map: Record<string, string> = {};
+        res.urls.forEach((u) => {
+          map[u.id] = u.url;
+        });
+        setSignedUrls(map);
+      })
+      .catch(() => {
+        // silencioso: mídia simplesmente não aparece
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [post.id, locked, post.media.length, mediaFn]);
+
   const unlockPpv = async () => {
     if (!user) return;
     setBusy(true);
     try {
-      const { error: te } = await supabase.from("transactions").insert({
-        payer_id: user.id,
-        payee_id: post.creator_id,
-        type: "ppv",
-        status: "paid",
-        amount_cents: post.price_cents,
-        reference_id: post.id,
-        gateway: "mock",
+      const res = await unlockFn({
+        data: { postId: post.id, gatewayToken: `mock_${Date.now()}` },
       });
-      if (te) throw te;
-
-      const { error: ue } = await supabase
-        .from("ppv_unlocks")
-        .insert({ user_id: user.id, post_id: post.id, amount_cents: post.price_cents });
-      if (ue) throw ue;
-
-      toast.success("Conteúdo desbloqueado!");
+      toast.success(res.alreadyUnlocked ? "Já desbloqueado" : "Conteúdo desbloqueado!");
       onChange?.();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro";
-      if (msg.includes("duplicate")) {
-        toast.success("Já desbloqueado");
-        onChange?.();
-      } else {
-        toast.error(msg);
-      }
+      toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
       setBusy(false);
     }
@@ -107,40 +109,20 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     if (!user || !post.goal) return;
     setBusy(true);
     try {
-      const amount = post.goal.unlock_price_cents;
-      const { error: te } = await supabase.from("transactions").insert({
-        payer_id: user.id,
-        payee_id: post.creator_id,
-        type: "ppv",
-        status: "paid",
-        amount_cents: amount,
-        reference_id: post.id,
-        gateway: "mock",
-        metadata: { kind: "goal_contribution" },
+      await goalFn({
+        data: { postId: post.id, gatewayToken: `mock_${Date.now()}` },
       });
-      if (te) throw te;
-
-      const { error: ce } = await supabase
-        .from("post_goal_contributions")
-        .insert({ user_id: user.id, post_id: post.id, amount_cents: amount });
-      if (ce) throw ce;
-
       toast.success("Você contribuiu para a meta!");
       onChange?.();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Erro";
-      if (msg.includes("duplicate")) {
-        toast.info("Você já contribuiu para esta meta");
-        onChange?.();
-      } else {
-        toast.error(msg);
-      }
+      toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
       setBusy(false);
     }
   };
 
   const firstMedia = post.media[0];
+  const firstUrl = firstMedia ? signedUrls[firstMedia.id] : "";
   const goalPct = post.goal
     ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
     : 0;
@@ -185,18 +167,18 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
       {firstMedia && (
         <div className="relative">
-          {firstMedia.mime_type.startsWith("video/") ? (
-            <video
-              src={publicUrl(firstMedia.storage_path)}
-              controls={!locked}
-              className={`aspect-square w-full bg-black object-cover ${locked ? "blur-2xl scale-110 pointer-events-none" : ""}`}
-            />
+          {locked ? (
+            <div className="aspect-square w-full bg-muted" />
+          ) : firstUrl ? (
+            firstMedia.mime_type.startsWith("video/") ? (
+              <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
+            ) : (
+              <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
+            )
           ) : (
-            <img
-              src={publicUrl(firstMedia.storage_path)}
-              alt=""
-              className={`aspect-square w-full object-cover ${locked ? "blur-2xl scale-110" : ""}`}
-            />
+            <div className="flex aspect-square w-full items-center justify-center bg-muted">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
           )}
           {locked && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 p-4 backdrop-blur-sm">
