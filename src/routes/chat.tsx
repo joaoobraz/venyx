@@ -248,6 +248,13 @@ function ChatPage() {
         .from("chat_ppv_unlocks")
         .insert({ message_id: m.id, user_id: user.id, amount_cents: m.ppv_price_cents });
       if (ue) throw ue;
+      // registra clique/abertura de PPV para filtro de mailing "já clicou em link/PPV"
+      await supabase.from("chat_link_clicks").insert({
+        message_id: m.id,
+        user_id: user.id,
+        creator_id: active.other_id,
+        click_type: "ppv_unlock",
+      });
       toast.success("Mídia desbloqueada!");
       loadMessages(active.id);
     } catch (e) {

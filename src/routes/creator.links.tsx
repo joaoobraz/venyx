@@ -20,6 +20,8 @@ import {
   Eye,
   Sparkles,
   Loader2,
+  Upload,
+  X as XIcon,
 } from "lucide-react";
 import {
   Select,
@@ -50,6 +52,7 @@ interface LinkPage {
   theme: string;
   button_style: string;
   cover_url: string | null;
+  avatar_url: string | null;
   show_avatar: boolean;
   is_published: boolean;
   views_count: number;
