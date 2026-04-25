@@ -266,6 +266,14 @@ export const markWithdrawalPaid = createServerFn({ method: "POST" })
       })
       .eq("id", data.withdrawal_id);
     if (error) throw safeError(error);
+
+    await notify(
+      w.creator_id,
+      "Saque pago",
+      `Seu saque de ${fmtBRL(w.amount_cents)} foi pago via PIX.${data.receipt_url ? " Comprovante disponível." : ""}`,
+      { withdrawal_id: data.withdrawal_id, receipt_url: data.receipt_url ?? null },
+    );
+
     return { ok: true };
   });
 
