@@ -32,6 +32,7 @@ import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as LinksUsernameRouteImport } from './routes/links.$username'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
@@ -164,6 +165,11 @@ const CreatorWalletRoute = CreatorWalletRouteImport.update({
   path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorUpsellsRoute = CreatorUpsellsRouteImport.update({
+  id: '/creator/upsells',
+  path: '/creator/upsells',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorSubscriptionPlansRoute =
   CreatorSubscriptionPlansRouteImport.update({
     id: '/creator/subscription-plans',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
+  '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
+  '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
+  '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
+    | '/creator/upsells'
     | '/creator/wallet'
     | '/links/$username'
     | '/profile/$username'
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
+    | '/creator/upsells'
     | '/creator/wallet'
     | '/links/$username'
     | '/profile/$username'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
+    | '/creator/upsells'
     | '/creator/wallet'
     | '/links/$username'
     | '/profile/$username'
@@ -529,6 +541,7 @@ export interface RootRouteChildren {
   CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
+  CreatorUpsellsRoute: typeof CreatorUpsellsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
   LinksUsernameRoute: typeof LinksUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
@@ -702,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/upsells': {
+      id: '/creator/upsells'
+      path: '/creator/upsells'
+      fullPath: '/creator/upsells'
+      preLoaderRoute: typeof CreatorUpsellsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/subscription-plans': {
       id: '/creator/subscription-plans'
       path: '/creator/subscription-plans'
@@ -849,6 +869,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorMailingRoute: CreatorMailingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
+  CreatorUpsellsRoute: CreatorUpsellsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
   LinksUsernameRoute: LinksUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
