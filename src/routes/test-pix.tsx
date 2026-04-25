@@ -50,6 +50,7 @@ function TestPixPage() {
   const status = useServerFn(getPixStatus);
 
   const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState<string>("1.00");
   const [charge, setCharge] = useState<Charge | null>(null);
   const [rawCreate, setRawCreate] = useState<any>(null);
   const [rawStatus, setRawStatus] = useState<any>(null);
