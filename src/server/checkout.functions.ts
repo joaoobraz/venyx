@@ -122,7 +122,6 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
       if (se && !se.message.includes("duplicate")) throw new Error("Falha ao ativar trial");
       if (couponId) {
         await supabaseAdmin.from("coupon_redemptions").insert({ coupon_id: couponId, user_id: userId });
-        await supabaseAdmin.rpc("noop").catch(() => null);
       }
       return { freeTrialActivated: true, isTrial: true, trialDays };
     }
