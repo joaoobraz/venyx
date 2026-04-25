@@ -9,7 +9,7 @@ import {
   Plus,
   X,
   Shield,
-  Sparkles,
+  Crown,
   Store,
   Users as UsersIcon,
   Star,
