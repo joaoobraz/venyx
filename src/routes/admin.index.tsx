@@ -134,7 +134,7 @@ function AdminHomePage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Sparkles className="h-7 w-7 text-primary" />
+              <ShieldCheck className="h-7 w-7 text-primary" />
               Painel Admin
             </h1>
             <p className="text-muted-foreground mt-1">
