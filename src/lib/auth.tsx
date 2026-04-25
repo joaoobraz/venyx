@@ -32,6 +32,7 @@ interface AuthCtx {
   isCreator: boolean;
   isAdmin: boolean;
   isAmbassador: boolean;
+  isSeller: boolean;
   mfaEnabled: boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
