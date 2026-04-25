@@ -149,6 +149,36 @@ function TestPixPage() {
       : `data:image/png;base64,${charge.qr_code_base64}`
     : null;
 
+  if (authLoading) {
+    return (
+      <div className="container mx-auto max-w-xl py-10 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!user || (!isSeller && !isAdmin)) {
+    return (
+      <div className="container mx-auto max-w-xl py-10">
+        <Card className="p-8 text-center space-y-4">
+          <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground" />
+          <div>
+            <h1 className="text-xl font-bold">Acesso restrito</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Esta ferramenta está disponível apenas para usuários com o cargo{" "}
+              <strong>Seller</strong>.
+            </p>
+          </div>
+          {!user && (
+            <Button asChild>
+              <Link to="/login">Entrar</Link>
+            </Button>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-xl py-10 space-y-6">
       <div>
