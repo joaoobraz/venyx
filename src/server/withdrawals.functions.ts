@@ -8,6 +8,25 @@ function safeError(internal: unknown, msg = "Operação falhou. Tente novamente.
   return new Error(msg);
 }
 
+function fmtBRL(cents: number): string {
+  return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
+}
+
+async function notify(userId: string, title: string, body: string, metadata: Record<string, unknown> = {}) {
+  try {
+    await (supabaseAdmin.from("notifications" as never) as any).insert({
+      user_id: userId,
+      type: "withdrawal",
+      title,
+      body,
+      link: "/creator/wallet",
+      metadata,
+    });
+  } catch (e) {
+    console.error("[withdrawals.notify]", e);
+  }
+}
+
 // ===================== Chave PIX da criadora =====================
 const upsertKeySchema = z.object({
   pix_key: z.string().min(3).max(140),
@@ -113,6 +132,13 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       .single();
     if (error) throw safeError(error);
 
+    await notify(
+      userId,
+      "Saque solicitado",
+      `Seu pedido de ${fmtBRL(data.amount_cents)} foi enviado e está aguardando aprovação.`,
+      { withdrawal_id: req.id, amount_cents: data.amount_cents },
+    );
+
     return { ok: true, withdrawal_id: req.id };
   });
 
@@ -162,6 +188,13 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => adminIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+
+    const { data: w } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select("creator_id, amount_cents")
+      .eq("id", data.withdrawal_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
@@ -173,6 +206,15 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
       .eq("id", data.withdrawal_id)
       .eq("status", "pending");
     if (error) throw safeError(error);
+
+    if (w) {
+      await notify(
+        w.creator_id,
+        "Saque aprovado",
+        `Seu saque de ${fmtBRL(w.amount_cents)} foi aprovado e está em processamento.`,
+        { withdrawal_id: data.withdrawal_id },
+      );
+    }
     return { ok: true };
   });
 
@@ -224,6 +266,14 @@ export const markWithdrawalPaid = createServerFn({ method: "POST" })
       })
       .eq("id", data.withdrawal_id);
     if (error) throw safeError(error);
+
+    await notify(
+      w.creator_id,
+      "Saque pago",
+      `Seu saque de ${fmtBRL(w.amount_cents)} foi pago via PIX.${data.receipt_url ? " Comprovante disponível." : ""}`,
+      { withdrawal_id: data.withdrawal_id, receipt_url: data.receipt_url ?? null },
+    );
+
     return { ok: true };
   });
 
@@ -238,6 +288,13 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => rejectSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+
+    const { data: w } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select("creator_id, amount_cents")
+      .eq("id", data.withdrawal_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
@@ -249,5 +306,14 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
       .eq("id", data.withdrawal_id)
       .in("status", ["pending", "approved"]);
     if (error) throw safeError(error);
+
+    if (w) {
+      await notify(
+        w.creator_id,
+        "Saque rejeitado",
+        `Seu saque de ${fmtBRL(w.amount_cents)} foi rejeitado: ${data.reason}`,
+        { withdrawal_id: data.withdrawal_id, reason: data.reason },
+      );
+    }
     return { ok: true };
   });

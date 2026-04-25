@@ -2,6 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 const BASE_URL = "https://nexuspag.com";
 
+// URL pública estável do projeto (Lovable). Ajuste para custom domain quando configurar.
+const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
+function getWebhookUrl(): string {
+  const envUrl = process.env.PUBLIC_WEBHOOK_URL;
+  if (envUrl) return envUrl;
+  return `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`;
+}
+
 function getApiKey(): string {
   const key = process.env.NEXUSPAG_API_KEY;
   if (!key) throw new Error("NEXUSPAG_API_KEY não configurada");
@@ -23,6 +31,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       description: data.description ?? "Teste NexusPag",
       external_id: data.external_id ?? `test-${Date.now()}`,
       expiration_seconds: data.expiration_seconds ?? 1800,
+      webhook_url: getWebhookUrl(),
     };
 
     const res = await fetch(`${BASE_URL}/api/pix/create`, {
