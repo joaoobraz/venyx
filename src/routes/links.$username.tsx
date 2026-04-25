@@ -10,7 +10,7 @@ import {
   Globe,
   Heart,
   ShoppingBag,
-  Sparkles,
+  Crown,
   Star,
   ExternalLink,
 } from "lucide-react";
