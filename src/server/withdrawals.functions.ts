@@ -14,7 +14,7 @@ function fmtBRL(cents: number): string {
 
 async function notify(userId: string, title: string, body: string, metadata: Record<string, unknown> = {}) {
   try {
-    await supabaseAdmin.from("notifications").insert({
+    await (supabaseAdmin.from("notifications" as never) as any).insert({
       user_id: userId,
       type: "withdrawal",
       title,
