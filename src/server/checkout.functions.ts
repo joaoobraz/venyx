@@ -220,22 +220,24 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
       ? `Assinatura trial + extras`
       : `Assinatura ${data.months}m${bumpsTotal > 0 ? " + extras" : ""}`;
 
-    const px = await callNexusPag(totalCents / 100, description, externalId);
+    const gateway = await callNexusPag(totalCents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
 
     // Grava charge interna
     const { data: charge, error: ce } = await supabaseAdmin
       .from("pix_charges")
       .insert({
         external_id: externalId,
-        gateway_transaction_id: px.id ?? null,
+        gateway_transaction_id: px.id,
         payer_id: userId,
         payee_id: data.creatorId,
         purpose: "subscription",
         amount_cents: totalCents,
         status: "pending",
-        qr_code: px.qr_code ?? px.qr_code_text ?? null,
-        qr_code_base64: px.qr_code_base64 ?? null,
-        expires_at: px.expires_at ?? null,
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
         metadata: {
           months: data.months,
           coupon: couponId,
@@ -285,21 +287,23 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
     if (offer.creator_id === userId) throw new Error("Você não pode comprar sua própria oferta");
 
     const externalId = `ups_${userId.slice(0, 8)}_${Date.now()}`;
-    const px = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
+    const gateway = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
 
     const { data: charge, error: ce } = await supabaseAdmin
       .from("pix_charges")
       .insert({
         external_id: externalId,
-        gateway_transaction_id: px.id ?? null,
+        gateway_transaction_id: px.id,
         payer_id: userId,
         payee_id: offer.creator_id,
         purpose: "upsell",
         amount_cents: offer.price_cents,
         status: "pending",
-        qr_code: px.qr_code ?? px.qr_code_text ?? null,
-        qr_code_base64: px.qr_code_base64 ?? null,
-        expires_at: px.expires_at ?? null,
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
         reference_id: offer.id,
         metadata: { offer_id: offer.id, origin: "upsell" },
       })
