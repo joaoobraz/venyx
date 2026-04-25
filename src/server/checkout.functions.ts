@@ -136,6 +136,29 @@ async function callNexusPag(
   }
 }
 
+async function checkNexusPagStatus(lookupId: string): Promise<NexusPagPixResponse | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${BASE_URL}/api/pix/${encodeURIComponent(lookupId)}`, {
+      method: "GET",
+      headers: { "x-api-key": getApiKey() },
+      signal: controller.signal,
+    });
+    const json = await readJsonResponse(res);
+    if (!res.ok) {
+      console.warn("[nexuspag] status falhou", res.status, json);
+      return null;
+    }
+    return unwrapNexusPayload(json);
+  } catch (e) {
+    console.warn("[nexuspag] status indisponível", e);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // =====================================================
 // Cobrança Pix da assinatura (com bumps opcionais)
 // =====================================================
