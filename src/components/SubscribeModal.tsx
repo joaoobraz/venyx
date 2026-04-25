@@ -58,7 +58,7 @@ export function SubscribeModal({
   basePriceCents: number;
   onSubscribed?: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const createChargeFn = useServerFn(createSubscriptionPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
   const listOffersFn = useServerFn(listCreatorOffers);
@@ -150,7 +150,10 @@ export function SubscribeModal({
 
   const startCheckout = async () => {
     if (!plan) return;
-    if (!user) {
+    const authHeaders = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+    if (!user || !authHeaders) {
       toast.error("Faça login para assinar.");
       return;
     }
@@ -164,6 +167,7 @@ export function SubscribeModal({
           couponCode: coupon?.code ?? null,
           bumpOfferIds: Array.from(selectedBumps),
         },
+        headers: authHeaders,
       });
 
       if ("freeTrialActivated" in res && res.freeTrialActivated) {
@@ -187,7 +191,7 @@ export function SubscribeModal({
         // inicia polling
         pollRef.current = setInterval(async () => {
           try {
-            const s = await getStatusFn({ data: { chargeId: res.chargeId } });
+            const s = await getStatusFn({ data: { chargeId: res.chargeId }, headers: authHeaders });
             if (s.status === "paid") {
               if (pollRef.current) clearInterval(pollRef.current);
               setStep("done");
