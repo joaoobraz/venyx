@@ -24,6 +24,7 @@ import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as RCodeRouteImport } from './routes/r.$code'
@@ -39,6 +40,7 @@ import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
 import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
 import { Route as CCodeRouteImport } from './routes/c.$code'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
@@ -120,6 +122,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
@@ -196,6 +203,11 @@ const CCodeRoute = CCodeRouteImport.update({
   path: '/c/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
   id: '/admin/payouts',
   path: '/admin/payouts',
@@ -243,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -258,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -280,6 +294,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -295,6 +310,7 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRoutesById {
@@ -318,6 +334,7 @@ export interface FileRoutesById {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -333,6 +350,7 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRouteTypes {
@@ -357,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -372,6 +391,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/admin/'
     | '/api/public/nexuspag-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -394,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -409,6 +430,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/admin'
     | '/api/public/nexuspag-webhook'
   id:
     | '__root__'
@@ -431,6 +453,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -446,6 +469,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/admin/'
     | '/api/public/nexuspag-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -469,6 +493,7 @@ export interface RootRouteChildren {
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
@@ -484,6 +509,7 @@ export interface RootRouteChildren {
   RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
 }
 
@@ -594,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/security': {
       id: '/settings/security'
       path: '/settings/security'
@@ -699,6 +732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/payouts': {
       id: '/admin/payouts'
       path: '/admin/payouts'
@@ -757,6 +797,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
@@ -772,6 +813,7 @@ const rootRouteChildren: RootRouteChildren = {
   RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
 }
 export const routeTree = rootRouteImport
