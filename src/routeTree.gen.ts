@@ -23,6 +23,7 @@ import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
+import { Route as R403RouteImport } from './routes/403'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
@@ -115,6 +116,11 @@ const ChatRoute = ChatRouteImport.update({
 const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
   id: '/become-creator',
   path: '/become-creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R403Route = R403RouteImport.update({
+  id: '/403',
+  path: '/403',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -237,6 +243,7 @@ const ApiPublicNexuspagWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/403': typeof R403Route
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
   '/dmca': typeof DmcaRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/403': typeof R403Route
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
   '/dmca': typeof DmcaRoute
@@ -316,6 +324,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/403': typeof R403Route
   '/become-creator': typeof BecomeCreatorRoute
   '/chat': typeof ChatRoute
   '/dmca': typeof DmcaRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/403'
     | '/become-creator'
     | '/chat'
     | '/dmca'
@@ -396,6 +406,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/403'
     | '/become-creator'
     | '/chat'
     | '/dmca'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/403'
     | '/become-creator'
     | '/chat'
     | '/dmca'
@@ -475,6 +487,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R403Route: typeof R403Route
   BecomeCreatorRoute: typeof BecomeCreatorRoute
   ChatRoute: typeof ChatRoute
   DmcaRoute: typeof DmcaRoute
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/become-creator'
       fullPath: '/become-creator'
       preLoaderRoute: typeof BecomeCreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/403': {
+      id: '/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof R403RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -779,6 +799,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R403Route: R403Route,
   BecomeCreatorRoute: BecomeCreatorRoute,
   ChatRoute: ChatRoute,
   DmcaRoute: DmcaRoute,

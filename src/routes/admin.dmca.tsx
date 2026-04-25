@@ -14,7 +14,7 @@ export const Route = createFileRoute("/admin/dmca")({
     try {
       await requireAdminServer();
     } catch {
-      throw redirect({ to: "/feed" });
+      throw redirect({ to: "/403" });
     }
   },
   component: AdminDmcaPage,

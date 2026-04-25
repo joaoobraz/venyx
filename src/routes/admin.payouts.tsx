@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { requireAdminServer } from "@/server/admin.functions";
 import { useEffect, useState, useCallback } from "react";
 import { ArrowDownToLine, Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +32,13 @@ import {
 } from "@/server/withdrawals.functions";
 
 export const Route = createFileRoute("/admin/payouts")({
+  beforeLoad: async () => {
+    try {
+      await requireAdminServer();
+    } catch {
+      throw redirect({ to: "/403" });
+    }
+  },
   component: AdminPayoutsPage,
 });
 
