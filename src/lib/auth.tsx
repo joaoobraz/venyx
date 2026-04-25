@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCreator: roles.includes("creator"),
         isAdmin: roles.includes("admin"),
         isAmbassador: roles.includes("ambassador"),
+        isSeller: roles.includes("seller"),
         mfaEnabled,
         signOut,
         refresh,
