@@ -317,6 +317,3 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
-    if (error) throw safeError(error);
-    return { ok: true };
-  });
