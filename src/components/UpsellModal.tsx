@@ -83,8 +83,8 @@ export function UpsellModal({
     setBusy(true);
     try {
       const res = await createUpsellFn({ data: { offerId: offer.id }, headers: authHeaders });
-      if ("ok" in res && res.ok === false) {
-        toast.error(res.error || "Não foi possível gerar o Pix. Tente novamente.");
+      if (!("chargeId" in res)) {
+        toast.error("error" in res ? res.error : "Não foi possível gerar o Pix. Tente novamente.");
         return;
       }
       setPix({
