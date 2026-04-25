@@ -731,6 +731,99 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pix_charges: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          expires_at: string | null
+          external_id: string
+          gateway_transaction_id: string | null
+          id: string
+          metadata: Json
+          paid_at: string | null
+          payee_id: string
+          payer_id: string
+          purpose: Database["public"]["Enums"]["pix_charge_purpose"]
+          qr_code: string | null
+          qr_code_base64: string | null
+          reference_id: string | null
+          status: Database["public"]["Enums"]["pix_charge_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          expires_at?: string | null
+          external_id: string
+          gateway_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          paid_at?: string | null
+          payee_id: string
+          payer_id: string
+          purpose: Database["public"]["Enums"]["pix_charge_purpose"]
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["pix_charge_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          expires_at?: string | null
+          external_id?: string
+          gateway_transaction_id?: string | null
+          id?: string
+          metadata?: Json
+          paid_at?: string | null
+          payee_id?: string
+          payer_id?: string
+          purpose?: Database["public"]["Enums"]["pix_charge_purpose"]
+          qr_code?: string | null
+          qr_code_base64?: string | null
+          reference_id?: string | null
+          status?: Database["public"]["Enums"]["pix_charge_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           hold_days: number
@@ -1490,6 +1583,13 @@ export type Database = {
         | "non_subscribers"
         | "all_contacts"
         | "tag"
+      pix_charge_purpose: "subscription" | "ppv" | "tip" | "goal" | "chat_ppv"
+      pix_charge_status:
+        | "pending"
+        | "paid"
+        | "expired"
+        | "cancelled"
+        | "refunded"
       pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       post_visibility: "public" | "subscribers" | "ppv" | "goal"
       story_visibility: "public" | "subscribers"
@@ -1652,6 +1752,14 @@ export const Constants = {
         "non_subscribers",
         "all_contacts",
         "tag",
+      ],
+      pix_charge_purpose: ["subscription", "ppv", "tip", "goal", "chat_ppv"],
+      pix_charge_status: [
+        "pending",
+        "paid",
+        "expired",
+        "cancelled",
+        "refunded",
       ],
       pix_key_type: ["cpf", "cnpj", "email", "phone", "random"],
       post_visibility: ["public", "subscribers", "ppv", "goal"],
