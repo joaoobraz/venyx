@@ -356,11 +356,31 @@ export const getChargeStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: charge } = await supabaseAdmin
       .from("pix_charges")
-      .select("id, status, paid_at, payer_id")
+      .select("id, status, paid_at, payer_id, external_id, gateway_transaction_id")
       .eq("id", data.chargeId)
       .maybeSingle();
     if (!charge || charge.payer_id !== context.userId) {
       throw new Error("Cobrança não encontrada");
+    }
+    if (charge.status === "pending") {
+      const gatewayCharge = await checkNexusPagStatus(charge.gateway_transaction_id ?? charge.external_id);
+      if (gatewayCharge?.status === "paid") {
+        await fulfillPaidCharge({
+          externalId: charge.external_id,
+          gatewayTransactionId: gatewayCharge.transaction_id ?? gatewayCharge.id ?? gatewayCharge.txid ?? charge.gateway_transaction_id,
+          paidAt: gatewayCharge.paid_at ?? new Date().toISOString(),
+          payerName: gatewayCharge.payer_name ?? null,
+        });
+        return { status: "paid", paidAt: gatewayCharge.paid_at ?? new Date().toISOString() };
+      }
+      if (gatewayCharge?.status === "expired" || gatewayCharge?.status === "cancelled") {
+        await supabaseAdmin
+          .from("pix_charges")
+          .update({ status: gatewayCharge.status })
+          .eq("id", charge.id)
+          .eq("status", "pending");
+        return { status: gatewayCharge.status, paidAt: null };
+      }
     }
     return { status: charge.status, paidAt: charge.paid_at };
   });
