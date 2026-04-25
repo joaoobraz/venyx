@@ -23,7 +23,7 @@ import { adminDashboardStats } from "@/server/admin-users.functions";
 export const Route = createFileRoute("/admin/")({
   beforeLoad: async () => {
     try {
-      await requireAdminServer();
+      await requireAdminServer({ data: { path: "/admin" } });
     } catch {
       throw redirect({ to: "/403" });
     }
