@@ -18,7 +18,7 @@ import {
   Star,
   ExternalLink,
   Eye,
-  Sparkles,
+  Plus,
   Loader2,
   Upload,
   X as XIcon,
