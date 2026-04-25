@@ -9,7 +9,8 @@ import {
   Eye,
   UserCog,
   Store,
-  Sparkles,
+  Crown,
+  ShieldCheck,
   Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
