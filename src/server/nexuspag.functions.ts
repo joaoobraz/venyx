@@ -108,24 +108,27 @@ export const getPixStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => getStatusSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSellerOrAdmin(context.userId);
-
-    const res = await fetch(
-      `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
-      {
-        method: "GET",
-        headers: { "x-api-key": getApiKey() },
-      },
-    );
-    const text = await res.text();
-    let json: any;
     try {
-      json = JSON.parse(text);
-    } catch {
-      json = { raw: text };
+      await assertSellerOrAdmin(context.userId);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+      const res = await fetch(
+        `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
+        {
+          method: "GET",
+          headers: { "x-api-key": getApiKey() },
+          signal: controller.signal,
+        },
+      ).finally(() => clearTimeout(timeout));
+      const json = await readJsonResponse(res);
+      if (!res.ok) {
+        console.warn("[nexuspag-test] status falhou", res.status, json);
+        return { ok: false as const, status: res.status, error: json };
+      }
+      return { ok: true as const, data: json };
+    } catch (error) {
+      console.warn("[nexuspag-test] erro ao consultar status", error);
+      return { ok: false as const, status: 500, error: safeError(error) };
     }
-    if (!res.ok) {
-      return { ok: false as const, status: res.status, error: json };
-    }
-    return { ok: true as const, data: json };
   });
