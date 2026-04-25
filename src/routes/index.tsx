@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, MessageCircle, Lock, DollarSign, ShieldCheck, ArrowRight } from "lucide-react";
+import { Crown, MessageCircle, Lock, DollarSign, ShieldCheck, ArrowRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
