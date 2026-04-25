@@ -31,6 +31,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
       description: data.description ?? "Teste NexusPag",
       external_id: data.external_id ?? `test-${Date.now()}`,
       expiration_seconds: data.expiration_seconds ?? 1800,
+      webhook_url: getWebhookUrl(),
     };
 
     const res = await fetch(`${BASE_URL}/api/pix/create`, {
