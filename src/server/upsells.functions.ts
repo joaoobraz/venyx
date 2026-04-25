@@ -61,7 +61,7 @@ export const listCreatorOffers = createServerFn({ method: "POST" })
 
     if (error) {
       console.error("[upsells] list", error);
-      return { offers: [] as Array<Record<string, unknown>> };
+      return { offers: [] };
     }
     return { offers: offers ?? [] };
   });
