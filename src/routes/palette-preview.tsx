@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, MessageCircle, Lock, Crown, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Lock, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/palette-preview")({
   head: () => ({
