@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, ShieldCheck, DollarSign, MessageCircle, Sparkles, Clock, XCircle } from "lucide-react";
+import { Check, ShieldCheck, DollarSign, MessageCircle, Crown, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
