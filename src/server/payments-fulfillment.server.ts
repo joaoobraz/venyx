@@ -77,6 +77,9 @@ export async function fulfillPaidCharge(opts: {
       case "chat_ppv":
         await fulfillChatPpv(charge);
         break;
+      case "upsell":
+        await fulfillUpsell(charge);
+        break;
     }
   } catch (e) {
     console.error("[fulfillPaidCharge] erro no efeito colateral", e);
