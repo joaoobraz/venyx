@@ -101,6 +101,11 @@ export function UpsellModal({
             if (pollRef.current) clearInterval(pollRef.current);
             toast.success("Upsell desbloqueado! Aproveite 🔥");
             onOpenChange(false);
+          } else if (s.status === "expired" || s.status === "cancelled") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            toast.error("Este Pix expirou. Gere uma nova cobrança.");
+            setStep("offer");
+            setPix(null);
           }
         } catch (e) { console.error(e); }
       }, 4000);
