@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles, Clock } from "lucide-react";
+import { Crown, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
@@ -38,7 +38,7 @@ export function BecomeCreatorBanner({ compact = false }: Props) {
     >
       <div className="flex items-start gap-3 text-primary-foreground">
         <div className="rounded-full bg-black/20 p-2">
-          <Sparkles className="h-5 w-5" />
+          <Crown className="h-5 w-5" />
         </div>
         <div className="flex-1">
           <div className="text-base font-bold leading-tight">

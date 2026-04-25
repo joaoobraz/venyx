@@ -9,7 +9,7 @@ import {
   Plus,
   X,
   Shield,
-  Sparkles,
+  Crown,
   Store,
   Users as UsersIcon,
   Star,
@@ -51,7 +51,7 @@ type Role = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 
 const ALL_ROLES: { value: Role; label: string; icon: typeof Shield; color: string }[] = [
   { value: "subscriber", label: "Subscriber", icon: UsersIcon, color: "bg-muted text-muted-foreground" },
-  { value: "creator", label: "Creator", icon: Sparkles, color: "bg-primary/15 text-primary" },
+  { value: "creator", label: "Creator", icon: Crown, color: "bg-primary/15 text-primary" },
   { value: "seller", label: "Seller", icon: Store, color: "bg-emerald-500/15 text-emerald-600" },
   { value: "ambassador", label: "Embaixadora", icon: Star, color: "bg-amber-500/15 text-amber-600" },
   { value: "admin", label: "Admin", icon: Shield, color: "bg-destructive/15 text-destructive" },

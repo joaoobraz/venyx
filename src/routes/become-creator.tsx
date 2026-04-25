@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, ShieldCheck, DollarSign, MessageCircle, Sparkles, Clock, XCircle } from "lucide-react";
+import { Check, ShieldCheck, DollarSign, MessageCircle, Crown, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
@@ -67,7 +67,7 @@ function Intro({ onStart }: { onStart: () => void }) {
   const { t } = useI18n();
   const benefits = [
     { icon: DollarSign, label: t("becomeCreator.benefit1") },
-    { icon: Sparkles, label: t("becomeCreator.benefit2") },
+    { icon: Crown, label: t("becomeCreator.benefit2") },
     { icon: MessageCircle, label: t("becomeCreator.benefit3") },
     { icon: ShieldCheck, label: t("becomeCreator.benefit4") },
   ];

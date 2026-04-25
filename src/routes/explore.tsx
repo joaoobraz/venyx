@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrendingUp, Sparkles, Tag } from "lucide-react";
+import { TrendingUp, Compass, Tag } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TopCreators } from "@/components/TopCreators";
 import { useI18n } from "@/lib/i18n";
@@ -54,7 +54,7 @@ function ExplorePage() {
 
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Compass className="h-5 w-5 text-primary" />
             <span>{t("explore.new")}</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

@@ -18,7 +18,6 @@ import {
   Star,
   ExternalLink,
   Eye,
-  Sparkles,
   Loader2,
   Upload,
   X as XIcon,
@@ -421,7 +420,7 @@ function CreatorLinksPage() {
             onClick={seedTemplates}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 text-sm text-primary hover:bg-primary/10"
           >
-            <Sparkles className="h-4 w-4" /> Adicionar templates iniciais (Venyx, IG, TikTok, PIX)
+            <Plus className="h-4 w-4" /> Adicionar templates iniciais (Venyx, IG, TikTok, PIX)
           </button>
         )}
       </Card>

@@ -10,7 +10,7 @@ import {
   Globe,
   Heart,
   ShoppingBag,
-  Sparkles,
+  Crown,
   Star,
   ExternalLink,
 } from "lucide-react";
@@ -54,7 +54,7 @@ function getIcon(id: string | null) {
     case "youtube": return Youtube;
     case "telegram": return Send;
     case "spotify": return Music2;
-    case "venyx": return Sparkles;
+    case "venyx": return Crown;
     case "heart": return Heart;
     case "shopping": return ShoppingBag;
     default: return Globe;

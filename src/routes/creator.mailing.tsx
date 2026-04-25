@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import {
   Send, Tag as TagIcon, Plus, Users, UserCheck, UserX, UserMinus,
-  Sparkles, Lock, Loader2, Mail, Calendar, Download, Eye, FileText, Trash2,
+  Lightbulb, Lock, Loader2, Mail, Calendar, Download, Eye, FileText, Trash2,
   Clock, CheckCircle2, XCircle, MousePointerClick, Ban,
 } from "lucide-react";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
@@ -553,7 +553,7 @@ function MailingPage() {
               </div>
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" /> Sugestões</Label>
+              <Label className="mb-2 flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5 text-accent" /> Sugestões</Label>
               <div className="flex flex-wrap gap-2">
                 {TAG_SUGGESTIONS.filter((s) => !tags.some((t) => t.name.toLowerCase() === s.name.toLowerCase())).map((s) => (
                   <button key={s.name} type="button" onClick={() => createTag(s.name, s.color, s.desc)}
