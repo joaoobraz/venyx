@@ -32,6 +32,13 @@ import {
 } from "@/server/withdrawals.functions";
 
 export const Route = createFileRoute("/admin/payouts")({
+  beforeLoad: async () => {
+    try {
+      await requireAdminServer();
+    } catch {
+      throw redirect({ to: "/403" });
+    }
+  },
   component: AdminPayoutsPage,
 });
 
