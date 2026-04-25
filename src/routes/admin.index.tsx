@@ -23,7 +23,7 @@ import { adminDashboardStats } from "@/server/admin-users.functions";
 export const Route = createFileRoute("/admin/")({
   beforeLoad: async () => {
     try {
-      await requireAdminServer();
+      await requireAdminServer({ data: { path: "/admin" } });
     } catch {
       throw redirect({ to: "/403" });
     }
@@ -119,6 +119,12 @@ function AdminHomePage() {
       description: "Revisar mídias sinalizadas pela moderação automática.",
       icon: Eye,
       link: "/admin/moderation",
+    },
+    {
+      title: "Auditoria de acessos",
+      description: "Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.",
+      icon: ShieldCheck,
+      link: "/admin/audit",
     },
   ];
 

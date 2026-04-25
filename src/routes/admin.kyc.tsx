@@ -11,7 +11,7 @@ import { requireAdminServer } from "@/server/admin.functions";
 export const Route = createFileRoute("/admin/kyc")({
   beforeLoad: async () => {
     try {
-      await requireAdminServer();
+      await requireAdminServer({ data: { path: "/admin/kyc" } });
     } catch {
       throw redirect({ to: "/403" });
     }

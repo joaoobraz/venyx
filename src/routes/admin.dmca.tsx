@@ -12,7 +12,7 @@ import { requireAdminServer } from "@/server/admin.functions";
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {
     try {
-      await requireAdminServer();
+      await requireAdminServer({ data: { path: "/admin/dmca" } });
     } catch {
       throw redirect({ to: "/403" });
     }

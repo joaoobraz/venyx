@@ -34,7 +34,7 @@ import {
 export const Route = createFileRoute("/admin/payouts")({
   beforeLoad: async () => {
     try {
-      await requireAdminServer();
+      await requireAdminServer({ data: { path: "/admin/payouts" } });
     } catch {
       throw redirect({ to: "/403" });
     }
