@@ -364,6 +364,36 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_payout_keys: {
+        Row: {
+          created_at: string
+          holder_document: string
+          holder_name: string
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          holder_document: string
+          holder_name: string
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          holder_document?: string
+          holder_name?: string
+          pix_key?: string
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dm_templates: {
         Row: {
           body: string
@@ -698,6 +728,30 @@ export type Database = {
           reason?: string | null
           surface?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          hold_days: number
+          id: number
+          min_withdrawal_cents: number
+          platform_fee_pct: number
+          updated_at: string
+        }
+        Insert: {
+          hold_days?: number
+          id?: number
+          min_withdrawal_cents?: number
+          platform_fee_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          hold_days?: number
+          id?: number
+          min_withdrawal_cents?: number
+          platform_fee_pct?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1244,9 +1298,77 @@ export type Database = {
           },
         ]
       }
+      withdrawal_requests: {
+        Row: {
+          admin_notes: string | null
+          amount_cents: number
+          created_at: string
+          creator_id: string
+          holder_document: string
+          holder_name: string
+          id: string
+          paid_at: string | null
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          receipt_url: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_cents: number
+          created_at?: string
+          creator_id: string
+          holder_document: string
+          holder_name: string
+          id?: string
+          paid_at?: string | null
+          pix_key: string
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"]
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_cents?: number
+          created_at?: string
+          creator_id?: string
+          holder_document?: string
+          holder_name?: string
+          id?: string
+          paid_at?: string | null
+          pix_key?: string
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"]
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      creator_balances: {
+        Row: {
+          available_cents: number | null
+          creator_id: string | null
+          gross_lifetime_cents: number | null
+          in_flight_cents: number | null
+          net_lifetime_cents: number | null
+          pending_cents: number | null
+          total_withdrawn_cents: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_view_post: {
@@ -1368,6 +1490,7 @@ export type Database = {
         | "non_subscribers"
         | "all_contacts"
         | "tag"
+      pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       post_visibility: "public" | "subscribers" | "ppv" | "goal"
       story_visibility: "public" | "subscribers"
       subscription_status: "active" | "canceled" | "expired"
@@ -1379,6 +1502,13 @@ export type Database = {
         | "withdrawal"
         | "affiliate_commission"
         | "chat_ppv"
+      withdrawal_status:
+        | "pending"
+        | "approved"
+        | "processing"
+        | "paid"
+        | "rejected"
+        | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1523,6 +1653,7 @@ export const Constants = {
         "all_contacts",
         "tag",
       ],
+      pix_key_type: ["cpf", "cnpj", "email", "phone", "random"],
       post_visibility: ["public", "subscribers", "ppv", "goal"],
       story_visibility: ["public", "subscribers"],
       subscription_status: ["active", "canceled", "expired"],
@@ -1534,6 +1665,14 @@ export const Constants = {
         "withdrawal",
         "affiliate_commission",
         "chat_ppv",
+      ],
+      withdrawal_status: [
+        "pending",
+        "approved",
+        "processing",
+        "paid",
+        "rejected",
+        "canceled",
       ],
     },
   },
