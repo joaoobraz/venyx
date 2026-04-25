@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Wallet as WalletIcon, ArrowDownToLine, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle, Pencil } from "lucide-react";
+import { Wallet as WalletIcon, ArrowDownToLine, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle, Pencil, Receipt, Lock, Heart, Crown, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
@@ -64,6 +64,21 @@ interface KycRow {
   status: string;
 }
 
+interface TxRow {
+  id: string;
+  type: "subscription" | "ppv" | "tip" | "withdrawal" | "affiliate_commission" | string;
+  amount_cents: number;
+  created_at: string;
+  payer_id: string | null;
+  reference_id: string | null;
+  gateway: string | null;
+}
+
+interface PlatformSettings {
+  platform_fee_pct: number;
+  hold_days: number;
+}
+
 const fmt = (cents: number) =>
   `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -75,6 +90,9 @@ function WalletPage() {
   const [key, setKey] = useState<PayoutKey | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [kycApproved, setKycApproved] = useState(false);
+  const [txs, setTxs] = useState<TxRow[]>([]);
+  const [payerNames, setPayerNames] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<PlatformSettings>({ platform_fee_pct: 15, hold_days: 1 });
 
   const [keyOpen, setKeyOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -103,7 +121,7 @@ function WalletPage() {
 
   const loadAll = useCallback(async () => {
     if (!user) return;
-    const [{ data: bal }, { data: k }, { data: ws }, { data: kyc }] = await Promise.all([
+    const [{ data: bal }, { data: k }, { data: ws }, { data: kyc }, { data: txList }, { data: ps }] = await Promise.all([
       supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
       supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
@@ -117,6 +135,19 @@ function WalletPage() {
         .select("status")
         .eq("user_id", user.id)
         .eq("status", "approved")
+        .maybeSingle(),
+      supabase
+        .from("transactions")
+        .select("id, type, amount_cents, created_at, payer_id, reference_id, gateway")
+        .eq("payee_id", user.id)
+        .eq("status", "paid")
+        .in("type", ["subscription", "ppv", "tip", "affiliate_commission"])
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("platform_settings")
+        .select("platform_fee_pct, hold_days")
+        .eq("id", 1)
         .maybeSingle(),
     ]);
     setBalance(
@@ -136,6 +167,25 @@ function WalletPage() {
     }
     setWithdrawals((ws ?? []) as Withdrawal[]);
     setKycApproved(!!(kyc as KycRow | null));
+    const txArr = (txList ?? []) as TxRow[];
+    setTxs(txArr);
+    if (ps) setSettings(ps as PlatformSettings);
+
+    // Buscar nomes dos pagadores
+    const payerIds = Array.from(new Set(txArr.map((t) => t.payer_id).filter(Boolean))) as string[];
+    if (payerIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name")
+        .in("user_id", payerIds);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: { user_id: string; username: string; display_name: string | null }) => {
+        map[p.user_id] = p.display_name || p.username;
+      });
+      setPayerNames(map);
+    } else {
+      setPayerNames({});
+    }
   }, [user]);
 
   useEffect(() => {
@@ -310,6 +360,77 @@ function WalletPage() {
             </div>
           )}
         </div>
+
+        {/* Histórico detalhado de transações */}
+        <div className="rounded-2xl bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Receipt className="h-4 w-4 text-primary" /> Histórico de transações
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Cada venda paga, com a taxa da plataforma ({settings.platform_fee_pct}%) descontada e o
+            status do hold de D+{settings.hold_days}.
+          </p>
+          {txs.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma venda registrada ainda.</p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {txs.map((t) => {
+                const fee = Math.floor((t.amount_cents * settings.platform_fee_pct) / 100);
+                const net = t.amount_cents - fee;
+                const ageMs = Date.now() - new Date(t.created_at).getTime();
+                const isAvailable = ageMs >= settings.hold_days * 24 * 60 * 60 * 1000;
+                const releaseAt = new Date(
+                  new Date(t.created_at).getTime() + settings.hold_days * 24 * 60 * 60 * 1000,
+                );
+                return (
+                  <div key={t.id} className="rounded-lg bg-background p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-start gap-2">
+                        <TxIcon type={t.type} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium text-foreground">{txLabel(t.type)}</span>
+                            {t.payer_id && payerNames[t.payer_id] && (
+                              <span className="text-xs text-muted-foreground">
+                                de @{payerNames[t.payer_id]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            {new Date(t.created_at).toLocaleString("pt-BR")}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-foreground">+{fmt(net)}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          bruto {fmt(t.amount_cents)} − taxa {fmt(fee)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
+                      {isAvailable ? (
+                        <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-600">
+                          <CheckCircle2 className="h-3 w-3" /> Liberado em disponível
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[10px] font-medium text-yellow-600">
+                          <Lock className="h-3 w-3" /> Pendente · libera{" "}
+                          {releaseAt.toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal: Chave PIX */}
@@ -463,5 +584,35 @@ function StatusBadge({ status }: { status: Withdrawal["status"] }) {
     <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.cls}`}>
       <m.Icon className="h-3 w-3" /> {m.label}
     </span>
+  );
+}
+
+function txLabel(type: string): string {
+  switch (type) {
+    case "subscription":
+      return "Assinatura";
+    case "ppv":
+      return "Pay-per-view";
+    case "tip":
+      return "Tip recebido";
+    case "affiliate_commission":
+      return "Comissão de afiliado";
+    default:
+      return type;
+  }
+}
+
+function TxIcon({ type }: { type: string }) {
+  const map: Record<string, { Icon: typeof Crown; cls: string }> = {
+    subscription: { Icon: Crown, cls: "bg-primary/15 text-primary" },
+    ppv: { Icon: Lock, cls: "bg-blue-500/15 text-blue-600" },
+    tip: { Icon: Heart, cls: "bg-pink-500/15 text-pink-600" },
+    affiliate_commission: { Icon: Gift, cls: "bg-purple-500/15 text-purple-600" },
+  };
+  const m = map[type] ?? { Icon: Receipt, cls: "bg-muted text-muted-foreground" };
+  return (
+    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.cls}`}>
+      <m.Icon className="h-3.5 w-3.5" />
+    </div>
   );
 }
