@@ -40,6 +40,7 @@ import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
 import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
 import { Route as CCodeRouteImport } from './routes/c.$code'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
@@ -202,6 +203,11 @@ const CCodeRoute = CCodeRouteImport.update({
   path: '/c/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
   id: '/admin/payouts',
   path: '/admin/payouts',
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
@@ -481,6 +493,7 @@ export interface RootRouteChildren {
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
@@ -719,6 +732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/payouts': {
       id: '/admin/payouts'
       path: '/admin/payouts'
@@ -777,6 +797,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
