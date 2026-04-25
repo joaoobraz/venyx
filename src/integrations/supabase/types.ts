@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_access_audit: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          ip_address: string | null
+          path: string | null
+          reason: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          ip_address?: string | null
+          path?: string | null
+          reason?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          ip_address?: string | null
+          path?: string | null
+          reason?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       affiliate_codes: {
         Row: {
           code: string
