@@ -170,6 +170,11 @@ export function SubscribeModal({
         headers: authHeaders,
       });
 
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix. Tente novamente.");
+        return;
+      }
+
       if ("freeTrialActivated" in res && res.freeTrialActivated) {
         toast.success(`Trial de ${res.trialDays} dias ativado!`);
         if (coupon) document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
@@ -200,6 +205,11 @@ export function SubscribeModal({
               onSubscribed?.();
               onOpenChange(false);
               setTimeout(() => setUpsellOpen(true), 500);
+            } else if (s.status === "expired" || s.status === "cancelled") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              toast.error("Este Pix expirou. Gere uma nova cobrança.");
+              setStep("plan");
+              setPix(null);
             }
           } catch (e) {
             console.error(e);

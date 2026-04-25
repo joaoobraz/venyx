@@ -2,9 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fulfillPaidCharge } from "@/server/payments-fulfillment.server";
 
 const BASE_URL = "https://nexuspag.com";
 const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
+const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 function getWebhookUrl(): string {
   return process.env.PUBLIC_WEBHOOK_URL ?? `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`;
@@ -18,33 +20,143 @@ function getApiKey(): string {
 
 interface NexusPagPixResponse {
   id?: string;
+  transaction_id?: string;
+  txid?: string;
   qr_code?: string;
   qr_code_text?: string;
   qr_code_base64?: string;
+  pix_copia_cola?: string;
+  pix_copy_paste?: string;
+  copy_paste?: string;
+  qr_code_image?: string;
+  status?: string;
+  amount?: number;
+  paid_at?: string;
+  payer_name?: string;
   expires_at?: string;
+  data?: unknown;
+  transaction?: unknown;
   [k: string]: unknown;
 }
 
-async function callNexusPag(amountReais: number, description: string, externalId: string, expirationSeconds = 1800) {
-  const res = await fetch(`${BASE_URL}/api/pix/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": getApiKey() },
-    body: JSON.stringify({
-      amount: amountReais,
-      description,
-      external_id: externalId,
-      expiration_seconds: expirationSeconds,
-      webhook_url: getWebhookUrl(),
-    }),
-  });
+type PaymentGatewayError = {
+  ok: false;
+  code: "PAYMENT_CONFIG_ERROR" | "PAYMENT_TIMEOUT" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_INVALID_RESPONSE";
+  error: string;
+  retryable: boolean;
+};
+
+type NormalizedPix = {
+  id: string | null;
+  qrCode: string;
+  qrCodeBase64: string | null;
+  expiresAt: string | null;
+  raw: NexusPagPixResponse;
+};
+
+function gatewayError(code: PaymentGatewayError["code"], error: string, retryable = true): PaymentGatewayError {
+  return { ok: false, code, error, retryable };
+}
+
+function unwrapNexusPayload(raw: unknown): NexusPagPixResponse {
+  const root = (raw ?? {}) as Record<string, unknown>;
+  const data = root.data as Record<string, unknown> | undefined;
+  return ((data?.transaction ?? root.transaction ?? data ?? root) ?? {}) as NexusPagPixResponse;
+}
+
+function normalizePix(raw: NexusPagPixResponse): NormalizedPix | null {
+  const tx = unwrapNexusPayload(raw);
+  const qrCode = tx.qr_code ?? tx.qr_code_text ?? tx.pix_copia_cola ?? tx.pix_copy_paste ?? tx.copy_paste ?? null;
+  if (!qrCode) return null;
+
+  return {
+    id: tx.id ?? tx.transaction_id ?? tx.txid ?? null,
+    qrCode,
+    qrCodeBase64: tx.qr_code_base64 ?? tx.qr_code_image ?? null,
+    expiresAt: tx.expires_at ?? null,
+    raw,
+  };
+}
+
+async function readJsonResponse(res: Response): Promise<NexusPagPixResponse> {
   const text = await res.text();
-  let json: NexusPagPixResponse;
-  try { json = JSON.parse(text); } catch { json = { raw: text } as NexusPagPixResponse; }
-  if (!res.ok) {
-    console.error("[nexuspag] erro", res.status, json);
-    throw new Error("Falha ao gerar Pix. Tente novamente.");
+  try {
+    return JSON.parse(text) as NexusPagPixResponse;
+  } catch {
+    return { raw: text } as NexusPagPixResponse;
   }
-  return json;
+}
+
+async function callNexusPag(
+  amountReais: number,
+  description: string,
+  externalId: string,
+  expirationSeconds = 1800,
+): Promise<{ ok: true; pix: NormalizedPix } | PaymentGatewayError> {
+  let apiKey: string;
+  try {
+    apiKey = getApiKey();
+  } catch (e) {
+    console.error("[nexuspag] chave ausente", e);
+    return gatewayError("PAYMENT_CONFIG_ERROR", "Pagamento indisponível no momento.", false);
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${BASE_URL}/api/pix/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+      signal: controller.signal,
+      body: JSON.stringify({
+        amount: amountReais,
+        description,
+        external_id: externalId,
+        expiration_seconds: expirationSeconds,
+        webhook_url: getWebhookUrl(),
+      }),
+    });
+    const json = await readJsonResponse(res);
+    if (!res.ok) {
+      console.error("[nexuspag] erro", res.status, json);
+      return gatewayError("PAYMENT_GATEWAY_ERROR", "Falha ao gerar Pix. Tente novamente.", res.status >= 500);
+    }
+
+    const pix = normalizePix(json);
+    if (!pix) {
+      console.error("[nexuspag] resposta sem código Pix", json);
+      return gatewayError("PAYMENT_INVALID_RESPONSE", "O provedor não retornou o código Pix. Tente novamente.");
+    }
+    return { ok: true, pix };
+  } catch (e) {
+    console.error("[nexuspag] timeout/erro de rede", e);
+    return gatewayError("PAYMENT_TIMEOUT", "O serviço Pix demorou para responder. Tente novamente.");
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function checkNexusPagStatus(lookupId: string): Promise<NexusPagPixResponse | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${BASE_URL}/api/pix/${encodeURIComponent(lookupId)}`, {
+      method: "GET",
+      headers: { "x-api-key": getApiKey() },
+      signal: controller.signal,
+    });
+    const json = await readJsonResponse(res);
+    if (!res.ok) {
+      console.warn("[nexuspag] status falhou", res.status, json);
+      return null;
+    }
+    return unwrapNexusPayload(json);
+  } catch (e) {
+    console.warn("[nexuspag] status indisponível", e);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // =====================================================
@@ -131,22 +243,24 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
       ? `Assinatura trial + extras`
       : `Assinatura ${data.months}m${bumpsTotal > 0 ? " + extras" : ""}`;
 
-    const px = await callNexusPag(totalCents / 100, description, externalId);
+    const gateway = await callNexusPag(totalCents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
 
     // Grava charge interna
     const { data: charge, error: ce } = await supabaseAdmin
       .from("pix_charges")
       .insert({
         external_id: externalId,
-        gateway_transaction_id: px.id ?? null,
+        gateway_transaction_id: px.id,
         payer_id: userId,
         payee_id: data.creatorId,
         purpose: "subscription",
         amount_cents: totalCents,
         status: "pending",
-        qr_code: px.qr_code ?? px.qr_code_text ?? null,
-        qr_code_base64: px.qr_code_base64 ?? null,
-        expires_at: px.expires_at ?? null,
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
         metadata: {
           months: data.months,
           coupon: couponId,
@@ -196,21 +310,23 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
     if (offer.creator_id === userId) throw new Error("Você não pode comprar sua própria oferta");
 
     const externalId = `ups_${userId.slice(0, 8)}_${Date.now()}`;
-    const px = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
+    const gateway = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
 
     const { data: charge, error: ce } = await supabaseAdmin
       .from("pix_charges")
       .insert({
         external_id: externalId,
-        gateway_transaction_id: px.id ?? null,
+        gateway_transaction_id: px.id,
         payer_id: userId,
         payee_id: offer.creator_id,
         purpose: "upsell",
         amount_cents: offer.price_cents,
         status: "pending",
-        qr_code: px.qr_code ?? px.qr_code_text ?? null,
-        qr_code_base64: px.qr_code_base64 ?? null,
-        expires_at: px.expires_at ?? null,
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
         reference_id: offer.id,
         metadata: { offer_id: offer.id, origin: "upsell" },
       })
@@ -240,11 +356,31 @@ export const getChargeStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: charge } = await supabaseAdmin
       .from("pix_charges")
-      .select("id, status, paid_at, payer_id")
+      .select("id, status, paid_at, payer_id, external_id, gateway_transaction_id")
       .eq("id", data.chargeId)
       .maybeSingle();
     if (!charge || charge.payer_id !== context.userId) {
       throw new Error("Cobrança não encontrada");
+    }
+    if (charge.status === "pending") {
+      const gatewayCharge = await checkNexusPagStatus(charge.gateway_transaction_id ?? charge.external_id);
+      if (gatewayCharge?.status === "paid") {
+        await fulfillPaidCharge({
+          externalId: charge.external_id,
+          gatewayTransactionId: gatewayCharge.transaction_id ?? gatewayCharge.id ?? gatewayCharge.txid ?? charge.gateway_transaction_id,
+          paidAt: gatewayCharge.paid_at ?? new Date().toISOString(),
+          payerName: gatewayCharge.payer_name ?? null,
+        });
+        return { status: "paid", paidAt: gatewayCharge.paid_at ?? new Date().toISOString() };
+      }
+      if (gatewayCharge?.status === "expired" || gatewayCharge?.status === "cancelled") {
+        await supabaseAdmin
+          .from("pix_charges")
+          .update({ status: gatewayCharge.status })
+          .eq("id", charge.id)
+          .eq("status", "pending");
+        return { status: gatewayCharge.status, paidAt: null };
+      }
     }
     return { status: charge.status, paidAt: charge.paid_at };
   });

@@ -83,6 +83,10 @@ export function UpsellModal({
     setBusy(true);
     try {
       const res = await createUpsellFn({ data: { offerId: offer.id }, headers: authHeaders });
+      if (!("chargeId" in res)) {
+        toast.error("error" in res ? res.error : "Não foi possível gerar o Pix. Tente novamente.");
+        return;
+      }
       setPix({
         chargeId: res.chargeId,
         qrCode: res.qrCode,
@@ -97,6 +101,11 @@ export function UpsellModal({
             if (pollRef.current) clearInterval(pollRef.current);
             toast.success("Upsell desbloqueado! Aproveite 🔥");
             onOpenChange(false);
+          } else if (s.status === "expired" || s.status === "cancelled") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            toast.error("Este Pix expirou. Gere uma nova cobrança.");
+            setStep("offer");
+            setPix(null);
           }
         } catch (e) { console.error(e); }
       }, 4000);
