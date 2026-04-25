@@ -182,7 +182,7 @@ function PaletteCard({ p, selected, onSelect }: { p: Palette; selected: boolean;
             style={{ background: "var(--p-grad)", color: "var(--p-primary-fg)" }}
           >
             <span className="inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4" /> Assinar agora
+              <Crown className="h-4 w-4" /> Assinar agora
             </span>
           </button>
           <div className="grid grid-cols-2 gap-2">
