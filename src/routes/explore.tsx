@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrendingUp, Sparkles, Tag } from "lucide-react";
+import { TrendingUp, Compass, Tag } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TopCreators } from "@/components/TopCreators";
 import { useI18n } from "@/lib/i18n";
