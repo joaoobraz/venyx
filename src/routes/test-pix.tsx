@@ -150,16 +150,29 @@ function TestPixPage() {
   return (
     <div className="container mx-auto max-w-xl py-10 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Teste NexusPag — PIX R$ 1,00</h1>
+        <h1 className="text-2xl font-bold">Gerar PIX</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Página de diagnóstico. Cria uma cobrança real de R$ 1,00 e
-          consulta o status a cada 4s.
+          Informe o valor e gere uma cobrança PIX. O status é consultado a cada 4s.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Valor (R$)</label>
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={loading}
+          className="w-full px-3 py-2 border rounded bg-background"
+          placeholder="0,00"
+        />
       </div>
 
       <Button onClick={handleCreate} disabled={loading} size="lg">
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Gerar PIX de R$ 1,00
+        Gerar PIX
       </Button>
 
       {error && (
