@@ -185,7 +185,7 @@ export function UpsellModal({
                 R$ {(pix.amountCents / 100).toFixed(2)}
               </div>
             </div>
-            {pix.qrCodeBase64 && (
+            {pix.qrCodeBase64 ? (
               <div className="flex justify-center">
                 <img
                   src={`data:image/png;base64,${pix.qrCodeBase64}`}
@@ -193,7 +193,13 @@ export function UpsellModal({
                   className="h-56 w-56 rounded-lg border bg-white p-2"
                 />
               </div>
-            )}
+            ) : pix.qrCode ? (
+              <div className="flex justify-center">
+                <div className="rounded-lg border bg-white p-3">
+                  <QRCodeSVG value={pix.qrCode} size={208} level="M" />
+                </div>
+              </div>
+            ) : null}
             {pix.qrCode && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Ou copie o código Pix:</p>
