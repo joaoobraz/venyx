@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Copy, CheckCircle2, ShieldAlert } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import {
@@ -47,7 +48,7 @@ function pickCharge(raw: any): Charge {
 }
 
 function TestPixPage() {
-  const { user, isSeller, isAdmin, loading: authLoading } = useAuth();
+  const { user, session, isSeller, isAdmin, loading: authLoading } = useAuth();
   const create = useServerFn(createPixCharge);
   const status = useServerFn(getPixStatus);
 
@@ -69,6 +70,15 @@ function TestPixPage() {
   useEffect(() => () => stopPolling(), []);
 
   const handleCreate = async () => {
+    const authHeaders = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+
+    if (!user || !authHeaders) {
+      setError("Faça login para gerar um PIX de teste.");
+      return;
+    }
+
     const value = Number(String(amount).replace(",", "."));
     if (!value || value <= 0 || isNaN(value)) {
       setError("Informe um valor válido maior que zero.");
@@ -89,6 +99,7 @@ function TestPixPage() {
           description: `PIX R$ ${value.toFixed(2)}`,
           external_id: `test-${Date.now()}`,
         },
+        headers: authHeaders,
       });
 
       setRawCreate(res);
