@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, Loader2, Copy, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/lib/auth";
 import { getEligiblePostPurchaseUpsell } from "@/server/upsells.functions";
 import { createUpsellPixCharge, getChargeStatus } from "@/server/checkout.functions";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ export function UpsellModal({
   creatorId: string;
   creatorName: string;
 }) {
+  const { session } = useAuth();
   const getEligibleFn = useServerFn(getEligiblePostPurchaseUpsell);
   const createUpsellFn = useServerFn(createUpsellPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
@@ -52,21 +54,35 @@ export function UpsellModal({
       if (pollRef.current) clearInterval(pollRef.current);
       return;
     }
+    const authHeaders = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+    if (!authHeaders) {
+      onOpenChange(false);
+      return;
+    }
     setLoading(true);
-    getEligibleFn({ data: { creatorId } })
+    getEligibleFn({ data: { creatorId }, headers: authHeaders })
       .then((res) => {
         if (res.offer) setOffer(res.offer as Offer);
         else onOpenChange(false); // sem oferta → não abre
       })
       .catch(() => onOpenChange(false))
       .finally(() => setLoading(false));
-  }, [open, creatorId, getEligibleFn, onOpenChange]);
+  }, [open, creatorId, session?.access_token, getEligibleFn, onOpenChange]);
 
   const accept = async () => {
     if (!offer) return;
+    const authHeaders = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+    if (!authHeaders) {
+      toast.error("Faça login para continuar.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await createUpsellFn({ data: { offerId: offer.id } });
+      const res = await createUpsellFn({ data: { offerId: offer.id }, headers: authHeaders });
       setPix({
         chargeId: res.chargeId,
         qrCode: res.qrCode,
@@ -76,7 +92,7 @@ export function UpsellModal({
       setStep("pix");
       pollRef.current = setInterval(async () => {
         try {
-          const s = await getStatusFn({ data: { chargeId: res.chargeId } });
+          const s = await getStatusFn({ data: { chargeId: res.chargeId }, headers: authHeaders });
           if (s.status === "paid") {
             if (pollRef.current) clearInterval(pollRef.current);
             toast.success("Upsell desbloqueado! Aproveite 🔥");
