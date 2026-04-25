@@ -170,6 +170,11 @@ export function SubscribeModal({
         headers: authHeaders,
       });
 
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix. Tente novamente.");
+        return;
+      }
+
       if ("freeTrialActivated" in res && res.freeTrialActivated) {
         toast.success(`Trial de ${res.trialDays} dias ativado!`);
         if (coupon) document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
