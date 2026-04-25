@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Copy, CheckCircle2 } from "lucide-react";
+import { Loader2, Copy, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import {
   createPixCharge,
   getPixStatus,
