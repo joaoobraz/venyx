@@ -346,6 +346,63 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
   });
 
 // =====================================================
+// Cobrança Pix de gorjeta (mimo)
+// =====================================================
+const tipPixSchema = z.object({
+  creatorId: z.string().uuid(),
+  amountCents: z.number().int().min(100).max(1_000_000),
+  postId: z.string().uuid().optional().nullable(),
+  message: z.string().max(200).optional().nullable(),
+});
+
+export const createTipPixCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => tipPixSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    if (data.creatorId === userId) throw new Error("Você não pode enviar gorjeta para si mesmo");
+
+    const externalId = `tip_${userId.slice(0, 8)}_${Date.now()}`;
+    const description = `Mimo R$ ${(data.amountCents / 100).toFixed(2)}`;
+    const gateway = await callNexusPag(data.amountCents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
+
+    const { data: charge, error: ce } = await supabaseAdmin
+      .from("pix_charges")
+      .insert({
+        external_id: externalId,
+        gateway_transaction_id: px.id,
+        payer_id: userId,
+        payee_id: data.creatorId,
+        purpose: "tip",
+        amount_cents: data.amountCents,
+        status: "pending",
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
+        reference_id: data.postId ?? null,
+        metadata: { message: data.message ?? null, post_id: data.postId ?? null },
+      })
+      .select("id, qr_code, qr_code_base64, expires_at, external_id")
+      .single();
+
+    if (ce || !charge) {
+      console.error("[createTipPixCharge] erro", ce);
+      throw new Error("Falha ao registrar cobrança");
+    }
+
+    return {
+      chargeId: charge.id,
+      externalId: charge.external_id,
+      qrCode: charge.qr_code,
+      qrCodeBase64: charge.qr_code_base64,
+      expiresAt: charge.expires_at,
+      amountCents: data.amountCents,
+    };
+  });
+
+// =====================================================
 // Polling de status (usado pelo modal pra detectar paid)
 // =====================================================
 const statusSchema = z.object({ chargeId: z.string().uuid() });
