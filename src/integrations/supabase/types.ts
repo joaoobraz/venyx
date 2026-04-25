@@ -1501,6 +1501,10 @@ export type Database = {
         Args: { _post_id: string; _viewer_id: string }
         Returns: boolean
       }
+      can_view_story_path: {
+        Args: { _path: string; _viewer: string }
+        Returns: boolean
+      }
       enqueue_mass_dm: {
         Args: {
           _body: string
@@ -1590,6 +1594,7 @@ export type Database = {
           sent: number
         }[]
       }
+      storage_path_to_post_id: { Args: { _path: string }; Returns: string }
       validate_coupon: {
         Args: { _code: string; _creator_id: string }
         Returns: {
