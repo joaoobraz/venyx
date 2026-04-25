@@ -120,6 +120,12 @@ function AdminHomePage() {
       icon: Eye,
       link: "/admin/moderation",
     },
+    {
+      title: "Auditoria de acessos",
+      description: "Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.",
+      icon: ShieldCheck,
+      link: "/admin/audit",
+    },
   ];
 
   return (
