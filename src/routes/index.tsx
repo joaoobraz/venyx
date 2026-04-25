@@ -62,7 +62,7 @@ function Landing() {
             { icon: DollarSign, title: t("landing.features.subscribe.title"), desc: t("landing.features.subscribe.desc") },
             { icon: Lock, title: t("landing.features.ppv.title"), desc: t("landing.features.ppv.desc") },
             { icon: MessageCircle, title: t("landing.features.chat.title"), desc: t("landing.features.chat.desc") },
-            { icon: Sparkles, title: t("landing.features.creator.title"), desc: t("landing.features.creator.desc") },
+            { icon: Crown, title: t("landing.features.creator.title"), desc: t("landing.features.creator.desc") },
           ].map((f, i) => {
             const Icon = f.icon;
             return (
