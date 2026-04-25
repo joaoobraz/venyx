@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { getEligiblePostPurchaseUpsell } from "@/server/upsells.functions";
 import { createUpsellPixCharge, getChargeStatus } from "@/server/checkout.functions";
+import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
