@@ -132,6 +132,13 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       .single();
     if (error) throw safeError(error);
 
+    await notify(
+      userId,
+      "Saque solicitado",
+      `Seu pedido de ${fmtBRL(data.amount_cents)} foi enviado e está aguardando aprovação.`,
+      { withdrawal_id: req.id, amount_cents: data.amount_cents },
+    );
+
     return { ok: true, withdrawal_id: req.id };
   });
 
