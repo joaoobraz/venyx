@@ -149,7 +149,11 @@ export function SubscribeModal({
   };
 
   const startCheckout = async () => {
-    if (!user || !plan) return;
+    if (!plan) return;
+    if (!user) {
+      toast.error("Faça login para assinar.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await createChargeFn({
