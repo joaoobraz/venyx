@@ -586,3 +586,33 @@ function StatusBadge({ status }: { status: Withdrawal["status"] }) {
     </span>
   );
 }
+
+function txLabel(type: string): string {
+  switch (type) {
+    case "subscription":
+      return "Assinatura";
+    case "ppv":
+      return "Pay-per-view";
+    case "tip":
+      return "Tip recebido";
+    case "affiliate_commission":
+      return "Comissão de afiliado";
+    default:
+      return type;
+  }
+}
+
+function TxIcon({ type }: { type: string }) {
+  const map: Record<string, { Icon: typeof Crown; cls: string }> = {
+    subscription: { Icon: Crown, cls: "bg-primary/15 text-primary" },
+    ppv: { Icon: Lock, cls: "bg-blue-500/15 text-blue-600" },
+    tip: { Icon: Heart, cls: "bg-pink-500/15 text-pink-600" },
+    affiliate_commission: { Icon: Gift, cls: "bg-purple-500/15 text-purple-600" },
+  };
+  const m = map[type] ?? { Icon: Receipt, cls: "bg-muted text-muted-foreground" };
+  return (
+    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${m.cls}`}>
+      <m.Icon className="h-3.5 w-3.5" />
+    </div>
+  );
+}
