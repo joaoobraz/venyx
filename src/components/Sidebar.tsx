@@ -83,6 +83,9 @@ export function Sidebar() {
             <Link to="/creator/coupons" className={linkCls(loc.pathname === "/creator/coupons")}>
               <Tag className="h-5 w-5" /> Cupons
             </Link>
+            <Link to="/creator/upsells" className={linkCls(loc.pathname === "/creator/upsells")}>
+              <Sparkles className="h-5 w-5" /> Bumps & Upsells
+            </Link>
             <Link to="/creator/mailing" className={linkCls(loc.pathname === "/creator/mailing")}>
               <Mail className="h-5 w-5" /> Mailing
             </Link>
