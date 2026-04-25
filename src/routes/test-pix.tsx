@@ -47,6 +47,7 @@ function pickCharge(raw: any): Charge {
 }
 
 function TestPixPage() {
+  const { user, isSeller, isAdmin, loading: authLoading } = useAuth();
   const create = useServerFn(createPixCharge);
   const status = useServerFn(getPixStatus);
 
