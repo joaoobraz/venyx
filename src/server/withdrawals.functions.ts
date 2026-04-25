@@ -8,6 +8,25 @@ function safeError(internal: unknown, msg = "Operação falhou. Tente novamente.
   return new Error(msg);
 }
 
+function fmtBRL(cents: number): string {
+  return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
+}
+
+async function notify(userId: string, title: string, body: string, metadata: Record<string, unknown> = {}) {
+  try {
+    await supabaseAdmin.from("notifications").insert({
+      user_id: userId,
+      type: "withdrawal",
+      title,
+      body,
+      link: "/creator/wallet",
+      metadata,
+    });
+  } catch (e) {
+    console.error("[withdrawals.notify]", e);
+  }
+}
+
 // ===================== Chave PIX da criadora =====================
 const upsertKeySchema = z.object({
   pix_key: z.string().min(3).max(140),
