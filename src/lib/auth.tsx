@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "subscriber" | "creator" | "admin" | "ambassador";
+export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 
 export interface Profile {
   id: string;
@@ -32,6 +32,7 @@ interface AuthCtx {
   isCreator: boolean;
   isAdmin: boolean;
   isAmbassador: boolean;
+  isSeller: boolean;
   mfaEnabled: boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -116,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCreator: roles.includes("creator"),
         isAdmin: roles.includes("admin"),
         isAmbassador: roles.includes("ambassador"),
+        isSeller: roles.includes("seller"),
         mfaEnabled,
         signOut,
         refresh,

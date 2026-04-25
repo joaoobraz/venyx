@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Copy, CheckCircle2 } from "lucide-react";
+import { Loader2, Copy, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import {
   createPixCharge,
   getPixStatus,
@@ -46,6 +47,7 @@ function pickCharge(raw: any): Charge {
 }
 
 function TestPixPage() {
+  const { user, isSeller, isAdmin, loading: authLoading } = useAuth();
   const create = useServerFn(createPixCharge);
   const status = useServerFn(getPixStatus);
 
@@ -146,6 +148,36 @@ function TestPixPage() {
       ? charge.qr_code_base64
       : `data:image/png;base64,${charge.qr_code_base64}`
     : null;
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto max-w-xl py-10 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!user || (!isSeller && !isAdmin)) {
+    return (
+      <div className="container mx-auto max-w-xl py-10">
+        <Card className="p-8 text-center space-y-4">
+          <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground" />
+          <div>
+            <h1 className="text-xl font-bold">Acesso restrito</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Esta ferramenta está disponível apenas para usuários com o cargo{" "}
+              <strong>Seller</strong>.
+            </p>
+          </div>
+          {!user && (
+            <Button asChild>
+              <Link to="/login">Entrar</Link>
+            </Button>
+          )}
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-xl py-10 space-y-6">
