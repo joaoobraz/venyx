@@ -105,31 +105,7 @@ export function Sidebar() {
         <Link to="/settings/security" className={linkCls(loc.pathname === "/settings/security")}>
           <ShieldCheck className="h-5 w-5" /> Segurança
         </Link>
-        {isAdmin && (
-          <>
-            <div className="pt-3 pb-1 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-              Admin
-            </div>
-            <Link to="/admin" className={linkCls(loc.pathname === "/admin")}>
-              <Sparkles className="h-5 w-5" /> Painel
-            </Link>
-            <Link to="/admin/users" className={linkCls(loc.pathname === "/admin/users")}>
-              <UserCog className="h-5 w-5" /> Usuários & Cargos
-            </Link>
-            <Link to="/admin/kyc" className={linkCls(loc.pathname === "/admin/kyc")}>
-              <ShieldCheck className="h-5 w-5" /> KYC
-            </Link>
-            <Link to="/admin/payouts" className={linkCls(loc.pathname === "/admin/payouts")}>
-              <Banknote className="h-5 w-5" /> Saques
-            </Link>
-            <Link to="/admin/dmca" className={linkCls(loc.pathname === "/admin/dmca")}>
-              <ShieldAlert className="h-5 w-5" /> DMCA
-            </Link>
-            <Link to="/admin/moderation" className={linkCls(loc.pathname === "/admin/moderation")}>
-              <ShieldAlert className="h-5 w-5 text-destructive" /> Moderação
-            </Link>
-          </>
-        )}
+        {/* Admin links ocultos — acesso somente via URL /admin */}
         <div className="pt-4">
           <BecomeCreatorBanner compact />
         </div>
