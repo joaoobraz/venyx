@@ -1,23 +1,64 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+function getClientIp(req: Request | undefined): string | null {
+  if (!req?.headers) return null;
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]!.trim();
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    null
+  );
+}
+
+const adminGuardSchema = z.object({
+  path: z.string().min(1).max(255).optional(),
+});
+
 /**
  * Verifica se o usuário autenticado é admin no servidor.
- * Use no beforeLoad de rotas /admin.* para garantir guarda real.
+ * Registra cada tentativa (concedida ou negada) em admin_access_audit.
  */
 export const requireAdminServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) =>
+    adminGuardSchema.parse(input ?? {})
+  )
+  .handler(async ({ data, context }) => {
     const { userId } = context;
-    const { data } = await supabaseAdmin
+    const req = getRequest();
+    const ip = getClientIp(req);
+    const ua = req?.headers?.get("user-agent") ?? null;
+    const path = data?.path ?? null;
+
+    const { data: roleRow } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
-    if (!data) throw new Error("forbidden");
+
+    const granted = !!roleRow;
+
+    // Registra auditoria (não bloqueia o fluxo se falhar)
+    try {
+      await supabaseAdmin.from("admin_access_audit").insert({
+        user_id: userId,
+        ip_address: ip,
+        user_agent: ua,
+        path,
+        granted,
+        reason: granted ? null : "missing_admin_role",
+      });
+    } catch (e) {
+      console.error("[admin.audit] insert failed", e);
+    }
+
+    if (!granted) throw new Error("forbidden");
     return { ok: true, userId };
   });
 
