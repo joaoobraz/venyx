@@ -188,6 +188,13 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => adminIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+
+    const { data: w } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select("creator_id, amount_cents")
+      .eq("id", data.withdrawal_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
@@ -199,6 +206,15 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
       .eq("id", data.withdrawal_id)
       .eq("status", "pending");
     if (error) throw safeError(error);
+
+    if (w) {
+      await notify(
+        w.creator_id,
+        "Saque aprovado",
+        `Seu saque de ${fmtBRL(w.amount_cents)} foi aprovado e está em processamento.`,
+        { withdrawal_id: data.withdrawal_id },
+      );
+    }
     return { ok: true };
   });
 
