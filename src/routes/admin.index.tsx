@@ -10,7 +10,6 @@ import {
   UserCog,
   Store,
   Crown,
-  ShieldCheck,
   Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
