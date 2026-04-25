@@ -67,7 +67,7 @@ function Intro({ onStart }: { onStart: () => void }) {
   const { t } = useI18n();
   const benefits = [
     { icon: DollarSign, label: t("becomeCreator.benefit1") },
-    { icon: Sparkles, label: t("becomeCreator.benefit2") },
+    { icon: Crown, label: t("becomeCreator.benefit2") },
     { icon: MessageCircle, label: t("becomeCreator.benefit3") },
     { icon: ShieldCheck, label: t("becomeCreator.benefit4") },
   ];
