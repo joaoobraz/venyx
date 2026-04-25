@@ -360,6 +360,77 @@ function WalletPage() {
             </div>
           )}
         </div>
+
+        {/* Histórico detalhado de transações */}
+        <div className="rounded-2xl bg-card p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Receipt className="h-4 w-4 text-primary" /> Histórico de transações
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Cada venda paga, com a taxa da plataforma ({settings.platform_fee_pct}%) descontada e o
+            status do hold de D+{settings.hold_days}.
+          </p>
+          {txs.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma venda registrada ainda.</p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {txs.map((t) => {
+                const fee = Math.floor((t.amount_cents * settings.platform_fee_pct) / 100);
+                const net = t.amount_cents - fee;
+                const ageMs = Date.now() - new Date(t.created_at).getTime();
+                const isAvailable = ageMs >= settings.hold_days * 24 * 60 * 60 * 1000;
+                const releaseAt = new Date(
+                  new Date(t.created_at).getTime() + settings.hold_days * 24 * 60 * 60 * 1000,
+                );
+                return (
+                  <div key={t.id} className="rounded-lg bg-background p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-start gap-2">
+                        <TxIcon type={t.type} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium text-foreground">{txLabel(t.type)}</span>
+                            {t.payer_id && payerNames[t.payer_id] && (
+                              <span className="text-xs text-muted-foreground">
+                                de @{payerNames[t.payer_id]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-muted-foreground">
+                            {new Date(t.created_at).toLocaleString("pt-BR")}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-foreground">+{fmt(net)}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          bruto {fmt(t.amount_cents)} − taxa {fmt(fee)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
+                      {isAvailable ? (
+                        <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-600">
+                          <CheckCircle2 className="h-3 w-3" /> Liberado em disponível
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[10px] font-medium text-yellow-600">
+                          <Lock className="h-3 w-3" /> Pendente · libera{" "}
+                          {releaseAt.toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal: Chave PIX */}
