@@ -154,7 +154,7 @@ function AdminHomePage() {
           <StatCard
             label="Criadoras"
             value={stats?.totalCreators ?? 0}
-            icon={Sparkles}
+            icon={Crown}
             loading={loading}
           />
           <StatCard
