@@ -28,8 +28,9 @@ type Charge = {
 };
 
 function pickCharge(raw: any): Charge {
-  // API may wrap in { data: {...} } or return flat
-  const d = raw?.data ?? raw ?? {};
+  // API may wrap as { data: { transaction: {...} } }, { data: {...} } or flat
+  const d =
+    raw?.data?.transaction ?? raw?.transaction ?? raw?.data ?? raw ?? {};
   return {
     id: d.id ?? d.transaction_id ?? d.txid,
     transaction_id: d.transaction_id ?? d.id,
