@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Wallet as WalletIcon, ArrowDownToLine, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle, Pencil } from "lucide-react";
+import { Wallet as WalletIcon, ArrowDownToLine, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle, Pencil, Receipt, Lock, Heart, Crown, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
