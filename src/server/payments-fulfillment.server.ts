@@ -117,18 +117,24 @@ function labelFor(p: string): string {
 // =====================================================
 
 async function fulfillSubscription(charge: any) {
-  // metadata.months indica duração
   const months = Number(charge.metadata?.months ?? 1);
-  const periodEnd = new Date();
-  periodEnd.setMonth(periodEnd.getMonth() + months);
+  const subAmount = Number(charge.metadata?.sub_amount_cents ?? charge.amount_cents);
+  const isTrial = !!charge.metadata?.is_trial;
+  const trialDays = Number(charge.metadata?.trial_days ?? 0);
 
-  // Cria assinatura (ou atualiza se já existir cancelada/expirada)
+  const periodEnd = new Date();
+  if (isTrial && trialDays > 0) {
+    periodEnd.setDate(periodEnd.getDate() + trialDays);
+  } else {
+    periodEnd.setMonth(periodEnd.getMonth() + months);
+  }
+
   const { data: sub, error: se } = await supabaseAdmin
     .from("subscriptions")
     .insert({
       subscriber_id: charge.payer_id,
       creator_id: charge.payee_id,
-      price_cents: Math.round(charge.amount_cents / months),
+      price_cents: months > 0 ? Math.round(subAmount / months) : subAmount,
       status: "active",
       current_period_end: periodEnd.toISOString(),
     })
@@ -137,16 +143,113 @@ async function fulfillSubscription(charge: any) {
 
   if (se && !se.message.includes("duplicate")) throw se;
 
-  await supabaseAdmin.from("transactions").insert({
-    payer_id: charge.payer_id,
-    payee_id: charge.payee_id,
-    type: "subscription",
+  if (subAmount > 0) {
+    await supabaseAdmin.from("transactions").insert({
+      payer_id: charge.payer_id,
+      payee_id: charge.payee_id,
+      type: "subscription",
+      status: "paid",
+      amount_cents: subAmount,
+      reference_id: sub?.id ?? null,
+      gateway: "nexuspag",
+      gateway_ref: charge.gateway_transaction_id,
+      metadata: { charge_id: charge.id, months, coupon: charge.metadata?.coupon ?? null },
+    });
+  }
+
+  // Entrega bumps marcados no checkout
+  const bumps: Array<{ id: string; price: number }> = Array.isArray(charge.metadata?.bumps)
+    ? charge.metadata.bumps
+    : [];
+  for (const bump of bumps) {
+    await deliverOfferPurchase({
+      offerId: bump.id,
+      buyerId: charge.payer_id,
+      creatorId: charge.payee_id,
+      pixChargeId: charge.id,
+      parentChargeId: charge.id,
+      amountCents: bump.price,
+      origin: "bump",
+    });
+  }
+}
+
+async function fulfillUpsell(charge: any) {
+  if (!charge.reference_id) throw new Error("Upsell sem offer_id");
+  await deliverOfferPurchase({
+    offerId: charge.reference_id,
+    buyerId: charge.payer_id,
+    creatorId: charge.payee_id,
+    pixChargeId: charge.id,
+    parentChargeId: null,
+    amountCents: charge.amount_cents,
+    origin: "upsell",
+  });
+}
+
+async function deliverOfferPurchase(opts: {
+  offerId: string;
+  buyerId: string;
+  creatorId: string;
+  pixChargeId: string;
+  parentChargeId: string | null;
+  amountCents: number;
+  origin: "bump" | "upsell";
+}) {
+  // Idempotência
+  const { data: existing } = await supabaseAdmin
+    .from("upsell_purchases")
+    .select("id")
+    .eq("offer_id", opts.offerId)
+    .eq("buyer_id", opts.buyerId)
+    .eq("pix_charge_id", opts.pixChargeId)
+    .maybeSingle();
+  if (existing) return;
+
+  await supabaseAdmin.from("upsell_purchases").insert({
+    offer_id: opts.offerId,
+    buyer_id: opts.buyerId,
+    creator_id: opts.creatorId,
+    pix_charge_id: opts.pixChargeId,
+    parent_charge_id: opts.parentChargeId,
+    amount_cents: opts.amountCents,
+    origin: opts.origin,
     status: "paid",
-    amount_cents: charge.amount_cents,
-    reference_id: sub?.id ?? null,
+    paid_at: new Date().toISOString(),
+  });
+
+  // Se a oferta apontar pra um post da criadora, libera PPV automaticamente
+  const { data: offer } = await supabaseAdmin
+    .from("upsell_offers")
+    .select("media_post_id")
+    .eq("id", opts.offerId)
+    .maybeSingle();
+  if (offer?.media_post_id) {
+    const { data: hasUnlock } = await supabaseAdmin
+      .from("ppv_unlocks")
+      .select("id")
+      .eq("user_id", opts.buyerId)
+      .eq("post_id", offer.media_post_id)
+      .maybeSingle();
+    if (!hasUnlock) {
+      await supabaseAdmin.from("ppv_unlocks").insert({
+        user_id: opts.buyerId,
+        post_id: offer.media_post_id,
+        amount_cents: opts.amountCents,
+      });
+    }
+  }
+
+  await supabaseAdmin.from("transactions").insert({
+    payer_id: opts.buyerId,
+    payee_id: opts.creatorId,
+    type: "ppv",
+    status: "paid",
+    amount_cents: opts.amountCents,
+    reference_id: opts.offerId,
     gateway: "nexuspag",
-    gateway_ref: charge.gateway_transaction_id,
-    metadata: { charge_id: charge.id, months, coupon: charge.metadata?.coupon ?? null },
+    gateway_ref: opts.pixChargeId,
+    metadata: { kind: opts.origin, charge_id: opts.pixChargeId },
   });
 }
 
