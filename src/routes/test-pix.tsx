@@ -122,7 +122,7 @@ function TestPixPage() {
       // start polling status every 4s
       pollRef.current = setInterval(async () => {
         try {
-          const s = await status({ data: { id: c.id! } });
+          const s = await status({ data: { id: c.id! }, headers: authHeaders });
           setRawStatus(s);
           if (s.ok) {
             const updated = pickCharge(s.data);
@@ -263,6 +263,14 @@ function TestPixPage() {
                 alt="QR Code PIX"
                 className="w-64 h-64 border rounded"
               />
+            </div>
+          )}
+
+          {!qrSrc && charge.qr_code && charge.status !== "paid" && (
+            <div className="flex justify-center">
+              <div className="rounded border bg-white p-3">
+                <QRCodeSVG value={charge.qr_code} size={232} level="M" />
+              </div>
             </div>
           )}
 
