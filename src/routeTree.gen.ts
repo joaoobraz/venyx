@@ -43,6 +43,7 @@ import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
+import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
 
 const TestPixRoute = TestPixRouteImport.update({
   id: '/test-pix',
@@ -215,6 +216,12 @@ const AdminDmcaRoute = AdminDmcaRouteImport.update({
   path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicNexuspagWebhookRoute =
+  ApiPublicNexuspagWebhookRouteImport.update({
+    id: '/api/public/nexuspag-webhook',
+    path: '/api/public/nexuspag-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -287,6 +295,7 @@ export interface FileRoutesByTo {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -324,6 +333,7 @@ export interface FileRoutesById {
   '/r/$code': typeof RCodeRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/nexuspag-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/nexuspag-webhook'
   id:
     | '__root__'
     | '/'
@@ -434,6 +446,7 @@ export interface FileRouteTypes {
     | '/r/$code'
     | '/settings/profile'
     | '/settings/security'
+    | '/api/public/nexuspag-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -471,6 +484,7 @@ export interface RootRouteChildren {
   RCodeRoute: typeof RCodeRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
+  ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -713,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/nexuspag-webhook': {
+      id: '/api/public/nexuspag-webhook'
+      path: '/api/public/nexuspag-webhook'
+      fullPath: '/api/public/nexuspag-webhook'
+      preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -751,6 +772,7 @@ const rootRouteChildren: RootRouteChildren = {
   RCodeRoute: RCodeRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
+  ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

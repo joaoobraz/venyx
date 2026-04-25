@@ -46,7 +46,10 @@ export async function fulfillPaidCharge(opts: {
       status: "paid",
       paid_at: opts.paidAt ?? new Date().toISOString(),
       gateway_transaction_id: opts.gatewayTransactionId ?? charge.gateway_transaction_id,
-      metadata: { ...(charge.metadata ?? {}), payer_name: opts.payerName ?? null },
+      metadata: {
+        ...(typeof charge.metadata === "object" && charge.metadata ? (charge.metadata as Record<string, unknown>) : {}),
+        payer_name: opts.payerName ?? null,
+      },
     })
     .eq("id", charge.id)
     .eq("status", "pending"); // proteção contra race
