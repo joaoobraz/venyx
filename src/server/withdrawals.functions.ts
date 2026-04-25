@@ -288,6 +288,13 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => rejectSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+
+    const { data: w } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select("creator_id, amount_cents")
+      .eq("id", data.withdrawal_id)
+      .maybeSingle();
+
     const { error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
@@ -298,6 +305,18 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
       })
       .eq("id", data.withdrawal_id)
       .in("status", ["pending", "approved"]);
+    if (error) throw safeError(error);
+
+    if (w) {
+      await notify(
+        w.creator_id,
+        "Saque rejeitado",
+        `Seu saque de ${fmtBRL(w.amount_cents)} foi rejeitado: ${data.reason}`,
+        { withdrawal_id: data.withdrawal_id, reason: data.reason },
+      );
+    }
+    return { ok: true };
+  });
     if (error) throw safeError(error);
     return { ok: true };
   });
