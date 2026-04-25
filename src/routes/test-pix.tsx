@@ -67,6 +67,12 @@ function TestPixPage() {
   useEffect(() => () => stopPolling(), []);
 
   const handleCreate = async () => {
+    const value = Number(String(amount).replace(",", "."));
+    if (!value || value <= 0 || isNaN(value)) {
+      setError("Informe um valor válido maior que zero.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setCharge(null);
@@ -77,8 +83,8 @@ function TestPixPage() {
     try {
       const res = await create({
         data: {
-          amount: 1.0,
-          description: "Teste PIX R$ 1,00 — Venyx",
+          amount: value,
+          description: `PIX R$ ${value.toFixed(2)}`,
           external_id: `test-${Date.now()}`,
         },
       });
