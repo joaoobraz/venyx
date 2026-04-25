@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_URL = "https://nexuspag.com";
+const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 // URL pública estável do projeto (Lovable). Ajuste para custom domain quando configurar.
 const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
@@ -17,6 +18,19 @@ function getApiKey(): string {
   const key = process.env.NEXUSPAG_API_KEY;
   if (!key) throw new Error("NEXUSPAG_API_KEY não configurada");
   return key;
+}
+
+async function readJsonResponse(res: Response) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+function safeError(error: unknown) {
+  return error instanceof Error ? error.message : "Falha ao comunicar com o provedor Pix";
 }
 
 /**
@@ -50,37 +64,40 @@ export const createPixCharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => createPixSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSellerOrAdmin(context.userId);
-
-    const body = {
-      amount: data.amount,
-      description: data.description ?? "Teste NexusPag",
-      external_id: data.external_id ?? `test-${Date.now()}`,
-      expiration_seconds: data.expiration_seconds ?? 1800,
-      webhook_url: getWebhookUrl(),
-    };
-
-    const res = await fetch(`${BASE_URL}/api/pix/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": getApiKey(),
-      },
-      body: JSON.stringify(body),
-    });
-
-    const text = await res.text();
-    let json: any;
     try {
-      json = JSON.parse(text);
-    } catch {
-      json = { raw: text };
-    }
+      await assertSellerOrAdmin(context.userId);
 
-    if (!res.ok) {
-      return { ok: false as const, status: res.status, error: json };
+      const body = {
+        amount: data.amount,
+        description: data.description ?? "Teste NexusPag",
+        external_id: data.external_id ?? `test-${Date.now()}`,
+        expiration_seconds: data.expiration_seconds ?? 1800,
+        webhook_url: getWebhookUrl(),
+      };
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+      const res = await fetch(`${BASE_URL}/api/pix/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": getApiKey(),
+        },
+        signal: controller.signal,
+        body: JSON.stringify(body),
+      }).finally(() => clearTimeout(timeout));
+
+      const json = await readJsonResponse(res);
+
+      if (!res.ok) {
+        console.error("[nexuspag-test] criação falhou", res.status, json);
+        return { ok: false as const, status: res.status, error: json };
+      }
+      return { ok: true as const, data: json };
+    } catch (error) {
+      console.error("[nexuspag-test] erro ao criar Pix", error);
+      return { ok: false as const, status: 500, error: safeError(error) };
     }
-    return { ok: true as const, data: json };
   });
 
 const getStatusSchema = z.object({
@@ -91,24 +108,27 @@ export const getPixStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => getStatusSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await assertSellerOrAdmin(context.userId);
-
-    const res = await fetch(
-      `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
-      {
-        method: "GET",
-        headers: { "x-api-key": getApiKey() },
-      },
-    );
-    const text = await res.text();
-    let json: any;
     try {
-      json = JSON.parse(text);
-    } catch {
-      json = { raw: text };
+      await assertSellerOrAdmin(context.userId);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
+      const res = await fetch(
+        `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
+        {
+          method: "GET",
+          headers: { "x-api-key": getApiKey() },
+          signal: controller.signal,
+        },
+      ).finally(() => clearTimeout(timeout));
+      const json = await readJsonResponse(res);
+      if (!res.ok) {
+        console.warn("[nexuspag-test] status falhou", res.status, json);
+        return { ok: false as const, status: res.status, error: json };
+      }
+      return { ok: true as const, data: json };
+    } catch (error) {
+      console.warn("[nexuspag-test] erro ao consultar status", error);
+      return { ok: false as const, status: 500, error: safeError(error) };
     }
-    if (!res.ok) {
-      return { ok: false as const, status: res.status, error: json };
-    }
-    return { ok: true as const, data: json };
   });
