@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { requireAdminServer } from "@/server/admin.functions";
 import { useEffect, useState, useCallback } from "react";
 import { ArrowDownToLine, Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
