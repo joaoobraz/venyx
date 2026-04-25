@@ -108,6 +108,7 @@ function labelFor(p: string): string {
     case "tip": return "gorjeta";
     case "goal": return "meta";
     case "chat_ppv": return "PPV no chat";
+    case "upsell": return "upsell";
     default: return p;
   }
 }
