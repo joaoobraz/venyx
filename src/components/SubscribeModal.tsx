@@ -369,19 +369,23 @@ export function SubscribeModal({
                 </div>
               </div>
 
-              {pix.qrCodeBase64 ? (
-                <div className="flex justify-center">
-                  <img
-                    src={`data:image/png;base64,${pix.qrCodeBase64}`}
-                    alt="QR Code Pix"
-                    className="h-56 w-56 rounded-lg border bg-white p-2"
-                  />
-                </div>
-              ) : pix.qrCode ? (
+              {pix.qrCode ? (
                 <div className="flex justify-center">
                   <div className="rounded-lg border bg-white p-3">
                     <QRCodeSVG value={pix.qrCode} size={208} level="M" />
                   </div>
+                </div>
+              ) : pix.qrCodeBase64 ? (
+                <div className="flex justify-center">
+                  <img
+                    src={
+                      pix.qrCodeBase64.startsWith("data:") || pix.qrCodeBase64.startsWith("http")
+                        ? pix.qrCodeBase64
+                        : `data:image/png;base64,${pix.qrCodeBase64}`
+                    }
+                    alt="QR Code Pix"
+                    className="h-56 w-56 rounded-lg border bg-white p-2"
+                  />
                 </div>
               ) : null}
 
