@@ -1568,7 +1568,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "subscriber" | "creator" | "admin" | "ambassador"
+      app_role: "subscriber" | "creator" | "admin" | "ambassador" | "seller"
       dmca_status: "pending" | "notified" | "resolved" | "rejected"
       kyc_status: "pending" | "approved" | "rejected"
       mass_dm_job_status:
@@ -1736,7 +1736,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["subscriber", "creator", "admin", "ambassador"],
+      app_role: ["subscriber", "creator", "admin", "ambassador", "seller"],
       dmca_status: ["pending", "notified", "resolved", "rejected"],
       kyc_status: ["pending", "approved", "rejected"],
       mass_dm_job_status: [
