@@ -89,7 +89,7 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.new": "Novas criadoras",
     "explore.categories": "Categorias",
 
-    "profile.subscribe": "Assinar por",
+    "profile.subscribe": "ASSINAR",
     "profile.subscribed": "Assinante",
     "profile.message": "Mensagem",
     "profile.tip": "Enviar mimo",
@@ -195,7 +195,7 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.new": "New creators",
     "explore.categories": "Categories",
 
-    "profile.subscribe": "Subscribe for",
+    "profile.subscribe": "SUBSCRIBE",
     "profile.subscribed": "Subscribed",
     "profile.message": "Message",
     "profile.tip": "Send tip",

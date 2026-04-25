@@ -1374,6 +1374,98 @@ export type Database = {
         }
         Relationships: []
       }
+      upsell_offers: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["upsell_offer_kind"]
+          media_post_id: string | null
+          position: number
+          price_cents: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["upsell_offer_kind"]
+          media_post_id?: string | null
+          position?: number
+          price_cents: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["upsell_offer_kind"]
+          media_post_id?: string | null
+          position?: number
+          price_cents?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      upsell_purchases: {
+        Row: {
+          amount_cents: number
+          buyer_id: string
+          created_at: string
+          creator_id: string
+          id: string
+          offer_id: string
+          origin: string
+          paid_at: string | null
+          parent_charge_id: string | null
+          pix_charge_id: string | null
+          status: string
+        }
+        Insert: {
+          amount_cents: number
+          buyer_id: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          offer_id: string
+          origin: string
+          paid_at?: string | null
+          parent_charge_id?: string | null
+          pix_charge_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          buyer_id?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          offer_id?: string
+          origin?: string
+          paid_at?: string | null
+          parent_charge_id?: string | null
+          pix_charge_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upsell_purchases_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "upsell_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1621,7 +1713,13 @@ export type Database = {
         | "non_subscribers"
         | "all_contacts"
         | "tag"
-      pix_charge_purpose: "subscription" | "ppv" | "tip" | "goal" | "chat_ppv"
+      pix_charge_purpose:
+        | "subscription"
+        | "ppv"
+        | "tip"
+        | "goal"
+        | "chat_ppv"
+        | "upsell"
       pix_charge_status:
         | "pending"
         | "paid"
@@ -1640,6 +1738,7 @@ export type Database = {
         | "withdrawal"
         | "affiliate_commission"
         | "chat_ppv"
+      upsell_offer_kind: "order_bump" | "post_purchase_upsell"
       withdrawal_status:
         | "pending"
         | "approved"
@@ -1791,7 +1890,14 @@ export const Constants = {
         "all_contacts",
         "tag",
       ],
-      pix_charge_purpose: ["subscription", "ppv", "tip", "goal", "chat_ppv"],
+      pix_charge_purpose: [
+        "subscription",
+        "ppv",
+        "tip",
+        "goal",
+        "chat_ppv",
+        "upsell",
+      ],
       pix_charge_status: [
         "pending",
         "paid",
@@ -1812,6 +1918,7 @@ export const Constants = {
         "affiliate_commission",
         "chat_ppv",
       ],
+      upsell_offer_kind: ["order_bump", "post_purchase_upsell"],
       withdrawal_status: [
         "pending",
         "approved",
