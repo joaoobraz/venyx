@@ -205,6 +205,11 @@ export function SubscribeModal({
               onSubscribed?.();
               onOpenChange(false);
               setTimeout(() => setUpsellOpen(true), 500);
+            } else if (s.status === "expired" || s.status === "cancelled") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              toast.error("Este Pix expirou. Gere uma nova cobrança.");
+              setStep("plan");
+              setPix(null);
             }
           } catch (e) {
             console.error(e);
