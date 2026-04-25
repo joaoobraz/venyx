@@ -121,7 +121,7 @@ function WalletPage() {
 
   const loadAll = useCallback(async () => {
     if (!user) return;
-    const [{ data: bal }, { data: k }, { data: ws }, { data: kyc }] = await Promise.all([
+    const [{ data: bal }, { data: k }, { data: ws }, { data: kyc }, { data: txList }, { data: ps }] = await Promise.all([
       supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
       supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
@@ -135,6 +135,19 @@ function WalletPage() {
         .select("status")
         .eq("user_id", user.id)
         .eq("status", "approved")
+        .maybeSingle(),
+      supabase
+        .from("transactions")
+        .select("id, type, amount_cents, created_at, payer_id, reference_id, gateway")
+        .eq("payee_id", user.id)
+        .eq("status", "paid")
+        .in("type", ["subscription", "ppv", "tip", "affiliate_commission"])
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("platform_settings")
+        .select("platform_fee_pct, hold_days")
+        .eq("id", 1)
         .maybeSingle(),
     ]);
     setBalance(
@@ -154,6 +167,25 @@ function WalletPage() {
     }
     setWithdrawals((ws ?? []) as Withdrawal[]);
     setKycApproved(!!(kyc as KycRow | null));
+    const txArr = (txList ?? []) as TxRow[];
+    setTxs(txArr);
+    if (ps) setSettings(ps as PlatformSettings);
+
+    // Buscar nomes dos pagadores
+    const payerIds = Array.from(new Set(txArr.map((t) => t.payer_id).filter(Boolean))) as string[];
+    if (payerIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name")
+        .in("user_id", payerIds);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: { user_id: string; username: string; display_name: string | null }) => {
+        map[p.user_id] = p.display_name || p.username;
+      });
+      setPayerNames(map);
+    } else {
+      setPayerNames({});
+    }
   }, [user]);
 
   useEffect(() => {
