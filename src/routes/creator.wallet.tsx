@@ -64,6 +64,21 @@ interface KycRow {
   status: string;
 }
 
+interface TxRow {
+  id: string;
+  type: "subscription" | "ppv" | "tip" | "withdrawal" | "affiliate_commission" | string;
+  amount_cents: number;
+  created_at: string;
+  payer_id: string | null;
+  reference_id: string | null;
+  gateway: string | null;
+}
+
+interface PlatformSettings {
+  platform_fee_pct: number;
+  hold_days: number;
+}
+
 const fmt = (cents: number) =>
   `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
