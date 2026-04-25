@@ -149,7 +149,11 @@ export function SubscribeModal({
   };
 
   const startCheckout = async () => {
-    if (!user || !plan) return;
+    if (!plan) return;
+    if (!user) {
+      toast.error("Faça login para assinar.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await createChargeFn({
@@ -199,7 +203,17 @@ export function SubscribeModal({
         }, 4000);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      console.error("[SubscribeModal] checkout error", e);
+      if (e instanceof Response) {
+        if (e.status === 401) {
+          toast.error("Faça login para assinar.");
+        } else {
+          const txt = await e.text().catch(() => "");
+          toast.error(txt || `Erro ${e.status}`);
+        }
+      } else {
+        toast.error(e instanceof Error ? e.message : "Erro ao iniciar pagamento");
+      }
     } finally {
       setBusy(false);
     }
