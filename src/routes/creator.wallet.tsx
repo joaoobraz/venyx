@@ -90,6 +90,9 @@ function WalletPage() {
   const [key, setKey] = useState<PayoutKey | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [kycApproved, setKycApproved] = useState(false);
+  const [txs, setTxs] = useState<TxRow[]>([]);
+  const [payerNames, setPayerNames] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<PlatformSettings>({ platform_fee_pct: 15, hold_days: 1 });
 
   const [keyOpen, setKeyOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
