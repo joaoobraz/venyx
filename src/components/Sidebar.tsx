@@ -16,7 +16,6 @@ import {
   BarChart3,
   Mail,
   Link2,
-  Crown,
   UserCog,
   Banknote,
 } from "lucide-react";
