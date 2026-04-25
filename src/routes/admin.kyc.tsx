@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/kyc")({
     try {
       await requireAdminServer();
     } catch {
-      throw redirect({ to: "/feed" });
+      throw redirect({ to: "/403" });
     }
   },
   component: AdminKycPage,
