@@ -18,7 +18,6 @@ import {
   Star,
   ExternalLink,
   Eye,
-  Plus,
   Loader2,
   Upload,
   X as XIcon,
