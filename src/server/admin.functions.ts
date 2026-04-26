@@ -117,3 +117,34 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
       .select("*");
     return { decisions: data ?? [] };
   });
+
+/**
+ * Gera URL assinada para visualizar um documento KYC.
+ * Verifica o papel admin no servidor antes de chamar storage,
+ * impedindo bypass das guards de rota via cliente.
+ */
+export const getKycSignedUrlServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ path: z.string().min(1).max(500) }).parse(input)
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: roleRow } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!roleRow) throw new Error("forbidden");
+
+    const { data: signed, error } = await supabaseAdmin
+      .storage
+      .from("kyc")
+      .createSignedUrl(data.path, 300);
+    if (error || !signed) {
+      console.error("[admin.getKycSignedUrl]", error);
+      throw new Error("Não foi possível abrir o documento");
+    }
+    return { url: signed.signedUrl };
+  });
