@@ -165,7 +165,9 @@ async function checkNexusPagStatus(lookupId: string): Promise<NexusPagPixRespons
 const subPixSchema = z.object({
   creatorId: z.string().uuid(),
   months: z.number().int().min(1).max(24),
-  pricePerMonthCents: z.number().int().min(100).max(1_000_000),
+  // pricePerMonthCents é IGNORADO no servidor — mantido só para compat com chamadas antigas.
+  // O preço canônico vem de profiles.subscription_price_cents.
+  pricePerMonthCents: z.number().int().min(0).max(1_000_000).optional(),
   couponCode: z.string().trim().min(1).max(50).optional().nullable(),
   bumpOfferIds: z.array(z.string().uuid()).max(3).default([]),
 });
@@ -176,6 +178,18 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     if (data.creatorId === userId) throw new Error("Você não pode assinar a si mesmo");
+
+    // SECURITY: preço canônico vem do banco, NUNCA do cliente.
+    const { data: creatorProfile, error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .select("subscription_price_cents")
+      .eq("user_id", data.creatorId)
+      .maybeSingle();
+    if (profileErr || !creatorProfile) throw new Error("Criadora não encontrada");
+    const pricePerMonthCents = creatorProfile.subscription_price_cents ?? 0;
+    if (pricePerMonthCents < 100) {
+      throw new Error("Esta criadora ainda não definiu um preço de assinatura.");
+    }
 
     // Cupom (validar trial / desconto no servidor)
     let trialDays = 0;
@@ -196,7 +210,7 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
       }
     }
 
-    const subSubtotal = data.pricePerMonthCents * data.months;
+    const subSubtotal = pricePerMonthCents * data.months;
     const subDiscounted = discountPct ? Math.round(subSubtotal * (1 - discountPct / 100)) : subSubtotal;
     const isTrial = trialDays > 0;
 
