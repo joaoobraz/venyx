@@ -20,7 +20,8 @@ const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => 
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      // Inline script de tema usa hash CSP em vez de 'unsafe-inline'
+      "script-src 'self' 'sha256-szfWHYoOn5tAdFFisCc0Q4JfDbV5o6wkpU8XsQTSdjg='",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
