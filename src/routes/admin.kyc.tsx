@@ -216,14 +216,16 @@ function DocPreview({ path, label }: { path: string; label: string }) {
   const sign = async () => {
     if (url) return url;
     setLoading(true);
-    const { data, error } = await supabase.storage.from("kyc").createSignedUrl(path, 300);
-    setLoading(false);
-    if (error || !data) {
+    try {
+      const { url: signedUrl } = await getKycSignedUrlServer({ data: { path } });
+      setLoading(false);
+      setUrl(signedUrl);
+      return signedUrl;
+    } catch {
+      setLoading(false);
       toast.error("Não foi possível abrir o documento");
       return null;
     }
-    setUrl(data.signedUrl);
-    return data.signedUrl;
   };
 
   const view = async () => {
@@ -232,13 +234,19 @@ function DocPreview({ path, label }: { path: string; label: string }) {
   };
 
   const download = async () => {
-    const { data, error } = await supabase.storage.from("kyc").download(path);
-    if (error || !data) return toast.error("Falha no download");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(data);
-    a.download = path.split("/").pop() ?? "kyc";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const u = await sign();
+    if (!u) return;
+    try {
+      const res = await fetch(u);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = path.split("/").pop() ?? "kyc";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast.error("Falha no download");
+    }
   };
 
   return (
