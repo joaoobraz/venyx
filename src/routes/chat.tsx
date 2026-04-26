@@ -189,6 +189,13 @@ function ChatPage() {
       });
       if (error) throw error;
       setDraft("");
+      // Notifica o destinatário via broadcast (sem expor conteúdo)
+      await supabase.channel(`thread-${active.id}`).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {},
+      });
+      await loadMessages(active.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
