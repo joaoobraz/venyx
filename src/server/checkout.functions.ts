@@ -241,7 +241,7 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
       const { error: se } = await supabaseAdmin.from("subscriptions").insert({
         subscriber_id: userId,
         creator_id: data.creatorId,
-        price_cents: data.pricePerMonthCents,
+        price_cents: pricePerMonthCents,
         status: "active",
         current_period_end: periodEnd.toISOString(),
       });
