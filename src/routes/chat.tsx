@@ -127,7 +127,7 @@ function ChatPage() {
       return;
     }
     setMessages(
-      ((msgs ?? []) as Omit<Message, "unlocked"> & { unlocked: boolean }[]).map((m) => ({
+      ((msgs ?? []) as Array<Omit<Message, "unlocked"> & { unlocked: boolean }>).map((m) => ({
         ...m,
         unlocked: m.unlocked,
       })),
