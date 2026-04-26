@@ -224,6 +224,12 @@ function ChatPage() {
       if (ie) throw ie;
       setPpvPrice("");
       toast.success(ppvCents ? `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})` : "Mídia enviada");
+      await supabase.channel(`thread-${active.id}`).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {},
+      });
+      await loadMessages(active.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     } finally {
