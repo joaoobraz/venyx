@@ -1639,6 +1639,23 @@ export type Database = {
           visibility: Database["public"]["Enums"]["post_visibility"]
         }[]
       }
+      list_thread_messages: {
+        Args: { _thread_id: string }
+        Returns: {
+          body: string
+          campaign_id: string
+          created_at: string
+          id: string
+          media_path: string
+          mime_type: string
+          ppv_price_cents: number
+          read_at: string
+          sender_id: string
+          subscribers_only: boolean
+          thread_id: string
+          unlocked: boolean
+        }[]
+      }
       lookup_affiliate_code: {
         Args: { _code: string }
         Returns: {

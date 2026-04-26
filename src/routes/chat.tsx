@@ -117,19 +117,19 @@ function ChatPage() {
 
   const loadMessages = async (threadId: string) => {
     if (!user) return;
-    const [{ data: msgs }, { data: unlocks }] = await Promise.all([
-      supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("thread_id", threadId)
-        .order("created_at", { ascending: true }),
-      supabase.from("chat_ppv_unlocks").select("message_id").eq("user_id", user.id),
-    ]);
-    const unlockSet = new Set(((unlocks ?? []) as { message_id: string }[]).map((u) => u.message_id));
+    // Usa RPC segura: mascara media_path/mime_type para PPV não desbloqueado
+    // ou subscribers_only sem assinatura ativa.
+    const { data: msgs, error } = await supabase.rpc("list_thread_messages", {
+      _thread_id: threadId,
+    });
+    if (error) {
+      console.error("[chat.loadMessages]", error);
+      return;
+    }
     setMessages(
-      ((msgs ?? []) as Omit<Message, "unlocked">[]).map((m) => ({
+      ((msgs ?? []) as Array<Omit<Message, "unlocked"> & { unlocked: boolean }>).map((m) => ({
         ...m,
-        unlocked: m.sender_id === user.id || unlockSet.has(m.id) || m.ppv_price_cents === 0,
+        unlocked: m.unlocked,
       })),
     );
   };
@@ -143,16 +143,12 @@ function ChatPage() {
     if (activeId) loadMessages(activeId);
   }, [activeId]);
 
-  // Realtime
+  // Realtime via broadcast (sem expor o payload da mensagem)
   useEffect(() => {
     if (!activeId) return;
     const ch = supabase
-      .channel(`thread-${activeId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `thread_id=eq.${activeId}` },
-        () => loadMessages(activeId),
-      )
+      .channel(`thread-${activeId}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "new_message" }, () => loadMessages(activeId))
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -193,6 +189,13 @@ function ChatPage() {
       });
       if (error) throw error;
       setDraft("");
+      // Notifica o destinatário via broadcast (sem expor conteúdo)
+      await supabase.channel(`thread-${active.id}`).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {},
+      });
+      await loadMessages(active.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
@@ -221,6 +224,12 @@ function ChatPage() {
       if (ie) throw ie;
       setPpvPrice("");
       toast.success(ppvCents ? `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})` : "Mídia enviada");
+      await supabase.channel(`thread-${active.id}`).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {},
+      });
+      await loadMessages(active.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     } finally {
