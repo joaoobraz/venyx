@@ -5,21 +5,21 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
  * SECURITY P0:
- * Todas as operações de pagamento (PPV, tip, contribuição de meta, assinatura)
- * passaram a fluir por aqui. O cliente NÃO grava mais em `transactions`.
+ * Estes endpoints históricos aceitavam um "mock_token" como prova de pagamento,
+ * o que permitia a qualquer usuário autenticado desbloquear conteúdo, fingir
+ * assinatura ou enviar gorjeta sem pagar. Foram DESATIVADOS.
  *
- * Em produção real, o handler deve receber o token do gateway (Stripe/Pix/Paddle)
- * e validar o pagamento ANTES de gravar status='paid'. Por enquanto usamos um
- * "mock_token" para manter o fluxo funcional, mas a entrada de dados está isolada
- * no servidor com service-role e o cliente não pode mais forjar transações.
+ * Todo fluxo de pagamento agora exige uma cobrança Pix real via NexusPag —
+ * use as funções em `src/server/checkout.functions.ts` (createSubscriptionPixCharge,
+ * createTipPixCharge, etc.). A liberação do conteúdo é feita pelo webhook
+ * (`/api/public/nexuspag-webhook`) ou pelo polling de `getChargeStatus`,
+ * que chamam `fulfillPaidCharge` em `payments-fulfillment.server.ts`.
  */
 
-// --------- Validação simulada do gateway ---------
-// Substitua isto pela chamada real (stripe.paymentIntents.retrieve, etc).
-function validateGatewayToken(token: string, expectedAmountCents: number): boolean {
-  if (!token || typeof token !== "string") return false;
-  if (token.startsWith("mock_")) return expectedAmountCents > 0;
-  return false;
+function disabled(): never {
+  throw new Error(
+    "Este fluxo de pagamento foi desativado. Use o checkout Pix oficial."
+  );
 }
 
 // Sanitiza erros do banco para não vazar nomes de tabelas/colunas/constraints ao cliente.
