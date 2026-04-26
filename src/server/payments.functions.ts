@@ -89,6 +89,6 @@ const chatPpvSchema = z.object({
 export const unlockChatPpvServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => chatPpvSchema.parse(input))
-  .handler(async () => {
+  .handler(async (): Promise<{ ok: true; alreadyUnlocked: boolean }> => {
     throw new Error(DISABLED_MSG);
   });
