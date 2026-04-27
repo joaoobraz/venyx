@@ -48,6 +48,7 @@ import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminActionsAuditRouteImport } from './routes/admin.actions-audit'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
 
 const TestPixRoute = TestPixRouteImport.update({
@@ -246,6 +247,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminActionsAuditRoute = AdminActionsAuditRouteImport.update({
+  id: '/admin/actions-audit',
+  path: '/admin/actions-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNexuspagWebhookRoute =
   ApiPublicNexuspagWebhookRouteImport.update({
     id: '/api/public/nexuspag-webhook',
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
     | '/admin/kyc'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
     | '/admin/kyc'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
     | '/admin/kyc'
@@ -526,6 +538,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   TestPixRoute: typeof TestPixRoute
+  AdminActionsAuditRoute: typeof AdminActionsAuditRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminDmcaRoute: typeof AdminDmcaRoute
   AdminKycRoute: typeof AdminKycRoute
@@ -827,6 +840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/actions-audit': {
+      id: '/admin/actions-audit'
+      path: '/admin/actions-audit'
+      fullPath: '/admin/actions-audit'
+      preLoaderRoute: typeof AdminActionsAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/nexuspag-webhook': {
       id: '/api/public/nexuspag-webhook'
       path: '/api/public/nexuspag-webhook'
@@ -854,6 +874,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   TestPixRoute: TestPixRoute,
+  AdminActionsAuditRoute: AdminActionsAuditRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminDmcaRoute: AdminDmcaRoute,
   AdminKycRoute: AdminKycRoute,

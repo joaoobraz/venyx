@@ -126,6 +126,12 @@ function AdminHomePage() {
       icon: ShieldCheck,
       link: "/admin/audit",
     },
+    {
+      title: "Auditoria de ações",
+      description: "Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.",
+      icon: ShieldCheck,
+      link: "/admin/actions-audit",
+    },
   ];
 
   return (
