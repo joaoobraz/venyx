@@ -296,3 +296,23 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================
+ * Proteção de conteúdo (anti-cópia básica)
+ * Marque mídias sensíveis com a classe `protected-media`
+ * para bloquear arrasto, long-press de salvar e seleção.
+ * Não substitui DRM/HLS-AES — é apenas dissuasão.
+ * ============================================ */
+.protected-media,
+.protected-media img,
+.protected-media video {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+}
+.protected-media img,
+.protected-media video {
+  -webkit-touch-callout: none;
+}
