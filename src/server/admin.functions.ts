@@ -148,3 +148,104 @@ export const getKycSignedUrlServer = createServerFn({ method: "POST" })
     }
     return { url: signed.signedUrl };
   });
+
+/**
+ * Helper: garante que o caller é admin (consulta user_roles via service role).
+ */
+async function assertAdmin(userId: string) {
+  const { data: roleRow } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleRow) throw new Error("forbidden");
+}
+
+const kycDecisionSchema = z.object({
+  kycId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+  rejectionReason: z.string().min(3).max(500).optional(),
+});
+
+/**
+ * Aprova ou rejeita um KYC. Em caso de aprovação, promove a usuária a creator
+ * e marca o profile como verificado. Tudo via service role no servidor.
+ */
+export const reviewKycServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => kycDecisionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    await assertAdmin(userId);
+
+    const { data: kyc, error: kycErr } = await supabaseAdmin
+      .from("kyc_requests")
+      .select("id, user_id, status")
+      .eq("id", data.kycId)
+      .maybeSingle();
+    if (kycErr || !kyc) throw new Error("KYC não encontrado");
+
+    if (data.decision === "rejected") {
+      if (!data.rejectionReason) throw new Error("Motivo obrigatório");
+      const { error } = await supabaseAdmin
+        .from("kyc_requests")
+        .update({
+          status: "rejected",
+          rejection_reason: data.rejectionReason,
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", data.kycId);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    // approved
+    const { error: e1 } = await supabaseAdmin
+      .from("kyc_requests")
+      .update({
+        status: "approved",
+        rejection_reason: null,
+        reviewed_by: userId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", data.kycId);
+    if (e1) throw new Error(e1.message);
+
+    const { error: e2 } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: kyc.user_id, role: "creator" });
+    if (e2 && !e2.message.toLowerCase().includes("duplicate")) {
+      throw new Error(e2.message);
+    }
+
+    await supabaseAdmin
+      .from("profiles")
+      .update({ is_verified: true })
+      .eq("user_id", kyc.user_id);
+
+    return { ok: true };
+  });
+
+const dmcaSchema = z.object({
+  reportId: z.string().uuid(),
+  status: z.enum(["notified", "resolved", "rejected"]),
+  adminNotes: z.string().max(2000).optional().nullable(),
+});
+
+export const updateDmcaReportServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => dmcaSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("dmca_reports")
+      .update({
+        status: data.status,
+        admin_notes: data.adminNotes ?? null,
+      })
+      .eq("id", data.reportId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
