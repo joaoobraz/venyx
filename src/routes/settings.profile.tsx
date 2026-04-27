@@ -159,6 +159,37 @@ function SettingsProfile() {
             </div>
           </div>
 
+          {isCreator && (
+            <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label className="flex items-center gap-2 text-base">
+                    <Gift className="h-4 w-4 text-accent" /> Trial grátis
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ofereça alguns dias grátis para novos assinantes (1 trial por pessoa).
+                  </p>
+                </div>
+                <Switch checked={trialEnabled} onCheckedChange={setTrialEnabled} />
+              </div>
+              {trialEnabled && (
+                <div>
+                  <Label htmlFor="td" className="text-sm">Dias de trial: {trialDays}</Label>
+                  <input
+                    id="td"
+                    type="range"
+                    min={1}
+                    max={14}
+                    step={1}
+                    value={trialDays}
+                    onChange={(e) => setTrialDays(Number(e.target.value))}
+                    className="mt-2 w-full accent-accent"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {saving ? "Salvando..." : "Salvar"}
           </Button>
