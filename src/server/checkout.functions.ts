@@ -417,6 +417,233 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
   });
 
 // =====================================================
+// Cobrança Pix de PPV (post bloqueado)
+// =====================================================
+const ppvPixSchema = z.object({
+  postId: z.string().uuid(),
+});
+
+export const createPpvPixCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ppvPixSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: post } = await supabaseAdmin
+      .from("posts")
+      .select("id, creator_id, price_cents, visibility, body")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!post) throw new Error("Post não encontrado");
+    if (post.visibility !== "ppv") throw new Error("Este post não é PPV");
+    if (post.creator_id === userId) throw new Error("Você não pode comprar seu próprio post");
+    if (!post.price_cents || post.price_cents < 100) throw new Error("Preço PPV inválido");
+
+    // Já desbloqueado?
+    const { data: existing } = await supabaseAdmin
+      .from("ppv_unlocks")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("post_id", post.id)
+      .maybeSingle();
+    if (existing) {
+      return { alreadyUnlocked: true as const };
+    }
+
+    const externalId = `ppv_${userId.slice(0, 8)}_${Date.now()}`;
+    const description = `Desbloqueio PPV`;
+    const gateway = await callNexusPag(post.price_cents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
+
+    const { data: charge, error: ce } = await supabaseAdmin
+      .from("pix_charges")
+      .insert({
+        external_id: externalId,
+        gateway_transaction_id: px.id,
+        payer_id: userId,
+        payee_id: post.creator_id,
+        purpose: "ppv",
+        amount_cents: post.price_cents,
+        status: "pending",
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
+        reference_id: post.id,
+        metadata: { post_id: post.id },
+      })
+      .select("id, qr_code, qr_code_base64, expires_at, external_id")
+      .single();
+
+    if (ce || !charge) {
+      console.error("[createPpvPixCharge] erro", ce);
+      throw new Error("Falha ao registrar cobrança");
+    }
+
+    return {
+      chargeId: charge.id,
+      externalId: charge.external_id,
+      qrCode: charge.qr_code,
+      qrCodeBase64: charge.qr_code_base64,
+      expiresAt: charge.expires_at,
+      amountCents: post.price_cents,
+    };
+  });
+
+// =====================================================
+// Cobrança Pix de contribuição para meta (goal)
+// =====================================================
+const goalPixSchema = z.object({
+  postId: z.string().uuid(),
+});
+
+export const createGoalPixCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => goalPixSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: post } = await supabaseAdmin
+      .from("posts")
+      .select("id, creator_id, visibility")
+      .eq("id", data.postId)
+      .maybeSingle();
+    if (!post) throw new Error("Post não encontrado");
+    if (post.visibility !== "goal") throw new Error("Este post não tem meta");
+    if (post.creator_id === userId) throw new Error("Você não pode contribuir no seu próprio post");
+
+    const { data: goal } = await supabaseAdmin
+      .from("post_goals")
+      .select("unlock_price_cents, is_unlocked")
+      .eq("post_id", post.id)
+      .maybeSingle();
+    if (!goal) throw new Error("Meta não encontrada");
+    if (!goal.unlock_price_cents || goal.unlock_price_cents < 100) throw new Error("Valor de contribuição inválido");
+
+    const externalId = `goal_${userId.slice(0, 8)}_${Date.now()}`;
+    const description = `Contribuição para meta`;
+    const gateway = await callNexusPag(goal.unlock_price_cents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
+
+    const { data: charge, error: ce } = await supabaseAdmin
+      .from("pix_charges")
+      .insert({
+        external_id: externalId,
+        gateway_transaction_id: px.id,
+        payer_id: userId,
+        payee_id: post.creator_id,
+        purpose: "goal",
+        amount_cents: goal.unlock_price_cents,
+        status: "pending",
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
+        reference_id: post.id,
+        metadata: { post_id: post.id, kind: "goal_contribution" },
+      })
+      .select("id, qr_code, qr_code_base64, expires_at, external_id")
+      .single();
+
+    if (ce || !charge) {
+      console.error("[createGoalPixCharge] erro", ce);
+      throw new Error("Falha ao registrar cobrança");
+    }
+
+    return {
+      chargeId: charge.id,
+      externalId: charge.external_id,
+      qrCode: charge.qr_code,
+      qrCodeBase64: charge.qr_code_base64,
+      expiresAt: charge.expires_at,
+      amountCents: goal.unlock_price_cents,
+    };
+  });
+
+// =====================================================
+// Cobrança Pix de PPV no chat (mensagem PPV)
+// =====================================================
+const chatPpvPixSchema = z.object({
+  messageId: z.string().uuid(),
+});
+
+export const createChatPpvPixCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => chatPpvPixSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: msg } = await supabaseAdmin
+      .from("chat_messages")
+      .select("id, sender_id, ppv_price_cents, thread_id")
+      .eq("id", data.messageId)
+      .maybeSingle();
+    if (!msg) throw new Error("Mensagem não encontrada");
+    if (msg.sender_id === userId) throw new Error("Você não pode comprar sua própria mídia");
+    if (!msg.ppv_price_cents || msg.ppv_price_cents < 100) throw new Error("Mensagem não é PPV");
+
+    // Confirma que o usuário é participante da thread
+    const { data: thread } = await supabaseAdmin
+      .from("chat_threads")
+      .select("user_a, user_b")
+      .eq("id", msg.thread_id)
+      .maybeSingle();
+    if (!thread || (thread.user_a !== userId && thread.user_b !== userId)) {
+      throw new Error("Acesso negado à conversa");
+    }
+
+    // Já desbloqueado?
+    const { data: existing } = await supabaseAdmin
+      .from("chat_ppv_unlocks")
+      .select("message_id")
+      .eq("message_id", msg.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (existing) {
+      return { alreadyUnlocked: true as const };
+    }
+
+    const externalId = `cppv_${userId.slice(0, 8)}_${Date.now()}`;
+    const description = `Desbloqueio mídia no chat`;
+    const gateway = await callNexusPag(msg.ppv_price_cents / 100, description, externalId);
+    if (!gateway.ok) return gateway;
+    const px = gateway.pix;
+
+    const { data: charge, error: ce } = await supabaseAdmin
+      .from("pix_charges")
+      .insert({
+        external_id: externalId,
+        gateway_transaction_id: px.id,
+        payer_id: userId,
+        payee_id: msg.sender_id,
+        purpose: "chat_ppv",
+        amount_cents: msg.ppv_price_cents,
+        status: "pending",
+        qr_code: px.qrCode,
+        qr_code_base64: px.qrCodeBase64,
+        expires_at: px.expiresAt,
+        reference_id: msg.id,
+        metadata: { message_id: msg.id, thread_id: msg.thread_id },
+      })
+      .select("id, qr_code, qr_code_base64, expires_at, external_id")
+      .single();
+
+    if (ce || !charge) {
+      console.error("[createChatPpvPixCharge] erro", ce);
+      throw new Error("Falha ao registrar cobrança");
+    }
+
+    return {
+      chargeId: charge.id,
+      externalId: charge.external_id,
+      qrCode: charge.qr_code,
+      qrCodeBase64: charge.qr_code_base64,
+      expiresAt: charge.expires_at,
+      amountCents: msg.ppv_price_cents,
+    };
+  });
+
+// =====================================================
 // Polling de status (usado pelo modal pra detectar paid)
 // =====================================================
 const statusSchema = z.object({ chargeId: z.string().uuid() });
