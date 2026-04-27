@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TestPixRouteImport } from './routes/test-pix'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -17,6 +18,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PalettePreviewRouteImport } from './routes/palette-preview'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
@@ -36,6 +38,7 @@ import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
 import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
@@ -51,6 +54,11 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminActionsAuditRouteImport } from './routes/admin.actions-audit'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
 
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TestPixRoute = TestPixRouteImport.update({
   id: '/test-pix',
   path: '/test-pix',
@@ -89,6 +97,11 @@ const PalettePreviewRoute = PalettePreviewRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -187,6 +200,11 @@ const CreatorMailingRoute = CreatorMailingRouteImport.update({
   path: '/creator/mailing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
+  id: '/creator/loyalty',
+  path: '/creator/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorLinksRoute = CreatorLinksRouteImport.update({
   id: '/creator/links',
   path: '/creator/links',
@@ -268,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
+  '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
@@ -276,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
@@ -289,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/links': typeof CreatorLinksRoute
+  '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
@@ -311,6 +332,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
+  '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
@@ -319,6 +341,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
@@ -332,6 +355,7 @@ export interface FileRoutesByTo {
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/links': typeof CreatorLinksRoute
+  '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
@@ -355,6 +379,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/login': typeof LoginRoute
+  '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
@@ -363,6 +388,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/test-pix': typeof TestPixRoute
+  '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/dmca': typeof AdminDmcaRoute
@@ -376,6 +402,7 @@ export interface FileRoutesById {
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
   '/creator/links': typeof CreatorLinksRoute
+  '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
@@ -400,6 +427,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/login'
+    | '/loyalty'
     | '/notifications'
     | '/palette-preview'
     | '/privacy'
@@ -408,6 +436,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
@@ -421,6 +450,7 @@ export interface FileRouteTypes {
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/links'
+    | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
@@ -443,6 +473,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/login'
+    | '/loyalty'
     | '/notifications'
     | '/palette-preview'
     | '/privacy'
@@ -451,6 +482,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
@@ -464,6 +496,7 @@ export interface FileRouteTypes {
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/links'
+    | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
@@ -486,6 +519,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/login'
+    | '/loyalty'
     | '/notifications'
     | '/palette-preview'
     | '/privacy'
@@ -494,6 +528,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/test-pix'
+    | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
     | '/admin/dmca'
@@ -507,6 +542,7 @@ export interface FileRouteTypes {
     | '/creator/coupons'
     | '/creator/dmca'
     | '/creator/links'
+    | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/posts'
     | '/creator/subscription-plans'
@@ -530,6 +566,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
   LoginRoute: typeof LoginRoute
+  LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
   PalettePreviewRoute: typeof PalettePreviewRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -538,6 +575,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   TestPixRoute: typeof TestPixRoute
+  WishlistRoute: typeof WishlistRoute
   AdminActionsAuditRoute: typeof AdminActionsAuditRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminDmcaRoute: typeof AdminDmcaRoute
@@ -551,6 +589,7 @@ export interface RootRouteChildren {
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
   CreatorLinksRoute: typeof CreatorLinksRoute
+  CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
@@ -567,6 +606,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/test-pix': {
       id: '/test-pix'
       path: '/test-pix'
@@ -621,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -756,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorMailingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/loyalty': {
+      id: '/creator/loyalty'
+      path: '/creator/loyalty'
+      fullPath: '/creator/loyalty'
+      preLoaderRoute: typeof CreatorLoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/links': {
       id: '/creator/links'
       path: '/creator/links'
@@ -866,6 +926,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
   LoginRoute: LoginRoute,
+  LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
   PalettePreviewRoute: PalettePreviewRoute,
   PrivacyRoute: PrivacyRoute,
@@ -874,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   TestPixRoute: TestPixRoute,
+  WishlistRoute: WishlistRoute,
   AdminActionsAuditRoute: AdminActionsAuditRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminDmcaRoute: AdminDmcaRoute,
@@ -887,6 +949,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
   CreatorLinksRoute: CreatorLinksRoute,
+  CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,

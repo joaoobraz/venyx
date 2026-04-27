@@ -592,6 +592,60 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_ledger: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          points_delta: number
+          reason: string
+          ref_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          points_delta: number
+          reason: string
+          ref_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          points_delta?: number
+          reason?: string
+          ref_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_points: {
+        Row: {
+          creator_id: string
+          points: number
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          creator_id: string
+          points?: number
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          creator_id?: string
+          points?: number
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mass_dm_campaigns: {
         Row: {
           body: string | null
@@ -1109,6 +1163,8 @@ export type Database = {
           links: Json | null
           location: string | null
           subscription_price_cents: number | null
+          trial_days: number
+          trial_days_enabled: boolean
           updated_at: string
           user_id: string
           username: string
@@ -1127,6 +1183,8 @@ export type Database = {
           links?: Json | null
           location?: string | null
           subscription_price_cents?: number | null
+          trial_days?: number
+          trial_days_enabled?: boolean
           updated_at?: string
           user_id: string
           username: string
@@ -1145,6 +1203,8 @@ export type Database = {
           links?: Json | null
           location?: string | null
           subscription_price_cents?: number | null
+          trial_days?: number
+          trial_days_enabled?: boolean
           updated_at?: string
           user_id?: string
           username?: string
@@ -1335,12 +1395,33 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_trials_used: {
+        Row: {
+          creator_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          creator_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          creator_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
           creator_id: string
           current_period_end: string | null
           id: string
+          is_trial: boolean
+          months: number | null
+          plan_id: string | null
           price_cents: number
           status: Database["public"]["Enums"]["subscription_status"]
           subscriber_id: string
@@ -1351,6 +1432,9 @@ export type Database = {
           creator_id: string
           current_period_end?: string | null
           id?: string
+          is_trial?: boolean
+          months?: number | null
+          plan_id?: string | null
           price_cents: number
           status?: Database["public"]["Enums"]["subscription_status"]
           subscriber_id: string
@@ -1361,6 +1445,9 @@ export type Database = {
           creator_id?: string
           current_period_end?: string | null
           id?: string
+          is_trial?: boolean
+          months?: number | null
+          plan_id?: string | null
           price_cents?: number
           status?: Database["public"]["Enums"]["subscription_status"]
           subscriber_id?: string
@@ -1555,6 +1642,30 @@ export type Database = {
           },
         ]
       }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           admin_notes: string | null
@@ -1628,6 +1739,17 @@ export type Database = {
       }
     }
     Functions: {
+      award_loyalty_points: {
+        Args: {
+          _creator_id: string
+          _delta: number
+          _reason: string
+          _ref_id?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      calc_loyalty_tier: { Args: { _points: number }; Returns: string }
       can_view_post: {
         Args: { _post_id: string; _viewer_id: string }
         Returns: boolean
@@ -1702,6 +1824,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      mass_dm_campaign_revenue: {
+        Args: { _creator_id: string }
+        Returns: {
+          campaign_id: string
+          revenue_cents: number
+          unlocks_count: number
+        }[]
+      }
       mass_send_dm: {
         Args: {
           _body: string
@@ -1742,6 +1872,7 @@ export type Database = {
           sent: number
         }[]
       }
+      start_creator_trial: { Args: { _creator_id: string }; Returns: Json }
       storage_path_to_post_id: { Args: { _path: string }; Returns: string }
       validate_coupon: {
         Args: { _code: string; _creator_id: string }

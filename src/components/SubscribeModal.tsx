@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UpsellModal } from "@/components/UpsellModal";
+import { startTrial, checkTrialEligibility } from "@/server/trial.functions";
 
 interface Plan {
   id: string;
@@ -80,6 +81,10 @@ export function SubscribeModal({
   const [copied, setCopied] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [trialInfo, setTrialInfo] = useState<{ eligible: boolean; days: number }>({ eligible: false, days: 0 });
+  const [trialBusy, setTrialBusy] = useState(false);
+  const startTrialFn = useServerFn(startTrial);
+  const checkTrialFn = useServerFn(checkTrialEligibility);
 
   // reset on close
   useEffect(() => {
@@ -132,6 +137,34 @@ export function SubscribeModal({
         });
     }
   }, [open, creatorId, basePriceCents, listOffersFn]);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    checkTrialFn({ data: { creatorId } })
+      .then((res) => {
+        if (res.eligible) setTrialInfo({ eligible: true, days: res.trialDays ?? 0 });
+        else setTrialInfo({ eligible: false, days: 0 });
+      })
+      .catch(() => setTrialInfo({ eligible: false, days: 0 }));
+  }, [open, user, creatorId, checkTrialFn]);
+
+  const activateTrial = async () => {
+    setTrialBusy(true);
+    try {
+      const res = await startTrialFn({ data: { creatorId } });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`Trial de ${res.trialDays} dias ativado! 🎁`);
+      onSubscribed?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao iniciar trial");
+    } finally {
+      setTrialBusy(false);
+    }
+  };
 
   const plan = plans.find((p) => p.months === selected) ?? plans[0];
   const subSubtotal = plan ? plan.price_cents * plan.months : 0;
@@ -254,6 +287,25 @@ export function SubscribeModal({
 
           {step === "plan" && (
             <div className="space-y-3">
+              {trialInfo.eligible && (
+                <div className="space-y-2 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/15 to-primary/10 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Gift className="h-5 w-5 text-accent" />
+                    🎁 {trialInfo.days} {trialInfo.days === 1 ? "dia grátis" : "dias grátis"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Experimente sem pagar. Cancele a qualquer momento antes do término.
+                  </p>
+                  <Button
+                    onClick={activateTrial}
+                    disabled={trialBusy}
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    {trialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Começar ${trialInfo.days} ${trialInfo.days === 1 ? "dia" : "dias"} grátis`}
+                  </Button>
+                  <p className="text-center text-[10px] text-muted-foreground">— ou escolha um plano abaixo —</p>
+                </div>
+              )}
               {coupon && (
                 <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
                   {isTrial ? <Gift className="h-4 w-4 text-accent" /> : <Tag className="h-4 w-4 text-accent" />}

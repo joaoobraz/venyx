@@ -9,18 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
+import { Switch } from "@/components/ui/switch";
+import { Gift } from "lucide-react";
 
 export const Route = createFileRoute("/settings/profile")({
   component: SettingsProfile,
 });
 
 function SettingsProfile() {
-  const { user, profile, refresh, loading } = useAuth();
+  const { user, profile, isCreator, refresh, loading } = useAuth();
   const nav = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [wmPosition, setWmPosition] = useState<WatermarkPosition>("bottom-right");
   const [wmOpacity, setWmOpacity] = useState(0.6);
+  const [trialEnabled, setTrialEnabled] = useState(false);
+  const [trialDays, setTrialDays] = useState(3);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -31,9 +35,16 @@ function SettingsProfile() {
     if (profile) {
       setDisplayName(profile.display_name ?? "");
       setBio(profile.bio ?? "");
-      const p = (profile as unknown as { watermark_position?: string; watermark_opacity?: number });
+      const p = (profile as unknown as {
+        watermark_position?: string;
+        watermark_opacity?: number;
+        trial_days_enabled?: boolean;
+        trial_days?: number;
+      });
       if (p.watermark_position) setWmPosition(p.watermark_position as WatermarkPosition);
       if (typeof p.watermark_opacity === "number") setWmOpacity(p.watermark_opacity);
+      if (typeof p.trial_days_enabled === "boolean") setTrialEnabled(p.trial_days_enabled);
+      if (typeof p.trial_days === "number") setTrialDays(p.trial_days);
     }
   }, [profile]);
 
@@ -48,7 +59,9 @@ function SettingsProfile() {
         bio,
         watermark_position: wmPosition,
         watermark_opacity: wmOpacity,
-      })
+        trial_days_enabled: trialEnabled,
+        trial_days: Math.max(1, Math.min(14, trialDays)),
+      } as never)
       .eq("user_id", profile.user_id);
     setSaving(false);
     if (error) toast.error(error.message);
@@ -145,6 +158,37 @@ function SettingsProfile() {
               </div>
             </div>
           </div>
+
+          {isCreator && (
+            <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label className="flex items-center gap-2 text-base">
+                    <Gift className="h-4 w-4 text-accent" /> Trial grátis
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ofereça alguns dias grátis para novos assinantes (1 trial por pessoa).
+                  </p>
+                </div>
+                <Switch checked={trialEnabled} onCheckedChange={setTrialEnabled} />
+              </div>
+              {trialEnabled && (
+                <div>
+                  <Label htmlFor="td" className="text-sm">Dias de trial: {trialDays}</Label>
+                  <input
+                    id="td"
+                    type="range"
+                    min={1}
+                    max={14}
+                    step={1}
+                    value={trialDays}
+                    onChange={(e) => setTrialDays(Number(e.target.value))}
+                    className="mt-2 w-full accent-accent"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {saving ? "Salvando..." : "Salvar"}

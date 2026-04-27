@@ -19,6 +19,8 @@ import {
   UserCog,
   Banknote,
   Sparkles,
+  Heart,
+  Trophy,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -34,6 +36,8 @@ export function Sidebar() {
     { to: "/explore", label: t("nav.explore"), icon: Compass },
     { to: "/chat", label: t("nav.chat"), icon: MessageCircle },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
+    { to: "/wishlist", label: "Wishlist", icon: Heart },
+    { to: "/loyalty", label: "Fidelidade", icon: Trophy },
   ];
 
   const linkCls = (active: boolean) =>
@@ -88,6 +92,9 @@ export function Sidebar() {
             </Link>
             <Link to="/creator/mailing" className={linkCls(loc.pathname === "/creator/mailing")}>
               <Mail className="h-5 w-5" /> Mailing
+            </Link>
+            <Link to="/creator/loyalty" className={linkCls(loc.pathname === "/creator/loyalty")}>
+              <Trophy className="h-5 w-5" /> Top fãs
             </Link>
             <Link to="/creator/links" className={linkCls(loc.pathname === "/creator/links")}>
               <Link2 className="h-5 w-5" /> Árvore de Links

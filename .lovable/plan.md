@@ -1,70 +1,102 @@
-# Correções de Segurança — Scan do Backend
 
-O scan automatizado encontrou **9 problemas**: **2 críticos** (fraude de pagamento) e **7 avisos** (RLS frouxa, CSP, padrões inconsistentes).
+# Próximas 5 features
 
-## 🔴 CRÍTICOS — corrigir antes de publicar
+Resumo do que já existe (não vou refazer):
+- **Mass DM**: já há `mass_dm_campaigns` + `mass_dm_jobs` + RPC `enqueue_mass_dm` + página `/creator/mailing`. Já tem campo `ppv_price_cents` na campanha e no job. Falta UI clara de "DM em massa **paga**" + tracking de receita por campanha.
+- **Bundles de assinatura**: já há `subscription_plans` (1/3/6/12 meses com desconto). Falta exibir os bundles dentro do `SubscribeModal` com destaque de economia.
+- **Trial grátis**: já há `subscription_coupons.trial_days` (cupom de trial). Falta um trial **nativo** configurável pela criadora (sem precisar de cupom) e bloqueio anti-abuso (1 trial por usuário/criadora).
+- **Wishlist** e **Loyalty**: não existem.
 
-### 1. Token de pagamento "mock" aceito em produção
-`src/server/payments.functions.ts` → função `validateGatewayToken` aceita qualquer string que comece com `mock_` como prova de pagamento. Isso afeta:
-- `unlockPpvServer`, `tipServer`, `contributeGoalServer`, `subscribeServer`, `unlockChatPpvServer`
+---
 
-**Impacto:** qualquer usuário autenticado pode chamar a RPC com `gatewayToken: "mock_qualquercoisa"` e desbloquear PPV, fingir assinatura, mandar mimo sem pagar, etc. As `transactions` ficam como `paid` — criadora vê como venda real.
+## 1. Mensagens em massa pagas (mass DM com PPV) — polish + receita
 
-**Correção:** remover o atalho `mock_` e exigir verificação real via NexusPag — consultar a `pix_charges` correspondente pelo `external_id` e confirmar `status = 'paid'` antes de gravar `transactions` / unlocks. Para fluxos legados que ainda dependiam do mock, redirecionar para o fluxo Pix novo já implementado em `checkout.functions.ts`.
+Backend já suporta. Vou:
+- Na página `/creator/mailing`, deixar o **PPV opt-in destacado** (toggle "🔒 Mensagem paga" com slider de preço sugerido R$5/10/20/50).
+- Mostrar preview do que o assinante verá (mídia borrada + CTA "Desbloquear por R$ X").
+- Adicionar coluna **"Receita gerada"** na lista de campanhas (soma de `chat_ppv_unlocks` joinado por `campaign_id` via mensagens criadas).
+- Migração leve: índice em `chat_messages(campaign_id)` + view `mass_dm_campaign_revenue` agregando unlocks por campanha.
 
-### 2. Preço da assinatura aceito do cliente sem validação
-`createSubscriptionPixCharge` (checkout) e `subscribeServer` (payments) usam `pricePerMonthCents` enviado pelo frontend.
+## 2. Wishlist (lista de desejos)
 
-**Impacto:** atacante manda `pricePerMonthCents: 100` para uma criadora de R$ 50/mês e gera cobrança Pix de R$ 1 — assinatura fica `active` por R$ 1.
+Permite assinante "favoritar" criadora ou post PPV pra receber notificação quando entrar em promoção / for desbloqueado em mass DM.
 
-**Correção:** dentro do handler, buscar o preço canônico em `profiles.subscription_price_cents` (ou `subscription_plans` se houver `planId`), ignorar o valor do cliente, aplicar cupom validado pelo servidor, e usar esse total como `amount_cents` da Pix.
+- Nova tabela `wishlists`: `id, user_id, target_type ('creator' | 'post'), target_id, created_at`. RLS: dono lê/escreve o seu; criadora vê quem favoritou ela/seus posts (agregado).
+- Botão de coração/bookmark no `PostCard` (PPV) e botão "Adicionar à wishlist" no perfil da criadora.
+- Página `/wishlist` listando criadoras e posts salvos.
+- Trigger: quando criadora dispara mass DM com `tag = wishlist`, o segmento "Quem te favoritou" aparece como filtro novo em `/creator/mailing` (junta com a UI já existente de segmentos).
+- Dashboard da criadora: contador "X pessoas adicionaram você à wishlist" em `/creator/analytics`.
 
-## 🟡 AVISOS — RLS e padrões
+## 3. Bundles de assinatura (destaque no checkout)
 
-### 3. `withdrawal_requests` sem políticas INSERT/UPDATE
-Criadoras não conseguem criar saque via API; admin não consegue aprovar via RLS.
-**Correção:** adicionar `INSERT` (`auth.uid() = creator_id` + `has_role(auth.uid(),'creator')`) e `UPDATE` restrito a `has_role(auth.uid(),'admin')`.
+Backend pronto (`subscription_plans`). Falta UX:
+- Reescrever `SubscribeModal` pra carregar **todos os planos ativos** da criadora e mostrar cards lado a lado: 1m / 3m / 6m / 12m com preço/mês, total, % de desconto, badge "MAIS ESCOLHIDO" no plano com mais vendas.
+- Plano selecionado por padrão = melhor custo-benefício (maior desconto > 0).
+- Após escolha, segue o fluxo normal de checkout PIX, passando `months` e `plan_id` pra `checkout.functions.ts`.
+- Na criação de assinatura, gravar `plan_id` e `months` no registro de `subscriptions` (migração: adicionar colunas se não existirem) pra `period_end = now + months`.
 
-### 4. `chat_ppv_unlocks` — criadora não vê quem desbloqueou
-**Correção:** adicionar policy `SELECT` permitindo a criadora ver unlocks onde a `chat_messages.sender_id = auth.uid()`.
+## 4. Trial grátis de X dias (nativo)
 
-### 5. Realtime de `chat_messages` aberto demais
-A policy do `realtime.messages` filtra só por prefixo `thread:%`. Qualquer autenticado que adivinhe um UUID de thread escuta as mensagens.
-**Correção:** policy de realtime que confere se `auth.uid()` é `user_a` ou `user_b` da `chat_threads` correspondente ao `topic`.
+Hoje só existe via cupom. Quero trial sem fricção:
+- Migração: adicionar `trial_days_enabled boolean default false` e `trial_days int default 0` em `profiles` (ou criar tabela `creator_trial_settings` se preferir não poluir profiles — vou usar `profiles` por simplicidade).
+- Nova tabela `subscription_trials_used`: `(user_id, creator_id, used_at)` com PK composta. Garante 1 trial por par.
+- UI em `/settings/profile` (aba criadora): toggle "Oferecer trial grátis" + input de dias (1–14, default 3).
+- No `SubscribeModal`, se a criadora tem trial ativo E o usuário ainda não usou, mostra botão **"Começar 3 dias grátis"** acima dos bundles. Cria assinatura com `status = active`, `period_end = now + trial_days`, `is_trial = true`, sem cobrança.
+- Migração: adicionar `is_trial boolean default false` em `subscriptions`.
+- Trigger / cron diário: ao expirar trial, marca `status = expired` (já deve existir lógica de expiração; só precisa cobrir o caso trial).
 
-### 6. `admin_access_audit` sem INSERT
-Auditoria fica silenciosamente vazia.
-**Correção:** adicionar policy `INSERT` para `authenticated` (com `user_id = auth.uid()`), assim o middleware de admin consegue gravar o registro.
+## 5. Programa de fidelidade (gamificação)
 
-### 7. CSP com `'unsafe-inline'` em scripts
-`src/start.ts` permite scripts inline — anula a proteção contra XSS num site que lida com Pix e mídia privada.
-**Correção:** trocar por CSP baseado em nonce (`script-src 'self' 'nonce-{aleatório}'`) gerado por request e injetado nos scripts inline do TanStack/Vite. Onde nonce não couber, usar `'strict-dynamic'`.
+Sistema de **pontos + tiers** que recompensa engajamento real (gastar dinheiro), não atividades vazias.
 
-### 8. `getPostMediaUrls` faz parsing manual de auth
-`src/server/media.functions.ts` importa `getRequestHeader` em try/catch e parseia o Bearer na mão; se falhar, vira anônimo silenciosamente.
-**Correção:** refatorar para usar `requireSupabaseAuth` (versão "auth opcional" que permite anônimos para posts públicos, mas usa a mesma cadeia de validação). Mantém consistência com o resto.
+- Tabela `loyalty_points`: `user_id, creator_id, points int, tier text, updated_at`. PK composta `(user_id, creator_id)` — pontos são **por criadora**, não globais (faz mais sentido no modelo).
+- Tabela `loyalty_ledger`: histórico `(id, user_id, creator_id, points_delta, reason, ref_id, created_at)` pra transparência.
+- Regras de pontuação (configuráveis por criadora numa segunda iteração; v1 hardcoded):
+  - 1 ponto por R$1 gasto (assinatura, PPV post, PPV chat, gorjeta).
+  - +50 pontos por mês completo de assinatura ativa.
+  - +10 pontos por comentário (limitado a 3/dia pra evitar spam).
+- Tiers (badges visíveis no chat/comentários):
+  - 🥉 Bronze (0–500), 🥈 Prata (500–2000), 🥇 Ouro (2000–5000), 💎 Diamante (5000+).
+- Benefícios automáticos (v1 simbólicos, v2 desbloqueia recompensas reais):
+  - Badge ao lado do nome no chat e nos comentários.
+  - Tier Diamante = entra automático em segmento "VIP" do mass DM.
+- Trigger SQL: ao inserir em `pix_charges` com status `paid` / `ppv_unlocks` / `chat_ppv_unlocks` / `subscriptions` ativa → calcula delta e insere em `loyalty_ledger` + upsert `loyalty_points`.
+- Página `/loyalty` (assinante): lista criadoras que segue, pontos atuais, tier, próxima recompensa.
+- Card no perfil da criadora: "Seus pontos com @fulana: 1.230 (Prata)".
+- Aba `/creator/loyalty` pra criadora ver top fãs por pontos (já é praticamente um VIP leaderboard que dobra como ferramenta de retenção).
 
-### 9. Extensão instalada no schema `public` (linter Supabase)
-**Correção:** mover a extensão para o schema `extensions` via migration (`ALTER EXTENSION ... SET SCHEMA extensions`).
-
-## Ordem de execução
-
-1. **(Bloqueante)** #1 e #2 — fraude de pagamento. Sem isso o site não pode receber pagamentos reais.
-2. **(Importante)** #3, #4, #5, #6 — migrations de RLS, baixo risco de regressão.
-3. **(Hardening)** #7 (CSP nonce) e #8 (refator do auth de mídia).
-4. **(Limpeza)** #9 — mover extensão.
+---
 
 ## Detalhes técnicos
 
-- Migrations SQL para #3, #4, #5, #6, #9 (alteração de policies / extensão).
-- Edição de `src/server/payments.functions.ts` para remover `validateGatewayToken` mock e passar a consultar `pix_charges` pelo `external_id`.
-- Edição de `src/server/checkout.functions.ts` para buscar preço canônico da criadora.
-- Edição de `src/start.ts` para CSP com nonce + ajuste no `__root.tsx` se for preciso passar nonce a scripts inline do TanStack.
-- Refator de `src/server/media.functions.ts` usando o middleware `requireSupabaseAuth` em modo opcional.
-- Após cada bloco, rodar novamente o scan e marcar findings como `fixed`.
+**Migrações** (uma por feature, em ordem):
+1. Wishlist: `wishlists` + RLS + index `(user_id, target_type, target_id)`.
+2. Trial: `profiles.trial_days_enabled/trial_days`, `subscriptions.is_trial`, `subscription_trials_used` + RLS.
+3. Loyalty: `loyalty_points`, `loyalty_ledger` + RLS + função `award_points(_user, _creator, _delta, _reason, _ref)` + triggers em `pix_charges` (após paid), `ppv_unlocks`, `chat_ppv_unlocks`, `subscriptions`.
+4. Mass DM revenue: índice + view materializada leve (ou função `mass_dm_campaign_stats(creator_id)` retornando linhas com receita).
 
-## Sobre testar
+**Novas rotas/arquivos**:
+- `src/routes/wishlist.tsx`
+- `src/routes/loyalty.tsx`
+- `src/routes/creator.loyalty.tsx`
+- `src/components/WishlistButton.tsx`
+- `src/components/LoyaltyBadge.tsx`
+- `src/components/BundlePicker.tsx` (usado dentro do `SubscribeModal`)
+- `src/components/TrialBanner.tsx` (usado no `SubscribeModal`)
 
-Depois de corrigir #1 e #2, é importante refazer um teste end-to-end de:
-- Assinatura via Pix (verificar que o valor cobrado bate com o preço da criadora no banco).
-- PPV / mimo / contribuição de meta (confirmar que só desbloqueiam após webhook NexusPag marcar `paid`).
+**Edits**:
+- `SubscribeModal.tsx` → BundlePicker + TrialBanner.
+- `creator.mailing.tsx` → destaque PPV + coluna receita + segmento "wishlist".
+- `settings.profile.tsx` → toggle de trial.
+- `PostCard.tsx` + `profile.$username.tsx` → WishlistButton + LoyaltyBadge.
+- `chat.tsx` → LoyaltyBadge ao lado do nome.
+- `Sidebar.tsx` → links pra /wishlist e /loyalty.
+
+**Server functions**:
+- `src/server/wishlist.functions.ts` (toggle, list).
+- `src/server/loyalty.functions.ts` (get points, ledger, top fãs).
+- `src/server/trial.functions.ts` (start trial, validações).
+
+**Sem novas dependências.** Tudo usa o stack atual (Supabase RLS, RPC, TanStack Start).
+
+Vou implementar nessa ordem: Bundles (mais rápido, já tem backend) → Trial → Wishlist → Mass DM polish → Loyalty (mais denso). Tudo na mesma rodada de build.
