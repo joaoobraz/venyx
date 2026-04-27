@@ -1758,6 +1758,12 @@ export type Database = {
         Args: { _path: string; _viewer: string }
         Returns: boolean
       }
+      cleanup_expired_stories: {
+        Args: never
+        Returns: {
+          deleted_paths: string[]
+        }[]
+      }
       enqueue_mass_dm: {
         Args: {
           _body: string
@@ -1774,6 +1780,12 @@ export type Database = {
         Returns: {
           campaign_id: string
           recipients: number
+        }[]
+      }
+      expire_due_subscriptions: {
+        Args: never
+        Returns: {
+          expired_count: number
         }[]
       }
       has_role: {
@@ -1874,6 +1886,15 @@ export type Database = {
       }
       start_creator_trial: { Args: { _creator_id: string }; Returns: Json }
       storage_path_to_post_id: { Args: { _path: string }; Returns: string }
+      subscriptions_expiring_in: {
+        Args: { _days?: number }
+        Returns: {
+          creator_id: string
+          current_period_end: string
+          id: string
+          subscriber_id: string
+        }[]
+      }
       validate_coupon: {
         Args: { _code: string; _creator_id: string }
         Returns: {
