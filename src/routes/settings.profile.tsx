@@ -77,6 +77,75 @@ function SettingsProfile() {
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className="mt-1.5" />
           </div>
+
+          <div className="space-y-3 rounded-xl border border-border/50 bg-card/40 p-4">
+            <div>
+              <Label className="text-base">Marca d'água nas suas mídias</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Aplicada automaticamente em todas as suas fotos e vídeos. Formato: <span className="font-mono">site/@{profile.username}</span>
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm">Posição</Label>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {([
+                  ["top-left", "↖"],
+                  ["", ""],
+                  ["top-right", "↗"],
+                  ["", ""],
+                  ["center", "•"],
+                  ["", ""],
+                  ["bottom-left", "↙"],
+                  ["", ""],
+                  ["bottom-right", "↘"],
+                ] as const).map(([pos, icon], i) =>
+                  pos ? (
+                    <button
+                      type="button"
+                      key={pos}
+                      onClick={() => setWmPosition(pos as WatermarkPosition)}
+                      className={`flex h-12 items-center justify-center rounded-md border text-lg transition ${
+                        wmPosition === pos
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ) : (
+                    <div key={`empty-${i}`} className="h-12" />
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="wmop" className="text-sm">
+                Opacidade: {Math.round(wmOpacity * 100)}%
+              </Label>
+              <input
+                id="wmop"
+                type="range"
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={wmOpacity}
+                onChange={(e) => setWmOpacity(Number(e.target.value))}
+                className="mt-2 w-full accent-primary"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm">Pré-visualização</Label>
+              <div className="mt-2 overflow-hidden rounded-md">
+                <CreatorWatermark username={profile.username} position={wmPosition} opacity={wmOpacity}>
+                  <div className="aspect-video w-full bg-gradient-to-br from-primary/30 via-accent/20 to-muted" />
+                </CreatorWatermark>
+              </div>
+            </div>
+          </div>
+
           <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {saving ? "Salvando..." : "Salvar"}
           </Button>
