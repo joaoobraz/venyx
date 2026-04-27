@@ -243,13 +243,34 @@ function ChatPage() {
 
   const unlock = async (m: Message) => {
     if (!user || !active) return;
+    const headers = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+    if (!headers) {
+      toast.error("Faça login.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await unlockChatFn({
-        data: { messageId: m.id, gatewayToken: `mock_${Date.now()}` },
-      });
-      toast.success(res.alreadyUnlocked ? "Já desbloqueado" : "Mídia desbloqueada!");
-      loadMessages(active.id);
+      const res = await unlockChatFn({ data: { messageId: m.id }, headers });
+      if ("alreadyUnlocked" in res && res.alreadyUnlocked) {
+        toast.success("Já desbloqueado");
+        loadMessages(active.id);
+        return;
+      }
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix.");
+        return;
+      }
+      if ("chargeId" in res && res.chargeId) {
+        setPixCharge({
+          chargeId: res.chargeId,
+          qrCode: res.qrCode ?? null,
+          qrCodeBase64: res.qrCodeBase64 ?? null,
+          amountCents: res.amountCents ?? m.ppv_price_cents,
+        });
+        setPixOpen(true);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
