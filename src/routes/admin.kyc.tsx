@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { requireAdminServer, getKycSignedUrlServer } from "@/server/admin.functions";
+import { requireAdminServer, getKycSignedUrlServer, reviewKycServer } from "@/server/admin.functions";
 
 export const Route = createFileRoute("/admin/kyc")({
   beforeLoad: async () => {
