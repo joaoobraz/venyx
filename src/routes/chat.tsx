@@ -7,11 +7,12 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { unlockChatPpvServer } from "@/server/payments.functions";
+import { createChatPpvPixCharge } from "@/server/checkout.functions";
 import { getChatMediaUrl } from "@/server/media.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { TranslateButton } from "@/components/TranslateButton";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
