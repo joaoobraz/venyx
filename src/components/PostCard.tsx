@@ -9,6 +9,7 @@ import { unlockPpvServer, contributeGoalServer } from "@/server/payments.functio
 import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 
 export interface PostMedia {
   id: string;
@@ -38,6 +39,8 @@ export interface PostWithRelations {
     display_name: string | null;
     avatar_url: string | null;
     is_verified: boolean;
+    watermark_position?: string;
+    watermark_opacity?: number;
   };
   media: PostMedia[];
   unlocked?: boolean;
@@ -170,11 +173,17 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           {locked ? (
             <div className="aspect-square w-full bg-muted" />
           ) : firstUrl ? (
-            firstMedia.mime_type.startsWith("video/") ? (
-              <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
-            ) : (
-              <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
-            )
+            <CreatorWatermark
+              username={post.author.username}
+              position={(post.author.watermark_position ?? "bottom-right") as WatermarkPosition}
+              opacity={post.author.watermark_opacity ?? 0.6}
+            >
+              {firstMedia.mime_type.startsWith("video/") ? (
+                <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
+              ) : (
+                <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
+              )}
+            </CreatorWatermark>
           ) : (
             <div className="flex aspect-square w-full items-center justify-center bg-muted">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
