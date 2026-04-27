@@ -502,6 +502,16 @@ function ChatPage() {
                 creatorId={active.other_id}
                 creatorName={active.other_name}
               />
+              <PixCheckoutModal
+                open={pixOpen}
+                onOpenChange={setPixOpen}
+                title="Desbloquear mídia"
+                charge={pixCharge}
+                onPaid={() => {
+                  setPixCharge(null);
+                  if (active) loadMessages(active.id);
+                }}
+              />
             </>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
