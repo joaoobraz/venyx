@@ -5,10 +5,11 @@ import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown, Target, Users }
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { unlockPpvServer, contributeGoalServer } from "@/server/payments.functions";
+import { createPpvPixCharge, createGoalPixCharge } from "@/server/checkout.functions";
 import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 import { WishlistButton } from "@/components/WishlistButton";
 import { LoyaltyBadge } from "@/components/LoyaltyBadge";
