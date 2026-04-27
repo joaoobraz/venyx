@@ -10,6 +10,8 @@ import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
+import { WishlistButton } from "@/components/WishlistButton";
+import { LoyaltyBadge } from "@/components/LoyaltyBadge";
 
 export interface PostMedia {
   id: string;
@@ -150,9 +152,13 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             {post.author.display_name || post.author.username}
             {post.author.is_verified && <Crown className="h-3.5 w-3.5 text-primary" />}
+            <LoyaltyBadge creatorId={post.creator_id} className="ml-1" />
           </div>
           <div className="text-xs text-muted-foreground">@{post.author.username}</div>
         </div>
+        {!isOwner && (isPpv || isSubsOnly) && (
+          <WishlistButton targetType="post" targetId={post.id} variant="icon" />
+        )}
         {isPpv && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">PPV</span>
         )}
