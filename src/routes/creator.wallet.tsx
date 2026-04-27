@@ -165,7 +165,7 @@ function WalletPage() {
     setKycApproved(!!(kyc as KycRow | null));
     const txArr = (txList ?? []) as TxRow[];
     setTxs(txArr);
-    if (ps) setSettings(ps as PlatformSettings);
+    if (typeof ps === "number") setSettings((s) => ({ ...s, platform_fee_pct: ps }));
 
     // Buscar nomes dos pagadores
     const payerIds = Array.from(new Set(txArr.map((t) => t.payer_id).filter(Boolean))) as string[];
