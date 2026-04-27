@@ -201,7 +201,7 @@ export const reviewKycServer = createServerFn({ method: "POST" })
         })
         .eq("id", data.kycId);
       if (error) throw new Error(error.message);
-      await logAdminAction({
+      await auditLog({
         adminId: userId,
         actionType: "kyc_rejected",
         targetType: "kyc_request",
@@ -236,7 +236,7 @@ export const reviewKycServer = createServerFn({ method: "POST" })
       .update({ is_verified: true })
       .eq("user_id", kyc.user_id);
 
-    await logAdminAction({
+    await auditLog({
       adminId: userId,
       actionType: "kyc_approved",
       targetType: "kyc_request",
@@ -272,7 +272,7 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
       })
       .eq("id", data.reportId);
     if (error) throw new Error(error.message);
-    await logAdminAction({
+    await auditLog({
       adminId: context.userId,
       actionType: `dmca_${data.status}`,
       targetType: "dmca_report",
