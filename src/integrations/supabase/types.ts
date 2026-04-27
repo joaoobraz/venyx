@@ -1788,6 +1788,7 @@ export type Database = {
           expired_count: number
         }[]
       }
+      get_platform_fee_pct: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
