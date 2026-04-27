@@ -46,10 +46,10 @@ interface Message {
 }
 
 function ChatPage() {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const { t } = useI18n();
   const nav = useNavigate();
-  const unlockChatFn = useServerFn(unlockChatPpvServer);
+  const unlockChatFn = useServerFn(createChatPpvPixCharge);
   const chatMediaFn = useServerFn(getChatMediaUrl);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -60,6 +60,8 @@ function ChatPage() {
   const [tipOpen, setTipOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ppvPrice, setPpvPrice] = useState("");
+  const [pixOpen, setPixOpen] = useState(false);
+  const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
