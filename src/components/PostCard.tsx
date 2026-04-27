@@ -325,6 +325,16 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         creatorName={post.author.display_name || post.author.username}
         postId={post.id}
       />
+      <PixCheckoutModal
+        open={pixOpen}
+        onOpenChange={setPixOpen}
+        title={pixTitle}
+        charge={pixCharge}
+        onPaid={() => {
+          setPixCharge(null);
+          onChange?.();
+        }}
+      />
     </article>
   );
 }
