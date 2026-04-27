@@ -7,11 +7,12 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { unlockChatPpvServer } from "@/server/payments.functions";
+import { createChatPpvPixCharge } from "@/server/checkout.functions";
 import { getChatMediaUrl } from "@/server/media.functions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { TranslateButton } from "@/components/TranslateButton";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 
@@ -45,10 +46,10 @@ interface Message {
 }
 
 function ChatPage() {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const { t } = useI18n();
   const nav = useNavigate();
-  const unlockChatFn = useServerFn(unlockChatPpvServer);
+  const unlockChatFn = useServerFn(createChatPpvPixCharge);
   const chatMediaFn = useServerFn(getChatMediaUrl);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -59,6 +60,8 @@ function ChatPage() {
   const [tipOpen, setTipOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ppvPrice, setPpvPrice] = useState("");
+  const [pixOpen, setPixOpen] = useState(false);
+  const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -240,13 +243,34 @@ function ChatPage() {
 
   const unlock = async (m: Message) => {
     if (!user || !active) return;
+    const headers = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : null;
+    if (!headers) {
+      toast.error("Faça login.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await unlockChatFn({
-        data: { messageId: m.id, gatewayToken: `mock_${Date.now()}` },
-      });
-      toast.success(res.alreadyUnlocked ? "Já desbloqueado" : "Mídia desbloqueada!");
-      loadMessages(active.id);
+      const res = await unlockChatFn({ data: { messageId: m.id }, headers });
+      if ("alreadyUnlocked" in res && res.alreadyUnlocked) {
+        toast.success("Já desbloqueado");
+        loadMessages(active.id);
+        return;
+      }
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix.");
+        return;
+      }
+      if ("chargeId" in res && res.chargeId) {
+        setPixCharge({
+          chargeId: res.chargeId,
+          qrCode: res.qrCode ?? null,
+          qrCodeBase64: res.qrCodeBase64 ?? null,
+          amountCents: res.amountCents ?? m.ppv_price_cents,
+        });
+        setPixOpen(true);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
@@ -477,6 +501,16 @@ function ChatPage() {
                 onOpenChange={setTipOpen}
                 creatorId={active.other_id}
                 creatorName={active.other_name}
+              />
+              <PixCheckoutModal
+                open={pixOpen}
+                onOpenChange={setPixOpen}
+                title="Desbloquear mídia"
+                charge={pixCharge}
+                onPaid={() => {
+                  setPixCharge(null);
+                  if (active) loadMessages(active.id);
+                }}
               />
             </>
           ) : (

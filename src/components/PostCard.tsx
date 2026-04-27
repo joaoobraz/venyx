@@ -5,10 +5,11 @@ import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown, Target, Users }
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { unlockPpvServer, contributeGoalServer } from "@/server/payments.functions";
+import { createPpvPixCharge, createGoalPixCharge } from "@/server/checkout.functions";
 import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 import { WishlistButton } from "@/components/WishlistButton";
 import { LoyaltyBadge } from "@/components/LoyaltyBadge";
@@ -52,14 +53,17 @@ export interface PostWithRelations {
 }
 
 export function PostCard({ post, onChange }: { post: PostWithRelations; onChange?: () => void }) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [pixOpen, setPixOpen] = useState(false);
+  const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
+  const [pixTitle, setPixTitle] = useState("Pague com Pix");
 
-  const unlockFn = useServerFn(unlockPpvServer);
-  const goalFn = useServerFn(contributeGoalServer);
+  const ppvFn = useServerFn(createPpvPixCharge);
+  const goalFn = useServerFn(createGoalPixCharge);
   const mediaFn = useServerFn(getPostMediaUrls);
 
   const isOwner = user?.id === post.creator_id;
@@ -94,15 +98,41 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     };
   }, [post.id, locked, post.media.length, mediaFn]);
 
+  const authHeaders = () =>
+    session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
+
   const unlockPpv = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Faça login para desbloquear.");
+      return;
+    }
+    const headers = authHeaders();
+    if (!headers) {
+      toast.error("Faça login para desbloquear.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await unlockFn({
-        data: { postId: post.id, gatewayToken: `mock_${Date.now()}` },
-      });
-      toast.success(res.alreadyUnlocked ? "Já desbloqueado" : "Conteúdo desbloqueado!");
-      onChange?.();
+      const res = await ppvFn({ data: { postId: post.id }, headers });
+      if ("alreadyUnlocked" in res && res.alreadyUnlocked) {
+        toast.success("Já desbloqueado");
+        onChange?.();
+        return;
+      }
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix.");
+        return;
+      }
+      if ("chargeId" in res) {
+        setPixCharge({
+          chargeId: res.chargeId,
+          qrCode: res.qrCode,
+          qrCodeBase64: res.qrCodeBase64,
+          amountCents: res.amountCents,
+        });
+        setPixTitle("Desbloquear conteúdo");
+        setPixOpen(true);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
@@ -112,13 +142,28 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
   const contributeGoal = async () => {
     if (!user || !post.goal) return;
+    const headers = authHeaders();
+    if (!headers) {
+      toast.error("Faça login para contribuir.");
+      return;
+    }
     setBusy(true);
     try {
-      await goalFn({
-        data: { postId: post.id, gatewayToken: `mock_${Date.now()}` },
-      });
-      toast.success("Você contribuiu para a meta!");
-      onChange?.();
+      const res = await goalFn({ data: { postId: post.id }, headers });
+      if ("ok" in res && res.ok === false) {
+        toast.error(res.error || "Não foi possível gerar o Pix.");
+        return;
+      }
+      if ("chargeId" in res) {
+        setPixCharge({
+          chargeId: res.chargeId,
+          qrCode: res.qrCode,
+          qrCodeBase64: res.qrCodeBase64,
+          amountCents: res.amountCents,
+        });
+        setPixTitle("Contribuir para a meta");
+        setPixOpen(true);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
@@ -279,6 +324,16 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         creatorId={post.creator_id}
         creatorName={post.author.display_name || post.author.username}
         postId={post.id}
+      />
+      <PixCheckoutModal
+        open={pixOpen}
+        onOpenChange={setPixOpen}
+        title={pixTitle}
+        charge={pixCharge}
+        onPaid={() => {
+          setPixCharge(null);
+          onChange?.();
+        }}
       />
     </article>
   );
