@@ -53,6 +53,9 @@ import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminActionsAuditRouteImport } from './routes/admin.actions-audit'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
+import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
+import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
+import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
 
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
@@ -276,6 +279,24 @@ const ApiPublicNexuspagWebhookRoute =
     path: '/api/public/nexuspag-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronProcessMassDmRoute =
+  ApiPublicCronProcessMassDmRouteImport.update({
+    id: '/api/public/cron/process-mass-dm',
+    path: '/api/public/cron/process-mass-dm',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronExpireSubscriptionsRoute =
+  ApiPublicCronExpireSubscriptionsRouteImport.update({
+    id: '/api/public/cron/expire-subscriptions',
+    path: '/api/public/cron/expire-subscriptions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronCleanupStoriesRoute =
+  ApiPublicCronCleanupStoriesRouteImport.update({
+    id: '/api/public/cron/cleanup-stories',
+    path: '/api/public/cron/cleanup-stories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -322,6 +343,9 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
+  '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
+  '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -368,6 +392,9 @@ export interface FileRoutesByTo {
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
+  '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
+  '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -415,6 +442,9 @@ export interface FileRoutesById {
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
+  '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
+  '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -463,6 +493,9 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/admin/'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/cron/cleanup-stories'
+    | '/api/public/cron/expire-subscriptions'
+    | '/api/public/cron/process-mass-dm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -509,6 +542,9 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/admin'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/cron/cleanup-stories'
+    | '/api/public/cron/expire-subscriptions'
+    | '/api/public/cron/process-mass-dm'
   id:
     | '__root__'
     | '/'
@@ -555,6 +591,9 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/admin/'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/cron/cleanup-stories'
+    | '/api/public/cron/expire-subscriptions'
+    | '/api/public/cron/process-mass-dm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -602,6 +641,9 @@ export interface RootRouteChildren {
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
+  ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
+  ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
+  ApiPublicCronProcessMassDmRoute: typeof ApiPublicCronProcessMassDmRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -914,6 +956,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/process-mass-dm': {
+      id: '/api/public/cron/process-mass-dm'
+      path: '/api/public/cron/process-mass-dm'
+      fullPath: '/api/public/cron/process-mass-dm'
+      preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/expire-subscriptions': {
+      id: '/api/public/cron/expire-subscriptions'
+      path: '/api/public/cron/expire-subscriptions'
+      fullPath: '/api/public/cron/expire-subscriptions'
+      preLoaderRoute: typeof ApiPublicCronExpireSubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/cleanup-stories': {
+      id: '/api/public/cron/cleanup-stories'
+      path: '/api/public/cron/cleanup-stories'
+      fullPath: '/api/public/cron/cleanup-stories'
+      preLoaderRoute: typeof ApiPublicCronCleanupStoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -962,6 +1025,9 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
+  ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
+  ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,
+  ApiPublicCronProcessMassDmRoute: ApiPublicCronProcessMassDmRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
