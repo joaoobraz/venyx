@@ -9,6 +9,7 @@ import { unlockPpvServer, contributeGoalServer } from "@/server/payments.functio
 import { getPostMediaUrls } from "@/server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
+import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 
 export interface PostMedia {
   id: string;
