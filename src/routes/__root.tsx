@@ -78,6 +78,7 @@ function RootComponent() {
     <ThemeProvider>
       <I18nProvider>
         <AuthProvider>
+          <ContentProtection />
           <AgeGateModal />
           <Outlet />
           <CookieBanner />
