@@ -19,6 +19,8 @@ function SettingsProfile() {
   const nav = useNavigate();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [wmPosition, setWmPosition] = useState<WatermarkPosition>("bottom-right");
+  const [wmOpacity, setWmOpacity] = useState(0.6);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -29,6 +31,9 @@ function SettingsProfile() {
     if (profile) {
       setDisplayName(profile.display_name ?? "");
       setBio(profile.bio ?? "");
+      const p = (profile as unknown as { watermark_position?: string; watermark_opacity?: number });
+      if (p.watermark_position) setWmPosition(p.watermark_position as WatermarkPosition);
+      if (typeof p.watermark_opacity === "number") setWmOpacity(p.watermark_opacity);
     }
   }, [profile]);
 
@@ -38,7 +43,12 @@ function SettingsProfile() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: displayName, bio })
+      .update({
+        display_name: displayName,
+        bio,
+        watermark_position: wmPosition,
+        watermark_opacity: wmOpacity,
+      })
       .eq("user_id", profile.user_id);
     setSaving(false);
     if (error) toast.error(error.message);
