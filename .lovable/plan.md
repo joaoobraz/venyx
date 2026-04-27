@@ -1,102 +1,78 @@
+# Auditoria: o que realmente falta
 
-# Próximas 5 features
-
-Resumo do que já existe (não vou refazer):
-- **Mass DM**: já há `mass_dm_campaigns` + `mass_dm_jobs` + RPC `enqueue_mass_dm` + página `/creator/mailing`. Já tem campo `ppv_price_cents` na campanha e no job. Falta UI clara de "DM em massa **paga**" + tracking de receita por campanha.
-- **Bundles de assinatura**: já há `subscription_plans` (1/3/6/12 meses com desconto). Falta exibir os bundles dentro do `SubscribeModal` com destaque de economia.
-- **Trial grátis**: já há `subscription_coupons.trial_days` (cupom de trial). Falta um trial **nativo** configurável pela criadora (sem precisar de cupom) e bloqueio anti-abuso (1 trial por usuário/criadora).
-- **Wishlist** e **Loyalty**: não existem.
+A base está muito completa. Mas olhando rotas, tabelas e componentes, identifiquei lacunas reais — não "ideias bonitas", mas coisas que faltam pra plataforma rodar 100% no mundo real.
 
 ---
 
-## 1. Mensagens em massa pagas (mass DM com PPV) — polish + receita
+## 🔴 Crítico (bloqueia operação real)
 
-Backend já suporta. Vou:
-- Na página `/creator/mailing`, deixar o **PPV opt-in destacado** (toggle "🔒 Mensagem paga" com slider de preço sugerido R$5/10/20/50).
-- Mostrar preview do que o assinante verá (mídia borrada + CTA "Desbloquear por R$ X").
-- Adicionar coluna **"Receita gerada"** na lista de campanhas (soma de `chat_ppv_unlocks` joinado por `campaign_id` via mensagens criadas).
-- Migração leve: índice em `chat_messages(campaign_id)` + view `mass_dm_campaign_revenue` agregando unlocks por campanha.
+### 1. Cron de processamento de mailing em massa
+A função `process_mass_dm_batch` existe no banco, mas **nada a chama**. Campanhas agendadas ficam paradas em `pending` pra sempre. Precisa de um endpoint `/api/public/cron/process-mass-dm` chamado por pg_cron a cada minuto.
 
-## 2. Wishlist (lista de desejos)
+### 2. Expiração automática de assinaturas
+Não há job que marca `subscriptions.status = 'expired'` quando `current_period_end < now()`. Hoje, assinaturas vencidas continuam ativas até o usuário tentar renovar. Cron diário resolve.
 
-Permite assinante "favoritar" criadora ou post PPV pra receber notificação quando entrar em promoção / for desbloqueado em mass DM.
+### 3. Expiração de stories
+Tabela `stories` tem `expires_at`, mas nenhum cron remove stories expiradas do storage. Vai acumular lixo no bucket.
 
-- Nova tabela `wishlists`: `id, user_id, target_type ('creator' | 'post'), target_id, created_at`. RLS: dono lê/escreve o seu; criadora vê quem favoritou ela/seus posts (agregado).
-- Botão de coração/bookmark no `PostCard` (PPV) e botão "Adicionar à wishlist" no perfil da criadora.
-- Página `/wishlist` listando criadoras e posts salvos.
-- Trigger: quando criadora dispara mass DM com `tag = wishlist`, o segmento "Quem te favoritou" aparece como filtro novo em `/creator/mailing` (junta com a UI já existente de segmentos).
-- Dashboard da criadora: contador "X pessoas adicionaram você à wishlist" em `/creator/analytics`.
-
-## 3. Bundles de assinatura (destaque no checkout)
-
-Backend pronto (`subscription_plans`). Falta UX:
-- Reescrever `SubscribeModal` pra carregar **todos os planos ativos** da criadora e mostrar cards lado a lado: 1m / 3m / 6m / 12m com preço/mês, total, % de desconto, badge "MAIS ESCOLHIDO" no plano com mais vendas.
-- Plano selecionado por padrão = melhor custo-benefício (maior desconto > 0).
-- Após escolha, segue o fluxo normal de checkout PIX, passando `months` e `plan_id` pra `checkout.functions.ts`.
-- Na criação de assinatura, gravar `plan_id` e `months` no registro de `subscriptions` (migração: adicionar colunas se não existirem) pra `period_end = now + months`.
-
-## 4. Trial grátis de X dias (nativo)
-
-Hoje só existe via cupom. Quero trial sem fricção:
-- Migração: adicionar `trial_days_enabled boolean default false` e `trial_days int default 0` em `profiles` (ou criar tabela `creator_trial_settings` se preferir não poluir profiles — vou usar `profiles` por simplicidade).
-- Nova tabela `subscription_trials_used`: `(user_id, creator_id, used_at)` com PK composta. Garante 1 trial por par.
-- UI em `/settings/profile` (aba criadora): toggle "Oferecer trial grátis" + input de dias (1–14, default 3).
-- No `SubscribeModal`, se a criadora tem trial ativo E o usuário ainda não usou, mostra botão **"Começar 3 dias grátis"** acima dos bundles. Cria assinatura com `status = active`, `period_end = now + trial_days`, `is_trial = true`, sem cobrança.
-- Migração: adicionar `is_trial boolean default false` em `subscriptions`.
-- Trigger / cron diário: ao expirar trial, marca `status = expired` (já deve existir lógica de expiração; só precisa cobrir o caso trial).
-
-## 5. Programa de fidelidade (gamificação)
-
-Sistema de **pontos + tiers** que recompensa engajamento real (gastar dinheiro), não atividades vazias.
-
-- Tabela `loyalty_points`: `user_id, creator_id, points int, tier text, updated_at`. PK composta `(user_id, creator_id)` — pontos são **por criadora**, não globais (faz mais sentido no modelo).
-- Tabela `loyalty_ledger`: histórico `(id, user_id, creator_id, points_delta, reason, ref_id, created_at)` pra transparência.
-- Regras de pontuação (configuráveis por criadora numa segunda iteração; v1 hardcoded):
-  - 1 ponto por R$1 gasto (assinatura, PPV post, PPV chat, gorjeta).
-  - +50 pontos por mês completo de assinatura ativa.
-  - +10 pontos por comentário (limitado a 3/dia pra evitar spam).
-- Tiers (badges visíveis no chat/comentários):
-  - 🥉 Bronze (0–500), 🥈 Prata (500–2000), 🥇 Ouro (2000–5000), 💎 Diamante (5000+).
-- Benefícios automáticos (v1 simbólicos, v2 desbloqueia recompensas reais):
-  - Badge ao lado do nome no chat e nos comentários.
-  - Tier Diamante = entra automático em segmento "VIP" do mass DM.
-- Trigger SQL: ao inserir em `pix_charges` com status `paid` / `ppv_unlocks` / `chat_ppv_unlocks` / `subscriptions` ativa → calcula delta e insere em `loyalty_ledger` + upsert `loyalty_points`.
-- Página `/loyalty` (assinante): lista criadoras que segue, pontos atuais, tier, próxima recompensa.
-- Card no perfil da criadora: "Seus pontos com @fulana: 1.230 (Prata)".
-- Aba `/creator/loyalty` pra criadora ver top fãs por pontos (já é praticamente um VIP leaderboard que dobra como ferramenta de retenção).
+### 4. Página pública do criador — preview pra quem não assina
+Verificar `profile.$username.tsx`: precisa mostrar bio, avatar, capa, contador de posts, botão de assinar e **grid de posts borrados/cadeado** pra converter visitante em assinante. Hoje provavelmente está minimal.
 
 ---
 
-## Detalhes técnicos
+## 🟡 Importante (impacta receita/UX)
 
-**Migrações** (uma por feature, em ordem):
-1. Wishlist: `wishlists` + RLS + index `(user_id, target_type, target_id)`.
-2. Trial: `profiles.trial_days_enabled/trial_days`, `subscriptions.is_trial`, `subscription_trials_used` + RLS.
-3. Loyalty: `loyalty_points`, `loyalty_ledger` + RLS + função `award_points(_user, _creator, _delta, _reason, _ref)` + triggers em `pix_charges` (após paid), `ppv_unlocks`, `chat_ppv_unlocks`, `subscriptions`.
-4. Mass DM revenue: índice + view materializada leve (ou função `mass_dm_campaign_stats(creator_id)` retornando linhas com receita).
+### 5. Renovação automática de assinaturas (recorrência real)
+Hoje só existe pagamento único via PIX. Sem recorrência, retenção despenca no fim do mês. Como PIX não suporta recurring nativo, o caminho é:
+- Cron que detecta assinaturas vencendo em 3/1/0 dias
+- Envia notificação + link de renovação 1-clique (cobrança PIX pré-gerada)
+- Opcional: cartão via gateway (Stripe/Pagar.me) numa fase futura
 
-**Novas rotas/arquivos**:
-- `src/routes/wishlist.tsx`
-- `src/routes/loyalty.tsx`
-- `src/routes/creator.loyalty.tsx`
-- `src/components/WishlistButton.tsx`
-- `src/components/LoyaltyBadge.tsx`
-- `src/components/BundlePicker.tsx` (usado dentro do `SubscribeModal`)
-- `src/components/TrialBanner.tsx` (usado no `SubscribeModal`)
+### 6. Notificações push (web push)
+Tabela `notifications` existe, mas só funciona se o usuário estiver no site. Sem web push (Service Worker + VAPID), criadora perde engajamento de quem não abre o app. Crítico pra mass DM converter.
 
-**Edits**:
-- `SubscribeModal.tsx` → BundlePicker + TrialBanner.
-- `creator.mailing.tsx` → destaque PPV + coluna receita + segmento "wishlist".
-- `settings.profile.tsx` → toggle de trial.
-- `PostCard.tsx` + `profile.$username.tsx` → WishlistButton + LoyaltyBadge.
-- `chat.tsx` → LoyaltyBadge ao lado do nome.
-- `Sidebar.tsx` → links pra /wishlist e /loyalty.
+### 7. Email transacional
+Não vi integração de email. Nada de "novo PPV recebido", "alguém te mandou gorjeta", "sua assinatura vai vencer", reset de senha customizado, etc. Email é canal de retenção #1.
 
-**Server functions**:
-- `src/server/wishlist.functions.ts` (toggle, list).
-- `src/server/loyalty.functions.ts` (get points, ledger, top fãs).
-- `src/server/trial.functions.ts` (start trial, validações).
+### 8. Busca/descoberta melhor
+Tem `/explore` e `/search`, mas falta:
+- Filtros (preço, categoria, online agora, novos)
+- Tags/categorias nos perfis (loira, fitness, cosplay, etc.)
+- "Trending" baseado em métricas reais (assinantes novos últimos 7 dias)
 
-**Sem novas dependências.** Tudo usa o stack atual (Supabase RLS, RPC, TanStack Start).
+### 9. Sistema de referral pra fãs (não só ambassador)
+Existe `affiliate_codes` pra ambassadors. Falta usuário comum poder convidar amigos com bônus mútuo (ex: "ganhe R$10 quando seu amigo assinar qualquer criadora").
 
-Vou implementar nessa ordem: Bundles (mais rápido, já tem backend) → Trial → Wishlist → Mass DM polish → Loyalty (mais denso). Tudo na mesma rodada de build.
+---
+
+## 🟢 Polimento (nice to have)
+
+### 10. Onboarding guiado pra criadora nova
+Existe `OnboardingChecklist.tsx` — verificar se cobre: completar perfil, definir preço, postar 1º conteúdo, configurar PIX, ativar 2FA. Se faltar passos, completar.
+
+### 11. Dashboard de analytics mais profundo
+`creator.analytics.tsx` existe — verificar se tem: receita por fonte (sub vs PPV vs tip vs chat), churn rate, LTV médio, top fãs, melhor horário pra postar.
+
+### 12. Backup/export de dados pro criador
+LGPD: criadora deve poder exportar todos os dados dela (lista de fãs, mensagens, transações) em CSV/JSON. Botão em settings.
+
+### 13. Modo "férias" pra criadora
+Pausar cobranças de novas assinaturas mas manter as ativas, com aviso no perfil. Evita reembolso quando criadora some.
+
+### 14. Live streaming / videochamada paga
+Mercado grande, mas tecnicamente pesado (precisa LiveKit/Agora/Daily). É um produto à parte — só vale se for prioridade estratégica.
+
+### 15. App mobile (PWA)
+Adicionar manifest.json + service worker pra instalar como app no celular. Baixo esforço, alto impacto percebido.
+
+---
+
+## Minha recomendação
+
+Se eu tivesse que escolher **3 pra fazer agora**, em ordem:
+
+1. **Crons essenciais** (#1, #2, #3) — sem isso a plataforma "vaza" silenciosamente
+2. **Email transacional + web push** (#6, #7) — multiplica retenção
+3. **Página pública do criador convertendo melhor** (#4) — multiplica conversão
+
+Me diz quais você quer que eu implemente que eu monto o plano detalhado. Ou se quer só os crons (que é o mais urgente), eu já faço direto.
