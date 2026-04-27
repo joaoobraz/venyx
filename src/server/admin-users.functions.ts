@@ -107,6 +107,13 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
         .eq("role", data.role);
       if (error) throw new Error(error.message);
     }
+    await logAdminAction({
+      adminId: context.userId,
+      actionType: data.action === "add" ? "role_added" : "role_removed",
+      targetType: "user_role",
+      targetUserId: data.targetUserId,
+      metadata: { role: data.role },
+    });
     return { ok: true };
   });
 
