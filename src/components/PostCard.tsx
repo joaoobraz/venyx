@@ -173,11 +173,17 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           {locked ? (
             <div className="aspect-square w-full bg-muted" />
           ) : firstUrl ? (
-            firstMedia.mime_type.startsWith("video/") ? (
-              <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
-            ) : (
-              <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
-            )
+            <CreatorWatermark
+              username={post.author.username}
+              position={(post.author.watermark_position ?? "bottom-right") as WatermarkPosition}
+              opacity={post.author.watermark_opacity ?? 0.6}
+            >
+              {firstMedia.mime_type.startsWith("video/") ? (
+                <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
+              ) : (
+                <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
+              )}
+            </CreatorWatermark>
           ) : (
             <div className="flex aspect-square w-full items-center justify-center bg-muted">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
