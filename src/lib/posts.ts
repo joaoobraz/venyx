@@ -42,8 +42,15 @@ export async function fetchPosts(opts: {
     list.push({ id: m.id, storage_path: m.storage_path, mime_type: m.mime_type, position: m.position });
     mediaByPost.set(m.post_id, list);
   });
-  const authorByUid = new Map<string, { username: string; display_name: string | null; avatar_url: string | null; is_verified: boolean }>();
-  (authors ?? []).forEach((a) => authorByUid.set(a.user_id, a));
+  const authorByUid = new Map<string, { username: string; display_name: string | null; avatar_url: string | null; is_verified: boolean; watermark_position: string; watermark_opacity: number }>();
+  (authors ?? []).forEach((a) => authorByUid.set(a.user_id, {
+    username: a.username,
+    display_name: a.display_name,
+    avatar_url: a.avatar_url,
+    is_verified: a.is_verified,
+    watermark_position: a.watermark_position ?? "bottom-right",
+    watermark_opacity: Number(a.watermark_opacity ?? 0.6),
+  }));
   const goalByPost = new Map<string, { target_cents: number; raised_cents: number; unlock_price_cents: number; is_unlocked: boolean }>();
   (goals ?? []).forEach((g) =>
     goalByPost.set(g.post_id, {
