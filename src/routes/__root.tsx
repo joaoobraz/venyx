@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { AgeGateModal } from "@/components/AgeGateModal";
 import { CookieBanner } from "@/components/CookieBanner";
+import { ContentProtection } from "@/components/ContentProtection";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -77,6 +78,7 @@ function RootComponent() {
     <ThemeProvider>
       <I18nProvider>
         <AuthProvider>
+          <ContentProtection />
           <AgeGateModal />
           <Outlet />
           <CookieBanner />
