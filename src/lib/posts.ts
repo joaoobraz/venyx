@@ -28,7 +28,7 @@ export async function fetchPosts(opts: {
       .in("post_id", ids),
     supabase
       .from("profiles")
-      .select("user_id, username, display_name, avatar_url, is_verified")
+      .select("user_id, username, display_name, avatar_url, is_verified, watermark_position, watermark_opacity")
       .in("user_id", creatorIds),
     supabase
       .from("post_goals")
