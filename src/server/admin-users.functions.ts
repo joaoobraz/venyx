@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logAdminAction } from "@/server/admin.functions";
 
 const ROLES = ["subscriber", "creator", "admin", "ambassador", "seller"] as const;
 type Role = (typeof ROLES)[number];
@@ -106,6 +107,13 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
         .eq("role", data.role);
       if (error) throw new Error(error.message);
     }
+    await logAdminAction({
+      adminId: context.userId,
+      actionType: data.action === "add" ? "role_added" : "role_removed",
+      targetType: "user_role",
+      targetUserId: data.targetUserId,
+      metadata: { role: data.role },
+    });
     return { ok: true };
   });
 

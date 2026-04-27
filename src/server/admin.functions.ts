@@ -162,6 +162,31 @@ async function assertAdmin(userId: string) {
   if (!roleRow) throw new Error("forbidden");
 }
 
+/**
+ * Registra uma ação admin na tabela admin_action_audit. Não bloqueia o fluxo se falhar.
+ */
+export async function logAdminAction(params: {
+  adminId: string;
+  actionType: string;
+  targetType: string;
+  targetId?: string | null;
+  targetUserId?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await (supabaseAdmin.from("admin_action_audit") as any).insert({
+      admin_id: params.adminId,
+      action_type: params.actionType,
+      target_type: params.targetType,
+      target_id: params.targetId ?? null,
+      target_user_id: params.targetUserId ?? null,
+      metadata: params.metadata ?? {},
+    });
+  } catch (e) {
+    console.error("[admin.logAdminAction] failed", e);
+  }
+}
+
 const kycDecisionSchema = z.object({
   kycId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
@@ -198,6 +223,14 @@ export const reviewKycServer = createServerFn({ method: "POST" })
         })
         .eq("id", data.kycId);
       if (error) throw new Error(error.message);
+      await logAdminAction({
+        adminId: userId,
+        actionType: "kyc_rejected",
+        targetType: "kyc_request",
+        targetId: data.kycId,
+        targetUserId: kyc.user_id,
+        metadata: { reason: data.rejectionReason },
+      });
       return { ok: true };
     }
 
@@ -225,6 +258,15 @@ export const reviewKycServer = createServerFn({ method: "POST" })
       .update({ is_verified: true })
       .eq("user_id", kyc.user_id);
 
+    await logAdminAction({
+      adminId: userId,
+      actionType: "kyc_approved",
+      targetType: "kyc_request",
+      targetId: data.kycId,
+      targetUserId: kyc.user_id,
+      metadata: { promotedToCreator: true },
+    });
+
     return { ok: true };
   });
 
@@ -239,6 +281,11 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => dmcaSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: report } = await supabaseAdmin
+      .from("dmca_reports")
+      .select("id, creator_id")
+      .eq("id", data.reportId)
+      .maybeSingle();
     const { error } = await supabaseAdmin
       .from("dmca_reports")
       .update({
@@ -247,5 +294,65 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
       })
       .eq("id", data.reportId);
     if (error) throw new Error(error.message);
+    await logAdminAction({
+      adminId: context.userId,
+      actionType: `dmca_${data.status}`,
+      targetType: "dmca_report",
+      targetId: data.reportId,
+      targetUserId: report?.creator_id ?? null,
+      metadata: { status: data.status, hasNotes: !!data.adminNotes },
+    });
     return { ok: true };
+  });
+
+/**
+ * Lista as últimas ações administrativas registradas (para a tela de auditoria).
+ */
+export const listAdminActionsAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        actionType: z.string().max(64).optional(),
+        limit: z.number().int().min(1).max(500).optional(),
+      })
+      .parse(input ?? {})
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const limit = data.limit ?? 200;
+
+    let query = (supabaseAdmin.from("admin_action_audit") as any)
+      .select("id, admin_id, action_type, target_type, target_id, target_user_id, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (data.actionType) query = query.eq("action_type", data.actionType);
+
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const userIds = new Set<string>();
+    (rows ?? []).forEach((r: any) => {
+      if (r.admin_id) userIds.add(r.admin_id);
+      if (r.target_user_id) userIds.add(r.target_user_id);
+    });
+
+    const profilesById = new Map<string, { username: string; display_name: string | null }>();
+    if (userIds.size > 0) {
+      const { data: profs } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, username, display_name")
+        .in("user_id", Array.from(userIds));
+      (profs ?? []).forEach((p) => {
+        profilesById.set(p.user_id, { username: p.username, display_name: p.display_name });
+      });
+    }
+
+    const enriched = (rows ?? []).map((r: any) => ({
+      ...r,
+      admin_username: profilesById.get(r.admin_id)?.username ?? null,
+      target_username: r.target_user_id ? (profilesById.get(r.target_user_id)?.username ?? null) : null,
+    }));
+
+    return { rows: enriched };
   });
