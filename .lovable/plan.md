@@ -1,78 +1,47 @@
-# Auditoria: o que realmente falta
+# Corrigir exposição pública de dados financeiros
 
-A base está muito completa. Mas olhando rotas, tabelas e componentes, identifiquei lacunas reais — não "ideias bonitas", mas coisas que faltam pra plataforma rodar 100% no mundo real.
+## Problema
+Duas tabelas estão com leitura pública desnecessária, expondo dados sensíveis:
 
----
+1. **`platform_settings`** — policy `"Todos leem settings"` permite que `anon` e `authenticated` leiam taxa da plataforma (`platform_fee_pct`), dias de retenção (`hold_days`) e mínimo de saque. Configurações internas não devem ser públicas.
+2. **`post_goals`** — policy `"Goals visíveis a todos"` (USING `true`) expõe metas financeiras (`target_cents`, `raised_cents`, `unlock_price_cents`) de **todos** os posts, mesmo de posts privados/PPV/subscribers que o usuário não tem acesso.
 
-## 🔴 Crítico (bloqueia operação real)
+## Solução
 
-### 1. Cron de processamento de mailing em massa
-A função `process_mass_dm_batch` existe no banco, mas **nada a chama**. Campanhas agendadas ficam paradas em `pending` pra sempre. Precisa de um endpoint `/api/public/cron/process-mass-dm` chamado por pg_cron a cada minuto.
+### 1. `platform_settings` → apenas admin
+- DROP policy `"Todos leem settings"`.
+- CREATE policy SELECT apenas para `has_role(auth.uid(), 'admin')`.
+- Criar função `public.get_platform_fee_pct()` (SECURITY DEFINER, STABLE) que retorna apenas o campo `platform_fee_pct` para qualquer authenticated. Isso permite o cálculo de payout no frontend/server sem expor a tabela inteira.
+- Refatorar `src/routes/creator.wallet.tsx` (e qualquer outro lugar que faça `from('platform_settings').select('*')`) para chamar a RPC `get_platform_fee_pct` em vez de ler a tabela.
 
-### 2. Expiração automática de assinaturas
-Não há job que marca `subscriptions.status = 'expired'` quando `current_period_end < now()`. Hoje, assinaturas vencidas continuam ativas até o usuário tentar renovar. Cron diário resolve.
+### 2. `post_goals` → respeitar acesso ao post
+- DROP policy `"Goals visíveis a todos"`.
+- CREATE policy SELECT com `USING (public.can_view_post(post_id, auth.uid()))` — assim a meta só aparece para quem pode ver o post (público, dono, assinante ativo, comprador PPV, ou meta já desbloqueada via `can_view_post`).
 
-### 3. Expiração de stories
-Tabela `stories` tem `expires_at`, mas nenhum cron remove stories expiradas do storage. Vai acumular lixo no bucket.
+## Detalhes técnicos
 
-### 4. Página pública do criador — preview pra quem não assina
-Verificar `profile.$username.tsx`: precisa mostrar bio, avatar, capa, contador de posts, botão de assinar e **grid de posts borrados/cadeado** pra converter visitante em assinante. Hoje provavelmente está minimal.
+**Migração SQL:**
+```sql
+-- platform_settings
+DROP POLICY "Todos leem settings" ON public.platform_settings;
+CREATE POLICY "Admin lê settings" ON public.platform_settings
+  FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
 
----
+CREATE OR REPLACE FUNCTION public.get_platform_fee_pct()
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT platform_fee_pct FROM public.platform_settings WHERE id = 1 $$;
 
-## 🟡 Importante (impacta receita/UX)
+-- post_goals
+DROP POLICY "Goals visíveis a todos" ON public.post_goals;
+CREATE POLICY "Goals visíveis conforme acesso ao post" ON public.post_goals
+  FOR SELECT USING (public.can_view_post(post_id, auth.uid()));
+```
 
-### 5. Renovação automática de assinaturas (recorrência real)
-Hoje só existe pagamento único via PIX. Sem recorrência, retenção despenca no fim do mês. Como PIX não suporta recurring nativo, o caminho é:
-- Cron que detecta assinaturas vencendo em 3/1/0 dias
-- Envia notificação + link de renovação 1-clique (cobrança PIX pré-gerada)
-- Opcional: cartão via gateway (Stripe/Pagar.me) numa fase futura
+**Refatoração de código:**
+- Buscar usos de `platform_settings` com `rg "platform_settings"` e substituir leituras por `supabase.rpc('get_platform_fee_pct')`.
+- Verificar componentes que mostram metas em posts (PostCard, feed, página do post) — como `can_view_post` já cobre o caso `visibility = 'goal'` (meta desbloqueada ou contribuinte), o comportamento público de exibir progresso de metas em posts goal continua funcionando.
 
-### 6. Notificações push (web push)
-Tabela `notifications` existe, mas só funciona se o usuário estiver no site. Sem web push (Service Worker + VAPID), criadora perde engajamento de quem não abre o app. Crítico pra mass DM converter.
-
-### 7. Email transacional
-Não vi integração de email. Nada de "novo PPV recebido", "alguém te mandou gorjeta", "sua assinatura vai vencer", reset de senha customizado, etc. Email é canal de retenção #1.
-
-### 8. Busca/descoberta melhor
-Tem `/explore` e `/search`, mas falta:
-- Filtros (preço, categoria, online agora, novos)
-- Tags/categorias nos perfis (loira, fitness, cosplay, etc.)
-- "Trending" baseado em métricas reais (assinantes novos últimos 7 dias)
-
-### 9. Sistema de referral pra fãs (não só ambassador)
-Existe `affiliate_codes` pra ambassadors. Falta usuário comum poder convidar amigos com bônus mútuo (ex: "ganhe R$10 quando seu amigo assinar qualquer criadora").
-
----
-
-## 🟢 Polimento (nice to have)
-
-### 10. Onboarding guiado pra criadora nova
-Existe `OnboardingChecklist.tsx` — verificar se cobre: completar perfil, definir preço, postar 1º conteúdo, configurar PIX, ativar 2FA. Se faltar passos, completar.
-
-### 11. Dashboard de analytics mais profundo
-`creator.analytics.tsx` existe — verificar se tem: receita por fonte (sub vs PPV vs tip vs chat), churn rate, LTV médio, top fãs, melhor horário pra postar.
-
-### 12. Backup/export de dados pro criador
-LGPD: criadora deve poder exportar todos os dados dela (lista de fãs, mensagens, transações) em CSV/JSON. Botão em settings.
-
-### 13. Modo "férias" pra criadora
-Pausar cobranças de novas assinaturas mas manter as ativas, com aviso no perfil. Evita reembolso quando criadora some.
-
-### 14. Live streaming / videochamada paga
-Mercado grande, mas tecnicamente pesado (precisa LiveKit/Agora/Daily). É um produto à parte — só vale se for prioridade estratégica.
-
-### 15. App mobile (PWA)
-Adicionar manifest.json + service worker pra instalar como app no celular. Baixo esforço, alto impacto percebido.
-
----
-
-## Minha recomendação
-
-Se eu tivesse que escolher **3 pra fazer agora**, em ordem:
-
-1. **Crons essenciais** (#1, #2, #3) — sem isso a plataforma "vaza" silenciosamente
-2. **Email transacional + web push** (#6, #7) — multiplica retenção
-3. **Página pública do criador convertendo melhor** (#4) — multiplica conversão
-
-Me diz quais você quer que eu implemente que eu monto o plano detalhado. Ou se quer só os crons (que é o mais urgente), eu já faço direto.
+## Validação
+- Rodar `supabase--linter` após a migração.
+- Confirmar que carteira da criadora (`/creator/wallet`) ainda calcula taxa corretamente.
+- Confirmar que posts com meta pública continuam mostrando barra de progresso.
