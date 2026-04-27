@@ -174,7 +174,7 @@ export async function logAdminAction(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
-    await supabaseAdmin.from("admin_action_audit").insert({
+    await (supabaseAdmin.from("admin_action_audit") as any).insert({
       admin_id: params.adminId,
       action_type: params.actionType,
       target_type: params.targetType,
