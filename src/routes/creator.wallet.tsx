@@ -144,11 +144,7 @@ function WalletPage() {
         .in("type", ["subscription", "ppv", "tip", "affiliate_commission"])
         .order("created_at", { ascending: false })
         .limit(100),
-      supabase
-        .from("platform_settings")
-        .select("platform_fee_pct, hold_days")
-        .eq("id", 1)
-        .maybeSingle(),
+      supabase.rpc("get_platform_fee_pct"),
     ]);
     setBalance(
       (bal as Balance | null) ?? {
