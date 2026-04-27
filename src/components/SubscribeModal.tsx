@@ -287,6 +287,25 @@ export function SubscribeModal({
 
           {step === "plan" && (
             <div className="space-y-3">
+              {trialInfo.eligible && (
+                <div className="space-y-2 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/15 to-primary/10 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Gift className="h-5 w-5 text-accent" />
+                    🎁 {trialInfo.days} {trialInfo.days === 1 ? "dia grátis" : "dias grátis"}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Experimente sem pagar. Cancele a qualquer momento antes do término.
+                  </p>
+                  <Button
+                    onClick={activateTrial}
+                    disabled={trialBusy}
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    {trialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Começar ${trialInfo.days} ${trialInfo.days === 1 ? "dia" : "dias"} grátis`}
+                  </Button>
+                  <p className="text-center text-[10px] text-muted-foreground">— ou escolha um plano abaixo —</p>
+                </div>
+              )}
               {coupon && (
                 <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
                   {isTrial ? <Gift className="h-4 w-4 text-accent" /> : <Tag className="h-4 w-4 text-accent" />}
