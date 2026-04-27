@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { requireAdminServer, getKycSignedUrlServer } from "@/server/admin.functions";
+import { requireAdminServer, getKycSignedUrlServer, reviewKycServer } from "@/server/admin.functions";
 
 export const Route = createFileRoute("/admin/kyc")({
   beforeLoad: async () => {
@@ -79,29 +79,27 @@ function AdminKycPage() {
   }, [isAdmin, tab]);
 
   const approve = async (r: Row) => {
-    const { error: e1 } = await supabase
-      .from("kyc_requests")
-      .update({ status: "approved", reviewed_by: user!.id, reviewed_at: new Date().toISOString(), rejection_reason: null })
-      .eq("id", r.id);
-    if (e1) return toast.error(e1.message);
-    const { error: e2 } = await supabase
-      .from("user_roles")
-      .insert({ user_id: r.user_id, role: "creator" });
-    if (e2 && !e2.message.includes("duplicate")) return toast.error(e2.message);
-    await supabase.from("profiles").update({ is_verified: true }).eq("user_id", r.user_id);
-    toast.success("KYC aprovado — usuária promovida a criadora");
-    load();
+    try {
+      await reviewKycServer({ data: { kycId: r.id, decision: "approved" } });
+      toast.success("KYC aprovado — usuária promovida a criadora");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao aprovar");
+    }
   };
 
   const reject = async (r: Row) => {
     const reason = window.prompt("Motivo da rejeição (será mostrado para a criadora)?");
     if (!reason) return;
-    const { error } = await supabase
-      .from("kyc_requests")
-      .update({ status: "rejected", rejection_reason: reason, reviewed_by: user!.id, reviewed_at: new Date().toISOString() })
-      .eq("id", r.id);
-    if (error) toast.error(error.message);
-    else { toast.success("Rejeitado"); load(); }
+    try {
+      await reviewKycServer({
+        data: { kycId: r.id, decision: "rejected", rejectionReason: reason },
+      });
+      toast.success("Rejeitado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao rejeitar");
+    }
   };
 
   if (!isAdmin) return null;

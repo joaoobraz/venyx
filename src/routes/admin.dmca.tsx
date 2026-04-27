@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { requireAdminServer } from "@/server/admin.functions";
+import { requireAdminServer, updateDmcaReportServer } from "@/server/admin.functions";
 
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {
@@ -75,11 +75,9 @@ function AdminDmcaPage() {
   const updateStatus = async (id: string, status: "notified" | "resolved" | "rejected") => {
     setBusy(id);
     try {
-      const { error } = await supabase
-        .from("dmca_reports")
-        .update({ status, admin_notes: notes[id] || null })
-        .eq("id", id);
-      if (error) throw error;
+      await updateDmcaReportServer({
+        data: { reportId: id, status, adminNotes: notes[id] || null },
+      });
       toast.success("Atualizado");
       load();
     } catch (e) {
