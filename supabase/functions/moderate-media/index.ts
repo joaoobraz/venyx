@@ -5,18 +5,24 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
-const ALLOWED_ORIGINS = new Set([
+const ALLOWED_ORIGINS = [
   "https://private-pleasures-portal.lovable.app",
   "https://id-preview--59549983-d8c7-43dd-bb65-ffb37fd041ca.lovable.app",
-]);
+];
 function buildCors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://private-pleasures-portal.lovable.app",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     "Vary": "Origin",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 }
+// Fallback estático para uso em helpers fora do handler (origin restrito ao domínio principal).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
+  "Vary": "Origin",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
