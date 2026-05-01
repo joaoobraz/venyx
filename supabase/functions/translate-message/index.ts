@@ -18,6 +18,7 @@ function buildCors(req: Request) {
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const auth = req.headers.get("Authorization");
