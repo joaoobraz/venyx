@@ -200,7 +200,10 @@ export const reviewKycServer = createServerFn({ method: "POST" })
           reviewed_at: new Date().toISOString(),
         })
         .eq("id", data.kycId);
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("[admin.reviewKyc.reject]", error);
+        throw new Error("Não foi possível atualizar o KYC. Tente novamente.");
+      }
       await auditLog({
         adminId: userId,
         actionType: "kyc_rejected",
@@ -222,13 +225,17 @@ export const reviewKycServer = createServerFn({ method: "POST" })
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", data.kycId);
-    if (e1) throw new Error(e1.message);
+    if (e1) {
+      console.error("[admin.reviewKyc.approve]", e1);
+      throw new Error("Não foi possível aprovar o KYC. Tente novamente.");
+    }
 
     const { error: e2 } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: kyc.user_id, role: "creator" });
     if (e2 && !e2.message.toLowerCase().includes("duplicate")) {
-      throw new Error(e2.message);
+      console.error("[admin.reviewKyc.promote]", e2);
+      throw new Error("KYC aprovado, mas não foi possível promover a criadora.");
     }
 
     await supabaseAdmin
@@ -271,7 +278,10 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
         admin_notes: data.adminNotes ?? null,
       })
       .eq("id", data.reportId);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[admin.updateDmcaReport]", error);
+      throw new Error("Não foi possível atualizar o report. Tente novamente.");
+    }
     await auditLog({
       adminId: context.userId,
       actionType: `dmca_${data.status}`,
@@ -307,7 +317,10 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
     if (data.actionType) query = query.eq("action_type", data.actionType);
 
     const { data: rows, error } = await query;
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[admin.listAdminActionsAudit]", error);
+      throw new Error("Não foi possível carregar a auditoria.");
+    }
 
     const userIds = new Set<string>();
     (rows ?? []).forEach((r: any) => {

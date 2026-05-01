@@ -35,8 +35,9 @@ function ResetPage() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Link enviado. Verifique seu e-mail.");
+    if (error) console.error("[reset-password]", error);
+    // Mensagem genérica em todos os casos para evitar enumeração de e-mails
+    toast.success("Se este e-mail existir em nossa base, enviamos um link de redefinição.");
   };
 
   const updatePassword = async (e: FormEvent) => {

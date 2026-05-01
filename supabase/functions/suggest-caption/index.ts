@@ -2,14 +2,28 @@
 // Body: { hint?: string, mood?: 'flerte'|'misterioso'|'engracado'|'provocante'|'romantico', n?: number }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
+const ALLOWED_ORIGINS = [
+  "https://private-pleasures-portal.lovable.app",
+  "https://id-preview--59549983-d8c7-43dd-bb65-ffb37fd041ca.lovable.app",
+];
+function buildCors(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
+  "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const auth = req.headers.get("Authorization");
