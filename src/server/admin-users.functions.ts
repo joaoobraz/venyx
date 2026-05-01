@@ -44,7 +44,10 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
     }
 
     const { data: profiles, error } = await query;
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[admin.listUsers]", error);
+      throw new Error("Não foi possível listar usuários.");
+    }
 
     const ids = (profiles ?? []).map((p) => p.user_id);
     if (ids.length === 0) return { users: [] };
@@ -94,9 +97,11 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
           { user_id: data.targetUserId, role: data.role },
           { onConflict: "user_id,role", ignoreDuplicates: true },
         );
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("[admin.updateUserRole.add]", error);
+        throw new Error("Não foi possível adicionar o cargo.");
+      }
     } else {
-      // Proteção: não permitir remover o próprio cargo admin
       if (data.role === "admin" && data.targetUserId === context.userId) {
         throw new Error("Você não pode remover seu próprio cargo de admin.");
       }
@@ -105,7 +110,10 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
         .delete()
         .eq("user_id", data.targetUserId)
         .eq("role", data.role);
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("[admin.updateUserRole.remove]", error);
+        throw new Error("Não foi possível remover o cargo.");
+      }
     }
     await logAdminAction({
       adminId: context.userId,
