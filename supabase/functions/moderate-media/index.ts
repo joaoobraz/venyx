@@ -121,10 +121,10 @@ Deno.serve(async (req) => {
   }
 });
 
-function json(d: unknown, status = 200, req?: Request) {
+function json(d: unknown, status = 200) {
   return new Response(JSON.stringify(d), {
     status,
-    headers: { ...(req ? buildCors(req) : {}), "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
