@@ -1737,6 +1737,57 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          cover_url: string | null
+          created_at: string | null
+          display_name: string | null
+          is_verified: boolean | null
+          language: string | null
+          links: Json | null
+          location: string | null
+          subscription_price_cents: number | null
+          user_id: string | null
+          username: string | null
+          watermark_opacity: number | null
+          watermark_position: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          language?: string | null
+          links?: Json | null
+          location?: string | null
+          subscription_price_cents?: number | null
+          user_id?: string | null
+          username?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          language?: string | null
+          links?: Json | null
+          location?: string | null
+          subscription_price_cents?: number | null
+          user_id?: string | null
+          username?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       award_loyalty_points: {
