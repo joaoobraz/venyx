@@ -1,25 +1,82 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+import { Search as SearchIcon, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
-import { useI18n } from "@/lib/i18n";
+import { CreatorCard, type CreatorSummary } from "@/components/CreatorCard";
+import { searchCreators } from "@/server/discovery.functions";
 
 export const Route = createFileRoute("/search")({
+  validateSearch: (s: Record<string, unknown>): { q?: string } => ({
+    q: typeof s.q === "string" ? s.q : undefined,
+  }),
   component: SearchPage,
 });
 
 function SearchPage() {
-  const { t } = useI18n();
+  const initial = Route.useSearch().q ?? "";
+  const [query, setQuery] = useState(initial);
+  const [results, setResults] = useState<CreatorSummary[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const run = useServerFn(searchCreators);
+  const reqId = useRef(0);
+
+  useEffect(() => {
+    const term = query.trim();
+    const id = ++reqId.current;
+    setLoading(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await run({
+          data: { query: term, sort: term ? "top" : "new", limit: 30 },
+        });
+        if (id === reqId.current) {
+          setResults(res.creators);
+          setSearched(true);
+        }
+      } catch {
+        if (id === reqId.current) setResults([]);
+      } finally {
+        if (id === reqId.current) setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [query, run]);
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder={t("nav.search")} className="h-12 pl-11" />
+          <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {loading && (
+            <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          )}
+          <Input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Busque por criadoras (nome ou @usuário)..."
+            className="h-12 pl-11 pr-11"
+          />
         </div>
-        <p className="px-1 text-sm text-muted-foreground">
-          Busque por criadoras, hashtags, posts...
-        </p>
+
+        {results.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {results.map((c) => (
+              <CreatorCard key={c.user_id} c={c} />
+            ))}
+          </div>
+        ) : (
+          <p className="px-1 text-sm text-muted-foreground">
+            {loading
+              ? "Buscando..."
+              : searched && query.trim()
+                ? `Nenhuma criadora encontrada para "${query.trim()}".`
+                : "Comece a digitar para encontrar criadoras."}
+          </p>
+        )}
       </div>
     </AppShell>
   );

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UpsellModal } from "@/components/UpsellModal";
 import { startTrial, checkTrialEligibility } from "@/server/trial.functions";
+import { IdentityVerificationModal } from "@/components/IdentityVerificationModal";
+import { getMyVerificationStatus } from "@/server/verification.functions";
 
 interface Plan {
   id: string;
@@ -81,10 +83,17 @@ export function SubscribeModal({
   const [copied, setCopied] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [trialInfo, setTrialInfo] = useState<{ eligible: boolean; days: number }>({ eligible: false, days: 0 });
+  const [trialInfo, setTrialInfo] = useState<{ eligible: boolean; days: number }>({
+    eligible: false,
+    days: 0,
+  });
   const [trialBusy, setTrialBusy] = useState(false);
   const startTrialFn = useServerFn(startTrial);
   const checkTrialFn = useServerFn(checkTrialEligibility);
+  const checkVerifyFn = useServerFn(getMyVerificationStatus);
+  const [verified, setVerified] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
+  const afterVerifyRef = useRef<null | (() => void)>(null);
 
   // reset on close
   useEffect(() => {
@@ -117,9 +126,11 @@ export function SubscribeModal({
         setSelected(list[0]?.months ?? 1);
       });
 
-    listOffersFn({ data: { creatorId, kind: "order_bump" } }).then((res) => {
-      setBumps((res.offers as unknown as BumpOffer[]) ?? []);
-    }).catch(() => setBumps([]));
+    listOffersFn({ data: { creatorId, kind: "order_bump" } })
+      .then((res) => {
+        setBumps((res.offers as unknown as BumpOffer[]) ?? []);
+      })
+      .catch(() => setBumps([]));
 
     const code = readCookie("venyx_coupon");
     if (code) {
@@ -148,6 +159,30 @@ export function SubscribeModal({
       .catch(() => setTrialInfo({ eligible: false, days: 0 }));
   }, [open, user, creatorId, checkTrialFn]);
 
+  // verifica se o usuário já passou pela verificação de identidade (+18)
+  useEffect(() => {
+    if (!open || !user) {
+      setVerified(false);
+      return;
+    }
+    const authHeaders = session?.access_token
+      ? { Authorization: `Bearer ${session.access_token}` }
+      : undefined;
+    checkVerifyFn({ headers: authHeaders })
+      .then((r) => setVerified(!!r.verified))
+      .catch(() => setVerified(false));
+  }, [open, user, session, checkVerifyFn]);
+
+  // garante a verificação antes de executar a ação (assinar / trial)
+  const ensureVerifiedThen = (action: () => void) => {
+    if (user && !verified) {
+      afterVerifyRef.current = action;
+      setShowVerify(true);
+    } else {
+      action();
+    }
+  };
+
   const activateTrial = async () => {
     setTrialBusy(true);
     try {
@@ -168,9 +203,13 @@ export function SubscribeModal({
 
   const plan = plans.find((p) => p.months === selected) ?? plans[0];
   const subSubtotal = plan ? plan.price_cents * plan.months : 0;
-  const subDiscounted = coupon?.discount_pct ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100)) : subSubtotal;
+  const subDiscounted = coupon?.discount_pct
+    ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100))
+    : subSubtotal;
   const isTrial = !!coupon?.trial_days;
-  const bumpsTotal = bumps.filter((b) => selectedBumps.has(b.id)).reduce((s, b) => s + b.price_cents, 0);
+  const bumpsTotal = bumps
+    .filter((b) => selectedBumps.has(b.id))
+    .reduce((s, b) => s + b.price_cents, 0);
   const totalCents = (isTrial ? 0 : subDiscounted) + bumpsTotal;
 
   const toggleBump = (id: string) => {
@@ -234,7 +273,8 @@ export function SubscribeModal({
             if (s.status === "paid") {
               if (pollRef.current) clearInterval(pollRef.current);
               setStep("done");
-              if (coupon) document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
+              if (coupon)
+                document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
               toast.success("Pagamento confirmado! Você já é assinante.");
               onSubscribed?.();
               onOpenChange(false);
@@ -297,18 +337,28 @@ export function SubscribeModal({
                     Experimente sem pagar. Cancele a qualquer momento antes do término.
                   </p>
                   <Button
-                    onClick={activateTrial}
+                    onClick={() => ensureVerifiedThen(activateTrial)}
                     disabled={trialBusy}
                     className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                   >
-                    {trialBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Começar ${trialInfo.days} ${trialInfo.days === 1 ? "dia" : "dias"} grátis`}
+                    {trialBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      `Começar ${trialInfo.days} ${trialInfo.days === 1 ? "dia" : "dias"} grátis`
+                    )}
                   </Button>
-                  <p className="text-center text-[10px] text-muted-foreground">— ou escolha um plano abaixo —</p>
+                  <p className="text-center text-[10px] text-muted-foreground">
+                    — ou escolha um plano abaixo —
+                  </p>
                 </div>
               )}
               {coupon && (
                 <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
-                  {isTrial ? <Gift className="h-4 w-4 text-accent" /> : <Tag className="h-4 w-4 text-accent" />}
+                  {isTrial ? (
+                    <Gift className="h-4 w-4 text-accent" />
+                  ) : (
+                    <Tag className="h-4 w-4 text-accent" />
+                  )}
                   <span className="text-foreground">
                     {isTrial
                       ? `🎁 Trial de ${coupon.trial_days} dias grátis aplicado!`
@@ -317,7 +367,9 @@ export function SubscribeModal({
                 </div>
               )}
               {plans.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Esta criadora ainda não definiu planos.</p>
+                <p className="text-sm text-muted-foreground">
+                  Esta criadora ainda não definiu planos.
+                </p>
               ) : (
                 <div className="space-y-2">
                   {plans.map((p) => (
@@ -344,7 +396,9 @@ export function SubscribeModal({
                           R$ {((p.price_cents * p.months) / 100).toFixed(2)}
                         </div>
                         {p.discount_pct > 0 && (
-                          <div className="text-[10px] font-semibold text-accent">-{p.discount_pct}%</div>
+                          <div className="text-[10px] font-semibold text-accent">
+                            -{p.discount_pct}%
+                          </div>
                         )}
                       </div>
                     </button>
@@ -397,7 +451,7 @@ export function SubscribeModal({
               )}
 
               <Button
-                onClick={startCheckout}
+                onClick={() => ensureVerifiedThen(startCheckout)}
                 disabled={busy || !plan}
                 className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-95"
               >
@@ -471,6 +525,17 @@ export function SubscribeModal({
         onOpenChange={setUpsellOpen}
         creatorId={creatorId}
         creatorName={creatorName}
+      />
+
+      <IdentityVerificationModal
+        open={showVerify}
+        onOpenChange={setShowVerify}
+        onVerified={() => {
+          setVerified(true);
+          const action = afterVerifyRef.current;
+          afterVerifyRef.current = null;
+          action?.();
+        }}
       />
     </>
   );

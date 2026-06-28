@@ -10,13 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
-import { Route as TestPixRouteImport } from './routes/test-pix'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PalettePreviewRouteImport } from './routes/palette-preview'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as LoginRouteImport } from './routes/login'
@@ -62,11 +60,6 @@ const WishlistRoute = WishlistRouteImport.update({
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TestPixRoute = TestPixRouteImport.update({
-  id: '/test-pix',
-  path: '/test-pix',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -90,11 +83,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PalettePreviewRoute = PalettePreviewRouteImport.update({
-  id: '/palette-preview',
-  path: '/palette-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -309,13 +297,11 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
-  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/test-pix': typeof TestPixRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -358,13 +344,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
-  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/test-pix': typeof TestPixRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -408,13 +392,11 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
-  '/palette-preview': typeof PalettePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/test-pix': typeof TestPixRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -459,13 +441,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/loyalty'
     | '/notifications'
-    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
     | '/terms'
-    | '/test-pix'
     | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
@@ -508,13 +488,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/loyalty'
     | '/notifications'
-    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
     | '/terms'
-    | '/test-pix'
     | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
@@ -557,13 +535,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/loyalty'
     | '/notifications'
-    | '/palette-preview'
     | '/privacy'
     | '/reset-password'
     | '/search'
     | '/signup'
     | '/terms'
-    | '/test-pix'
     | '/wishlist'
     | '/admin/actions-audit'
     | '/admin/audit'
@@ -607,13 +583,11 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
-  PalettePreviewRoute: typeof PalettePreviewRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
-  TestPixRoute: typeof TestPixRoute
   WishlistRoute: typeof WishlistRoute
   AdminActionsAuditRoute: typeof AdminActionsAuditRoute
   AdminAuditRoute: typeof AdminAuditRoute
@@ -655,13 +629,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/test-pix': {
-      id: '/test-pix'
-      path: '/test-pix'
-      fullPath: '/test-pix'
-      preLoaderRoute: typeof TestPixRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -695,13 +662,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/palette-preview': {
-      id: '/palette-preview'
-      path: '/palette-preview'
-      fullPath: '/palette-preview'
-      preLoaderRoute: typeof PalettePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -991,13 +951,11 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
-  PalettePreviewRoute: PalettePreviewRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
-  TestPixRoute: TestPixRoute,
   WishlistRoute: WishlistRoute,
   AdminActionsAuditRoute: AdminActionsAuditRoute,
   AdminAuditRoute: AdminAuditRoute,
