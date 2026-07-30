@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_URL = "https://nexuspag.com";
@@ -38,18 +38,20 @@ function safeError(error: unknown) {
  * Sem isso, qualquer pessoa poderia POSTar direto na server function e gerar cobranças
  * reais usando NEXUSPAG_API_KEY.
  */
-async function assertSellerOrAdmin(userId: string): Promise<void> {
+async function assertPaymentTestAdmin(userId: string): Promise<void> {
+  if (process.env.ENABLE_PAYMENT_TEST_ENDPOINTS !== "true") {
+    throw new Error("Os endpoints de teste de pagamento estão desativados");
+  }
+
   const { data: roles, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId);
 
   if (error) throw new Error("Falha ao verificar permissões");
-  const allowed = (roles ?? []).some(
-    (r) => r.role === "seller" || r.role === "admin",
-  );
+  const allowed = (roles ?? []).some((r) => r.role === "admin");
   if (!allowed) {
-    throw new Error("Acesso negado: apenas vendedores ou administradores");
+    throw new Error("Acesso negado: apenas administradores");
   }
 }
 
@@ -61,11 +63,11 @@ const createPixSchema = z.object({
 });
 
 export const createPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => createPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
-      await assertSellerOrAdmin(context.userId);
+      await assertPaymentTestAdmin(context.userId);
 
       const body = {
         amount: data.amount,
@@ -101,26 +103,27 @@ export const createPixCharge = createServerFn({ method: "POST" })
   });
 
 const getStatusSchema = z.object({
-  id: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_\-]+$/),
+  id: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-zA-Z0-9_-]+$/),
 });
 
 export const getPixStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => getStatusSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
-      await assertSellerOrAdmin(context.userId);
+      await assertPaymentTestAdmin(context.userId);
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
-      const res = await fetch(
-        `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
-        {
-          method: "GET",
-          headers: { "x-api-key": getApiKey() },
-          signal: controller.signal,
-        },
-      ).finally(() => clearTimeout(timeout));
+      const res = await fetch(`${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`, {
+        method: "GET",
+        headers: { "x-api-key": getApiKey() },
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
       const json = await readJsonResponse(res);
       if (!res.ok) {
         console.warn("[nexuspag-test] status falhou", res.status, json);

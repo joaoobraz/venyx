@@ -22,7 +22,7 @@ const BANNED_PATTERNS: { re: RegExp; reason: string }[] = [
   { re: /(https?:\/\/|www\.)/i, reason: "links externos" },
   { re: /\b(wa\.me|t\.me|telegram|whatsapp|zap|insta(gram)?|tiktok|onlyfans|privacy|fanvue)\b/i, reason: "redes sociais ou plataformas externas" },
   { re: /@[a-z0-9_.]{3,}/i, reason: "@usuário" },
-  { re: /\+?\d{2}[\s.\-]?\(?\d{2,3}\)?[\s.\-]?\d{4,5}[\s.\-]?\d{4}/, reason: "telefone" },
+  { re: /\+?\d{2}[\s.-]?\(?\d{2,3}\)?[\s.-]?\d{4,5}[\s.-]?\d{4}/, reason: "telefone" },
   { re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i, reason: "e-mail" },
 ];
 

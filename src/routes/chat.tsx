@@ -1,6 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef, type ChangeEvent } from "react";
-import { Search as SearchIcon, Send, DollarSign, Image as ImageIcon, Lock, Crown, Loader2 } from "lucide-react";
+import {
+  Search as SearchIcon,
+  Send,
+  DollarSign,
+  Image as ImageIcon,
+  Lock,
+  Crown,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
@@ -76,7 +84,12 @@ function ChatPage() {
       .select("*")
       .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
       .order("last_message_at", { ascending: false });
-    const list = (ths ?? []) as { id: string; user_a: string; user_b: string; last_message_at: string }[];
+    const list = (ths ?? []) as {
+      id: string;
+      user_a: string;
+      user_b: string;
+      last_message_at: string;
+    }[];
     if (list.length === 0) {
       setThreads([]);
       return;
@@ -94,9 +107,14 @@ function ChatPage() {
         .eq("status", "active"),
     ]);
     const profMap = new Map(
-      ((profs ?? []) as { user_id: string; username: string; display_name: string | null; avatar_url: string | null }[]).map(
-        (p) => [p.user_id, p],
-      ),
+      (
+        (profs ?? []) as {
+          user_id: string;
+          username: string;
+          display_name: string | null;
+          avatar_url: string | null;
+        }[]
+      ).map((p) => [p.user_id, p]),
     );
     const subSet = new Set(((subs ?? []) as { creator_id: string }[]).map((s) => s.creator_id));
     setThreads(
@@ -122,7 +140,7 @@ function ChatPage() {
     if (!user) return;
     // Usa RPC segura: mascara media_path/mime_type para PPV não desbloqueado
     // ou subscribers_only sem assinatura ativa.
-    const { data: msgs, error } = await supabase.rpc("list_thread_messages", {
+    const { data: msgs, error } = await supabase.rpc("list_thread_messages_verified", {
       _thread_id: threadId,
     });
     if (error) {
@@ -178,7 +196,10 @@ function ChatPage() {
         user_id: user.id,
         surface: "chat",
         category: "contact_share",
-        reason: detection.matches.map((m) => `${m.label}: ${m.sample}`).join(" | ").slice(0, 500),
+        reason: detection.matches
+          .map((m) => `${m.label}: ${m.sample}`)
+          .join(" | ")
+          .slice(0, 500),
       });
       return;
     }
@@ -215,7 +236,9 @@ function ChatPage() {
     try {
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${active.id}/${Date.now()}.${ext}`;
-      const { error: ue } = await supabase.storage.from("chat-media").upload(path, f, { contentType: f.type });
+      const { error: ue } = await supabase.storage
+        .from("chat-media")
+        .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
       const { error: ie } = await supabase.from("chat_messages").insert({
         thread_id: active.id,
@@ -226,7 +249,9 @@ function ChatPage() {
       });
       if (ie) throw ie;
       setPpvPrice("");
-      toast.success(ppvCents ? `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})` : "Mídia enviada");
+      toast.success(
+        ppvCents ? `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})` : "Mídia enviada",
+      );
       await supabase.channel(`thread-${active.id}`).send({
         type: "broadcast",
         event: "new_message",
@@ -282,7 +307,10 @@ function ChatPage() {
   useEffect(() => {
     if (!user) return;
     const toFetch = messages.filter(
-      (m) => m.media_path && !mediaUrls[m.id] && (m.sender_id === user.id || m.unlocked || (m.subscribers_only && active?.subscribed)),
+      (m) =>
+        m.media_path &&
+        !mediaUrls[m.id] &&
+        (m.sender_id === user.id || m.unlocked || (m.subscribers_only && active?.subscribed)),
     );
     if (toFetch.length === 0) return;
     let cancel = false;
@@ -334,7 +362,9 @@ function ChatPage() {
           </div>
           <div className="flex-1 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="p-6 text-center text-xs text-muted-foreground">Nenhuma conversa ainda.</div>
+              <div className="p-6 text-center text-xs text-muted-foreground">
+                Nenhuma conversa ainda.
+              </div>
             ) : (
               filtered.map((th) => (
                 <button
@@ -354,8 +384,12 @@ function ChatPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-foreground">{th.other_name}</div>
-                    <div className="truncate text-xs text-muted-foreground">@{th.other_username}</div>
+                    <div className="truncate text-sm font-semibold text-foreground">
+                      {th.other_name}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      @{th.other_username}
+                    </div>
                   </div>
                 </button>
               ))
@@ -395,25 +429,39 @@ function ChatPage() {
               <div className="flex-1 space-y-2 overflow-y-auto bg-background/30 p-4">
                 {messages.map((m) => {
                   const fromMe = m.sender_id === user.id;
-                  const isLockedMedia = m.media_path && !m.unlocked && (m.ppv_price_cents > 0 || (m.subscribers_only && !active.subscribed));
+                  const isLockedMedia =
+                    m.media_path &&
+                    !m.unlocked &&
+                    (m.ppv_price_cents > 0 || (m.subscribers_only && !active.subscribed));
                   // Auto-libera para assinantes ativos
                   const subUnlocked = m.subscribers_only && active.subscribed;
                   const showMedia = m.media_path && (m.unlocked || subUnlocked);
                   return (
-                    <div key={m.id} className={`max-w-[78%] overflow-hidden rounded-2xl shadow-card ${fromMe ? "ml-auto bg-primary text-primary-foreground" : "bg-card text-foreground"}`}>
-                      {showMedia && m.media_path && (
-                        mediaUrls[m.id] ? (
+                    <div
+                      key={m.id}
+                      className={`max-w-[78%] overflow-hidden rounded-2xl shadow-card ${fromMe ? "ml-auto bg-primary text-primary-foreground" : "bg-card text-foreground"}`}
+                    >
+                      {showMedia &&
+                        m.media_path &&
+                        (mediaUrls[m.id] ? (
                           m.mime_type?.startsWith("video/") ? (
-                            <video src={mediaUrls[m.id]} controls className="aspect-square w-72 max-w-full object-cover" />
+                            <video
+                              src={mediaUrls[m.id]}
+                              controls
+                              className="aspect-square w-72 max-w-full object-cover"
+                            />
                           ) : (
-                            <img src={mediaUrls[m.id]} alt="" className="aspect-square w-72 max-w-full object-cover" />
+                            <img
+                              src={mediaUrls[m.id]}
+                              alt=""
+                              className="aspect-square w-72 max-w-full object-cover"
+                            />
                           )
                         ) : (
                           <div className="flex aspect-square w-72 max-w-full items-center justify-center bg-muted">
                             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                           </div>
-                        )
-                      )}
+                        ))}
                       {isLockedMedia && m.media_path && (
                         <div className="relative">
                           <div className="aspect-square w-72 max-w-full bg-muted" />
@@ -426,7 +474,11 @@ function ChatPage() {
                                 onClick={() => unlock(m)}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90"
                               >
-                                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `${t("feed.unlock")} R$ ${(m.ppv_price_cents / 100).toFixed(2)}`}
+                                {busy ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  `${t("feed.unlock")} R$ ${(m.ppv_price_cents / 100).toFixed(2)}`
+                                )}
                               </Button>
                             ) : (
                               <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-primary-foreground">
@@ -436,14 +488,23 @@ function ChatPage() {
                           </div>
                         </div>
                       )}
-                      {m.body && <div className={`px-4 py-2 text-sm ${fromMe ? "" : "text-foreground"}`}>{m.body}</div>}
+                      {m.body && (
+                        <div className={`px-4 py-2 text-sm ${fromMe ? "" : "text-foreground"}`}>
+                          {m.body}
+                        </div>
+                      )}
                       {m.body && !fromMe && (
                         <div className="px-4 pb-1">
                           <TranslateButton text={m.body} />
                         </div>
                       )}
-                      <div className={`px-3 pb-1.5 text-[10px] ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                        {new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      <div
+                        className={`px-3 pb-1.5 text-[10px] ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                      >
+                        {new Date(m.created_at).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </div>
                     </div>
                   );
@@ -455,7 +516,12 @@ function ChatPage() {
                 {ppvPrice && (
                   <div className="flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-1.5 text-xs text-accent">
                     🔒 Próxima mídia será PPV: R$ {parseFloat(ppvPrice || "0").toFixed(2)}
-                    <button onClick={() => setPpvPrice("")} className="ml-auto text-muted-foreground hover:text-foreground">×</button>
+                    <button
+                      onClick={() => setPpvPrice("")}
+                      className="ml-auto text-muted-foreground hover:text-foreground"
+                    >
+                      ×
+                    </button>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -466,7 +532,13 @@ function ChatPage() {
                   >
                     <ImageIcon className="h-5 w-5" />
                   </button>
-                  <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={onFile} />
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={onFile}
+                  />
                   <button
                     onClick={() => {
                       const v = prompt("Preço PPV em R$ (ou cancele para mídia grátis):", "9.90");
@@ -485,13 +557,18 @@ function ChatPage() {
                     placeholder={t("chat.placeholder")}
                     className="h-10 flex-1"
                   />
-                  <Button onClick={send} disabled={busy} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button
+                    onClick={send}
+                    disabled={busy}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
                 {draft.trim().length > 3 && detectExternalContact(draft).blocked && (
                   <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
-                    ⚠️ Compartilhar contato externo (WhatsApp, Telegram, telefone, redes sociais) é proibido.
+                    ⚠️ Compartilhar contato externo (WhatsApp, Telegram, telefone, redes sociais) é
+                    proibido.
                   </div>
                 )}
               </footer>

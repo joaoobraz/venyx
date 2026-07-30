@@ -547,6 +547,48 @@ export type Database = {
         }
         Relationships: []
       }
+      identity_verifications: {
+        Row: {
+          birth_date: string
+          country: string
+          cpf: string
+          created_at: string
+          full_name: string
+          id: string
+          method: string
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          birth_date: string
+          country?: string
+          cpf: string
+          created_at?: string
+          full_name: string
+          id?: string
+          method?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          birth_date?: string
+          country?: string
+          cpf?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          method?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       kyc_requests: {
         Row: {
           created_at: string
@@ -973,6 +1015,7 @@ export type Database = {
           amount_cents: number
           created_at: string
           id: string
+          pix_charge_id: string | null
           post_id: string
           user_id: string
         }
@@ -980,6 +1023,7 @@ export type Database = {
           amount_cents: number
           created_at?: string
           id?: string
+          pix_charge_id?: string | null
           post_id: string
           user_id: string
         }
@@ -987,6 +1031,7 @@ export type Database = {
           amount_cents?: number
           created_at?: string
           id?: string
+          pix_charge_id?: string | null
           post_id?: string
           user_id?: string
         }
@@ -1417,6 +1462,7 @@ export type Database = {
         Row: {
           created_at: string
           creator_id: string
+          current_period_start: string | null
           current_period_end: string | null
           id: string
           is_trial: boolean
@@ -1430,6 +1476,7 @@ export type Database = {
         Insert: {
           created_at?: string
           creator_id: string
+          current_period_start?: string | null
           current_period_end?: string | null
           id?: string
           is_trial?: boolean
@@ -1443,6 +1490,7 @@ export type Database = {
         Update: {
           created_at?: string
           creator_id?: string
+          current_period_start?: string | null
           current_period_end?: string | null
           id?: string
           is_trial?: boolean
@@ -1462,6 +1510,7 @@ export type Database = {
           gateway: string | null
           gateway_ref: string | null
           id: string
+          idempotency_key: string | null
           metadata: Json | null
           payee_id: string | null
           payer_id: string | null
@@ -1476,6 +1525,7 @@ export type Database = {
           gateway?: string | null
           gateway_ref?: string | null
           id?: string
+          idempotency_key?: string | null
           metadata?: Json | null
           payee_id?: string | null
           payer_id?: string | null
@@ -1490,6 +1540,7 @@ export type Database = {
           gateway?: string | null
           gateway_ref?: string | null
           id?: string
+          idempotency_key?: string | null
           metadata?: Json | null
           payee_id?: string | null
           payer_id?: string | null
@@ -1800,6 +1851,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      activate_coupon_trial: {
+        Args: {
+          _coupon_id: string
+          _creator_id: string
+          _subscriber_id: string
+        }
+        Returns: Json
+      }
       calc_loyalty_tier: { Args: { _points: number }; Returns: string }
       can_view_post: {
         Args: { _post_id: string; _viewer_id: string }
@@ -1847,6 +1906,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      fulfill_subscription_payment: {
+        Args: {
+          _amount_cents: number
+          _charge_id: string
+          _coupon_id: string | null
+          _creator_id: string
+          _gateway_ref: string
+          _is_trial: boolean
+          _months: number
+          _subscriber_id: string
+          _trial_days: number
+        }
+        Returns: string
+      }
+      is_age_verified: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       list_feed_posts: {
         Args: { _creator_id?: string; _limit?: number; _viewer_id?: string }
         Returns: {
@@ -1865,6 +1942,23 @@ export type Database = {
         }[]
       }
       list_thread_messages: {
+        Args: { _thread_id: string }
+        Returns: {
+          body: string
+          campaign_id: string
+          created_at: string
+          id: string
+          media_path: string
+          mime_type: string
+          ppv_price_cents: number
+          read_at: string
+          sender_id: string
+          subscribers_only: boolean
+          thread_id: string
+          unlocked: boolean
+        }[]
+      }
+      list_thread_messages_verified: {
         Args: { _thread_id: string }
         Returns: {
           body: string
@@ -1936,7 +2030,14 @@ export type Database = {
           sent: number
         }[]
       }
-      start_creator_trial: { Args: { _creator_id: string }; Returns: Json }
+      start_creator_trial: {
+        Args: { _creator_id: string; _subscriber_id: string }
+        Returns: Json
+      }
+      create_withdrawal_request: {
+        Args: { _amount_cents: number; _creator_id: string }
+        Returns: string
+      }
       storage_path_to_post_id: { Args: { _path: string }; Returns: string }
       subscriptions_expiring_in: {
         Args: { _days?: number }
@@ -1982,6 +2083,7 @@ export type Database = {
         | "upsell"
       pix_charge_status:
         | "pending"
+        | "processing"
         | "paid"
         | "expired"
         | "cancelled"

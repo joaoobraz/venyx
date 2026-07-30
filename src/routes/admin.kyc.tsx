@@ -251,7 +251,6 @@ function DocPreview({ path, label }: { path: string; label: string }) {
     <div className="group relative overflow-hidden rounded-lg bg-muted">
       <div className="flex aspect-[4/3] items-center justify-center">
         {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={label} className="h-full w-full object-cover" />
         ) : (
           <button

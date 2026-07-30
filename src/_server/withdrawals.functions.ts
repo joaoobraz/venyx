@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 
 function safeError(internal: unknown, msg = "Operação falhou. Tente novamente."): Error {
   console.error("[withdrawals]", internal);
@@ -12,9 +13,14 @@ function fmtBRL(cents: number): string {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
 
-async function notify(userId: string, title: string, body: string, metadata: Record<string, unknown> = {}) {
+async function notify(
+  userId: string,
+  title: string,
+  body: string,
+  metadata: { [key: string]: Json | undefined } = {},
+) {
   try {
-    await (supabaseAdmin.from("notifications" as never) as any).insert({
+    await supabaseAdmin.from("notifications").insert({
       user_id: userId,
       type: "withdrawal",
       title,
@@ -36,7 +42,7 @@ const upsertKeySchema = z.object({
 });
 
 export const upsertPayoutKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => upsertKeySchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -49,18 +55,16 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     const isCreator = (roles ?? []).some((r) => r.role === "creator");
     if (!isCreator) throw new Error("Apenas criadoras podem cadastrar chave PIX");
 
-    const { error } = await supabaseAdmin
-      .from("creator_payout_keys")
-      .upsert(
-        {
-          user_id: userId,
-          pix_key: data.pix_key.trim(),
-          pix_key_type: data.pix_key_type,
-          holder_name: data.holder_name.trim(),
-          holder_document: data.holder_document.replace(/\D/g, ""),
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await supabaseAdmin.from("creator_payout_keys").upsert(
+      {
+        user_id: userId,
+        pix_key: data.pix_key.trim(),
+        pix_key_type: data.pix_key_type,
+        holder_name: data.holder_name.trim(),
+        holder_document: data.holder_document.replace(/\D/g, ""),
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw safeError(error);
     return { ok: true };
   });
@@ -71,82 +75,49 @@ const requestSchema = z.object({
 });
 
 export const requestWithdrawal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => requestSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
-    // 1) KYC aprovado?
-    const { data: kyc } = await supabaseAdmin
-      .from("kyc_requests")
-      .select("status")
-      .eq("user_id", userId)
-      .eq("status", "approved")
-      .maybeSingle();
-    if (!kyc) throw new Error("Você precisa concluir o KYC antes de sacar");
-
-    // 2) Chave PIX cadastrada?
-    const { data: key } = await supabaseAdmin
-      .from("creator_payout_keys")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!key) throw new Error("Cadastre sua chave PIX antes de solicitar saque");
-
-    // 3) Settings + saldo
-    const { data: settings } = await supabaseAdmin
-      .from("platform_settings")
-      .select("min_withdrawal_cents")
-      .eq("id", 1)
-      .single();
-    if (!settings) throw new Error("Configurações indisponíveis");
-    if (data.amount_cents < settings.min_withdrawal_cents) {
-      throw new Error(`Saque mínimo é R$ ${(settings.min_withdrawal_cents / 100).toFixed(2)}`);
+    // A função de banco obtém um lock por criadora, recalcula o saldo e cria o
+    // pedido na mesma transação. Isso impede dois saques simultâneos do mesmo saldo.
+    const { data: withdrawalId, error } = await supabaseAdmin.rpc("create_withdrawal_request", {
+      _creator_id: userId,
+      _amount_cents: data.amount_cents,
+    });
+    if (error || !withdrawalId) {
+      const message = error?.message ?? "";
+      if (message.includes("VENYX_KYC_REQUIRED")) {
+        throw new Error("Você precisa concluir o KYC antes de sacar");
+      }
+      if (message.includes("VENYX_PIX_KEY_REQUIRED")) {
+        throw new Error("Cadastre sua chave PIX antes de solicitar saque");
+      }
+      if (message.includes("VENYX_INSUFFICIENT_BALANCE")) {
+        throw new Error("Saldo insuficiente para este saque");
+      }
+      if (message.includes("VENYX_MIN_WITHDRAWAL")) {
+        throw new Error("O valor está abaixo do saque mínimo");
+      }
+      throw safeError(error);
     }
-
-    const { data: bal } = await supabaseAdmin
-      .from("creator_balances")
-      .select("available_cents")
-      .eq("creator_id", userId)
-      .maybeSingle();
-    const available = bal?.available_cents ?? 0;
-    if (data.amount_cents > available) {
-      throw new Error(
-        `Saldo insuficiente. Disponível: R$ ${(available / 100).toFixed(2)}`,
-      );
-    }
-
-    // 4) Cria pedido
-    const { data: req, error } = await supabaseAdmin
-      .from("withdrawal_requests")
-      .insert({
-        creator_id: userId,
-        amount_cents: data.amount_cents,
-        pix_key: key.pix_key,
-        pix_key_type: key.pix_key_type,
-        holder_name: key.holder_name,
-        holder_document: key.holder_document,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-    if (error) throw safeError(error);
 
     await notify(
       userId,
       "Saque solicitado",
       `Seu pedido de ${fmtBRL(data.amount_cents)} foi enviado e está aguardando aprovação.`,
-      { withdrawal_id: req.id, amount_cents: data.amount_cents },
+      { withdrawal_id: withdrawalId, amount_cents: data.amount_cents },
     );
 
-    return { ok: true, withdrawal_id: req.id };
+    return { ok: true, withdrawal_id: withdrawalId };
   });
 
 // ===================== Cancelar (criadora) =====================
 const cancelSchema = z.object({ withdrawal_id: z.string().uuid() });
 
 export const cancelWithdrawal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => cancelSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -159,11 +130,15 @@ export const cancelWithdrawal = createServerFn({ method: "POST" })
     if (w.creator_id !== userId) throw new Error("Sem permissão");
     if (w.status !== "pending") throw new Error("Só é possível cancelar saques pendentes");
 
-    const { error } = await supabaseAdmin
+    const { data: canceled, error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({ status: "canceled" })
-      .eq("id", data.withdrawal_id);
+      .eq("id", data.withdrawal_id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
     if (error) throw safeError(error);
+    if (!canceled) throw new Error("Este saque já foi processado");
     return { ok: true };
   });
 
@@ -184,18 +159,22 @@ const adminIdSchema = z.object({
 });
 
 export const approveWithdrawal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => adminIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id, amount_cents")
+      .select("creator_id, amount_cents, status")
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
-    const { error } = await supabaseAdmin
+    if (!w || w.status !== "pending") {
+      throw new Error("Saque não encontrado ou já processado");
+    }
+
+    const { data: approved, error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
         status: "approved",
@@ -204,17 +183,18 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
         admin_notes: data.notes ?? null,
       })
       .eq("id", data.withdrawal_id)
-      .eq("status", "pending");
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
     if (error) throw safeError(error);
+    if (!approved) throw new Error("Este saque já foi processado");
 
-    if (w) {
-      await notify(
-        w.creator_id,
-        "Saque aprovado",
-        `Seu saque de ${fmtBRL(w.amount_cents)} foi aprovado e está em processamento.`,
-        { withdrawal_id: data.withdrawal_id },
-      );
-    }
+    await notify(
+      w.creator_id,
+      "Saque aprovado",
+      `Seu saque de ${fmtBRL(w.amount_cents)} foi aprovado e está em processamento.`,
+      { withdrawal_id: data.withdrawal_id },
+    );
     return { ok: true };
   });
 
@@ -226,7 +206,7 @@ const markPaidSchema = z.object({
 });
 
 export const markWithdrawalPaid = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => markPaidSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -241,7 +221,20 @@ export const markWithdrawalPaid = createServerFn({ method: "POST" })
       throw new Error(`Saque está em estado ${w.status} e não pode ser marcado como pago`);
     }
 
-    // Registra a transação de saída (espelha no histórico)
+    const previousStatus = w.status;
+    const { data: claimed, error: claimError } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .update({ status: "processing" })
+      .eq("id", data.withdrawal_id)
+      .in("status", ["approved", "pending"])
+      .select("id")
+      .maybeSingle();
+    if (claimError) throw safeError(claimError);
+    if (!claimed && previousStatus !== "processing") {
+      throw new Error("Este saque já está sendo processado");
+    }
+
+    // Registra a transação de saída uma única vez.
     const { error: txErr } = await supabaseAdmin.from("transactions").insert({
       payer_id: null,
       payee_id: w.creator_id,
@@ -251,11 +244,19 @@ export const markWithdrawalPaid = createServerFn({ method: "POST" })
       reference_id: data.withdrawal_id,
       gateway: "manual",
       gateway_ref: data.receipt_url ?? null,
+      idempotency_key: `withdrawal:${data.withdrawal_id}`,
       metadata: { withdrawal_id: data.withdrawal_id, notes: data.notes ?? null },
     });
-    if (txErr) throw safeError(txErr);
+    if (txErr && txErr.code !== "23505") {
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: previousStatus })
+        .eq("id", data.withdrawal_id)
+        .eq("status", "processing");
+      throw safeError(txErr);
+    }
 
-    const { error } = await supabaseAdmin
+    const { data: paid, error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
         status: "paid",
@@ -264,8 +265,20 @@ export const markWithdrawalPaid = createServerFn({ method: "POST" })
         admin_notes: data.notes ?? null,
         reviewed_by: context.userId,
       })
-      .eq("id", data.withdrawal_id);
+      .eq("id", data.withdrawal_id)
+      .eq("status", "processing")
+      .select("id")
+      .maybeSingle();
     if (error) throw safeError(error);
+    if (!paid) {
+      const { data: current } = await supabaseAdmin
+        .from("withdrawal_requests")
+        .select("status")
+        .eq("id", data.withdrawal_id)
+        .maybeSingle();
+      if (current?.status === "paid") return { ok: true };
+      throw new Error("Este saque não pôde ser finalizado");
+    }
 
     await notify(
       w.creator_id,
@@ -284,18 +297,22 @@ const rejectSchema = z.object({
 });
 
 export const rejectWithdrawal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => rejectSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id, amount_cents")
+      .select("creator_id, amount_cents, status")
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
-    const { error } = await supabaseAdmin
+    if (!w || !["pending", "approved"].includes(w.status)) {
+      throw new Error("Saque não encontrado ou já finalizado");
+    }
+
+    const { data: rejected, error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
         status: "rejected",
@@ -304,16 +321,17 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", data.withdrawal_id)
-      .in("status", ["pending", "approved"]);
+      .in("status", ["pending", "approved"])
+      .select("id")
+      .maybeSingle();
     if (error) throw safeError(error);
+    if (!rejected) throw new Error("Este saque já foi processado");
 
-    if (w) {
-      await notify(
-        w.creator_id,
-        "Saque rejeitado",
-        `Seu saque de ${fmtBRL(w.amount_cents)} foi rejeitado: ${data.reason}`,
-        { withdrawal_id: data.withdrawal_id, reason: data.reason },
-      );
-    }
+    await notify(
+      w.creator_id,
+      "Saque rejeitado",
+      `Seu saque de ${fmtBRL(w.amount_cents)} foi rejeitado: ${data.reason}`,
+      { withdrawal_id: data.withdrawal_id, reason: data.reason },
+    );
     return { ok: true };
   });

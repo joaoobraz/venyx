@@ -54,10 +54,10 @@ const PATTERNS: Array<{ id: string; label: string; re: RegExp }> = [
   { id: "phone", label: "Telefone", re: /(?:\+?\d{1,3})?\d{10,14}/ },
 
   // E-mail
-  { id: "email", label: "E-mail", re: /[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/i },
+  { id: "email", label: "E-mail", re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i },
 
   // URLs externas (não-app)
-  { id: "url", label: "Link externo", re: /\b(?:https?:\/\/|www\.)[a-z0-9.\-]+\.[a-z]{2,}(?:\/[^\s]*)?/i },
+  { id: "url", label: "Link externo", re: /\b(?:https?:\/\/|www\.)[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s]*)?/i },
 ];
 
 export interface ContactDetection {

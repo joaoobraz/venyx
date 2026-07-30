@@ -50,22 +50,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadUserData = async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: sec }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase
-        .from("kyc_requests")
-        .select("id,status,rejection_reason")
-        .eq("user_id", uid)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase.from("security_settings").select("mfa_enabled").eq("user_id", uid).maybeSingle(),
-    ]);
+    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }] =
+      await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase
+          .from("kyc_requests")
+          .select("id,status,rejection_reason")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase.auth.mfa.listFactors(),
+      ]);
     setProfile((prof as Profile) ?? null);
     setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
     setKyc((kycRow as KycRequest) ?? null);
-    setMfaEnabled(!!(sec as { mfa_enabled?: boolean } | null)?.mfa_enabled);
+    setMfaEnabled((factors?.all ?? []).some((factor) => factor.status === "verified"));
   };
 
   useEffect(() => {

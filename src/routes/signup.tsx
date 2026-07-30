@@ -68,6 +68,7 @@ function SignupPage() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -79,8 +80,9 @@ function SignupPage() {
             <Input
               id="password"
               type="password"
+              autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1.5"

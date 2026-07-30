@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdultVerification } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
 
@@ -9,7 +9,10 @@ const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 function getWebhookUrl(): string {
-  return process.env.PUBLIC_WEBHOOK_URL ?? `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`;
+  return (
+    process.env.PUBLIC_WEBHOOK_URL ??
+    `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`
+  );
 }
 
 function getApiKey(): string {
@@ -41,7 +44,11 @@ interface NexusPagPixResponse {
 
 type PaymentGatewayError = {
   ok: false;
-  code: "PAYMENT_CONFIG_ERROR" | "PAYMENT_TIMEOUT" | "PAYMENT_GATEWAY_ERROR" | "PAYMENT_INVALID_RESPONSE";
+  code:
+    | "PAYMENT_CONFIG_ERROR"
+    | "PAYMENT_TIMEOUT"
+    | "PAYMENT_GATEWAY_ERROR"
+    | "PAYMENT_INVALID_RESPONSE";
   error: string;
   retryable: boolean;
 };
@@ -54,23 +61,34 @@ type NormalizedPix = {
   raw: NexusPagPixResponse;
 };
 
-function gatewayError(code: PaymentGatewayError["code"], error: string, retryable = true): PaymentGatewayError {
+function gatewayError(
+  code: PaymentGatewayError["code"],
+  error: string,
+  retryable = true,
+): PaymentGatewayError {
   return { ok: false, code, error, retryable };
 }
 
 function unwrapNexusPayload(raw: unknown): NexusPagPixResponse {
   const root = (raw ?? {}) as Record<string, unknown>;
   const data = root.data as Record<string, unknown> | undefined;
-  return ((data?.transaction ?? root.transaction ?? data ?? root) ?? {}) as NexusPagPixResponse;
+  return (data?.transaction ?? root.transaction ?? data ?? root ?? {}) as NexusPagPixResponse;
 }
 
 function normalizePix(raw: NexusPagPixResponse): NormalizedPix | null {
   const tx = unwrapNexusPayload(raw);
-  const qrCode = tx.qr_code ?? tx.qr_code_text ?? tx.pix_copia_cola ?? tx.pix_copy_paste ?? tx.copy_paste ?? null;
-  if (!qrCode) return null;
+  const qrCode =
+    tx.qr_code ??
+    tx.qr_code_text ??
+    tx.pix_copia_cola ??
+    tx.pix_copy_paste ??
+    tx.copy_paste ??
+    null;
+  const id = tx.id ?? tx.transaction_id ?? tx.txid ?? null;
+  if (!qrCode || !id) return null;
 
   return {
-    id: tx.id ?? tx.transaction_id ?? tx.txid ?? null,
+    id,
     qrCode,
     qrCodeBase64: tx.qr_code_base64 ?? tx.qr_code_image ?? null,
     expiresAt: tx.expires_at ?? null,
@@ -119,18 +137,28 @@ async function callNexusPag(
     const json = await readJsonResponse(res);
     if (!res.ok) {
       console.error("[nexuspag] erro", res.status, json);
-      return gatewayError("PAYMENT_GATEWAY_ERROR", "Falha ao gerar Pix. Tente novamente.", res.status >= 500);
+      return gatewayError(
+        "PAYMENT_GATEWAY_ERROR",
+        "Falha ao gerar Pix. Tente novamente.",
+        res.status >= 500,
+      );
     }
 
     const pix = normalizePix(json);
     if (!pix) {
       console.error("[nexuspag] resposta sem código Pix", json);
-      return gatewayError("PAYMENT_INVALID_RESPONSE", "O provedor não retornou o código Pix. Tente novamente.");
+      return gatewayError(
+        "PAYMENT_INVALID_RESPONSE",
+        "O provedor não retornou o código Pix. Tente novamente.",
+      );
     }
     return { ok: true, pix };
   } catch (e) {
     console.error("[nexuspag] timeout/erro de rede", e);
-    return gatewayError("PAYMENT_TIMEOUT", "O serviço Pix demorou para responder. Tente novamente.");
+    return gatewayError(
+      "PAYMENT_TIMEOUT",
+      "O serviço Pix demorou para responder. Tente novamente.",
+    );
   } finally {
     clearTimeout(timeout);
   }
@@ -173,7 +201,7 @@ const subPixSchema = z.object({
 });
 
 export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => subPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -203,15 +231,28 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
         .eq("creator_id", data.creatorId)
         .eq("is_active", true)
         .maybeSingle();
-      if (c && c.uses_count < c.max_uses) {
-        couponId = c.id;
-        trialDays = c.trial_days ?? 0;
-        discountPct = c.discount_pct ?? 0;
+      if (c && (c.max_uses === 0 || c.uses_count < c.max_uses)) {
+        const { data: existingRedemption } = await supabaseAdmin
+          .from("coupon_redemptions")
+          .select("id")
+          .eq("coupon_id", c.id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!existingRedemption) {
+          couponId = c.id;
+          trialDays = c.trial_days ?? 0;
+          discountPct = c.discount_pct ?? 0;
+        }
+      }
+      if (!couponId) {
+        throw new Error("Cupom inválido, esgotado ou já utilizado");
       }
     }
 
     const subSubtotal = pricePerMonthCents * data.months;
-    const subDiscounted = discountPct ? Math.round(subSubtotal * (1 - discountPct / 100)) : subSubtotal;
+    const subDiscounted = discountPct
+      ? Math.round(subSubtotal * (1 - discountPct / 100))
+      : subSubtotal;
     const isTrial = trialDays > 0;
 
     // Bumps: validar ofertas pertencem à criadora
@@ -235,21 +276,30 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
     const totalCents = (isTrial ? 0 : subDiscounted) + bumpsTotal;
 
     if (totalCents === 0) {
-      // Trial puro sem bumps → ativa direto sem Pix
-      const periodEnd = new Date();
-      periodEnd.setDate(periodEnd.getDate() + trialDays);
-      const { error: se } = await supabaseAdmin.from("subscriptions").insert({
-        subscriber_id: userId,
-        creator_id: data.creatorId,
-        price_cents: pricePerMonthCents,
-        status: "active",
-        current_period_end: periodEnd.toISOString(),
-      });
-      if (se && !se.message.includes("duplicate")) throw new Error("Falha ao ativar trial");
-      if (couponId) {
-        await supabaseAdmin.from("coupon_redemptions").insert({ coupon_id: couponId, user_id: userId });
+      if (!couponId) throw new Error("Cupom de trial inválido");
+      const { data: trialResult, error: trialError } = await supabaseAdmin.rpc(
+        "activate_coupon_trial",
+        {
+          _creator_id: data.creatorId,
+          _subscriber_id: userId,
+          _coupon_id: couponId,
+        },
+      );
+      if (trialError) throw new Error("Falha ao ativar trial");
+      const result = trialResult as { error?: string; trial_days?: number };
+      if (result.error) {
+        const messages: Record<string, string> = {
+          invalid_coupon: "Este cupom não está mais disponível.",
+          coupon_already_used: "Você já utilizou este cupom.",
+          already_subscribed: "Você já possui uma assinatura ativa.",
+        };
+        throw new Error(messages[result.error] ?? "Não foi possível ativar o trial");
       }
-      return { freeTrialActivated: true, isTrial: true, trialDays };
+      return {
+        freeTrialActivated: true,
+        isTrial: true,
+        trialDays: result.trial_days ?? trialDays,
+      };
     }
 
     const externalId = `sub_${userId.slice(0, 8)}_${Date.now()}`;
@@ -310,7 +360,7 @@ const upsellPixSchema = z.object({
 });
 
 export const createUpsellPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => upsellPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -370,7 +420,7 @@ const tipPixSchema = z.object({
 });
 
 export const createTipPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => tipPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -424,7 +474,7 @@ const ppvPixSchema = z.object({
 });
 
 export const createPpvPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => ppvPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -498,7 +548,7 @@ const goalPixSchema = z.object({
 });
 
 export const createGoalPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => goalPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -518,7 +568,8 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
       .eq("post_id", post.id)
       .maybeSingle();
     if (!goal) throw new Error("Meta não encontrada");
-    if (!goal.unlock_price_cents || goal.unlock_price_cents < 100) throw new Error("Valor de contribuição inválido");
+    if (!goal.unlock_price_cents || goal.unlock_price_cents < 100)
+      throw new Error("Valor de contribuição inválido");
 
     const externalId = `goal_${userId.slice(0, 8)}_${Date.now()}`;
     const description = `Contribuição para meta`;
@@ -568,7 +619,7 @@ const chatPpvPixSchema = z.object({
 });
 
 export const createChatPpvPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => chatPpvPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -649,27 +700,56 @@ export const createChatPpvPixCharge = createServerFn({ method: "POST" })
 const statusSchema = z.object({ chargeId: z.string().uuid() });
 
 export const getChargeStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdultVerification])
   .inputValidator((input: unknown) => statusSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: charge } = await supabaseAdmin
       .from("pix_charges")
-      .select("id, status, paid_at, payer_id, external_id, gateway_transaction_id")
+      .select("id, status, paid_at, payer_id, external_id, gateway_transaction_id, amount_cents")
       .eq("id", data.chargeId)
       .maybeSingle();
     if (!charge || charge.payer_id !== context.userId) {
       throw new Error("Cobrança não encontrada");
     }
     if (charge.status === "pending") {
-      const gatewayCharge = await checkNexusPagStatus(charge.gateway_transaction_id ?? charge.external_id);
+      const gatewayCharge = await checkNexusPagStatus(
+        charge.gateway_transaction_id ?? charge.external_id,
+      );
       if (gatewayCharge?.status === "paid") {
-        await fulfillPaidCharge({
+        const confirmedId =
+          gatewayCharge.transaction_id ?? gatewayCharge.id ?? gatewayCharge.txid ?? null;
+        const confirmedExternalId =
+          typeof gatewayCharge.external_id === "string" ? gatewayCharge.external_id : null;
+        const confirmedAmount = Number(gatewayCharge.amount);
+        const amountMatches =
+          Number.isFinite(confirmedAmount) &&
+          Math.round(confirmedAmount * 100) === charge.amount_cents;
+        const transactionMatches = !confirmedId || confirmedId === charge.gateway_transaction_id;
+        const externalIdMatches =
+          !confirmedExternalId || confirmedExternalId === charge.external_id;
+
+        if (!amountMatches || !transactionMatches || !externalIdMatches) {
+          console.warn("[getChargeStatus] confirmação do gateway divergente", {
+            amountMatches,
+            transactionMatches,
+            externalIdMatches,
+          });
+          return { status: "pending", paidAt: null };
+        }
+
+        const fulfillment = await fulfillPaidCharge({
           externalId: charge.external_id,
-          gatewayTransactionId: gatewayCharge.transaction_id ?? gatewayCharge.id ?? gatewayCharge.txid ?? charge.gateway_transaction_id,
+          gatewayTransactionId: charge.gateway_transaction_id,
           paidAt: gatewayCharge.paid_at ?? new Date().toISOString(),
           payerName: gatewayCharge.payer_name ?? null,
         });
-        return { status: "paid", paidAt: gatewayCharge.paid_at ?? new Date().toISOString() };
+        if (fulfillment.ok) {
+          return {
+            status: "paid",
+            paidAt: gatewayCharge.paid_at ?? new Date().toISOString(),
+          };
+        }
+        return { status: "pending", paidAt: null };
       }
       if (gatewayCharge?.status === "expired" || gatewayCharge?.status === "cancelled") {
         await supabaseAdmin

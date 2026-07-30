@@ -7,9 +7,9 @@ import { onlyDigits, isValidCpf, isAdult } from "@/lib/cpf";
 /**
  * Verificação de identidade/idade do assinante.
  *
- * Camada 1 (sempre): CPF matematicamente válido + idade >= 18.
- * Camada 2 (opcional, quando houver provedor): conferir se CPF + nome + nascimento
- * batem com o documento oficial via API de consulta de CPF. Ver matchCpfWithDocument().
+ * CPF matematicamente válido é apenas uma validação de formato. Em produção, a
+ * conta só é aprovada depois que um provedor confiável confirma CPF, nome e data
+ * de nascimento.
  */
 
 const verifySchema = z.object({
@@ -20,20 +20,29 @@ const verifySchema = z.object({
 });
 
 /**
- * Ponto de extensão para conferência com o documento oficial.
- * Hoje: se não houver provedor configurado (CPF_LOOKUP_API_KEY), pula essa camada.
- * Futuro: integrar Serpro / idwall / BigDataCorp / etc.
+ * Ponto de extensão para conferência com documento oficial.
+ * A exceção de checksum existe apenas para localhost e nunca funciona em produção.
  */
 async function matchCpfWithDocument(_input: {
   cpf: string;
   fullName: string;
   birthDate: string;
-}): Promise<{ checked: boolean; ok: boolean }> {
+}): Promise<{ checked: boolean; ok: boolean; method: string }> {
+  const allowLocalChecksum =
+    process.env.NODE_ENV !== "production" && process.env.ALLOW_INSECURE_AGE_CHECK === "true";
+
+  if (allowLocalChecksum) {
+    return { checked: true, ok: true, method: "local_cpf_checksum" };
+  }
+
   const apiKey = process.env.CPF_LOOKUP_API_KEY;
-  if (!apiKey) return { checked: false, ok: true };
-  // TODO[provedor]: chamar a API de consulta de CPF, comparar primeiro nome e
-  // data de nascimento com o retorno oficial e devolver { checked: true, ok: matched }.
-  return { checked: false, ok: true };
+  if (apiKey) {
+    console.error(
+      "[verifyIdentity] CPF_LOOKUP_API_KEY foi configurada, mas o adaptador do provedor ainda não foi implementado.",
+    );
+  }
+
+  return { checked: false, ok: false, method: "provider_unavailable" };
 }
 
 export const verifyIdentity = createServerFn({ method: "POST" })
@@ -59,6 +68,13 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       fullName: data.full_name,
       birthDate: data.birth_date,
     });
+    if (!match.checked) {
+      return {
+        ok: false as const,
+        error:
+          "A verificação oficial de identidade ainda não está configurada. Tente novamente mais tarde.",
+      };
+    }
     if (match.checked && !match.ok) {
       return {
         ok: false as const,
@@ -66,8 +82,7 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tabela nova ainda fora dos tipos gerados do Supabase
-    const { error } = await (supabaseAdmin.from("identity_verifications" as never) as any).upsert(
+    const { error } = await supabaseAdmin.from("identity_verifications").upsert(
       {
         user_id: userId,
         country: data.country,
@@ -75,7 +90,7 @@ export const verifyIdentity = createServerFn({ method: "POST" })
         full_name: data.full_name.trim(),
         birth_date: data.birth_date,
         status: "verified",
-        method: match.checked ? "cpf_lookup" : "cpf_checksum",
+        method: match.method,
         verified_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -99,8 +114,8 @@ export const verifyIdentity = createServerFn({ method: "POST" })
 export const getMyVerificationStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tabela nova ainda fora dos tipos gerados do Supabase
-    const { data } = await (supabaseAdmin.from("identity_verifications" as never) as any)
+    const { data } = await supabaseAdmin
+      .from("identity_verifications")
       .select("status")
       .eq("user_id", context.userId)
       .maybeSingle();
