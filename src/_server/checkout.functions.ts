@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { fulfillPaidCharge } from "@/server/payments-fulfillment.server";
+import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
 
 const BASE_URL = "https://nexuspag.com";
 const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";

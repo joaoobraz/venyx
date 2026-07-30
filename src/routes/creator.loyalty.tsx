@@ -4,7 +4,7 @@ import { Trophy, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
-import { listTopFans } from "@/server/loyalty.functions";
+import { listTopFans } from "@/_server/loyalty.functions";
 import { TIER_META, type LoyaltyTier } from "@/components/LoyaltyBadge";
 
 export const Route = createFileRoute("/creator/loyalty")({

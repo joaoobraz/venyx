@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { registerAffiliateReferralServer } from "@/server/affiliate.functions";
+import { registerAffiliateReferralServer } from "@/_server/affiliate.functions";
 
 export const Route = createFileRoute("/r/$code")({
   component: ReferralRedirect,

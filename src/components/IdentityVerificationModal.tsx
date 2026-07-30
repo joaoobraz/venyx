@@ -3,7 +3,7 @@ import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
-import { verifyIdentity } from "@/server/verification.functions";
+import { verifyIdentity } from "@/_server/verification.functions";
 import { formatCpf, isValidCpf, isAdult, onlyDigits } from "@/lib/cpf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

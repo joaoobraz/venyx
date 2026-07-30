@@ -3,16 +3,21 @@ import type { PostWithRelations } from "@/components/PostCard";
 
 export async function fetchPosts(opts: {
   creatorId?: string;
+  postId?: string;
   viewerId?: string | null;
   limit?: number;
 }): Promise<PostWithRelations[]> {
-  const { creatorId, viewerId, limit = 30 } = opts;
+  const { creatorId, postId, viewerId, limit = 30 } = opts;
   let q = supabase
     .from("posts")
     .select("id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at")
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (creatorId) q = q.eq("creator_id", creatorId);
+  if (postId) {
+    q = q.eq("id", postId).limit(1);
+  } else if (creatorId) {
+    q = q.eq("creator_id", creatorId);
+  }
 
   const { data: posts, error } = await q;
   if (error) throw error;

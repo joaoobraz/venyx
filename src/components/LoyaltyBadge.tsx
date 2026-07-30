@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
-import { getMyPointsForCreator } from "@/server/loyalty.functions";
+import { getMyPointsForCreator } from "@/_server/loyalty.functions";
 
 export type LoyaltyTier = "bronze" | "silver" | "gold" | "diamond";
 

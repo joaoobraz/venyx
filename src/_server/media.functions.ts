@@ -12,6 +12,10 @@ const postMediaSchema = z.object({
   postId: z.string().uuid(),
 });
 
+const multiPostMediaSchema = z.object({
+  postIds: z.array(z.string().uuid()),
+});
+
 export const getPostMediaUrls = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => postMediaSchema.parse(input))
   .handler(async ({ data }) => {
@@ -41,21 +45,110 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
       return { urls: [] as Array<{ id: string; url: string; mime_type: string }> };
     }
 
-    const { data: media } = await supabaseAdmin
+    const { data: media, error } = await supabaseAdmin
       .from("post_media")
       .select("id, storage_path, mime_type, position")
       .eq("post_id", data.postId)
       .order("position", { ascending: true });
 
+    if (error) {
+      console.error("Error fetching post_media:", error);
+      return { urls: [] };
+    }
+
     const urls = await Promise.all(
       (media ?? []).map(async (m) => {
-        const { data: signed } = await supabaseAdmin.storage
-          .from("posts")
-          .createSignedUrl(m.storage_path, 60 * 60);
-        return { id: m.id, url: signed?.signedUrl ?? "", mime_type: m.mime_type };
+        try {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("posts")
+            .createSignedUrl(m.storage_path, 60 * 60);
+          return { id: m.id, url: signed?.signedUrl ?? "", mime_type: m.mime_type };
+        } catch (err) {
+          console.error(`Failed to sign URL for ${m.storage_path}:`, err);
+          return { id: m.id, url: "", mime_type: m.mime_type };
+        }
       })
     );
-    return { urls };
+    return { urls: urls.filter((u) => u.url) };
+  });
+
+/**
+ * Batch load first media URL for multiple posts (more efficient)
+ */
+export const getFirstMediaForPosts = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => multiPostMediaSchema.parse(input))
+  .handler(async ({ data }) => {
+    // viewer pode ser anônimo (post público)
+    let viewerId: string | null = null;
+    try {
+      const { getRequestHeader } = await import("@tanstack/react-start/server");
+      const auth = getRequestHeader("authorization");
+      if (auth?.startsWith("Bearer ")) {
+        const token = auth.slice(7);
+        const { data: claims } = await supabaseAdmin.auth.getClaims(token);
+        viewerId = claims?.claims?.sub ?? null;
+      }
+    } catch {
+      viewerId = null;
+    }
+
+    // Check access for all posts
+    const { data: posts } = await supabaseAdmin
+      .from("posts")
+      .select("id, creator_id, visibility")
+      .in("id", data.postIds);
+
+    const accessMap: Record<string, boolean> = {};
+    for (const post of posts ?? []) {
+      accessMap[post.id] = await checkPostAccess(post, viewerId);
+    }
+
+    // Get media for accessible posts
+    const accessiblePostIds = Object.entries(accessMap)
+      .filter(([, hasAccess]) => hasAccess)
+      .map(([postId]) => postId);
+
+    if (!accessiblePostIds.length) {
+      return { mediaByPostId: {} as Record<string, { url: string; mime_type: string }> };
+    }
+
+    const { data: media, error } = await supabaseAdmin
+      .from("post_media")
+      .select("id, post_id, storage_path, mime_type, position")
+      .in("post_id", accessiblePostIds)
+      .order("position", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching post_media:", error);
+      return { mediaByPostId: {} };
+    }
+
+    // Build map of first media per post
+    const firstMediaByPost: Record<string, { path: string; type: string; id: string }> = {};
+    (media ?? []).forEach((m) => {
+      if (!firstMediaByPost[m.post_id]) {
+        firstMediaByPost[m.post_id] = { path: m.storage_path, type: m.mime_type, id: m.id };
+      }
+    });
+
+    // Get signed URLs for all media
+    const mediaByPostId: Record<string, { url: string; mime_type: string }> = {};
+    await Promise.all(
+      Object.entries(firstMediaByPost).map(async ([postId, mediaInfo]) => {
+        try {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("posts")
+            .createSignedUrl(mediaInfo.path, 60 * 60);
+          if (signed?.signedUrl) {
+            mediaByPostId[postId] = { url: signed.signedUrl, mime_type: mediaInfo.type };
+          }
+        } catch (err) {
+          console.error(`Failed to sign URL for post ${postId}:`, err);
+        }
+      })
+    );
+
+    return { mediaByPostId };
   });
 
 async function checkPostAccess(

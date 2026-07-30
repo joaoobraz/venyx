@@ -17,8 +17,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   requireAdminServer,
-} from "@/server/admin.functions";
-import { adminDashboardStats } from "@/server/admin-users.functions";
+} from "@/_server/admin.functions";
+import { adminDashboardStats } from "@/_server/admin-users.functions";
 
 export const Route = createFileRoute("/admin/")({
   beforeLoad: async () => {

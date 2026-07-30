@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { upsertOffer, deleteOffer } from "@/server/upsells.functions";
+import { upsertOffer, deleteOffer } from "@/_server/upsells.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

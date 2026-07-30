@@ -28,7 +28,7 @@ import {
   upsertPayoutKey,
   requestWithdrawal,
   cancelWithdrawal,
-} from "@/server/withdrawals.functions";
+} from "@/_server/withdrawals.functions";
 
 export const Route = createFileRoute("/creator/wallet")({
   component: WalletPage,

@@ -27,11 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { requireAdminServer } from "@/server/admin.functions";
+import { requireAdminServer } from "@/_server/admin.functions";
 import {
   listUsersAdmin,
   updateUserRoleAdmin,
-} from "@/server/admin-users.functions";
+} from "@/_server/admin-users.functions";
 
 export const Route = createFileRoute("/admin/users")({
   beforeLoad: async () => {

@@ -4,16 +4,16 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { listCreatorOffers } from "@/server/upsells.functions";
-import { createSubscriptionPixCharge, getChargeStatus } from "@/server/checkout.functions";
+import { listCreatorOffers } from "@/_server/upsells.functions";
+import { createSubscriptionPixCharge, getChargeStatus } from "@/_server/checkout.functions";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UpsellModal } from "@/components/UpsellModal";
-import { startTrial, checkTrialEligibility } from "@/server/trial.functions";
+import { startTrial, checkTrialEligibility } from "@/_server/trial.functions";
 import { IdentityVerificationModal } from "@/components/IdentityVerificationModal";
-import { getMyVerificationStatus } from "@/server/verification.functions";
+import { getMyVerificationStatus } from "@/_server/verification.functions";
 
 interface Plan {
   id: string;

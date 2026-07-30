@@ -5,7 +5,7 @@ import { Search as SearchIcon, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { CreatorCard, type CreatorSummary } from "@/components/CreatorCard";
-import { searchCreators } from "@/server/discovery.functions";
+import { searchCreators } from "@/_server/discovery.functions";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (s: Record<string, unknown>): { q?: string } => ({

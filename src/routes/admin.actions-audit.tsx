@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   requireAdminServer,
   listAdminActionsAudit,
-} from "@/server/admin.functions";
+} from "@/_server/admin.functions";
 
 export const Route = createFileRoute("/admin/actions-audit")({
   beforeLoad: async () => {

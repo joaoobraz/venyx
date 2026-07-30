@@ -5,8 +5,8 @@ import { Heart, MessageCircle, DollarSign, Lock, Loader2, Crown, Target, Users }
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { createPpvPixCharge, createGoalPixCharge } from "@/server/checkout.functions";
-import { getPostMediaUrls } from "@/server/media.functions";
+import { createPpvPixCharge, createGoalPixCharge } from "@/_server/checkout.functions";
+import { getPostMediaUrls } from "@/_server/media.functions";
 import { Button } from "@/components/ui/button";
 import { TipModal } from "@/components/TipModal";
 import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
@@ -58,6 +58,9 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const [busy, setBusy] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [likesCount, setLikesCount] = useState(post.likes_count);
+  const [commentsCount, setCommentsCount] = useState(post.comments_count);
+  const [liked, setLiked] = useState(false);
   const [pixOpen, setPixOpen] = useState(false);
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const [pixTitle, setPixTitle] = useState("Pague com Pix");
@@ -173,6 +176,16 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
   const firstMedia = post.media[0];
   const firstUrl = firstMedia ? signedUrls[firstMedia.id] : "";
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const avatarFull =
+    post.author.avatar_url && post.author.avatar_url.startsWith("http")
+      ? post.author.avatar_url
+      : post.author.avatar_url
+      ? `${SUPABASE_URL}/storage/v1/object/public/avatars/${post.author.avatar_url}`
+      : null;
+
+  // Fallback: use signed media URL when available, otherwise show avatar or placeholder
+  const effectiveImageUrl = firstUrl || avatarFull || "/test-images/cover-placeholder.svg";
   const goalPct = post.goal
     ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
     : 0;
@@ -185,9 +198,9 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           params={{ username: post.author.username }}
           className="h-10 w-10 overflow-hidden rounded-full bg-muted"
         >
-          {post.author.avatar_url ? (
-            <img src={post.author.avatar_url} alt="" className="h-full w-full object-cover" />
-          ) : (
+          {avatarFull ? (
+              <img src={avatarFull} alt="" className="h-full w-full object-cover" />
+            ) : (
             <div className="flex h-full w-full items-center justify-center text-sm font-bold text-primary">
               {post.author.username[0]?.toUpperCase()}
             </div>
@@ -201,9 +214,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           </div>
           <div className="text-xs text-muted-foreground">@{post.author.username}</div>
         </div>
-        {!isOwner && (isPpv || isSubsOnly) && (
-          <WishlistButton targetType="post" targetId={post.id} variant="icon" />
-        )}
+        {!isOwner && <WishlistButton targetType="post" targetId={post.id} variant="icon" label="Favoritar conteúdo" />}
         {isPpv && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">PPV</span>
         )}
@@ -219,27 +230,32 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
       {post.body && <p className="px-4 pb-3 text-sm text-foreground whitespace-pre-wrap">{post.body}</p>}
 
-      {firstMedia && (
-        <div className="relative">
-          {locked ? (
-            <div className="aspect-square w-full bg-muted" />
-          ) : firstUrl ? (
-            <CreatorWatermark
-              username={post.author.username}
-              position={(post.author.watermark_position ?? "bottom-right") as WatermarkPosition}
-              opacity={post.author.watermark_opacity ?? 0.6}
-            >
-              {firstMedia.mime_type.startsWith("video/") ? (
-                <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
-              ) : (
-                <img src={firstUrl} alt="" className="aspect-square w-full object-cover" />
-              )}
-            </CreatorWatermark>
-          ) : (
-            <div className="flex aspect-square w-full items-center justify-center bg-muted">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
+      <div className="relative">
+        {locked ? (
+          <div className="aspect-square w-full bg-muted" />
+        ) : effectiveImageUrl ? (
+          <CreatorWatermark
+            username={post.author.username}
+            position={(post.author.watermark_position ?? "bottom-right") as WatermarkPosition}
+            opacity={post.author.watermark_opacity ?? 0.6}
+          >
+            {firstMedia && firstMedia.mime_type.startsWith("video/") && firstUrl ? (
+              // vídeo real quando houver URL assinada
+              <video src={firstUrl} controls className="aspect-square w-full bg-black object-cover" />
+            ) : effectiveImageUrl ? (
+              // imagem do post quando houver, caso contrário usar avatar/placeholder
+              <img src={effectiveImageUrl} alt="" className="aspect-square w-full object-cover" />
+            ) : (
+              <div className="flex aspect-square w-full items-center justify-center bg-muted">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </CreatorWatermark>
+        ) : (
+          <div className="flex aspect-square w-full items-center justify-center bg-muted">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
           {locked && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 p-4 backdrop-blur-sm">
               <Lock className="h-8 w-8 text-primary" />
@@ -287,7 +303,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
             </div>
           )}
         </div>
-      )}
+      
 
       {/* Barra de meta visível também quando desbloqueado/sem mídia */}
       {isGoal && post.goal && !locked && (
@@ -305,11 +321,28 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
       )}
 
       <footer className="flex items-center gap-4 px-4 py-3 text-sm text-muted-foreground">
-        <button className="group/btn flex items-center gap-1.5 transition-colors hover:text-accent">
-          <Heart className="h-4 w-4 transition-transform group-hover/btn:scale-125" /> {post.likes_count}
+        <button
+          onClick={async () => {
+            // optimistic toggle (demo only)
+            setLiked((s) => {
+              const next = !s;
+              setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
+              return next;
+            });
+          }}
+          className={`group/btn flex items-center gap-1.5 transition-colors ${liked ? "text-accent" : "hover:text-accent"}`}>
+          <Heart className="h-4 w-4 transition-transform group-hover/btn:scale-125" /> {likesCount}
         </button>
-        <button className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary">
-          <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" /> {post.comments_count}
+        <button
+          onClick={async () => {
+            const txt = window.prompt("Escreva um comentário:");
+            if (!txt) return;
+            // optimistic add (demo only)
+            setCommentsCount((c) => c + 1);
+            toast.success("Comentário adicionado (demo)");
+          }}
+          className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary">
+          <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" /> {commentsCount}
         </button>
         <button
           onClick={() => setTipOpen(true)}

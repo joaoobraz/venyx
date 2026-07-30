@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { fulfillPaidCharge } from "@/server/payments-fulfillment.server";
+import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const NEXUSPAG_BASE = "https://nexuspag.com";

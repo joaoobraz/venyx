@@ -50,7 +50,7 @@ export const listMyWishlist = createServerFn({ method: "GET" })
     const creatorIds = list.filter((i) => i.target_type === "creator").map((i) => i.target_id);
     const postIds = list.filter((i) => i.target_type === "post").map((i) => i.target_id);
 
-    const [{ data: creators }, { data: posts }] = await Promise.all([
+    const [{ data: creators }, { data: posts }, { data: mediaRecords }] = await Promise.all([
       creatorIds.length
         ? supabase
             .from("profiles")
@@ -63,7 +63,22 @@ export const listMyWishlist = createServerFn({ method: "GET" })
             .select("id, creator_id, body, visibility, price_cents, created_at")
             .in("id", postIds)
         : Promise.resolve({ data: [] as any[] }),
+      postIds.length
+        ? supabase
+            .from("post_media")
+            .select("id, post_id, storage_path, mime_type, position")
+            .in("post_id", postIds)
+            .order("position", { ascending: true })
+        : Promise.resolve({ data: [] as any[] }),
     ]);
+
+    // Build a map of media by post_id, taking the first (position 0)
+    const mediaByPost: Record<string, { path: string; type: string }> = {};
+    (mediaRecords ?? []).forEach((m) => {
+      if (!mediaByPost[m.post_id]) {
+        mediaByPost[m.post_id] = { path: m.storage_path, type: m.mime_type };
+      }
+    });
 
     return {
       creators: (creators ?? []) as Array<{
@@ -81,6 +96,7 @@ export const listMyWishlist = createServerFn({ method: "GET" })
         price_cents: number;
         created_at: string;
       }>,
+      mediaByPostId: mediaByPost,
     };
   });
 

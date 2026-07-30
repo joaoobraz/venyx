@@ -4,7 +4,7 @@ import {
   requireAdminServer,
   recordModerationDecision,
   listModerationDecisions,
-} from "@/server/admin.functions";
+} from "@/_server/admin.functions";
 import { useEffect, useMemo, useState } from "react";
 import {
   ShieldAlert,

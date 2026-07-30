@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { requireAdminServer } from "@/server/admin.functions";
+import { requireAdminServer } from "@/_server/admin.functions";
 
 export const Route = createFileRoute("/admin/audit")({
   beforeLoad: async () => {

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/lib/auth";
-import { createTipPixCharge, getChargeStatus } from "@/server/checkout.functions";
+import { createTipPixCharge, getChargeStatus } from "@/_server/checkout.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

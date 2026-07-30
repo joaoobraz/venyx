@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as LinksUsernameRouteImport } from './routes/links.$username'
@@ -148,6 +149,11 @@ const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
   id: '/settings/profile',
   path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedPostIdRoute = SavedPostIdRouteImport.update({
+  id: '/saved/$postId',
+  path: '/saved/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RCodeRoute = RCodeRouteImport.update({
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/saved/$postId': typeof SavedPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
@@ -372,6 +379,7 @@ export interface FileRoutesByTo {
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/saved/$postId': typeof SavedPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
@@ -420,6 +428,7 @@ export interface FileRoutesById {
   '/links/$username': typeof LinksUsernameRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/saved/$postId': typeof SavedPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
@@ -469,6 +478,7 @@ export interface FileRouteTypes {
     | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
+    | '/saved/$postId'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
+    | '/saved/$postId'
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
@@ -563,6 +574,7 @@ export interface FileRouteTypes {
     | '/links/$username'
     | '/profile/$username'
     | '/r/$code'
+    | '/saved/$postId'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
@@ -611,6 +623,7 @@ export interface RootRouteChildren {
   LinksUsernameRoute: typeof LinksUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   RCodeRoute: typeof RCodeRoute
+  SavedPostIdRoute: typeof SavedPostIdRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved/$postId': {
+      id: '/saved/$postId'
+      path: '/saved/$postId'
+      fullPath: '/saved/$postId'
+      preLoaderRoute: typeof SavedPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/r/$code': {
@@ -979,6 +999,7 @@ const rootRouteChildren: RootRouteChildren = {
   LinksUsernameRoute: LinksUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   RCodeRoute: RCodeRoute,
+  SavedPostIdRoute: SavedPostIdRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,

@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
-import { toggleWishlist, getMyWishlistIds } from "@/server/wishlist.functions";
+import { toggleWishlist, getMyWishlistIds } from "@/_server/wishlist.functions";
 import { Button } from "@/components/ui/button";
 
 export function WishlistButton({
@@ -11,11 +11,13 @@ export function WishlistButton({
   targetId,
   variant = "default",
   size = "sm",
+  label = "Salvar",
 }: {
   targetType: "creator" | "post";
   targetId: string;
   variant?: "default" | "icon";
   size?: "sm" | "default";
+  label?: string;
 }) {
   const { user } = useAuth();
   const [active, setActive] = useState(false);
@@ -54,7 +56,7 @@ export function WishlistButton({
       <button
         onClick={onClick}
         disabled={busy}
-        title={active ? "Remover da wishlist" : "Salvar na wishlist"}
+        title={active ? "Remover dos favoritos" : "Adicionar aos favoritos"}
         className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
           active
             ? "border-accent bg-accent/15 text-accent"
@@ -75,7 +77,7 @@ export function WishlistButton({
       className={active ? "bg-accent text-accent-foreground hover:bg-accent/90" : ""}
     >
       <Heart className={`mr-1.5 h-4 w-4 ${active ? "fill-current" : ""}`} />
-      {active ? "Salvo" : "Salvar"}
+      {active ? "Salvo" : label}
     </Button>
   );
 }

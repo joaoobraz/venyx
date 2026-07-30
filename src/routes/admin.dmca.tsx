@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { requireAdminServer, updateDmcaReportServer } from "@/server/admin.functions";
+import { requireAdminServer, updateDmcaReportServer } from "@/_server/admin.functions";
 
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {

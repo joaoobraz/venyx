@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { logAdminAction as auditLog } from "@/server/admin-audit.server";
+import { logAdminAction as auditLog } from "@/_server/admin-audit.server";
 
 function getClientIp(req: Request | undefined): string | null {
   if (!req?.headers) return null;

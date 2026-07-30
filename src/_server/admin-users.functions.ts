@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { logAdminAction } from "@/server/admin-audit.server";
+import { logAdminAction } from "@/_server/admin-audit.server";
 
 const ROLES = ["subscriber", "creator", "admin", "ambassador", "seller"] as const;
 type Role = (typeof ROLES)[number];

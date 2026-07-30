@@ -9,7 +9,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * assinatura ou enviar gorjeta sem pagar. Foram DESATIVADOS.
  *
  * Todo fluxo de pagamento agora exige uma cobrança Pix real via NexusPag —
- * use as funções em `src/server/checkout.functions.ts` (createSubscriptionPixCharge,
+ * use as funções em `src/_server/checkout.functions.ts` (createSubscriptionPixCharge,
  * createTipPixCharge, etc.). A liberação do conteúdo é feita pelo webhook
  * (`/api/public/nexuspag-webhook`) ou pelo polling de `getChargeStatus`,
  * que chamam `fulfillPaidCharge` em `payments-fulfillment.server.ts`.
