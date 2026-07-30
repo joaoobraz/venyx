@@ -15,15 +15,22 @@ END $$;
 
 ALTER TABLE public.chat_messages REPLICA IDENTITY FULL;
 
--- RLS para realtime.messages (canal de broadcast/postgres_changes)
-ALTER TABLE IF EXISTS realtime.messages ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "authenticated can receive realtime" ON realtime.messages;
-CREATE POLICY "authenticated can receive realtime"
-ON realtime.messages
-FOR SELECT
-TO authenticated
-USING (true);
+-- Realtime internals vary between Supabase platform versions and may not be
+-- owned by the migration role. The source table RLS remains authoritative.
+DO $$
+BEGIN
+  IF to_regclass('realtime.messages') IS NOT NULL THEN
+    BEGIN
+      EXECUTE 'ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY';
+      EXECUTE 'DROP POLICY IF EXISTS "authenticated can receive realtime" ON realtime.messages';
+      EXECUTE 'CREATE POLICY "authenticated can receive realtime" ON realtime.messages FOR SELECT TO authenticated USING (true)';
+    EXCEPTION
+      WHEN insufficient_privilege THEN
+        RAISE NOTICE 'Skipping realtime.messages policy: platform-managed table';
+    END;
+  END IF;
+END
+$$;
 
 -- =========================================
 -- 2) Storage: chat-media — destinatário também pode baixar

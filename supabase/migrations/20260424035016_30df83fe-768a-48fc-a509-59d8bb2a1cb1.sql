@@ -62,23 +62,33 @@ DROP POLICY IF EXISTS "Cupons visíveis a autenticados" ON public.subscription_c
 
 -- 5) Realtime: restringir broadcast a participantes
 -- Remove policy permissiva (se existir) e adiciona scoping por tópico.
-DROP POLICY IF EXISTS "authenticated can receive realtime" ON realtime.messages;
-DROP POLICY IF EXISTS "Authenticated users can read realtime" ON realtime.messages;
-
-CREATE POLICY "Realtime: participantes do thread leem broadcasts"
-ON realtime.messages
-FOR SELECT
-TO authenticated
-USING (
-  -- Tópicos genéricos (presence/global) seguem permitidos
-  -- Tópicos prefixados com "thread:" são restritos aos participantes do chat_threads.
-  CASE
-    WHEN realtime.topic() LIKE 'thread:%' THEN
-      EXISTS (
-        SELECT 1 FROM public.chat_threads t
-        WHERE t.id::text = substring(realtime.topic() FROM 'thread:(.+)')
-          AND (t.user_a = auth.uid() OR t.user_b = auth.uid())
-      )
-    ELSE auth.uid() IS NOT NULL
-  END
-);
+DO $realtime_policy$
+BEGIN
+  IF to_regclass('realtime.messages') IS NOT NULL THEN
+    BEGIN
+      EXECUTE 'DROP POLICY IF EXISTS "authenticated can receive realtime" ON realtime.messages';
+      EXECUTE 'DROP POLICY IF EXISTS "Authenticated users can read realtime" ON realtime.messages';
+      EXECUTE $policy$
+        CREATE POLICY "Realtime: participantes do thread leem broadcasts"
+        ON realtime.messages
+        FOR SELECT
+        TO authenticated
+        USING (
+          CASE
+            WHEN realtime.topic() LIKE 'thread:%' THEN
+              EXISTS (
+                SELECT 1 FROM public.chat_threads t
+                WHERE t.id::text = substring(realtime.topic() FROM 'thread:(.+)')
+                  AND (t.user_a = auth.uid() OR t.user_b = auth.uid())
+              )
+            ELSE auth.uid() IS NOT NULL
+          END
+        )
+      $policy$;
+    EXCEPTION
+      WHEN insufficient_privilege OR undefined_function OR undefined_table THEN
+        RAISE NOTICE 'Skipping realtime.messages policy: platform-managed or unavailable';
+    END;
+  END IF;
+END
+$realtime_policy$;
