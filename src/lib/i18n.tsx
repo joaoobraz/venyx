@@ -34,6 +34,13 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.security": "Segurança",
     "nav.commentModeration": "Moderação de comentários",
 
+    "preview.viewAs": "Visualizar como",
+    "preview.realAccount": "Conta real",
+    "preview.client": "Cliente (lead)",
+    "preview.creator": "Modelo",
+    "preview.moderator": "Moderador",
+    "preview.safety": "Modo de apresentação: ações reais continuam protegidas pelas permissões da conta.",
+
     "landing.hero.badge": "Plataforma +18",
     "landing.hero.title": "Conteúdo exclusivo. Direto da criadora pra você.",
     "landing.hero.subtitle": "Assine, troque mensagens e desbloqueie conteúdos PPV das suas criadoras favoritas.",
@@ -103,7 +110,6 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.trending": "Em alta",
     "explore.new": "Novas criadoras",
     "explore.categories": "Categorias",
-    "explore.demoDisclosure": "Perfis fictícios, com imagens de adultas geradas por IA, usados apenas nesta demonstração.",
 
     "top.title": "Top 15 Criadoras",
     "top.refresh": "Ranking atualizado a cada 6 horas.",
@@ -120,6 +126,8 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.followers": "Seguidores",
     "profile.following": "Seguindo",
     "profile.noBio": "Esta criadora ainda não adicionou uma bio.",
+    "profile.previewBio": "Conteúdo exclusivo, bastidores e novidades toda semana.",
+    "profile.previewOnly": "Ação indisponível no modo de apresentação",
     "profile.noMedia": "Nenhuma mídia publicada ainda.",
     "profile.noPosts": "Nenhum post publicado ainda.",
 
@@ -192,6 +200,13 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.security": "Security",
     "nav.commentModeration": "Comment moderation",
 
+    "preview.viewAs": "View as",
+    "preview.realAccount": "Real account",
+    "preview.client": "Client (lead)",
+    "preview.creator": "Creator",
+    "preview.moderator": "Moderator",
+    "preview.safety": "Presentation mode: real actions remain protected by the account permissions.",
+
     "landing.hero.badge": "Adult platform",
     "landing.hero.title": "Exclusive content. Straight from the creator.",
     "landing.hero.subtitle": "Subscribe, message and unlock PPV content from your favorite creators.",
@@ -261,7 +276,6 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.trending": "Trending",
     "explore.new": "New creators",
     "explore.categories": "Categories",
-    "explore.demoDisclosure": "Fictional profiles with AI-generated adult images, used only in this demo.",
 
     "top.title": "Top 15 Creators",
     "top.refresh": "Ranking refreshes every 6 hours.",
@@ -278,6 +292,8 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.followers": "Followers",
     "profile.following": "Following",
     "profile.noBio": "This creator has not added a bio yet.",
+    "profile.previewBio": "Exclusive content, behind the scenes and new releases every week.",
+    "profile.previewOnly": "Action unavailable in presentation mode",
     "profile.noMedia": "No media published yet.",
     "profile.noPosts": "No posts published yet.",
 

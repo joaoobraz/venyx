@@ -25,7 +25,6 @@ function ExplorePage() {
             <span>{t("explore.trending")}</span>
           </h2>
 
-          <p className="mb-4 text-sm text-muted-foreground">{t("explore.demoDisclosure")}</p>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {DEMO_CREATORS.map((c) => (
               <Link

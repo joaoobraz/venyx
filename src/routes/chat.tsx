@@ -671,8 +671,8 @@ function ChatPage() {
     if (active.is_demo) {
       toast.info(
         tr(
-          "O envio de mídia real fica desativado nesta conversa de demonstração.",
-          "Real media uploads are disabled in this demo conversation.",
+          "O envio de mídia está desativado nesta conversa de exemplo.",
+          "Media uploads are disabled in this sample conversation.",
         ),
       );
       e.target.value = "";
@@ -854,11 +854,6 @@ function ChatPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                       <span className="truncate">{th.other_name}</span>
-                      {th.is_demo && (
-                        <span className="shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent">
-                          {tr("Demo", "Demo")}
-                        </span>
-                      )}
                     </div>
                     <div
                       className={`truncate text-xs ${
@@ -906,11 +901,6 @@ function ChatPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     {active.other_name}
-                    {active.is_demo && (
-                      <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
-                        {tr("Demonstração", "Demo")}
-                      </span>
-                    )}
                     {active.subscribed && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
                         <Crown className="h-3 w-3" /> {t("chat.activeSubscriber")}
@@ -936,7 +926,7 @@ function ChatPage() {
                   disabled={active.is_demo}
                   title={
                     active.is_demo
-                      ? tr("Indisponível na demonstração", "Unavailable in the demo")
+                      ? tr("Indisponível nesta conversa", "Unavailable in this conversation")
                       : undefined
                   }
                   onClick={() => setTipOpen(true)}
@@ -957,14 +947,6 @@ function ChatPage() {
               </header>
 
               <div className="flex-1 space-y-2 overflow-y-auto bg-background/30 p-4">
-                {active.is_demo && (
-                  <div className="mx-auto mb-3 max-w-lg rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-center text-[11px] text-muted-foreground">
-                    {tr(
-                      "Conversa fictícia para demonstrar envio, leitura e edição. Ela fica salva somente neste navegador.",
-                      "Fictional conversation demonstrating send, read and edit states. It is stored only in this browser.",
-                    )}
-                  </div>
-                )}
                 {messages.map((m) => {
                   const fromMe = m.sender_id === user.id;
                   const isLockedMedia =
@@ -1150,7 +1132,7 @@ function ChatPage() {
                     aria-label="media"
                     title={
                       active.is_demo
-                        ? tr("Indisponível na demonstração", "Unavailable in the demo")
+                        ? tr("Indisponível nesta conversa", "Unavailable in this conversation")
                         : undefined
                     }
                   >

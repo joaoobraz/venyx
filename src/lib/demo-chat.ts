@@ -41,6 +41,24 @@ export const DEMO_CHAT_THREADS: DemoChatThread[] = [
     username: "lara",
     subscribed: false,
   },
+  {
+    id: "00000000-0000-4000-8000-000000000104",
+    creatorId: "demo-camila",
+    username: "camila",
+    subscribed: true,
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000105",
+    creatorId: "demo-marina",
+    username: "marina",
+    subscribed: false,
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000106",
+    creatorId: "demo-valentina",
+    username: "valentina",
+    subscribed: true,
+  },
 ];
 
 const STORAGE_VERSION = "v2";
@@ -131,30 +149,55 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
 
   if (thread.username === "aline") {
     return [
-      message(1, userId, "Oi, Aline! Conheci seu perfil hoje 😊", 22, isoMinutesAgo(20)),
-      message(2, thread.creatorId, "Oi! Que bom ter você por aqui 💜", 18, isoMinutesAgo(17)),
-      message(3, thread.creatorId, "Preparei algumas novidades para esta semana.", 6, null),
-      message(4, thread.creatorId, "Depois me conta qual conteúdo você mais gostou!", 4, null),
+      message(1, userId, "Oi, Aline! Conheci seu perfil hoje 😊", 42, isoMinutesAgo(40)),
+      message(2, thread.creatorId, "Oi! Que bom ter você por aqui 💜", 37, isoMinutesAgo(35)),
+      message(3, thread.creatorId, "Preparei algumas novidades para esta semana.", 20, isoMinutesAgo(18)),
+      message(4, thread.creatorId, "Eu acabei de publicar um bastidor exclusivo para assinantes.", 7, null),
     ];
   }
 
   if (thread.username === "duda") {
     return [
-      message(1, thread.creatorId, "Bem-vindo ao meu espaço!", 75, isoMinutesAgo(74)),
-      message(2, userId, "Obrigado, Duda! Já estou explorando o perfil.", 70, isoMinutesAgo(68)),
+      message(1, thread.creatorId, "Bem-vindo ao meu espaço!", 88, isoMinutesAgo(86)),
+      message(2, userId, "Obrigado, Duda! Já estou explorando o perfil.", 81, isoMinutesAgo(79)),
       message(
         3,
         thread.creatorId,
-        "Qualquer dúvida, pode falar comigo por aqui.",
+        "Se quiser, posso te mostrar minhas melhores coleções e os próximos lançamentos.",
         64,
-        isoMinutesAgo(63),
+        null,
       ),
     ];
   }
 
+  if (thread.username === "lara") {
+    return [
+      message(1, userId, "Oi, Lara! Tudo bem?", 24, isoMinutesAgo(22)),
+      message(2, thread.creatorId, "Tudo ótimo! Obrigada pela mensagem ✨", 16, isoMinutesAgo(14)),
+      message(3, thread.creatorId, "Hoje eu estou liberando uma sessão especial para quem acompanha de perto.", 6, null),
+    ];
+  }
+
+  if (thread.username === "camila") {
+    return [
+      message(1, thread.creatorId, "Oi! Sua presença já está anotada no meu calendário ✨", 36, isoMinutesAgo(34)),
+      message(2, userId, "Fico feliz! Quero acompanhar seu conteúdo com mais calma.", 30, isoMinutesAgo(28)),
+      message(3, thread.creatorId, "Perfeito. Eu também gosto de conversar antes de cada lançamento.", 13, null),
+    ];
+  }
+
+  if (thread.username === "marina") {
+    return [
+      message(1, thread.creatorId, "Tenho uma novidade para você hoje.", 48, isoMinutesAgo(45)),
+      message(2, userId, "Que ótimo, Marina! Estou curiosa para ver.", 42, isoMinutesAgo(40)),
+      message(3, thread.creatorId, "Vou te mandar um convite para o conteúdo mais recente assim que você estiver pronta.", 11, null),
+    ];
+  }
+
   return [
-    message(1, userId, "Oi, Lara! Tudo bem?", 14, isoMinutesAgo(12)),
-    message(2, thread.creatorId, "Tudo ótimo! Obrigada pela mensagem ✨", 10, null),
+    message(1, userId, "Oi, Valentina! Vi seu perfil e queria dizer que adorei a energia.", 18, isoMinutesAgo(16)),
+    message(2, thread.creatorId, "Que carinho! Eu também gosto de manter uma comunicação mais próxima.", 12, isoMinutesAgo(10)),
+    message(3, thread.creatorId, "Se quiser, posso te indicar as melhores formas de acompanhar meus novos posts.", 4, null),
   ];
 }
 

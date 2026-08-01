@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crown, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { DEMO_CREATORS, DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
 import { useI18n } from "@/lib/i18n";
 
 interface TopCreator {
@@ -16,7 +16,7 @@ interface TopCreator {
 
 const MAX_RANKING_SIZE = 15;
 const RANKING_CACHE_MS = 6 * 60 * 60 * 1000;
-const RANKING_CACHE_KEY = "venyx:top-creators:v2";
+const RANKING_CACHE_KEY = "venyx:top-creators:v3";
 
 export function TopCreators({ limit = 15, compact = false }: { limit?: number; compact?: boolean }) {
   const { t } = useI18n();
@@ -26,6 +26,12 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
 
   useEffect(() => {
     (async () => {
+      if (DEMO_MODE) {
+        setCreators(DEMO_CREATORS.slice(0, safeLimit));
+        setLoading(false);
+        return;
+      }
+
       try {
         const cached = localStorage.getItem(RANKING_CACHE_KEY);
         if (cached) {
@@ -55,7 +61,6 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
         new Set((roles ?? []).map((role) => role.user_id).filter((id) => planIds.has(id))),
       );
       if (ids.length === 0) {
-        if (DEMO_MODE) setCreators(DEMO_CREATORS.slice(0, safeLimit));
         setLoading(false);
         return;
       }
@@ -80,7 +85,6 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
       const ranked: TopCreator[] = (profs ?? [])
         .map((p) => ({
           ...p,
-          avatar_url: DEMO_MODE ? getDemoAsset(p.username).avatar_url : p.avatar_url,
           score:
             (followCount.get(p.user_id) ?? 0) * 100 +
             (likesSum.get(p.user_id) ?? 0) +

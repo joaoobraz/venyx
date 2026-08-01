@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
+export type DemoPreviewRole = Extract<AppRole, "subscriber" | "creator" | "admin">;
 
 export interface Profile {
   id: string;
@@ -34,11 +35,36 @@ interface AuthCtx {
   isAmbassador: boolean;
   isSeller: boolean;
   mfaEnabled: boolean;
+  canUseDemoPreview: boolean;
+  demoPreviewRole: DemoPreviewRole | null;
+  setDemoPreviewRole: (role: DemoPreviewRole | null) => void;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
+const DEMO_PREVIEW_STORAGE_KEY = "venyx:demo-preview-role";
+const DEFAULT_DEMO_PREVIEW_EMAIL = "joaobraz.ofc@gmail.com";
+const DEMO_PREVIEW_ROLES: DemoPreviewRole[] = ["subscriber", "creator", "admin"];
+
+function previewStorageKey(email: string) {
+  return `${DEMO_PREVIEW_STORAGE_KEY}:${email.toLowerCase()}`;
+}
+
+function isDemoPreviewAllowed(email?: string) {
+  if (!email) return false;
+  const enabled =
+    import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_PREVIEW === "true";
+  if (!enabled) return false;
+
+  const allowlist = (
+    import.meta.env.VITE_DEMO_PREVIEW_EMAILS || DEFAULT_DEMO_PREVIEW_EMAIL
+  )
+    .split(",")
+    .map((entry: string) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  return allowlist.includes(email.trim().toLowerCase());
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,6 +74,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [kyc, setKyc] = useState<KycRequest | null>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [demoPreviewRole, setDemoPreviewRoleState] = useState<DemoPreviewRole | null>(null);
+  const canUseDemoPreview = isDemoPreviewAllowed(user?.email);
+
+  const setDemoPreviewRole = (role: DemoPreviewRole | null) => {
+    if (!canUseDemoPreview || !user?.email || typeof window === "undefined") return;
+    const key = previewStorageKey(user.email);
+    if (role) {
+      window.localStorage.setItem(key, role);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+    setDemoPreviewRoleState(role);
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(DEMO_PREVIEW_STORAGE_KEY);
+    if (!canUseDemoPreview || !user?.email) {
+      setDemoPreviewRoleState(null);
+      return;
+    }
+    const saved = window.localStorage.getItem(previewStorageKey(user.email)) as DemoPreviewRole | null;
+    setDemoPreviewRoleState(saved && DEMO_PREVIEW_ROLES.includes(saved) ? saved : null);
+  }, [canUseDemoPreview, user?.email]);
 
   const loadUserData = async (uid: string) => {
     const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }] =
@@ -106,20 +156,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const effectiveRoles = canUseDemoPreview && demoPreviewRole ? [demoPreviewRole] : roles;
+
   return (
     <Ctx.Provider
       value={{
         user,
         session,
         profile,
-        roles,
+        roles: effectiveRoles,
         kyc,
         loading,
-        isCreator: roles.includes("creator"),
-        isAdmin: roles.includes("admin"),
-        isAmbassador: roles.includes("ambassador"),
-        isSeller: roles.includes("seller"),
+        isCreator: effectiveRoles.includes("creator"),
+        isAdmin: effectiveRoles.includes("admin"),
+        isAmbassador: effectiveRoles.includes("ambassador"),
+        isSeller: effectiveRoles.includes("seller"),
         mfaEnabled,
+        canUseDemoPreview,
+        demoPreviewRole,
+        setDemoPreviewRole,
         signOut,
         refresh,
       }}

@@ -4,7 +4,7 @@ Atualizado em 31/07/2026.
 
 ## Bloco 1 — experiência, demonstração e segurança
 
-- [x] Substituir fotos de demonstração por quatro adultas fictícias geradas por IA.
+- [x] Preparar 15 perfis de apresentação com retratos distintos de adultas fictícias geradas por IA.
 - [x] Impedir que os assets de demonstração sejam usados como fallback em produção.
 - [x] Top 15, com atualização/cache de 6 horas.
 - [x] Mostrar empty state honesto quando ainda não houver criadoras verificadas com plano ativo.
@@ -42,6 +42,7 @@ Atualizado em 31/07/2026.
 - [x] Aplicar e validar a migração de integridade das notificações do chat no Supabase staging.
 - [x] Remover dependências operacionais da Lovable e gerar um build portátil para hospedagem própria.
 - [x] Completar a tradução PT/EN do backoffice interno de criadoras e administradores.
+- [x] Restringir o seletor temporário cliente/modelo/moderador à conta autorizada, sem elevar permissões reais.
 
 ## Bloco 2 — P0 antes de abrir ao público
 

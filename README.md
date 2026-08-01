@@ -25,6 +25,17 @@ npm run dev
 
 Abra `http://localhost:8080`.
 
+### Apresentação para investidores
+
+No desenvolvimento local, os 15 perfis de apresentação ficam disponíveis por padrão. A conta
+`joaobraz.ofc@gmail.com` também recebe o seletor **Visualizar como**, com as visões de cliente,
+modelo e moderador. O seletor altera somente a interface; operações reais continuam protegidas
+pelas permissões armazenadas no banco.
+
+Para habilitar a mesma apresentação em um deploy de preview dedicado, configure
+`VITE_ENABLE_DEMO_CREATORS=true`, `VITE_ENABLE_DEMO_PREVIEW=true` e mantenha a lista de e-mails
+autorizados em `VITE_DEMO_PREVIEW_EMAILS`. Não habilite essas opções no ambiente público final.
+
 No Windows, depois de configurar `.env.local`, você também pode dar dois
 cliques em `INICIAR-LOCAL.bat`.
 

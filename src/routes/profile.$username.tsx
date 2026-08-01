@@ -13,7 +13,7 @@ import { fetchPosts } from "@/lib/posts";
 import { TipModal } from "@/components/TipModal";
 import { SubscribeModal } from "@/components/SubscribeModal";
 import { SafetyMenu } from "@/components/SafetyMenu";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { DEMO_MODE, getDemoAsset, getDemoCreator } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -34,6 +34,10 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!profile) return;
+    if (profile.user_id.startsWith("demo-")) {
+      setOwnerMfa(false);
+      return;
+    }
     supabase
       .from("security_settings")
       .select("mfa_enabled")
@@ -44,6 +48,22 @@ function ProfilePage() {
 
   useEffect(() => {
     setLoading(true);
+    const demoCreator = DEMO_MODE ? getDemoCreator(username) : null;
+    if (demoCreator) {
+      setProfile({
+        id: demoCreator.user_id,
+        user_id: demoCreator.user_id,
+        username: demoCreator.username,
+        display_name: demoCreator.display_name,
+        bio: null,
+        avatar_url: demoCreator.avatar_url,
+        cover_url: demoCreator.cover_url,
+        is_verified: true,
+        subscription_price_cents: 1990,
+      });
+      setLoading(false);
+      return;
+    }
     supabase
       .from("profiles")
       .select("*")
@@ -63,10 +83,15 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!profile) return;
+    if (profile.user_id.startsWith("demo-")) {
+      setPosts([]);
+      return;
+    }
     fetchPosts({ creatorId: profile.user_id, viewerId: user?.id ?? null }).then(setPosts);
   }, [profile, user?.id]);
 
   const isMe = user && profile && user.id === profile.user_id;
+  const isDemoProfile = profile?.user_id.startsWith("demo-") ?? false;
   const mediaPosts = posts.filter((p) => p.media.length > 0);
 
   return (
@@ -96,16 +121,24 @@ function ProfilePage() {
                 </div>
                 {!isMe && (
                   <div className="flex flex-wrap justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setTipOpen(true)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isDemoProfile}
+                      title={isDemoProfile ? t("profile.previewOnly") : undefined}
+                      onClick={() => setTipOpen(true)}
+                    >
                       <Heart className="mr-1.5 h-4 w-4 text-primary" /> {t("profile.tip")}
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to="/chat" search={{ with: profile.user_id }}>
+                      <Link to="/chat" search={isDemoProfile ? {} : { with: profile.user_id }}>
                         <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
                       </Link>
                     </Button>
                     <Button
                       size="sm"
+                      disabled={isDemoProfile}
+                      title={isDemoProfile ? t("profile.previewOnly") : undefined}
                       onClick={() => setSubOpen(true)}
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
@@ -155,7 +188,7 @@ function ProfilePage() {
 
           {tab === "about" ? (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              {profile.bio ?? t("profile.noBio")}
+              {profile.bio ?? (isDemoProfile ? t("profile.previewBio") : t("profile.noBio"))}
             </div>
           ) : tab === "media" ? (
             mediaPosts.length === 0 ? (
