@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/settings/security")({
   component: SecurityPage,
@@ -20,6 +21,7 @@ interface FactorEnroll {
 
 function SecurityPage() {
   const { user, mfaEnabled, refresh, loading } = useAuth();
+  const { tr } = useI18n();
   const nav = useNavigate();
   const [enrolling, setEnrolling] = useState<FactorEnroll | null>(null);
   const [code, setCode] = useState("");
@@ -73,12 +75,12 @@ function SecurityPage() {
       await supabase
         .from("security_settings")
         .upsert({ user_id: user.id, mfa_enabled: true, mfa_required_for_withdraw: requireForWithdraw });
-      toast.success("2FA ativado!");
+      toast.success(tr("2FA ativado!", "2FA enabled!"));
       setEnrolling(null);
       setCode("");
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Código inválido");
+      toast.error(e instanceof Error ? e.message : tr("Código inválido", "Invalid code"));
     } finally {
       setBusy(false);
     }
@@ -92,7 +94,7 @@ function SecurityPage() {
         await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
       await supabase.from("security_settings").upsert({ user_id: user.id, mfa_enabled: false });
-      toast.success("2FA desativado");
+      toast.success(tr("2FA desativado", "2FA disabled"));
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
@@ -113,7 +115,7 @@ function SecurityPage() {
       <div className="mx-auto max-w-xl space-y-4">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-accent" />
-          <h1 className="text-xl font-bold text-foreground">Segurança</h1>
+          <h1 className="text-xl font-bold text-foreground">{tr("Segurança", "Security")}</h1>
         </div>
 
         <div className="space-y-4 rounded-2xl bg-card p-5">
@@ -122,16 +124,24 @@ function SecurityPage() {
               <ShieldCheck className={`h-5 w-5 ${mfaEnabled ? "text-green-400" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
-              <h2 className="text-sm font-bold text-foreground">Autenticação em 2 fatores (2FA)</h2>
+              <h2 className="text-sm font-bold text-foreground">
+                {tr("Autenticação em 2 fatores (2FA)", "Two-factor authentication (2FA)")}
+              </h2>
               <p className="text-xs text-muted-foreground">
                 {mfaEnabled
-                  ? "Sua conta está protegida. Você precisa do código do app a cada login."
-                  : "Use Google Authenticator, Authy ou similar para gerar códigos temporários."}
+                  ? tr(
+                      "Sua conta está protegida. Você precisa do código do app a cada login.",
+                      "Your account is protected. You'll need the app code at each sign-in.",
+                    )
+                  : tr(
+                      "Use Google Authenticator, Authy ou similar para gerar códigos temporários.",
+                      "Use Google Authenticator, Authy or a similar app to generate temporary codes.",
+                    )}
               </p>
             </div>
             {mfaEnabled ? (
               <Button size="sm" variant="outline" onClick={disable} disabled={busy}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Desativar"}
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Desativar", "Disable")}
               </Button>
             ) : (
               !enrolling && (
@@ -141,7 +151,7 @@ function SecurityPage() {
                   disabled={busy}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ativar 2FA"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Ativar 2FA", "Enable 2FA")}
                 </Button>
               )
             )}
@@ -150,16 +160,16 @@ function SecurityPage() {
           {enrolling && (
             <div className="space-y-3 rounded-xl bg-background p-4">
               <p className="text-xs text-muted-foreground">
-                <Smartphone className="mr-1 inline h-3.5 w-3.5" /> Escaneie o QR no seu app autenticador:
+                <Smartphone className="mr-1 inline h-3.5 w-3.5" /> {tr("Escaneie o QR no seu app autenticador:", "Scan the QR code in your authenticator app:")}
               </p>
               <div className="flex justify-center rounded-lg bg-white p-3">
                 <img src={enrolling.totp.qr_code} alt="QR Code" className="h-44 w-44" />
               </div>
               <div className="text-center text-[10px] text-muted-foreground">
-                Ou digite manualmente: <code className="text-foreground">{enrolling.totp.secret}</code>
+                {tr("Ou digite manualmente:", "Or enter it manually:")} <code className="text-foreground">{enrolling.totp.secret}</code>
               </div>
               <Input
-                placeholder="Digite o código de 6 dígitos"
+                placeholder={tr("Digite o código de 6 dígitos", "Enter the 6-digit code")}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 maxLength={6}
@@ -167,14 +177,14 @@ function SecurityPage() {
               />
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setEnrolling(null)} className="flex-1">
-                  Cancelar
+                  {tr("Cancelar", "Cancel")}
                 </Button>
                 <Button
                   onClick={verify}
                   disabled={busy || code.length !== 6}
                   className="flex-1 bg-primary text-primary-foreground"
                 >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Confirmar", "Confirm")}
                 </Button>
               </div>
             </div>
@@ -183,8 +193,12 @@ function SecurityPage() {
           {mfaEnabled && (
             <div className="flex items-center justify-between border-t border-border pt-4">
               <div>
-                <div className="text-sm font-medium text-foreground">Exigir 2FA para saques</div>
-                <div className="text-xs text-muted-foreground">Pedir código ao solicitar saque na carteira</div>
+                <div className="text-sm font-medium text-foreground">
+                  {tr("Exigir 2FA para saques", "Require 2FA for withdrawals")}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {tr("Pedir código ao solicitar saque na carteira", "Ask for a code when requesting a wallet withdrawal")}
+                </div>
               </div>
               <Switch checked={requireForWithdraw} onCheckedChange={updateRequire} />
             </div>

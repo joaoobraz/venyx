@@ -90,14 +90,42 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
       .map(([postId]) => postId);
 
     if (!accessiblePostIds.length) {
-      return { mediaByPostId: {} as Record<string, { url: string; mime_type: string }> };
+      return {
+        mediaByPostId: {} as Record<
+          string,
+          { url: string; mime_type: string; is_video: boolean; has_custom_cover: boolean }
+        >,
+      };
     }
 
-    const { data: media, error } = await supabaseAdmin
+    const extendedResult = await supabaseAdmin
       .from("post_media")
-      .select("id, post_id, storage_path, mime_type, position")
+      .select("id, post_id, storage_path, cover_storage_path, mime_type, position")
       .in("post_id", accessiblePostIds)
       .order("position", { ascending: true });
+
+    let media = extendedResult.data as Array<{
+      id: string;
+      post_id: string;
+      storage_path: string;
+      cover_storage_path: string | null;
+      mime_type: string;
+      position: number;
+    }> | null;
+    let error = extendedResult.error;
+    if (error) {
+      // Keeps previews working until the video-cover migration is applied in staging.
+      const fallbackResult = await supabaseAdmin
+        .from("post_media")
+        .select("id, post_id, storage_path, mime_type, position")
+        .in("post_id", accessiblePostIds)
+        .order("position", { ascending: true });
+      media = (fallbackResult.data ?? []).map((item) => ({
+        ...item,
+        cover_storage_path: null,
+      }));
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error("Error fetching post_media:", error);
@@ -105,23 +133,41 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
     }
 
     // Build map of first media per post
-    const firstMediaByPost: Record<string, { path: string; type: string; id: string }> = {};
+    const firstMediaByPost: Record<
+      string,
+      { path: string; coverPath: string | null; type: string; id: string }
+    > = {};
     (media ?? []).forEach((m) => {
       if (!firstMediaByPost[m.post_id]) {
-        firstMediaByPost[m.post_id] = { path: m.storage_path, type: m.mime_type, id: m.id };
+        firstMediaByPost[m.post_id] = {
+          path: m.storage_path,
+          coverPath: m.cover_storage_path,
+          type: m.mime_type,
+          id: m.id,
+        };
       }
     });
 
     // Get signed URLs for all media
-    const mediaByPostId: Record<string, { url: string; mime_type: string }> = {};
+    const mediaByPostId: Record<
+      string,
+      { url: string; mime_type: string; is_video: boolean; has_custom_cover: boolean }
+    > = {};
     await Promise.all(
       Object.entries(firstMediaByPost).map(async ([postId, mediaInfo]) => {
         try {
+          const isVideo = mediaInfo.type.startsWith("video/");
+          const previewPath = isVideo && mediaInfo.coverPath ? mediaInfo.coverPath : mediaInfo.path;
           const { data: signed } = await supabaseAdmin.storage
             .from("posts")
-            .createSignedUrl(mediaInfo.path, SIGNED_URL_TTL_SECONDS);
+            .createSignedUrl(previewPath, SIGNED_URL_TTL_SECONDS);
           if (signed?.signedUrl) {
-            mediaByPostId[postId] = { url: signed.signedUrl, mime_type: mediaInfo.type };
+            mediaByPostId[postId] = {
+              url: signed.signedUrl,
+              mime_type: mediaInfo.type,
+              is_video: isVideo,
+              has_custom_cover: isVideo && Boolean(mediaInfo.coverPath),
+            };
           }
         } catch (err) {
           console.error(`Failed to sign URL for post ${postId}:`, err);

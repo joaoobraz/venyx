@@ -28,10 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { requireAdminServer } from "@/_server/admin.functions";
-import {
-  listUsersAdmin,
-  updateUserRoleAdmin,
-} from "@/_server/admin-users.functions";
+import { listUsersAdmin, updateUserRoleAdmin } from "@/_server/admin-users.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/users")({
   beforeLoad: async () => {
@@ -49,12 +47,42 @@ export const Route = createFileRoute("/admin/users")({
 
 type Role = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 
-const ALL_ROLES: { value: Role; label: string; icon: typeof Shield; color: string }[] = [
-  { value: "subscriber", label: "Subscriber", icon: UsersIcon, color: "bg-muted text-muted-foreground" },
-  { value: "creator", label: "Creator", icon: Crown, color: "bg-primary/15 text-primary" },
-  { value: "seller", label: "Seller", icon: Store, color: "bg-emerald-500/15 text-emerald-600" },
-  { value: "ambassador", label: "Embaixadora", icon: Star, color: "bg-amber-500/15 text-amber-600" },
-  { value: "admin", label: "Admin", icon: Shield, color: "bg-destructive/15 text-destructive" },
+const ALL_ROLES: { value: Role; pt: string; en: string; icon: typeof Shield; color: string }[] = [
+  {
+    value: "subscriber",
+    pt: "Assinante",
+    en: "Subscriber",
+    icon: UsersIcon,
+    color: "bg-muted text-muted-foreground",
+  },
+  {
+    value: "creator",
+    pt: "Criadora",
+    en: "Creator",
+    icon: Crown,
+    color: "bg-primary/15 text-primary",
+  },
+  {
+    value: "seller",
+    pt: "Vendedora",
+    en: "Seller",
+    icon: Store,
+    color: "bg-emerald-500/15 text-emerald-600",
+  },
+  {
+    value: "ambassador",
+    pt: "Embaixadora",
+    en: "Ambassador",
+    icon: Star,
+    color: "bg-amber-500/15 text-amber-600",
+  },
+  {
+    value: "admin",
+    pt: "Admin",
+    en: "Admin",
+    icon: Shield,
+    color: "bg-destructive/15 text-destructive",
+  },
 ];
 
 type UserRow = {
@@ -67,6 +95,7 @@ type UserRow = {
 };
 
 function AdminUsersPage() {
+  const { tr } = useI18n();
   const list = useServerFn(listUsersAdmin);
   const update = useServerFn(updateUserRoleAdmin);
 
@@ -88,7 +117,7 @@ function AdminUsersPage() {
       });
       setUsers(res.users as UserRow[]);
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao carregar usuários");
+      toast.error(e?.message ?? tr("Erro ao carregar usuários", "Could not load users"));
     } finally {
       setLoading(false);
     }
@@ -99,11 +128,7 @@ function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter]);
 
-  const handleToggleRole = async (
-    userId: string,
-    role: Role,
-    hasRole: boolean,
-  ) => {
+  const handleToggleRole = async (userId: string, role: Role, hasRole: boolean) => {
     const key = `${userId}:${role}`;
     setBusyKey(key);
     try {
@@ -120,18 +145,18 @@ function AdminUsersPage() {
           u.user_id === userId
             ? {
                 ...u,
-                roles: hasRole
-                  ? u.roles.filter((r) => r !== role)
-                  : [...u.roles, role],
+                roles: hasRole ? u.roles.filter((r) => r !== role) : [...u.roles, role],
               }
             : u,
         ),
       );
       toast.success(
-        hasRole ? `Cargo ${role} removido` : `Cargo ${role} atribuído`,
+        hasRole
+          ? tr(`Cargo ${role} removido`, `${role} role removed`)
+          : tr(`Cargo ${role} atribuído`, `${role} role assigned`),
       );
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao atualizar cargo");
+      toast.error(e?.message ?? tr("Erro ao atualizar cargo", "Could not update role"));
     } finally {
       setBusyKey(null);
     }
@@ -143,10 +168,13 @@ function AdminUsersPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <UserCog className="h-7 w-7 text-primary" />
-            Usuários & Cargos
+            {tr("Usuários e cargos", "Users & roles")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Atribua ou remova cargos como Seller, Creator, Admin, Embaixadora.
+            {tr(
+              "Atribua ou remova cargos como Vendedora, Criadora, Admin e Embaixadora.",
+              "Assign or remove Seller, Creator, Admin and Ambassador roles.",
+            )}
           </p>
         </div>
 
@@ -154,13 +182,13 @@ function AdminUsersPage() {
           <div className="flex gap-2 flex-wrap items-end">
             <div className="flex-1 min-w-[240px]">
               <label className="text-xs font-medium text-muted-foreground">
-                Buscar por @username ou nome
+                {tr("Buscar por @username ou nome", "Search by @username or name")}
               </label>
               <div className="relative mt-1">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-8"
-                  placeholder="ex: maria"
+                  placeholder={tr("ex.: maria", "e.g. maria")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => {
@@ -171,20 +199,17 @@ function AdminUsersPage() {
             </div>
             <div className="w-[180px]">
               <label className="text-xs font-medium text-muted-foreground">
-                Filtrar por cargo
+                {tr("Filtrar por cargo", "Filter by role")}
               </label>
-              <Select
-                value={roleFilter}
-                onValueChange={(v) => setRoleFilter(v as Role | "all")}
-              >
+              <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as Role | "all")}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">{tr("Todos", "All")}</SelectItem>
                   {ALL_ROLES.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
-                      {r.label}
+                      {tr(r.pt, r.en)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -192,7 +217,7 @@ function AdminUsersPage() {
             </div>
             <Button onClick={load} disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Buscar
+              {tr("Buscar", "Search")}
             </Button>
           </div>
         </Card>
@@ -206,7 +231,7 @@ function AdminUsersPage() {
 
           {!loading && users.length === 0 && (
             <Card className="p-8 text-center text-muted-foreground">
-              Nenhum usuário encontrado.
+              {tr("Nenhum usuário encontrado.", "No users found.")}
             </Card>
           )}
 
@@ -215,33 +240,23 @@ function AdminUsersPage() {
               <div className="flex items-start gap-4 flex-wrap">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={u.avatar_url ?? undefined} />
-                  <AvatarFallback>
-                    {u.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
+                  <AvatarFallback>{u.username.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 min-w-[200px]">
-                  <div className="font-semibold">
-                    {u.display_name ?? u.username}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    @{u.username}
-                  </div>
+                  <div className="font-semibold">{u.display_name ?? u.username}</div>
+                  <div className="text-sm text-muted-foreground">@{u.username}</div>
                   <div className="flex gap-1 flex-wrap mt-2">
                     {u.roles.length === 0 && (
                       <span className="text-xs text-muted-foreground">
-                        Sem cargos
+                        {tr("Sem cargos", "No roles")}
                       </span>
                     )}
                     {u.roles.map((r) => {
                       const meta = ALL_ROLES.find((x) => x.value === r);
                       return (
-                        <Badge
-                          key={r}
-                          variant="secondary"
-                          className={meta?.color}
-                        >
-                          {meta?.label ?? r}
+                        <Badge key={r} variant="secondary" className={meta?.color}>
+                          {meta ? tr(meta.pt, meta.en) : r}
                         </Badge>
                       );
                     })}
@@ -259,9 +274,7 @@ function AdminUsersPage() {
                         size="sm"
                         variant={has ? "secondary" : "outline"}
                         disabled={busy}
-                        onClick={() =>
-                          handleToggleRole(u.user_id, r.value, has)
-                        }
+                        onClick={() => handleToggleRole(u.user_id, r.value, has)}
                       >
                         {busy ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -271,7 +284,7 @@ function AdminUsersPage() {
                           <Plus className="h-3 w-3" />
                         )}
                         <r.icon className="h-3 w-3 ml-1" />
-                        <span className="ml-1">{r.label}</span>
+                        <span className="ml-1">{tr(r.pt, r.en)}</span>
                       </Button>
                     );
                   })}

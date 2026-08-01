@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
@@ -12,6 +13,91 @@ export const Route = createFileRoute("/terms")({
 });
 
 function TermsPage() {
+  const { locale } = useI18n();
+  if (locale === "en") {
+    return (
+      <AppShell>
+        <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
+          <h1>Terms of Use</h1>
+          <p className="text-sm text-muted-foreground">
+            Last updated: {new Date().toLocaleDateString("en-US")}
+          </p>
+          <h2>1. Acceptance</h2>
+          <p>
+            By creating an account or accessing the platform, you confirm that you have read,
+            understood and fully agree to these Terms and our{" "}
+            <Link to="/privacy" className="underline">Privacy Policy</Link>. If you disagree, do not
+            use the service.
+          </p>
+          <h2>2. Minimum age — 18+</h2>
+          <p>
+            This platform is <strong>exclusively for adults aged 18 or older</strong>. By signing up,
+            you declare that you are at least 18. Access by minors is strictly prohibited, and age
+            verification may be requested at any time. Adult content may only be published by
+            creators whose identity verification has been approved.
+          </p>
+          <h2>3. Registration and account</h2>
+          <ul>
+            <li>You are responsible for your password and all activity on your account.</li>
+            <li>Fake accounts, impersonation, and credential sharing are prohibited.</li>
+            <li>We recommend enabling two-factor authentication under Settings → Security.</li>
+          </ul>
+          <h2>4. User content</h2>
+          <p>When publishing content, you represent and warrant that:</p>
+          <ul>
+            <li>You own the rights or have express permission from every person depicted.</li>
+            <li>Every person depicted is 18 or older and consented to publication.</li>
+            <li>The content does not violate law, copyright, trademarks, privacy, or image rights.</li>
+          </ul>
+          <p><strong>The following is strictly prohibited:</strong></p>
+          <ul>
+            <li>Content involving anyone under 18 in a sexual or suggestive context.</li>
+            <li>Non-consensual content, including revenge porn, deepfakes, or hidden cameras.</li>
+            <li>Real violence, bestiality, necrophilia, incest, scatology, or promotion of crime.</li>
+            <li>Human trafficking, prostitution, grooming, drugs, weapons, or illegal activity.</li>
+            <li>Hate speech, racism, xenophobia, homophobia, or harassment.</li>
+          </ul>
+          <p>
+            You grant the platform a non-exclusive, worldwide, royalty-free license to host, display,
+            and distribute content as needed to operate the service. You retain your copyrights.
+          </p>
+          <h2>5. Payments, subscriptions and PPV</h2>
+          <ul>
+            <li>Subscriptions, tips, and PPV unlocks are processed by a payment partner.</li>
+            <li>The platform retains the service fee shown in the creator dashboard.</li>
+            <li>Withdrawals require approved identity verification and are subject to gateway limits.</li>
+            <li>Chargebacks may be deducted from creator balances and may temporarily suspend an account.</li>
+          </ul>
+          <h2>6. Right of withdrawal</h2>
+          <p>
+            Because digital content is delivered immediately, the Brazilian statutory withdrawal
+            right does not apply after content is unlocked or viewed. Canceling a subscription stops
+            future renewals while access remains through the paid period.
+          </p>
+          <h2>7. Suspension and termination</h2>
+          <p>
+            Accounts that violate these Terms may be suspended or terminated without notice,
+            especially for illegal content. Balances may be held while an investigation is pending.
+          </p>
+          <h2>8. Limitation of liability</h2>
+          <p>
+            The platform is provided “as is.” We do not guarantee uninterrupted availability and are
+            not liable for indirect damages. Total liability is limited to the amount paid by the user
+            during the previous six months.
+          </p>
+          <h2>9. Intellectual property and DMCA</h2>
+          <p>
+            To report infringing content, see our{" "}
+            <Link to="/dmca" className="underline">DMCA Policy</Link>.
+          </p>
+          <h2>10. Governing law</h2>
+          <p>These Terms are governed by the laws of the Federative Republic of Brazil.</p>
+          <h2>11. Contact</h2>
+          <p>Questions: <a href="mailto:suporte@plataforma.com">suporte@plataforma.com</a></p>
+        </article>
+      </AppShell>
+    );
+  }
   return (
     <AppShell>
       <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">

@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Botão de tradução com confirmação prévia, estado de loading,
@@ -21,7 +22,9 @@ import {
  */
 const RETRY_DELAYS = [5, 10, 20, 40];
 
-export function TranslateButton({ text, target = "pt-BR" }: { text: string; target?: string }) {
+export function TranslateButton({ text, target }: { text: string; target?: string }) {
+  const { locale, tr } = useI18n();
+  const effectiveTarget = target ?? (locale === "en" ? "en" : "pt-BR");
   const [translated, setTranslated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,7 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
     setRetryAttempt(attempt);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("translate-message", {
-        body: { text, target },
+        body: { text, target: effectiveTarget },
       });
 
       if (fnError) {
@@ -82,15 +85,15 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
         if (status === 429) {
           setRateLimited(true);
           if (attempt < RETRY_DELAYS.length) {
-            setError(`IA sobrecarregada. Nova tentativa automática em alguns segundos…`);
+            setError(tr("IA sobrecarregada. Nova tentativa automática em alguns segundos…", "AI is busy. Retrying automatically in a few seconds…"));
             scheduleRetry(attempt);
           } else {
-            setError("IA continua sobrecarregada. Tente novamente manualmente.");
+            setError(tr("IA continua sobrecarregada. Tente novamente manualmente.", "AI is still busy. Please try again manually."));
           }
           return;
         }
         if (status === 402) {
-          setError("Créditos de IA esgotados. Avise a criadora ou tente mais tarde.");
+          setError(tr("Créditos de IA esgotados. Tente mais tarde.", "AI credits are unavailable. Please try later."));
           return;
         }
         throw fnError;
@@ -98,11 +101,11 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
 
       const payload = data as { translation?: string; error?: string } | null;
       const t = payload?.translation;
-      if (!t) throw new Error(payload?.error || "Sem resposta do tradutor");
+      if (!t) throw new Error(payload?.error || tr("Sem resposta do tradutor", "No response from translator"));
       setTranslated(t);
       setRetryAttempt(0);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao traduzir";
+      const msg = e instanceof Error ? e.message : tr("Falha ao traduzir", "Translation failed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -113,7 +116,7 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
   const cancelRetry = () => {
     clearTimer();
     setRetryIn(null);
-    setError("Auto-retry cancelado. Toque para tentar novamente.");
+    setError(tr("Nova tentativa cancelada. Toque para tentar novamente.", "Retry canceled. Tap to try again."));
   };
 
   const onClick = () => {
@@ -147,22 +150,22 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
         {loading ? (
           <>
             <Loader2 className="h-3 w-3 animate-spin" />
-            Traduzindo…
+            {tr("Traduzindo…", "Translating…")}
           </>
         ) : retryIn != null ? (
           <>
             <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
-            Nova tentativa em {retryIn}s · tocar p/ tentar agora
+            {tr(`Nova tentativa em ${retryIn}s · tocar para tentar agora`, `Retrying in ${retryIn}s · tap to try now`)}
           </>
         ) : rateLimited || error ? (
           <>
             <AlertTriangle className="h-3 w-3 text-destructive" />
-            Tentar novamente
+            {tr("Tentar novamente", "Try again")}
           </>
         ) : (
           <>
             <Languages className="h-3 w-3" />
-            {translated ? "Ocultar tradução" : "Traduzir"}
+            {translated ? tr("Ocultar tradução", "Hide translation") : tr("Traduzir", "Translate")}
           </>
         )}
       </button>
@@ -187,7 +190,7 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
                 }}
                 className="text-[10px] underline opacity-80 hover:opacity-100"
               >
-                Cancelar
+                {tr("Cancelar", "Cancel")}
               </button>
               <button
                 type="button"
@@ -199,7 +202,7 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
                 }}
                 className="rounded-md bg-destructive px-2 py-0.5 text-[10px] font-medium text-destructive-foreground hover:opacity-90"
               >
-                Tentar agora
+                {tr("Tentar agora", "Try now")}
               </button>
             </div>
           )}
@@ -209,21 +212,24 @@ export function TranslateButton({ text, target = "pt-BR" }: { text: string; targ
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Traduzir esta mensagem?</AlertDialogTitle>
+            <AlertDialogTitle>{tr("Traduzir esta mensagem?", "Translate this message?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              O texto será enviado ao provedor de IA para tradução automática para{" "}
-              <strong>{target}</strong>. A tradução é apenas uma sugestão e pode conter imprecisões.
+              {tr(
+                "O texto será enviado ao provedor de IA para tradução automática. A tradução é apenas uma sugestão e pode conter imprecisões.",
+                "The text will be sent to the AI provider for automatic translation. The translation is a suggestion and may contain inaccuracies.",
+              )}{" "}
+              <strong>({effectiveTarget})</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{tr("Cancelar", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setConfirmOpen(false);
                 void doTranslate(0);
               }}
             >
-              Traduzir
+              {tr("Traduzir", "Translate")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

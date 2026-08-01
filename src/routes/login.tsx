@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,15 +77,11 @@ function LoginPage() {
   };
 
   const onGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/feed` },
     });
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/feed" });
+    if (error) toast.error(error.message);
   };
 
   return (

@@ -5,14 +5,20 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
 
 const BASE_URL = "https://nexuspag.com";
-const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 function getWebhookUrl(): string {
-  return (
-    process.env.PUBLIC_WEBHOOK_URL ??
-    `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`
-  );
+  const configured = process.env.PUBLIC_WEBHOOK_URL;
+  if (!configured) throw new Error("Pagamento indisponível no momento");
+  const url = new URL(configured);
+  const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  if (
+    (url.protocol !== "https:" && !localHttp) ||
+    url.pathname !== "/api/public/nexuspag-webhook"
+  ) {
+    throw new Error("Pagamento indisponível no momento");
+  }
+  return url.toString();
 }
 
 function getApiKey(): string {
@@ -130,7 +136,7 @@ async function callNexusPag(
         amount: amountReais,
         description,
         external_id: externalId,
-        expiration_seconds: expirationSeconds,
+        expiration: expirationSeconds,
         webhook_url: getWebhookUrl(),
       }),
     });

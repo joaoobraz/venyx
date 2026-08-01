@@ -50,6 +50,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/moderation")({
   beforeLoad: async () => {
@@ -98,6 +99,7 @@ interface PendingDecision {
 }
 
 function AdminModerationPage() {
+  const { locale, tr } = useI18n();
   const { user, loading, isAdmin } = useAuth();
   const nav = useNavigate();
   const [logs, setLogs] = useState<ModLog[]>([]);
@@ -152,7 +154,10 @@ function AdminModerationPage() {
           .select("user_id, username")
           .in("user_id", ids);
         userMap = new Map(
-          ((profs ?? []) as { user_id: string; username: string }[]).map((p) => [p.user_id, p.username]),
+          ((profs ?? []) as { user_id: string; username: string }[]).map((p) => [
+            p.user_id,
+            p.username,
+          ]),
         );
       }
       setLogs(rows.map((r) => ({ ...r, username: userMap.get(r.user_id) })));
@@ -187,7 +192,18 @@ function AdminModerationPage() {
   // reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [query, usernameFilter, surfaceFilter, categoryFilter, decisionFilter, trustFilter, dateFrom, dateTo, sizeMin, sizeMax]);
+  }, [
+    query,
+    usernameFilter,
+    surfaceFilter,
+    categoryFilter,
+    decisionFilter,
+    trustFilter,
+    dateFrom,
+    dateTo,
+    sizeMin,
+    sizeMax,
+  ]);
 
   const openDecision = (id: string, decision: "approved" | "rejected") => {
     setPendingDecision({ id, decision });
@@ -197,7 +213,12 @@ function AdminModerationPage() {
 
   const goReview = () => {
     if (decisionNote.trim().length < 5) {
-      toast.error("Descreva o motivo (mínimo 5 caracteres) para manter auditoria.");
+      toast.error(
+        tr(
+          "Descreva o motivo (mínimo de 5 caracteres) para manter a auditoria.",
+          "Describe the reason (at least 5 characters) for the audit trail.",
+        ),
+      );
       return;
     }
     setDecisionStage("review");
@@ -206,7 +227,7 @@ function AdminModerationPage() {
   const confirmDecision = async () => {
     if (!user || !pendingDecision) return;
     if (decisionNote.trim().length < 5) {
-      toast.error("Motivo inválido.");
+      toast.error(tr("Motivo inválido.", "Invalid reason."));
       return;
     }
     try {
@@ -218,7 +239,11 @@ function AdminModerationPage() {
         },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao registrar decisão");
+      toast.error(
+        e instanceof Error
+          ? e.message
+          : tr("Falha ao registrar decisão", "Could not record decision"),
+      );
       return;
     }
     const next: DecisionMap = {
@@ -231,7 +256,11 @@ function AdminModerationPage() {
       },
     };
     setDecisions(next);
-    toast.success(pendingDecision.decision === "approved" ? "Reupload aprovado" : "Reupload rejeitado");
+    toast.success(
+      pendingDecision.decision === "approved"
+        ? tr("Reenvio aprovado", "Re-upload approved")
+        : tr("Reenvio rejeitado", "Re-upload rejected"),
+    );
     setPendingDecision(null);
     setDecisionNote("");
     setDecisionStage("edit");
@@ -251,9 +280,10 @@ function AdminModerationPage() {
     setTrustFilter("all");
     setQuery("");
     toast.success(
-      `Mostrando reuploads ${targetDecision === "approved" ? "aprovados" : "rejeitados"} de @${
-        targetUsername ?? "—"
-      } em ${targetSurface}`,
+      tr(
+        `Mostrando reenvios ${targetDecision === "approved" ? "aprovados" : "rejeitados"} de @${targetUsername ?? "—"} em ${targetSurface}`,
+        `Showing ${targetDecision === "approved" ? "approved" : "rejected"} re-uploads from @${targetUsername ?? "—"} on ${targetSurface}`,
+      ),
     );
     // scroll suave para a lista
     if (typeof window !== "undefined") {
@@ -266,7 +296,12 @@ function AdminModerationPage() {
     const next = { ...decisions };
     delete next[id];
     setDecisions(next);
-    toast.message("Removido da visão local. O registro de auditoria permanece no servidor.");
+    toast.message(
+      tr(
+        "Removido da visão local. O registro de auditoria permanece no servidor.",
+        "Removed from the local view. The audit record remains on the server.",
+      ),
+    );
   };
 
   // Estatísticas por usuário p/ definir confiança
@@ -321,12 +356,25 @@ function AdminModerationPage() {
       if (maxB != null && (l.file_size_bytes ?? Number.MAX_SAFE_INTEGER) > maxB) return false;
       if (query) {
         const q = query.toLowerCase();
-        const hay = `${l.username ?? ""} ${l.user_id} ${l.reason ?? ""} ${l.category}`.toLowerCase();
+        const hay =
+          `${l.username ?? ""} ${l.user_id} ${l.reason ?? ""} ${l.category}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [enriched, surfaceFilter, categoryFilter, decisionFilter, trustFilter, usernameFilter, dateFrom, dateTo, sizeMin, sizeMax, query]);
+  }, [
+    enriched,
+    surfaceFilter,
+    categoryFilter,
+    decisionFilter,
+    trustFilter,
+    usernameFilter,
+    dateFrom,
+    dateTo,
+    sizeMin,
+    sizeMax,
+    query,
+  ]);
 
   // Resumo agrupado por surface × categoria + top razões
   const summary = useMemo(() => {
@@ -406,7 +454,12 @@ function AdminModerationPage() {
     a.download = `moderation-${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exportadas ${rows.length} linhas (${scope === "page" ? "página atual" : "todos os filtros"})`);
+    toast.success(
+      tr(
+        `Exportadas ${rows.length} linhas (${scope === "page" ? "página atual" : "todos os filtros"})`,
+        `Exported ${rows.length} rows (${scope === "page" ? "current page" : "all filters"})`,
+      ),
+    );
   };
 
   if (loading || !isAdmin) return null;
@@ -419,426 +472,526 @@ function AdminModerationPage() {
   return (
     <AppShell>
       <TooltipProvider delayDuration={200}>
-      <div className="space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/15 text-destructive">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Moderação · Logs</h1>
-              <p className="text-sm text-muted-foreground">
-                Mídias bloqueadas pela IA. Decida sobre eventuais reuploads e exporte o histórico.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadCsv("page")}
-              disabled={!pageItems.length}
-              title="Exporta apenas os itens visíveis na página atual"
-            >
-              <FileDown className="mr-2 h-4 w-4" /> CSV da página ({pageItems.length})
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => downloadCsv("filtered")} disabled={!filtered.length}>
-              <Download className="mr-2 h-4 w-4" /> CSV filtrado ({filtered.length})
-            </Button>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Total" value={total} />
-          <StatCard label="Pendentes" value={pending} tone="warning" />
-          <StatCard label="Aprovados" value={approved} tone="success" />
-          <StatCard label="Rejeitados" value={rejected} tone="danger" />
-        </div>
-
-        {/* Resumo por surface × categoria + top motivos */}
-        {filtered.length > 0 && (
-          <div className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Resumo por surface × categoria</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="py-1.5 pr-2">Surface</th>
-                      <th className="py-1.5 pr-2">CSAM</th>
-                      <th className="py-1.5 pr-2">Outras</th>
-                      <th className="py-1.5">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(summary.matrix).map(([surface, cats]) => {
-                      const csam = cats.csam ?? 0;
-                      const other = cats.other ?? 0;
-                      return (
-                        <tr key={surface} className="border-t border-border/40">
-                          <td className="py-1.5 pr-2 font-medium capitalize">{surface}</td>
-                          <td className="py-1.5 pr-2 text-destructive">{csam}</td>
-                          <td className="py-1.5 pr-2">{other}</td>
-                          <td className="py-1.5 font-semibold">{csam + other}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+        <div className="space-y-6">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {tr("Moderação · Registros", "Moderation · Logs")}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {tr(
+                    "Mídias bloqueadas pela IA. Decida sobre possíveis reenvios e exporte o histórico.",
+                    "Media blocked by AI. Review possible re-uploads and export the audit history.",
+                  )}
+                </p>
               </div>
             </div>
-
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Top motivos da IA</h2>
-              {summary.topReasons.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhum motivo registrado nos itens filtrados.</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {summary.topReasons.map(([reason, count]) => (
-                    <li key={reason} className="flex items-start justify-between gap-2 text-xs">
-                      <span className="text-muted-foreground">{reason}</span>
-                      <Badge variant="secondary" className="shrink-0">{count}</Badge>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadCsv("page")}
+                disabled={!pageItems.length}
+                title={tr(
+                  "Exporta apenas os itens visíveis na página atual",
+                  "Exports only items visible on the current page",
+                )}
+              >
+                <FileDown className="mr-2 h-4 w-4" /> {tr("CSV da página", "Page CSV")} (
+                {pageItems.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadCsv("filtered")}
+                disabled={!filtered.length}
+              >
+                <Download className="mr-2 h-4 w-4" /> {tr("CSV filtrado", "Filtered CSV")} (
+                {filtered.length})
+              </Button>
             </div>
-          </div>
-        )}
+          </header>
 
-        {/* Filtros principais */}
-        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por usuário, motivo ou categoria…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-9 pl-9"
-            />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Total" value={total} />
+            <StatCard label={tr("Pendentes", "Pending")} value={pending} tone="warning" />
+            <StatCard label={tr("Aprovados", "Approved")} value={approved} tone="success" />
+            <StatCard label={tr("Rejeitados", "Rejected")} value={rejected} tone="danger" />
           </div>
-          <Filter className="hidden h-4 w-4 text-muted-foreground sm:block" />
-          <Select value={surfaceFilter} onValueChange={setSurfaceFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32">
-              <SelectValue placeholder="Surface" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Surfaces</SelectItem>
-              <SelectItem value="post">Post</SelectItem>
-              <SelectItem value="story">Story</SelectItem>
-              <SelectItem value="chat">Chat</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Categorias</SelectItem>
-              <SelectItem value="csam">CSAM</SelectItem>
-              <SelectItem value="other">Outras</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={decisionFilter} onValueChange={setDecisionFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32">
-              <SelectValue placeholder="Decisão" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Decisões</SelectItem>
-              <SelectItem value="pending">Pendentes</SelectItem>
-              <SelectItem value="approved">Aprovados</SelectItem>
-              <SelectItem value="rejected">Rejeitados</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={trustFilter} onValueChange={setTrustFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32">
-              <SelectValue placeholder="Confiança" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Confiança</SelectItem>
-              <SelectItem value="trusted">Confiável</SelectItem>
-              <SelectItem value="neutral">Neutro</SelectItem>
-              <SelectItem value="suspicious">Suspeito</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Filtros avançados */}
-        <div className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Username</label>
-            <Input
-              placeholder="@criadora"
-              value={usernameFilter}
-              onChange={(e) => setUsernameFilter(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div>
-            <label className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <Calendar className="h-3 w-3" /> De
-            </label>
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9" />
-          </div>
-          <div>
-            <label className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <Calendar className="h-3 w-3" /> Até
-            </label>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Min (KB)</label>
-              <Input
-                type="number"
-                inputMode="numeric"
-                placeholder="0"
-                value={sizeMin}
-                onChange={(e) => setSizeMin(e.target.value)}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">Max (KB)</label>
-              <Input
-                type="number"
-                inputMode="numeric"
-                placeholder="∞"
-                value={sizeMax}
-                onChange={(e) => setSizeMax(e.target.value)}
-                className="h-9"
-              />
-            </div>
-          </div>
-        </div>
+          {/* Resumo por surface × categoria + top motivos */}
+          {filtered.length > 0 && (
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">
+                  {tr("Resumo por área × categoria", "Summary by surface × category")}
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        <th className="py-1.5 pr-2">{tr("Área", "Surface")}</th>
+                        <th className="py-1.5 pr-2">CSAM</th>
+                        <th className="py-1.5 pr-2">{tr("Outras", "Other")}</th>
+                        <th className="py-1.5">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(summary.matrix).map(([surface, cats]) => {
+                        const csam = cats.csam ?? 0;
+                        const other = cats.other ?? 0;
+                        return (
+                          <tr key={surface} className="border-t border-border/40">
+                            <td className="py-1.5 pr-2 font-medium capitalize">{surface}</td>
+                            <td className="py-1.5 pr-2 text-destructive">{csam}</td>
+                            <td className="py-1.5 pr-2">{other}</td>
+                            <td className="py-1.5 font-semibold">{csam + other}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-        {busy ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando logs…
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-            Nenhum log corresponde aos filtros.
-          </div>
-        ) : (
-          <>
-            <ul className="space-y-3">
-              {pageItems.map((l) => (
-                <li key={l.id} className="rounded-2xl border border-border bg-card p-4 shadow-card">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={l.category === "csam" ? "destructive" : "secondary"}>
-                          {l.category.toUpperCase()}
+              <div className="rounded-xl border border-border bg-card p-4">
+                <h2 className="mb-3 text-sm font-semibold text-foreground">
+                  {tr("Principais motivos da IA", "Top AI reasons")}
+                </h2>
+                {summary.topReasons.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {tr(
+                      "Nenhum motivo registrado nos itens filtrados.",
+                      "No reasons recorded for the filtered items.",
+                    )}
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {summary.topReasons.map(([reason, count]) => (
+                      <li key={reason} className="flex items-start justify-between gap-2 text-xs">
+                        <span className="text-muted-foreground">{reason}</span>
+                        <Badge variant="secondary" className="shrink-0">
+                          {count}
                         </Badge>
-                        <Badge variant="outline">{l.surface}</Badge>
-                        <TrustBadge
-                          trust={l.trust}
-                          total={l.user_total}
-                          csam={l.user_csam}
-                          category={l.category}
-                          surface={l.surface}
-                        />
-                        {l.mime_type && <span className="text-[11px] text-muted-foreground">{l.mime_type}</span>}
-                        {l.file_size_bytes != null && (
-                          <span className="text-[11px] text-muted-foreground">
-                            {(l.file_size_bytes / 1024).toFixed(1)} KB
-                          </span>
-                        )}
-                        <DecisionBadge decision={l.decision ?? "pending"} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
-                        {l.username ? (
-                          <Link
-                            to="/profile/$username"
-                            params={{ username: l.username }}
-                            className="inline-flex items-center gap-1 hover:text-primary"
-                          >
-                            @{l.username}
-                            <ExternalLink className="h-3 w-3" />
-                          </Link>
-                        ) : (
-                          <span className="font-mono text-xs text-muted-foreground">{l.user_id.slice(0, 8)}…</span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => drillDown(l.username, l.surface, "approved")}
-                          className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-                          title={`Ver reuploads aprovados de @${l.username ?? "—"} em ${l.surface}`}
-                        >
-                          <FilterIcon className="h-2.5 w-2.5" /> Aprovados aqui
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => drillDown(l.username, l.surface, "rejected")}
-                          className="inline-flex items-center gap-1 rounded-full border border-destructive/30 px-2 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10"
-                          title={`Ver reuploads rejeitados de @${l.username ?? "—"} em ${l.surface}`}
-                        >
-                          <FilterIcon className="h-2.5 w-2.5" /> Rejeitados aqui
-                        </button>
-                      </div>
-                      {l.reason && (
-                        <div className="rounded-md bg-background/40 px-2 py-1 text-xs text-muted-foreground">
-                          Motivo da IA: <span className="text-foreground">{l.reason}</span>
-                        </div>
-                      )}
-                      {l.decision_note && (
-                        <div className="rounded-md border border-border bg-background/30 px-2 py-1 text-xs">
-                          <span className="text-muted-foreground">Nota da decisão: </span>
-                          <span className="text-foreground">{l.decision_note}</span>
-                        </div>
-                      )}
-                      <div className="text-[11px] text-muted-foreground">
-                        {new Date(l.created_at).toLocaleString("pt-BR")}
-                        {l.decision_at && l.decision !== "pending" && (
-                          <> · Decidido em {new Date(l.decision_at).toLocaleString("pt-BR")}</>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 gap-2">
-                      {l.decision === "pending" ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openDecision(l.id, "approved")}
-                            className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-                            disabled={l.category === "csam"}
-                            title={l.category === "csam" ? "CSAM não pode ser aprovado" : "Aprovar reupload"}
-                          >
-                            <Check className="mr-1 h-3.5 w-3.5" /> Aprovar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openDecision(l.id, "rejected")}
-                            className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                          >
-                            <X className="mr-1 h-3.5 w-3.5" /> Rejeitar
-                          </Button>
-                        </>
-                      ) : (
-                        <Button size="sm" variant="ghost" onClick={() => undo(l.id)}>
-                          Desfazer
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            {/* Paginação */}
-            <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-              <span>
-                Exibindo <strong className="text-foreground">{cursorStart}</strong>–
-                <strong className="text-foreground">{cursorEnd}</strong> de{" "}
-                <strong className="text-foreground">{filtered.length}</strong>
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={safePage === 0}
-                >
-                  <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Anterior
-                </Button>
-                <span>
-                  Página {safePage + 1} / {pageCount}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                  disabled={safePage >= pageCount - 1}
-                >
-                  Próxima <ChevronRight className="ml-1 h-3.5 w-3.5" />
-                </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
-          </>
-        )}
-      </div>
+          )}
 
-      {/* Confirmação com motivo da decisão (2 etapas: editar → revisar → salvar) */}
-      <AlertDialog
-        open={pendingDecision !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPendingDecision(null);
-            setDecisionNote("");
-            setDecisionStage("edit");
-          }
-        }}
-      >
-        <AlertDialogContent>
-          {decisionStage === "edit" ? (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {pendingDecision?.decision === "approved" ? "Aprovar reupload?" : "Rejeitar reupload?"}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Descreva o motivo da decisão. Você poderá revisar a nota antes de salvar no histórico de auditoria.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <Textarea
-                value={decisionNote}
-                onChange={(e) => setDecisionNote(e.target.value)}
-                placeholder="Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou contexto…"
-                rows={4}
-                className="resize-none"
-                autoFocus
+          {/* Filtros principais */}
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={tr(
+                  "Buscar por usuário, motivo ou categoria…",
+                  "Search by user, reason or category…",
+                )}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="h-9 pl-9"
               />
-              <p className="text-[11px] text-muted-foreground">
-                {decisionNote.trim().length}/5 caracteres mínimos
-              </p>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <Button onClick={goReview} disabled={decisionNote.trim().length < 5}>
-                  Revisar antes de salvar
-                </Button>
-              </AlertDialogFooter>
-            </>
+            </div>
+            <Filter className="hidden h-4 w-4 text-muted-foreground sm:block" />
+            <Select value={surfaceFilter} onValueChange={setSurfaceFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-32">
+                <SelectValue placeholder={tr("Área", "Surface")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tr("Todas as áreas", "All surfaces")}</SelectItem>
+                <SelectItem value="post">Post</SelectItem>
+                <SelectItem value="story">Story</SelectItem>
+                <SelectItem value="chat">Chat</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-32">
+                <SelectValue placeholder={tr("Categoria", "Category")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tr("Categorias", "Categories")}</SelectItem>
+                <SelectItem value="csam">CSAM</SelectItem>
+                <SelectItem value="other">{tr("Outras", "Other")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={decisionFilter} onValueChange={setDecisionFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-32">
+                <SelectValue placeholder={tr("Decisão", "Decision")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tr("Decisões", "Decisions")}</SelectItem>
+                <SelectItem value="pending">{tr("Pendentes", "Pending")}</SelectItem>
+                <SelectItem value="approved">{tr("Aprovados", "Approved")}</SelectItem>
+                <SelectItem value="rejected">{tr("Rejeitados", "Rejected")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={trustFilter} onValueChange={setTrustFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-32">
+                <SelectValue placeholder={tr("Confiança", "Trust")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{tr("Confiança", "Trust")}</SelectItem>
+                <SelectItem value="trusted">{tr("Confiável", "Trusted")}</SelectItem>
+                <SelectItem value="neutral">{tr("Neutro", "Neutral")}</SelectItem>
+                <SelectItem value="suspicious">{tr("Suspeito", "Suspicious")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtros avançados */}
+          <div className="grid gap-3 rounded-xl border border-border bg-card p-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+                Username
+              </label>
+              <Input
+                placeholder="@criadora"
+                value={usernameFilter}
+                onChange={(e) => setUsernameFilter(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <Calendar className="h-3 w-3" /> {tr("De", "From")}
+              </label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <Calendar className="h-3 w-3" /> {tr("Até", "To")}
+              </label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Min (KB)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={sizeMin}
+                  onChange={(e) => setSizeMin(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Max (KB)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="∞"
+                  value={sizeMax}
+                  onChange={(e) => setSizeMax(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            </div>
+          </div>
+
+          {busy ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
+              {tr("Carregando registros…", "Loading logs…")}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+              {tr("Nenhum registro corresponde aos filtros.", "No logs match the filters.")}
+            </div>
           ) : (
             <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirme a decisão</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Revise o motivo abaixo. Após salvar, ele será registrado permanentemente no histórico de auditoria
-                  (incluindo CSV exportado).
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-2 rounded-lg border border-border bg-background/50 p-3 text-sm">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Decisão</span>
-                  <DecisionBadge decision={pendingDecision?.decision ?? "pending"} />
-                </div>
-                <div className="border-t border-border pt-2">
-                  <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Motivo</div>
-                  <p className="whitespace-pre-wrap text-sm text-foreground">{decisionNote.trim()}</p>
+              <ul className="space-y-3">
+                {pageItems.map((l) => (
+                  <li
+                    key={l.id}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-card"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={l.category === "csam" ? "destructive" : "secondary"}>
+                            {l.category.toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline">{l.surface}</Badge>
+                          <TrustBadge
+                            trust={l.trust}
+                            total={l.user_total}
+                            csam={l.user_csam}
+                            category={l.category}
+                            surface={l.surface}
+                          />
+                          {l.mime_type && (
+                            <span className="text-[11px] text-muted-foreground">{l.mime_type}</span>
+                          )}
+                          {l.file_size_bytes != null && (
+                            <span className="text-[11px] text-muted-foreground">
+                              {(l.file_size_bytes / 1024).toFixed(1)} KB
+                            </span>
+                          )}
+                          <DecisionBadge decision={l.decision ?? "pending"} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                          {l.username ? (
+                            <Link
+                              to="/profile/$username"
+                              params={{ username: l.username }}
+                              className="inline-flex items-center gap-1 hover:text-primary"
+                            >
+                              @{l.username}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {l.user_id.slice(0, 8)}…
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => drillDown(l.username, l.surface, "approved")}
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                            title={tr(
+                              `Ver reenvios aprovados de @${l.username ?? "—"} em ${l.surface}`,
+                              `View approved re-uploads from @${l.username ?? "—"} on ${l.surface}`,
+                            )}
+                          >
+                            <FilterIcon className="h-2.5 w-2.5" />{" "}
+                            {tr("Aprovados aqui", "Approved here")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => drillDown(l.username, l.surface, "rejected")}
+                            className="inline-flex items-center gap-1 rounded-full border border-destructive/30 px-2 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10"
+                            title={tr(
+                              `Ver reenvios rejeitados de @${l.username ?? "—"} em ${l.surface}`,
+                              `View rejected re-uploads from @${l.username ?? "—"} on ${l.surface}`,
+                            )}
+                          >
+                            <FilterIcon className="h-2.5 w-2.5" />{" "}
+                            {tr("Rejeitados aqui", "Rejected here")}
+                          </button>
+                        </div>
+                        {l.reason && (
+                          <div className="rounded-md bg-background/40 px-2 py-1 text-xs text-muted-foreground">
+                            {tr("Motivo da IA", "AI reason")}:{" "}
+                            <span className="text-foreground">{l.reason}</span>
+                          </div>
+                        )}
+                        {l.decision_note && (
+                          <div className="rounded-md border border-border bg-background/30 px-2 py-1 text-xs">
+                            <span className="text-muted-foreground">
+                              {tr("Nota da decisão", "Decision note")}:{" "}
+                            </span>
+                            <span className="text-foreground">{l.decision_note}</span>
+                          </div>
+                        )}
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(l.created_at).toLocaleString(locale)}
+                          {l.decision_at && l.decision !== "pending" && (
+                            <>
+                              {" "}
+                              · {tr("Decidido em", "Decided on")}{" "}
+                              {new Date(l.decision_at).toLocaleString(locale)}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 gap-2">
+                        {l.decision === "pending" ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openDecision(l.id, "approved")}
+                              className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                              disabled={l.category === "csam"}
+                              title={
+                                l.category === "csam"
+                                  ? tr("CSAM não pode ser aprovado", "CSAM cannot be approved")
+                                  : tr("Aprovar reenvio", "Approve re-upload")
+                              }
+                            >
+                              <Check className="mr-1 h-3.5 w-3.5" /> {tr("Aprovar", "Approve")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openDecision(l.id, "rejected")}
+                              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="mr-1 h-3.5 w-3.5" /> {tr("Rejeitar", "Reject")}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="ghost" onClick={() => undo(l.id)}>
+                            {tr("Desfazer", "Undo")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Paginação */}
+              <div className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+                <span>
+                  {tr("Exibindo", "Showing")}{" "}
+                  <strong className="text-foreground">{cursorStart}</strong>–
+                  <strong className="text-foreground">{cursorEnd}</strong> {tr("de", "of")}{" "}
+                  <strong className="text-foreground">{filtered.length}</strong>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={safePage === 0}
+                  >
+                    <ChevronLeft className="mr-1 h-3.5 w-3.5" /> {tr("Anterior", "Previous")}
+                  </Button>
+                  <span>
+                    {tr("Página", "Page")} {safePage + 1} / {pageCount}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                    disabled={safePage >= pageCount - 1}
+                  >
+                    {tr("Próxima", "Next")} <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
-              <AlertDialogFooter>
-                <Button variant="ghost" onClick={() => setDecisionStage("edit")}>
-                  <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Editar motivo
-                </Button>
-                <AlertDialogAction onClick={confirmDecision}>
-                  Salvar {pendingDecision?.decision === "approved" ? "aprovação" : "rejeição"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
             </>
           )}
-        </AlertDialogContent>
-      </AlertDialog>
+        </div>
+
+        {/* Confirmação com motivo da decisão (2 etapas: editar → revisar → salvar) */}
+        <AlertDialog
+          open={pendingDecision !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingDecision(null);
+              setDecisionNote("");
+              setDecisionStage("edit");
+            }
+          }}
+        >
+          <AlertDialogContent>
+            {decisionStage === "edit" ? (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {pendingDecision?.decision === "approved"
+                      ? tr("Aprovar reenvio?", "Approve re-upload?")
+                      : tr("Rejeitar reenvio?", "Reject re-upload?")}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {tr(
+                      "Descreva o motivo da decisão. Você poderá revisar a nota antes de salvar no histórico de auditoria.",
+                      "Describe the reason for this decision. You can review the note before saving it to the audit trail.",
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Textarea
+                  value={decisionNote}
+                  onChange={(e) => setDecisionNote(e.target.value)}
+                  placeholder={tr(
+                    "Ex.: falso positivo da IA, mídia já moderada manualmente, criadora confirmou o contexto…",
+                    "E.g. AI false positive, media already reviewed manually, creator confirmed the context…",
+                  )}
+                  rows={4}
+                  className="resize-none"
+                  autoFocus
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {decisionNote.trim().length}/5 {tr("caracteres mínimos", "minimum characters")}
+                </p>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{tr("Cancelar", "Cancel")}</AlertDialogCancel>
+                  <Button onClick={goReview} disabled={decisionNote.trim().length < 5}>
+                    {tr("Revisar antes de salvar", "Review before saving")}
+                  </Button>
+                </AlertDialogFooter>
+              </>
+            ) : (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {tr("Confirme a decisão", "Confirm decision")}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {tr(
+                      "Revise o motivo abaixo. Após salvar, ele será registrado permanentemente no histórico de auditoria, incluindo o CSV exportado.",
+                      "Review the reason below. Once saved, it will be permanently recorded in the audit trail, including exported CSV files.",
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2 rounded-lg border border-border bg-background/50 p-3 text-sm">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{tr("Decisão", "Decision")}</span>
+                    <DecisionBadge decision={pendingDecision?.decision ?? "pending"} />
+                  </div>
+                  <div className="border-t border-border pt-2">
+                    <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {tr("Motivo", "Reason")}
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm text-foreground">
+                      {decisionNote.trim()}
+                    </p>
+                  </div>
+                </div>
+                <AlertDialogFooter>
+                  <Button variant="ghost" onClick={() => setDecisionStage("edit")}>
+                    <ArrowLeft className="mr-1 h-3.5 w-3.5" /> {tr("Editar motivo", "Edit reason")}
+                  </Button>
+                  <AlertDialogAction onClick={confirmDecision}>
+                    {tr("Salvar", "Save")}{" "}
+                    {pendingDecision?.decision === "approved"
+                      ? tr("aprovação", "approval")
+                      : tr("rejeição", "rejection")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </>
+            )}
+          </AlertDialogContent>
+        </AlertDialog>
       </TooltipProvider>
     </AppShell>
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: number; tone?: "success" | "warning" | "danger" }) {
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "success" | "warning" | "danger";
+}) {
   const toneCls =
     tone === "success"
       ? "text-emerald-600 dark:text-emerald-400"
@@ -856,15 +1009,20 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
 }
 
 function DecisionBadge({ decision }: { decision: "pending" | "approved" | "rejected" }) {
+  const { tr } = useI18n();
   if (decision === "approved")
     return (
       <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400">
-        Aprovado
+        {tr("Aprovado", "Approved")}
       </Badge>
     );
   if (decision === "rejected")
-    return <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">Rejeitado</Badge>;
-  return <Badge variant="outline">Pendente</Badge>;
+    return (
+      <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">
+        {tr("Rejeitado", "Rejected")}
+      </Badge>
+    );
+  return <Badge variant="outline">{tr("Pendente", "Pending")}</Badge>;
 }
 
 function TrustBadge({
@@ -880,34 +1038,61 @@ function TrustBadge({
   category: string;
   surface: string;
 }) {
+  const { tr } = useI18n();
   // Sinais legíveis
   const signals: { label: string; tone: "danger" | "warning" | "info" | "ok" }[] = [];
-  if (csam > 0) signals.push({ label: `Histórico de CSAM (${csam})`, tone: "danger" });
-  if (total >= 5) signals.push({ label: `Muitos bloqueios (${total})`, tone: "warning" });
-  if (total > 1 && total < 5) signals.push({ label: `${total} bloqueios anteriores`, tone: "info" });
-  if (total === 1 && csam === 0) signals.push({ label: "Primeira ocorrência", tone: "ok" });
-  if (category === "csam") signals.push({ label: "Categoria atual: CSAM", tone: "danger" });
-  signals.push({ label: `Surface atual: ${surface}`, tone: "info" });
+  if (csam > 0)
+    signals.push({
+      label: tr(`Histórico de CSAM (${csam})`, `CSAM history (${csam})`),
+      tone: "danger",
+    });
+  if (total >= 5)
+    signals.push({
+      label: tr(`Muitos bloqueios (${total})`, `Many previous blocks (${total})`),
+      tone: "warning",
+    });
+  if (total > 1 && total < 5)
+    signals.push({
+      label: tr(`${total} bloqueios anteriores`, `${total} previous blocks`),
+      tone: "info",
+    });
+  if (total === 1 && csam === 0)
+    signals.push({ label: tr("Primeira ocorrência", "First occurrence"), tone: "ok" });
+  if (category === "csam")
+    signals.push({ label: tr("Categoria atual: CSAM", "Current category: CSAM"), tone: "danger" });
+  signals.push({
+    label: tr(`Área atual: ${surface}`, `Current surface: ${surface}`),
+    tone: "info",
+  });
 
   const heuristic =
     trust === "suspicious"
-      ? "Marcado como SUSPEITO porque tem CSAM no histórico ou já acumulou ≥5 bloqueios."
+      ? tr(
+          "Marcado como SUSPEITO porque há CSAM no histórico ou pelo menos 5 bloqueios acumulados.",
+          "Marked SUSPICIOUS because the history contains CSAM or at least 5 blocks.",
+        )
       : trust === "trusted"
-        ? "Marcado como CONFIÁVEL porque é a primeira ocorrência e não envolve CSAM."
-        : "Marcado como NEUTRO: nem confiável, nem suspeito ainda — aguardar mais sinais.";
+        ? tr(
+            "Marcado como CONFIÁVEL porque é a primeira ocorrência e não envolve CSAM.",
+            "Marked TRUSTED because this is the first occurrence and it does not involve CSAM.",
+          )
+        : tr(
+            "Marcado como NEUTRO: ainda não há sinais suficientes.",
+            "Marked NEUTRAL: there are not enough signals yet.",
+          );
 
   const badge =
     trust === "suspicious" ? (
       <Badge className="cursor-help gap-1 bg-destructive/15 text-destructive hover:bg-destructive/20">
-        <ShieldX className="h-3 w-3" /> Suspeito
+        <ShieldX className="h-3 w-3" /> {tr("Suspeito", "Suspicious")}
       </Badge>
     ) : trust === "trusted" ? (
       <Badge className="cursor-help gap-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400">
-        <ShieldCheck className="h-3 w-3" /> Confiável
+        <ShieldCheck className="h-3 w-3" /> {tr("Confiável", "Trusted")}
       </Badge>
     ) : (
       <Badge variant="outline" className="cursor-help gap-1">
-        <ShieldAlert className="h-3 w-3" /> Neutro
+        <ShieldAlert className="h-3 w-3" /> {tr("Neutro", "Neutral")}
       </Badge>
     );
 

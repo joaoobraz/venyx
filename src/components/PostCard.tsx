@@ -13,6 +13,11 @@ import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal"
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 import { WishlistButton } from "@/components/WishlistButton";
 import { LoyaltyBadge } from "@/components/LoyaltyBadge";
+import { SafetyMenu } from "@/components/SafetyMenu";
+import { TranslateButton } from "@/components/TranslateButton";
+import { PostComments } from "@/components/PostComments";
+import { togglePostLike } from "@/_server/post-interactions.functions";
+import { DEMO_MODE } from "@/lib/demo-creators";
 
 export interface PostMedia {
   id: string;
@@ -50,24 +55,29 @@ export interface PostWithRelations {
   subscribed?: boolean;
   goal?: PostGoal | null;
   goal_contributed?: boolean;
+  liked?: boolean;
 }
 
 export function PostCard({ post, onChange }: { post: PostWithRelations; onChange?: () => void }) {
   const { user, session } = useAuth();
-  const { t } = useI18n();
+  const { t, tr } = useI18n();
   const [busy, setBusy] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(Boolean(post.liked));
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [pixOpen, setPixOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
-  const [pixTitle, setPixTitle] = useState("Pague com Pix");
+  const [pixTitle, setPixTitle] = useState(() => tr("Pague com Pix", "Pay with Pix"));
 
   const ppvFn = useServerFn(createPpvPixCharge);
   const goalFn = useServerFn(createGoalPixCharge);
   const mediaFn = useServerFn(getPostMediaUrls);
+  const likeFn = useServerFn(togglePostLike);
 
   const isOwner = user?.id === post.creator_id;
   const isPpv = post.visibility === "ppv";
@@ -104,6 +114,74 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const authHeaders = () =>
     session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
 
+  useEffect(() => {
+    setLikesCount(post.likes_count);
+    setCommentsCount(post.comments_count);
+    setLiked(Boolean(post.liked));
+  }, [post.id, post.likes_count, post.comments_count, post.liked]);
+
+  useEffect(() => {
+    if (!DEMO_MODE || !user || post.liked) return;
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem(`venyx-demo-liked-posts:${user.id}`) ?? "[]",
+      ) as string[];
+      if (stored.includes(post.id)) {
+        setLiked(true);
+        setLikesCount((count) => count + 1);
+      }
+    } catch {
+      // Invalid local demo data is ignored.
+    }
+  }, [post.id, post.liked, user]);
+
+  const toggleLike = async () => {
+    if (!user) {
+      toast.error(tr("Faça login para curtir.", "Sign in to like."));
+      return;
+    }
+    const headers = authHeaders();
+    if (!headers || likeBusy) return;
+
+    const previousLiked = liked;
+    const previousCount = likesCount;
+    const nextLiked = !previousLiked;
+    setLikeBusy(true);
+    setLiked(nextLiked);
+    setLikesCount(Math.max(0, previousCount + (nextLiked ? 1 : -1)));
+
+    try {
+      const result = await likeFn({ data: { postId: post.id }, headers });
+      setLiked(result.liked);
+      setLikesCount(result.likesCount);
+    } catch (error) {
+      if (DEMO_MODE) {
+        const key = `venyx-demo-liked-posts:${user.id}`;
+        const ids = (() => {
+          try {
+            return JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
+          } catch {
+            return [] as string[];
+          }
+        })();
+        const nextIds = nextLiked
+          ? Array.from(new Set([...ids, post.id]))
+          : ids.filter((id) => id !== post.id);
+        localStorage.setItem(key, JSON.stringify(nextIds));
+      } else {
+        setLiked(previousLiked);
+        setLikesCount(previousCount);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : tr("Não foi possível atualizar a curtida.", "Couldn't update the like."),
+        );
+      }
+    } finally {
+      setLikeBusy(false);
+    }
+  };
+
   const unlockPpv = async () => {
     if (!user) {
       toast.error("Faça login para desbloquear.");
@@ -133,7 +211,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           qrCodeBase64: res.qrCodeBase64,
           amountCents: res.amountCents,
         });
-        setPixTitle("Desbloquear conteúdo");
+        setPixTitle(tr("Desbloquear conteúdo", "Unlock content"));
         setPixOpen(true);
       }
     } catch (e) {
@@ -164,7 +242,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           qrCodeBase64: res.qrCodeBase64,
           amountCents: res.amountCents,
         });
-        setPixTitle("Contribuir para a meta");
+        setPixTitle(tr("Contribuir para a meta", "Contribute to the goal"));
         setPixOpen(true);
       }
     } catch (e) {
@@ -178,7 +256,8 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const firstUrl = firstMedia ? signedUrls[firstMedia.id] : "";
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
   const avatarFull =
-    post.author.avatar_url && post.author.avatar_url.startsWith("http")
+    post.author.avatar_url &&
+    (post.author.avatar_url.startsWith("http") || post.author.avatar_url.startsWith("/"))
       ? post.author.avatar_url
       : post.author.avatar_url
       ? `${SUPABASE_URL}/storage/v1/object/public/avatars/${post.author.avatar_url}`
@@ -189,6 +268,8 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const goalPct = post.goal
     ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
     : 0;
+
+  if (!visible) return null;
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-border/40 bg-gradient-card shadow-card transition-all duration-300 hover:border-primary/30 hover:shadow-elegant animate-fade-in-up">
@@ -215,6 +296,18 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           <div className="text-xs text-muted-foreground">@{post.author.username}</div>
         </div>
         {!isOwner && <WishlistButton targetType="post" targetId={post.id} variant="icon" label="Favoritar conteúdo" />}
+        {!isOwner && (
+          <SafetyMenu
+            targetType="post"
+            targetId={post.id}
+            targetUserId={post.creator_id}
+            targetLabel={`@${post.author.username}`}
+            onBlocked={() => {
+              setVisible(false);
+              onChange?.();
+            }}
+          />
+        )}
         {isPpv && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">PPV</span>
         )}
@@ -228,7 +321,12 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         )}
       </header>
 
-      {post.body && <p className="px-4 pb-3 text-sm text-foreground whitespace-pre-wrap">{post.body}</p>}
+      {post.body && (
+        <div className="px-4 pb-3">
+          <p data-user-content className="text-sm text-foreground whitespace-pre-wrap">{post.body}</p>
+          <TranslateButton text={post.body} />
+        </div>
+      )}
 
       <div className="relative">
         {locked ? (
@@ -322,25 +420,22 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
       <footer className="flex items-center gap-4 px-4 py-3 text-sm text-muted-foreground">
         <button
-          onClick={async () => {
-            // optimistic toggle (demo only)
-            setLiked((s) => {
-              const next = !s;
-              setLikesCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
-              return next;
-            });
-          }}
+          type="button"
+          onClick={toggleLike}
+          disabled={likeBusy}
+          aria-pressed={liked}
+          aria-label={liked ? tr("Remover curtida", "Unlike") : tr("Curtir", "Like")}
           className={`group/btn flex items-center gap-1.5 transition-colors ${liked ? "text-accent" : "hover:text-accent"}`}>
-          <Heart className="h-4 w-4 transition-transform group-hover/btn:scale-125" /> {likesCount}
+          <Heart className={`h-4 w-4 transition-transform group-hover/btn:scale-125 ${liked ? "fill-current" : ""}`} /> {likesCount}
         </button>
         <button
-          onClick={async () => {
-            const txt = window.prompt("Escreva um comentário:");
-            if (!txt) return;
-            // optimistic add (demo only)
-            setCommentsCount((c) => c + 1);
-            toast.success("Comentário adicionado (demo)");
-          }}
+          type="button"
+          onClick={() => setCommentsOpen(true)}
+          aria-expanded={commentsOpen}
+          aria-label={tr(
+            `Abrir comentários (${commentsCount})`,
+            `Open comments (${commentsCount})`,
+          )}
           className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary">
           <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" /> {commentsCount}
         </button>
@@ -351,6 +446,14 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
         </button>
       </footer>
+      <PostComments
+        postId={post.id}
+        creatorId={post.creator_id}
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        commentsCount={commentsCount}
+        onCommentsCountChange={setCommentsCount}
+      />
       <TipModal
         open={tipOpen}
         onOpenChange={setTipOpen}

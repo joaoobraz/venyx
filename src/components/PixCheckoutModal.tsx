@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { getChargeStatus } from "@/_server/checkout.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export interface PixCharge {
   chargeId: string;
@@ -33,6 +34,7 @@ export function PixCheckoutModal({
   onPaid: () => void;
 }) {
   const { session } = useAuth();
+  const { tr } = useI18n();
   const getStatusFn = useServerFn(getChargeStatus);
   const [copied, setCopied] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -49,12 +51,12 @@ export function PixCheckoutModal({
         const s = await getStatusFn({ data: { chargeId: charge.chargeId }, headers: authHeaders });
         if (s.status === "paid") {
           if (pollRef.current) clearInterval(pollRef.current);
-          toast.success("Pagamento confirmado!");
+          toast.success(tr("Pagamento confirmado!", "Payment confirmed!"));
           onPaid();
           onOpenChange(false);
         } else if (s.status === "expired" || s.status === "cancelled") {
           if (pollRef.current) clearInterval(pollRef.current);
-          toast.error("Pix expirou. Tente novamente.");
+          toast.error(tr("Pix expirou. Tente novamente.", "Pix expired. Please try again."));
           onOpenChange(false);
         }
       } catch (err) {
@@ -84,7 +86,7 @@ export function PixCheckoutModal({
         {charge && (
           <div className="space-y-3">
             <div className="rounded-xl bg-muted p-3 text-center text-sm">
-              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-xs text-muted-foreground">{tr("Total", "Total")}</div>
               <div className="text-2xl font-bold text-foreground">
                 R$ {(charge.amountCents / 100).toFixed(2)}
               </div>
@@ -112,7 +114,9 @@ export function PixCheckoutModal({
 
             {charge.qrCode && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Ou copie o código Pix:</p>
+                <p className="text-xs text-muted-foreground">
+                  {tr("Ou copie o código Pix:", "Or copy the Pix code:")}
+                </p>
                 <div className="flex gap-2">
                   <input
                     readOnly
@@ -128,7 +132,7 @@ export function PixCheckoutModal({
 
             <div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Aguardando pagamento…
+              {tr("Aguardando pagamento…", "Waiting for payment…")}
             </div>
           </div>
         )}

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/dmca")({
   component: DmcaPage,
@@ -12,6 +13,62 @@ export const Route = createFileRoute("/dmca")({
 });
 
 function DmcaPage() {
+  const { locale } = useI18n();
+  if (locale === "en") {
+    return (
+      <AppShell>
+        <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
+          <h1>DMCA / Notice-and-Takedown Policy</h1>
+          <p>
+            We take creators' copyright and image rights seriously. This policy explains how to
+            request removal of infringing content hosted here or leaked to another site.
+          </p>
+          <h2>For creators: content leaked to another site</h2>
+          <ol>
+            <li>Sign in to your creator account.</li>
+            <li>Open <Link to="/creator/dmca" className="underline">Dashboard → DMCA</Link>.</li>
+            <li>Provide the exact leaked-content URL and attach a screenshot.</li>
+            <li>Our team reviews the request and sends a formal takedown notice to the site and its host or CDN.</li>
+            <li>You receive status updates: pending → notified → resolved.</li>
+          </ol>
+          <h2>For third parties: infringing content on our platform</h2>
+          <p>
+            Copyright owners may email <a href="mailto:dmca@plataforma.com">dmca@plataforma.com</a> with:
+          </p>
+          <ol>
+            <li>Identification of the protected work;</li>
+            <li>The exact URL of the allegedly infringing content;</li>
+            <li>Your full contact information;</li>
+            <li>A good-faith statement that the use was not authorized;</li>
+            <li>A statement, under penalty of perjury, that the information is accurate and you are authorized to act;</li>
+            <li>The physical or electronic signature of the owner or authorized representative.</li>
+          </ol>
+          <h2>Illegal content (non-DMCA)</h2>
+          <p>
+            Report content involving minors, non-consensual material, real violence, or trafficking
+            immediately to <a href="mailto:abuse@plataforma.com">abuse@plataforma.com</a>. Include the
+            URL, a description, and your contact information. Clearly illegal content is removed
+            within 24 hours and reported to the appropriate authorities.
+          </p>
+          <h2>Counter-notice</h2>
+          <p>
+            If your content was removed by mistake, email a counter-notice to{" "}
+            <a href="mailto:dmca@plataforma.com">dmca@plataforma.com</a> with identification, a
+            description of the material, and a good-faith statement. Content may be restored in
+            10–14 business days if the claimant does not begin legal proceedings.
+          </p>
+          <h2>Response times</h2>
+          <ul>
+            <li>Illegal-content report: up to 24 hours.</li>
+            <li>Standard DMCA request: up to 72 business hours.</li>
+            <li>Counter-notice: 10–14 business days.</li>
+          </ul>
+          <h2>Repeat infringement</h2>
+          <p>Accounts receiving multiple valid notices are permanently suspended under our repeat-infringer policy.</p>
+        </article>
+      </AppShell>
+    );
+  }
   return (
     <AppShell>
       <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">

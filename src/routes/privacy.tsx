@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -12,6 +13,80 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
+  const { locale } = useI18n();
+  if (locale === "en") {
+    return (
+      <AppShell>
+        <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
+          <h1>Privacy Policy</h1>
+          <p className="text-sm text-muted-foreground">
+            Last updated: {new Date().toLocaleDateString("en-US")}
+          </p>
+          <p>
+            This policy describes how we process personal data in compliance with Brazil's General
+            Data Protection Law (Law 13,709/2018 — LGPD).
+          </p>
+          <h2>1. Data controller</h2>
+          <p>
+            The platform is the data controller. Data Protection Officer:{" "}
+            <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a>.
+          </p>
+          <h2>2. Data we collect</h2>
+          <ul>
+            <li><strong>Registration:</strong> email, display name, username, and password hash.</li>
+            <li><strong>Profile:</strong> avatar, cover, bio, social links, language, and preferences.</li>
+            <li><strong>Creator verification:</strong> official ID and selfie stored privately with restricted compliance access.</li>
+            <li><strong>Payments:</strong> transaction amount, date, and method. Full card data is handled by the payment gateway and is never stored on our servers.</li>
+            <li><strong>User content:</strong> posts, messages, stories, and uploaded media.</li>
+            <li><strong>Usage and device:</strong> IP address, user agent, visited pages, and link clicks for security and fraud prevention.</li>
+          </ul>
+          <h2>3. Legal bases</h2>
+          <ul>
+            <li><strong>Contract performance:</strong> account operation and payment processing.</li>
+            <li><strong>Legal obligation:</strong> tax retention, identity checks, and lawful authority requests.</li>
+            <li><strong>Legitimate interest:</strong> fraud prevention, moderation, and platform security.</li>
+            <li><strong>Consent:</strong> opt-in marketing email and non-essential cookies.</li>
+          </ul>
+          <h2>4. Sharing</h2>
+          <p>We do not sell personal data. We only share it with:</p>
+          <ul>
+            <li>Payment processors;</li>
+            <li>Cloud and transactional-email providers;</li>
+            <li>AI moderation services, limited to the media required for review;</li>
+            <li>Public authorities under a valid legal request or court order.</li>
+          </ul>
+          <h2>5. Your LGPD rights</h2>
+          <ul>
+            <li>Confirmation of processing and access to your data;</li>
+            <li>Correction of incomplete or outdated data;</li>
+            <li>Anonymization, blocking, or deletion of unnecessary data;</li>
+            <li>Data portability, deletion of consent-based data, and withdrawal of consent.</li>
+          </ul>
+          <p>
+            Contact <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a> to exercise these
+            rights. We respond within 15 days.
+          </p>
+          <h2>6. Retention</h2>
+          <ul>
+            <li>Active account data: for the duration of the relationship.</li>
+            <li>Financial, tax, and identity-verification records: up to five years after closure.</li>
+            <li>Security logs: up to six months.</li>
+          </ul>
+          <h2>7. Security</h2>
+          <p>
+            We use encryption in transit and at rest, role-based access controls, optional 2FA, and
+            continuous monitoring. Incidents are reported as required by Article 48 of the LGPD.
+          </p>
+          <h2>8. Cookies</h2>
+          <p>We use essential cookies for authentication and preferences. We do not use third-party advertising trackers.</p>
+          <h2>9. International transfers</h2>
+          <p>Some infrastructure providers may store data outside Brazil under appropriate contractual safeguards.</p>
+          <h2>10. Changes</h2>
+          <p>Material updates will be communicated by email or through a platform notice.</p>
+        </article>
+      </AppShell>
+    );
+  }
   return (
     <AppShell>
       <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">

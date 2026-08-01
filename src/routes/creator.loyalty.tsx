@@ -6,12 +6,14 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { listTopFans } from "@/_server/loyalty.functions";
 import { TIER_META, type LoyaltyTier } from "@/components/LoyaltyBadge";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/loyalty")({
   component: CreatorLoyaltyPage,
 });
 
 function CreatorLoyaltyPage() {
+  const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
   const [fans, setFans] = useState<Awaited<ReturnType<typeof listTopFans>>["fans"]>([]);
@@ -26,7 +28,9 @@ function CreatorLoyaltyPage() {
 
   useEffect(() => {
     if (!user || !isCreator) return;
-    fn().then((res) => setFans(res.fans)).finally(() => setBusy(false));
+    fn()
+      .then((res) => setFans(res.fans))
+      .finally(() => setBusy(false));
   }, [user, isCreator, fn]);
 
   if (!user || !isCreator) return null;
@@ -39,8 +43,13 @@ function CreatorLoyaltyPage() {
             <Trophy className="h-6 w-6 text-accent" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Top fãs</h1>
-            <p className="text-sm text-muted-foreground">Ranking de fidelidade dos seus assinantes.</p>
+            <h1 className="text-2xl font-bold text-foreground">{tr("Top fãs", "Top fans")}</h1>
+            <p className="text-sm text-muted-foreground">
+              {tr(
+                "Ranking de fidelidade dos seus assinantes.",
+                "Your subscribers' loyalty ranking.",
+              )}
+            </p>
           </div>
         </header>
 
@@ -50,7 +59,10 @@ function CreatorLoyaltyPage() {
           </div>
         ) : fans.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Nenhum fã pontuado ainda. Os pontos crescem conforme cada um consome seu conteúdo.
+            {tr(
+              "Nenhum fã pontuado ainda. Os pontos crescem conforme cada um consome seu conteúdo.",
+              "No ranked fans yet. Points grow as each fan engages with your content.",
+            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -62,7 +74,9 @@ function CreatorLoyaltyPage() {
                   key={f.user_id}
                   className="flex items-center gap-3 border-b border-border/40 px-4 py-3 last:border-0"
                 >
-                  <div className="w-6 text-center text-sm font-bold text-muted-foreground">{idx + 1}</div>
+                  <div className="w-6 text-center text-sm font-bold text-muted-foreground">
+                    {idx + 1}
+                  </div>
                   {f.profile && (
                     <Link
                       to="/profile/$username"
@@ -70,7 +84,11 @@ function CreatorLoyaltyPage() {
                       className="h-9 w-9 overflow-hidden rounded-full bg-muted shrink-0"
                     >
                       {f.profile.avatar_url ? (
-                        <img src={f.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={f.profile.avatar_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs font-bold text-primary">
                           {f.profile.username[0]?.toUpperCase()}
@@ -84,10 +102,14 @@ function CreatorLoyaltyPage() {
                     </div>
                     <div className="text-xs text-muted-foreground">@{f.profile?.username}</div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${meta.bg} ${meta.color}`}
+                  >
                     {meta.emoji} {meta.label}
                   </span>
-                  <div className="ml-2 w-16 text-right text-sm font-bold text-foreground">{f.points}</div>
+                  <div className="ml-2 w-16 text-right text-sm font-bold text-foreground">
+                    {f.points}
+                  </div>
                 </div>
               );
             })}

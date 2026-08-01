@@ -18,6 +18,21 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.login": "Entrar",
     "nav.signup": "Criar conta",
     "nav.logout": "Sair",
+    "nav.mobile": "Navegação principal",
+    "nav.menu": "Abrir menu",
+    "nav.account": "Minha conta",
+    "nav.wishlist": "Favoritos",
+    "nav.loyalty": "Fidelidade",
+    "nav.creatorArea": "Área da criadora",
+    "nav.newPost": "Novo post",
+    "nav.plans": "Planos",
+    "nav.coupons": "Cupons",
+    "nav.mailing": "Mensagens em massa",
+    "nav.topFans": "Top fãs",
+    "nav.linkTree": "Árvore de links",
+    "nav.affiliate": "Afiliado",
+    "nav.security": "Segurança",
+    "nav.commentModeration": "Moderação de comentários",
 
     "landing.hero.badge": "Plataforma +18",
     "landing.hero.title": "Conteúdo exclusivo. Direto da criadora pra você.",
@@ -88,6 +103,12 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.trending": "Em alta",
     "explore.new": "Novas criadoras",
     "explore.categories": "Categorias",
+    "explore.demoDisclosure": "Perfis fictícios, com imagens de adultas geradas por IA, usados apenas nesta demonstração.",
+
+    "top.title": "Top 15 Criadoras",
+    "top.refresh": "Ranking atualizado a cada 6 horas.",
+    "top.empty.title": "As primeiras criadoras estão chegando",
+    "top.empty.body": "O ranking aparecerá assim que houver perfis verificados e com plano ativo.",
 
     "profile.subscribe": "ASSINAR",
     "profile.subscribed": "Assinante",
@@ -98,6 +119,9 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.about": "Sobre",
     "profile.followers": "Seguidores",
     "profile.following": "Seguindo",
+    "profile.noBio": "Esta criadora ainda não adicionou uma bio.",
+    "profile.noMedia": "Nenhuma mídia publicada ainda.",
+    "profile.noPosts": "Nenhum post publicado ainda.",
 
     "chat.title": "Mensagens",
     "chat.search": "Buscar conversas",
@@ -105,11 +129,39 @@ const dictionaries: Record<Locale, Dict> = {
     "chat.placeholder": "Digite uma mensagem...",
     "chat.send": "Enviar",
     "chat.empty": "Selecione uma conversa",
+    "chat.noConversations": "Nenhuma conversa ainda.",
+    "chat.activeSubscriber": "Assinante ativo",
+
+    "safety.actions": "Ações de segurança",
+    "safety.report": "Denunciar",
+    "safety.block": "Bloquear",
+    "safety.unblock": "Desbloquear",
+    "safety.mute": "Silenciar",
+    "safety.unmute": "Ativar notificações",
+    "safety.reportTitle": "Enviar denúncia",
+    "safety.reportDescription": "Nossa equipe analisará a denúncia.",
+    "safety.reportAbout": "Denunciar",
+    "safety.reason": "Motivo",
+    "safety.reason.spam": "Spam ou fraude",
+    "safety.reason.harassment": "Assédio ou ameaça",
+    "safety.reason.impersonation": "Falsa identidade",
+    "safety.reason.underage": "Possível menor de idade",
+    "safety.reason.illegal": "Conteúdo ilegal",
+    "safety.reason.other": "Outro",
+    "safety.details": "Conte o que aconteceu (opcional)",
+    "safety.submit": "Enviar denúncia",
+    "safety.reported": "Denúncia enviada para análise.",
+    "safety.blocked": "Perfil bloqueado.",
+    "safety.unblocked": "Perfil desbloqueado.",
+    "safety.muted": "Perfil silenciado.",
+    "safety.unmuted": "Notificações reativadas.",
+    "safety.error": "Não foi possível concluir. Tente novamente.",
 
     "common.cancel": "Cancelar",
     "common.save": "Salvar",
     "common.loading": "Carregando...",
     "common.required": "Campo obrigatório",
+    "common.back": "Voltar",
   },
   en: {
     "nav.home": "Home",
@@ -124,6 +176,21 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.login": "Sign in",
     "nav.signup": "Sign up",
     "nav.logout": "Sign out",
+    "nav.mobile": "Primary navigation",
+    "nav.menu": "Open menu",
+    "nav.account": "My account",
+    "nav.wishlist": "Favorites",
+    "nav.loyalty": "Loyalty",
+    "nav.creatorArea": "Creator area",
+    "nav.newPost": "New post",
+    "nav.plans": "Plans",
+    "nav.coupons": "Coupons",
+    "nav.mailing": "Mass messages",
+    "nav.topFans": "Top fans",
+    "nav.linkTree": "Link tree",
+    "nav.affiliate": "Affiliate",
+    "nav.security": "Security",
+    "nav.commentModeration": "Comment moderation",
 
     "landing.hero.badge": "Adult platform",
     "landing.hero.title": "Exclusive content. Straight from the creator.",
@@ -194,6 +261,12 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.trending": "Trending",
     "explore.new": "New creators",
     "explore.categories": "Categories",
+    "explore.demoDisclosure": "Fictional profiles with AI-generated adult images, used only in this demo.",
+
+    "top.title": "Top 15 Creators",
+    "top.refresh": "Ranking refreshes every 6 hours.",
+    "top.empty.title": "The first creators are on their way",
+    "top.empty.body": "The ranking will appear once verified creators have active plans.",
 
     "profile.subscribe": "SUBSCRIBE",
     "profile.subscribed": "Subscribed",
@@ -204,6 +277,9 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.about": "About",
     "profile.followers": "Followers",
     "profile.following": "Following",
+    "profile.noBio": "This creator has not added a bio yet.",
+    "profile.noMedia": "No media published yet.",
+    "profile.noPosts": "No posts published yet.",
 
     "chat.title": "Messages",
     "chat.search": "Search conversations",
@@ -211,11 +287,39 @@ const dictionaries: Record<Locale, Dict> = {
     "chat.placeholder": "Type a message...",
     "chat.send": "Send",
     "chat.empty": "Select a conversation",
+    "chat.noConversations": "No conversations yet.",
+    "chat.activeSubscriber": "Active subscriber",
+
+    "safety.actions": "Safety actions",
+    "safety.report": "Report",
+    "safety.block": "Block",
+    "safety.unblock": "Unblock",
+    "safety.mute": "Mute",
+    "safety.unmute": "Unmute",
+    "safety.reportTitle": "Submit a report",
+    "safety.reportDescription": "Our team will review this report.",
+    "safety.reportAbout": "Report",
+    "safety.reason": "Reason",
+    "safety.reason.spam": "Spam or scam",
+    "safety.reason.harassment": "Harassment or threat",
+    "safety.reason.impersonation": "Impersonation",
+    "safety.reason.underage": "Possible underage person",
+    "safety.reason.illegal": "Illegal content",
+    "safety.reason.other": "Other",
+    "safety.details": "Tell us what happened (optional)",
+    "safety.submit": "Submit report",
+    "safety.reported": "Report submitted for review.",
+    "safety.blocked": "Profile blocked.",
+    "safety.unblocked": "Profile unblocked.",
+    "safety.muted": "Profile muted.",
+    "safety.unmuted": "Notifications restored.",
+    "safety.error": "We couldn't complete that. Please try again.",
 
     "common.cancel": "Cancel",
     "common.save": "Save",
     "common.loading": "Loading...",
     "common.required": "Required",
+    "common.back": "Back",
   },
 };
 
@@ -223,6 +327,7 @@ interface I18nCtx {
   locale: Locale;
   setLocale: (l: Locale) => void;
   t: (key: string) => string;
+  tr: (pt: string, en: string) => string;
 }
 
 const Ctx = createContext<I18nCtx | null>(null);
@@ -235,14 +340,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (saved === "pt-BR" || saved === "en") setLocaleState(saved);
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = locale;
+  }, [locale]);
+
   const setLocale = (l: Locale) => {
     setLocaleState(l);
     if (typeof window !== "undefined") localStorage.setItem("locale", l);
   };
 
   const t = (key: string) => dictionaries[locale][key] ?? key;
+  const tr = (pt: string, en: string) => (locale === "en" ? en : pt);
 
-  return <Ctx.Provider value={{ locale, setLocale, t }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ locale, setLocale, t, tr }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

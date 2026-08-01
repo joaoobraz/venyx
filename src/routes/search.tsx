@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { CreatorCard, type CreatorSummary } from "@/components/CreatorCard";
 import { searchCreators } from "@/_server/discovery.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (s: Record<string, unknown>): { q?: string } => ({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
+  const { tr } = useI18n();
   const initial = Route.useSearch().q ?? "";
   const [query, setQuery] = useState(initial);
   const [results, setResults] = useState<CreatorSummary[]>([]);
@@ -57,7 +59,10 @@ function SearchPage() {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Busque por criadoras (nome ou @usuário)..."
+            placeholder={tr(
+              "Busque por criadoras (nome ou @usuário)...",
+              "Search creators by name or @username...",
+            )}
             className="h-12 pl-11 pr-11"
           />
         </div>
@@ -71,10 +76,16 @@ function SearchPage() {
         ) : (
           <p className="px-1 text-sm text-muted-foreground">
             {loading
-              ? "Buscando..."
+              ? tr("Buscando...", "Searching...")
               : searched && query.trim()
-                ? `Nenhuma criadora encontrada para "${query.trim()}".`
-                : "Comece a digitar para encontrar criadoras."}
+                ? tr(
+                    `Nenhuma criadora encontrada para "${query.trim()}".`,
+                    `No creators found for "${query.trim()}".`,
+                  )
+                : tr(
+                    "Comece a digitar para encontrar criadoras.",
+                    "Start typing to find creators.",
+                  )}
           </p>
         )}
       </div>

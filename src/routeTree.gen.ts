@@ -32,6 +32,7 @@ import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
@@ -41,6 +42,7 @@ import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
 import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
@@ -51,6 +53,7 @@ import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
 import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
 import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
@@ -171,6 +174,11 @@ const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
   path: '/admin/payouts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -214,6 +222,11 @@ const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
 const CreatorMailingRoute = CreatorMailingRouteImport.update({
   id: '/creator/mailing',
   path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorModerationRoute = CreatorModerationRouteImport.update({
+  id: '/creator/moderation',
+  path: '/creator/moderation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorPostsRoute = CreatorPostsRouteImport.update({
@@ -267,6 +280,11 @@ const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
   path: '/settings/security',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNexuspagWebhookRoute =
   ApiPublicNexuspagWebhookRouteImport.update({
     id: '/api/public/nexuspag-webhook',
@@ -315,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -324,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -335,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -363,6 +384,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -372,6 +394,7 @@ export interface FileRoutesByTo {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -383,6 +406,7 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -412,6 +436,7 @@ export interface FileRoutesById {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -421,6 +446,7 @@ export interface FileRoutesById {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -432,6 +458,7 @@ export interface FileRoutesById {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -462,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -471,6 +499,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -482,6 +511,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -510,6 +540,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -519,6 +550,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -530,6 +562,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -558,6 +591,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -567,6 +601,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -578,6 +613,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -607,6 +643,7 @@ export interface RootRouteChildren {
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
@@ -616,6 +653,7 @@ export interface RootRouteChildren {
   CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
+  CreatorModerationRoute: typeof CreatorModerationRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
@@ -627,6 +665,7 @@ export interface RootRouteChildren {
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
   ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
   ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
@@ -796,6 +835,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPayoutsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -857,6 +903,13 @@ declare module '@tanstack/react-router' {
       path: '/creator/mailing'
       fullPath: '/creator/mailing'
       preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/moderation': {
+      id: '/creator/moderation'
+      path: '/creator/moderation'
+      fullPath: '/creator/moderation'
+      preLoaderRoute: typeof CreatorModerationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator/posts': {
@@ -929,6 +982,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsSecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/nexuspag-webhook': {
       id: '/api/public/nexuspag-webhook'
       path: '/api/public/nexuspag-webhook'
@@ -983,6 +1043,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminReportsRoute: AdminReportsRoute,
   AdminUsersRoute: AdminUsersRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
@@ -992,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorLinksRoute: CreatorLinksRoute,
   CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
+  CreatorModerationRoute: CreatorModerationRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
@@ -1003,6 +1065,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
   ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
   ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,

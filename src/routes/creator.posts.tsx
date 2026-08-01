@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { ImagePlus, X, DollarSign, Lock, Globe, Loader2, Target, Zap } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -10,18 +10,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { CaptionSuggest } from "@/components/CaptionSuggest";
 import { moderateBeforeUpload } from "@/lib/moderation";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
 });
 
 type Visibility = "public" | "subscribers" | "ppv" | "goal";
+type MediaDraft = {
+  id: string;
+  file: File;
+  coverFile?: File;
+};
 
 function CreatorPostsPage() {
+  const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
   const [body, setBody] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [priceReais, setPriceReais] = useState("");
   const [goalTargetReais, setGoalTargetReais] = useState("");
@@ -38,19 +45,35 @@ function CreatorPostsPage() {
 
   const onFiles = (e: ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []).slice(0, 6);
-    setFiles((prev) => [...prev, ...list].slice(0, 6));
+    setMediaDrafts((current) =>
+      [
+        ...current,
+        ...list.map((file) => ({ id: crypto.randomUUID(), file })),
+      ].slice(0, 6),
+    );
+    e.target.value = "";
   };
 
-  const removeFile = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
+  const removeFile = (id: string) =>
+    setMediaDrafts((current) => current.filter((draft) => draft.id !== id));
+
+  const setVideoCover = (id: string, coverFile?: File) =>
+    setMediaDrafts((current) =>
+      current.map((draft) => (draft.id === id ? { ...draft, coverFile } : draft)),
+    );
 
   const submit = async () => {
-    if (!body.trim() && files.length === 0) {
-      toast.error("Adicione texto ou mídia");
+    if (!body.trim() && mediaDrafts.length === 0) {
+      toast.error(tr("Adicione texto ou mídia", "Add text or media"));
+      return;
+    }
+    if (mediaDrafts.some((draft) => draft.file.type.startsWith("video/") && !draft.coverFile)) {
+      toast.error(tr("Escolha uma capa para cada vídeo antes de publicar.", "Choose a cover for every video before publishing."));
       return;
     }
     const priceCents = visibility === "ppv" ? Math.round(parseFloat(priceReais || "0") * 100) : 0;
     if (visibility === "ppv" && priceCents < 100) {
-      toast.error("Preço mínimo PPV: R$ 1,00");
+      toast.error(tr("Preço mínimo PPV: R$ 1,00", "Minimum PPV price: R$ 1.00"));
       return;
     }
 
@@ -58,11 +81,11 @@ function CreatorPostsPage() {
     const goalUnlockCents = Math.round(parseFloat(goalUnlockReais || "0") * 100);
     if (visibility === "goal") {
       if (goalTargetCents < 100) {
-        toast.error("Meta mínima: R$ 1,00");
+        toast.error(tr("Meta mínima: R$ 1,00", "Minimum goal: R$ 1.00"));
         return;
       }
       if (goalUnlockCents < 100) {
-        toast.error("Contribuição mínima: R$ 1,00");
+        toast.error(tr("Contribuição mínima: R$ 1,00", "Minimum contribution: R$ 1.00"));
         return;
       }
     }
@@ -70,12 +93,20 @@ function CreatorPostsPage() {
     setSubmitting(true);
     try {
       // Moderação prévia: bloqueia CSAM em qualquer mídia
-      for (const f of files) {
-        const mod = await moderateBeforeUpload(f, "post", user.id);
+      for (const draft of mediaDrafts) {
+        const mod = await moderateBeforeUpload(draft.file, "post", user.id);
         if (!mod.allowed) {
-          toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+          toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
           setSubmitting(false);
           return;
+        }
+        if (draft.coverFile) {
+          const coverMod = await moderateBeforeUpload(draft.coverFile, "post", user.id);
+          if (!coverMod.allowed) {
+            toast.error(`${tr("Capa bloqueada", "Cover blocked")}: ${coverMod.reason || tr("violação de política", "policy violation")}`);
+            setSubmitting(false);
+            return;
+          }
         }
       }
 
@@ -89,7 +120,7 @@ function CreatorPostsPage() {
         })
         .select()
         .single();
-      if (pe || !post) throw pe ?? new Error("Falha ao criar post");
+      if (pe || !post) throw pe ?? new Error(tr("Falha ao criar post", "Couldn't create post"));
 
       if (visibility === "goal") {
         const { error: ge } = await supabase.from("post_goals").insert({
@@ -101,8 +132,8 @@ function CreatorPostsPage() {
       }
 
       // upload mídia
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
+      for (let i = 0; i < mediaDrafts.length; i++) {
+        const { file: f, coverFile } = mediaDrafts[i];
         const ext = f.name.split(".").pop() || "bin";
         const path = `${user.id}/${post.id}/${i}.${ext}`;
         const { error: ue } = await supabase.storage.from("posts").upload(path, f, {
@@ -110,25 +141,50 @@ function CreatorPostsPage() {
           contentType: f.type,
         });
         if (ue) throw ue;
-        const { error: me } = await supabase.from("post_media").insert({
+        let coverPath: string | null = null;
+        if (coverFile) {
+          const coverExt = coverFile.name.split(".").pop() || "jpg";
+          coverPath = `${user.id}/${post.id}/${i}-cover.${coverExt}`;
+          const { error: coverUploadError } = await supabase.storage
+            .from("posts")
+            .upload(coverPath, coverFile, {
+              upsert: false,
+              contentType: coverFile.type,
+            });
+          if (coverUploadError) throw coverUploadError;
+        }
+
+        const mediaPayload = {
           post_id: post.id,
           storage_path: path,
+          cover_storage_path: coverPath,
           mime_type: f.type,
           position: i,
-        });
+        };
+        let { error: me } = await supabase.from("post_media").insert(mediaPayload);
+        if (me && coverPath) {
+          // Temporary compatibility while the cover column is not yet applied in staging.
+          const fallback = await supabase.from("post_media").insert({
+            post_id: post.id,
+            storage_path: path,
+            mime_type: f.type,
+            position: i,
+          });
+          me = fallback.error;
+        }
         if (me) throw me;
       }
 
-      toast.success("Post publicado!");
+      toast.success(tr("Post publicado!", "Post published!"));
       setBody("");
-      setFiles([]);
+      setMediaDrafts([]);
       setVisibility("public");
       setPriceReais("");
       setGoalTargetReais("");
       setGoalUnlockReais("");
       nav({ to: "/feed" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao publicar");
+      toast.error(e instanceof Error ? e.message : tr("Erro ao publicar", "Couldn't publish"));
     } finally {
       setSubmitting(false);
     }
@@ -141,7 +197,7 @@ function CreatorPostsPage() {
     try {
       const mod = await moderateBeforeUpload(f, "story", user.id);
       if (!mod.allowed) {
-        toast.error(`Upload bloqueado: ${mod.reason || "violação de política"}`);
+        toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
         setSubmitting(false);
         return;
       }
@@ -156,10 +212,10 @@ function CreatorPostsPage() {
         visibility: "public",
       });
       if (ie) throw ie;
-      toast.success("Story publicado! Expira em 24h.");
+      toast.success(tr("Story publicado! Expira em 24h.", "Story published! It expires in 24 hours."));
       nav({ to: "/feed" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
+      toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
     } finally {
       setSubmitting(false);
     }
@@ -169,16 +225,16 @@ function CreatorPostsPage() {
     <AppShell>
       <div className="mx-auto max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Novo post</h1>
+          <h1 className="text-xl font-bold text-foreground">{tr("Novo post", "New post")}</h1>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-glow hover:opacity-95">
-            <Zap className="h-3.5 w-3.5" /> Postar Story 24h
+            <Zap className="h-3.5 w-3.5" /> {tr("Postar Story 24h", "Post 24h Story")}
             <input type="file" accept="image/*,video/*" className="hidden" onChange={uploadStory} disabled={submitting} />
           </label>
         </div>
 
         <div className="space-y-3 rounded-2xl bg-card p-4">
           <Textarea
-            placeholder="Compartilhe algo com seus assinantes..."
+            placeholder={tr("Compartilhe algo com seus assinantes...", "Share something with your subscribers...")}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             className="min-h-28 resize-none border-0 bg-background/50 text-base"
@@ -187,23 +243,15 @@ function CreatorPostsPage() {
 
           <CaptionSuggest hint={body} onPick={(c) => setBody(c)} />
 
-          {files.length > 0 && (
+          {mediaDrafts.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
-              {files.map((f, i) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-lg bg-muted">
-                  {f.type.startsWith("image/") ? (
-                    <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <video src={URL.createObjectURL(f)} className="h-full w-full object-cover" />
-                  )}
-                  <button
-                    onClick={() => removeFile(i)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    type="button"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
+              {mediaDrafts.map((draft) => (
+                <MediaDraftCard
+                  key={draft.id}
+                  draft={draft}
+                  onRemove={() => removeFile(draft.id)}
+                  onCoverChange={(coverFile) => setVideoCover(draft.id, coverFile)}
+                />
               ))}
             </div>
           )}
@@ -211,7 +259,7 @@ function CreatorPostsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-background px-3 py-1.5 text-xs text-foreground hover:bg-background/70">
               <ImagePlus className="h-4 w-4 text-primary" />
-              Adicionar mídia
+              {tr("Adicionar mídia", "Add media")}
               <input
                 type="file"
                 accept="image/*,video/*"
@@ -222,17 +270,17 @@ function CreatorPostsPage() {
             </label>
 
             <div className="ml-auto flex gap-1 rounded-full bg-background p-1">
-              <VisBtn active={visibility === "public"} onClick={() => setVisibility("public")} icon={<Globe className="h-3.5 w-3.5" />} label="Público" />
-              <VisBtn active={visibility === "subscribers"} onClick={() => setVisibility("subscribers")} icon={<Lock className="h-3.5 w-3.5" />} label="Assinantes" />
+              <VisBtn active={visibility === "public"} onClick={() => setVisibility("public")} icon={<Globe className="h-3.5 w-3.5" />} label={tr("Público", "Public")} />
+              <VisBtn active={visibility === "subscribers"} onClick={() => setVisibility("subscribers")} icon={<Lock className="h-3.5 w-3.5" />} label={tr("Assinantes", "Subscribers")} />
               <VisBtn active={visibility === "ppv"} onClick={() => setVisibility("ppv")} icon={<DollarSign className="h-3.5 w-3.5" />} label="PPV" />
-              <VisBtn active={visibility === "goal"} onClick={() => setVisibility("goal")} icon={<Target className="h-3.5 w-3.5" />} label="Meta" />
+              <VisBtn active={visibility === "goal"} onClick={() => setVisibility("goal")} icon={<Target className="h-3.5 w-3.5" />} label={tr("Meta", "Goal")} />
             </div>
           </div>
 
           {visibility === "ppv" && (
             <div className="flex items-center gap-2 rounded-xl bg-background p-3">
               <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Preço fixo (R$)</span>
+              <span className="text-xs text-muted-foreground">{tr("Preço fixo (R$)", "Fixed price (R$)")}</span>
               <Input
                 type="number"
                 step="0.50"
@@ -249,10 +297,10 @@ function CreatorPostsPage() {
             <div className="space-y-2 rounded-xl bg-background p-3">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Target className="h-4 w-4 text-accent" />
-                Meta coletiva — várias pessoas contribuem para liberar
+                {tr("Meta coletiva — várias pessoas contribuem para liberar", "Collective goal — several people contribute to unlock")}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Meta total (R$)</span>
+                <span className="text-xs text-muted-foreground">{tr("Meta total (R$)", "Total goal (R$)")}</span>
                 <Input
                   type="number"
                   step="1"
@@ -264,7 +312,7 @@ function CreatorPostsPage() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Cada contribuição (R$)</span>
+                <span className="text-xs text-muted-foreground">{tr("Cada contribuição (R$)", "Each contribution (R$)")}</span>
                 <Input
                   type="number"
                   step="0.50"
@@ -283,11 +331,60 @@ function CreatorPostsPage() {
             disabled={submitting}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publicar"}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Publicar", "Publish")}
           </Button>
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function MediaDraftCard({
+  draft,
+  onRemove,
+  onCoverChange,
+}: {
+  draft: MediaDraft;
+  onRemove: () => void;
+  onCoverChange: (file?: File) => void;
+}) {
+  const { tr } = useI18n();
+  const isVideo = draft.file.type.startsWith("video/");
+  const previewFile = draft.coverFile ?? draft.file;
+  const previewUrl = useMemo(() => URL.createObjectURL(previewFile), [previewFile]);
+
+  useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
+
+  return (
+    <div className="group relative aspect-square overflow-hidden rounded-lg bg-muted">
+      {isVideo && !draft.coverFile ? (
+        <video src={previewUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+      ) : (
+        <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+      )}
+      <button
+        onClick={onRemove}
+        className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+        type="button"
+        aria-label={tr("Remover mídia", "Remove media")}
+      >
+        <X className="h-3 w-3" />
+      </button>
+      {isVideo && (
+        <label className="absolute inset-x-1 bottom-1 cursor-pointer rounded-md bg-black/75 px-2 py-1.5 text-center text-[10px] font-semibold text-white backdrop-blur-sm hover:bg-black/90">
+          {draft.coverFile ? tr("Trocar capa", "Change cover") : tr("Escolher capa", "Choose cover")}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => {
+              onCoverChange(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </label>
+      )}
+    </div>
   );
 }
 

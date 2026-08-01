@@ -1,5 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { PostWithRelations } from "@/components/PostCard";
+import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+
+function demoCommentsCount(postId: string) {
+  if (!DEMO_MODE || typeof window === "undefined") return 0;
+  try {
+    const comments = JSON.parse(
+      localStorage.getItem(`venyx-demo-comments:${postId}`) ?? "[]",
+    ) as unknown[];
+    return comments.length;
+  } catch {
+    return 0;
+  }
+}
 
 export async function fetchPosts(opts: {
   creatorId?: string;
@@ -26,7 +39,7 @@ export async function fetchPosts(opts: {
   const ids = posts.map((p) => p.id);
   const creatorIds = Array.from(new Set(posts.map((p) => p.creator_id)));
 
-  const [{ data: media }, { data: authors }, { data: goals }] = await Promise.all([
+  const [{ data: media }, { data: authors }, { data: goals }, { data: likedRows }] = await Promise.all([
     supabase
       .from("post_media")
       .select("id, post_id, storage_path, mime_type, position")
@@ -39,6 +52,13 @@ export async function fetchPosts(opts: {
       .from("post_goals")
       .select("post_id, target_cents, raised_cents, unlock_price_cents, is_unlocked")
       .in("post_id", ids),
+    viewerId
+      ? supabase
+          .from("post_likes")
+          .select("post_id")
+          .eq("user_id", viewerId)
+          .in("post_id", ids)
+      : Promise.resolve({ data: [] as Array<{ post_id: string }>, error: null }),
   ]);
 
   const mediaByPost = new Map<string, { id: string; storage_path: string; mime_type: string; position: number }[]>();
@@ -65,25 +85,35 @@ export async function fetchPosts(opts: {
       is_unlocked: g.is_unlocked,
     }),
   );
+  const likedPostIds = new Set((likedRows ?? []).map((row) => row.post_id));
 
   let unlocks = new Set<string>();
   let subs = new Set<string>();
   let contributed = new Set<string>();
+  let hiddenCreators = new Set<string>();
   if (viewerId) {
-    const [{ data: u }, { data: s }, { data: c }] = await Promise.all([
+    const [{ data: u }, { data: s }, { data: c }, { data: b }, { data: m }] = await Promise.all([
       supabase.from("ppv_unlocks").select("post_id").eq("user_id", viewerId),
       supabase.from("subscriptions").select("creator_id").eq("subscriber_id", viewerId).eq("status", "active"),
       supabase.from("post_goal_contributions").select("post_id").eq("user_id", viewerId),
+      supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewerId),
+      supabase.from("user_mutes").select("muted_user_id").eq("user_id", viewerId),
     ]);
     unlocks = new Set((u ?? []).map((r: { post_id: string }) => r.post_id));
     subs = new Set((s ?? []).map((r: { creator_id: string }) => r.creator_id));
     contributed = new Set((c ?? []).map((r: { post_id: string }) => r.post_id));
+    hiddenCreators = new Set([
+      ...(b ?? []).map((r: { blocked_id: string }) => r.blocked_id),
+      ...(m ?? []).map((r: { muted_user_id: string }) => r.muted_user_id),
+    ]);
   }
 
   return posts
     .map((p) => {
+      if (hiddenCreators.has(p.creator_id)) return null;
       const a = authorByUid.get(p.creator_id);
       if (!a) return null;
+      const demo = DEMO_MODE ? getDemoAsset(a.username) : null;
       const goal = goalByPost.get(p.id);
       return {
         id: p.id,
@@ -92,14 +122,15 @@ export async function fetchPosts(opts: {
         visibility: p.visibility,
         price_cents: p.price_cents,
         likes_count: p.likes_count,
-        comments_count: p.comments_count,
+        comments_count: DEMO_MODE ? demoCommentsCount(p.id) : p.comments_count,
         created_at: p.created_at,
-        author: a,
+        author: demo ? { ...a, avatar_url: demo.avatar_url } : a,
         media: (mediaByPost.get(p.id) ?? []).sort((a, b) => a.position - b.position),
         unlocked: unlocks.has(p.id),
         subscribed: subs.has(p.creator_id),
         goal: goal ?? null,
         goal_contributed: contributed.has(p.id),
+        liked: likedPostIds.has(p.id),
       } as PostWithRelations;
     })
     .filter((x): x is PostWithRelations => x !== null);

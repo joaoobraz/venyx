@@ -7,11 +7,18 @@ const BASE_URL = "https://nexuspag.com";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 // URL pública estável do projeto (Lovable). Ajuste para custom domain quando configurar.
-const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
 function getWebhookUrl(): string {
-  const envUrl = process.env.PUBLIC_WEBHOOK_URL;
-  if (envUrl) return envUrl;
-  return `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`;
+  const configured = process.env.PUBLIC_WEBHOOK_URL;
+  if (!configured) throw new Error("PUBLIC_WEBHOOK_URL não configurada");
+  const url = new URL(configured);
+  const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  if (
+    (url.protocol !== "https:" && !localHttp) ||
+    url.pathname !== "/api/public/nexuspag-webhook"
+  ) {
+    throw new Error("PUBLIC_WEBHOOK_URL inválida");
+  }
+  return url.toString();
 }
 
 function getApiKey(): string {
@@ -73,7 +80,7 @@ export const createPixCharge = createServerFn({ method: "POST" })
         amount: data.amount,
         description: data.description ?? "Teste NexusPag",
         external_id: data.external_id ?? `test-${Date.now()}`,
-        expiration_seconds: data.expiration_seconds ?? 1800,
+        expiration: data.expiration_seconds ?? 1800,
         webhook_url: getWebhookUrl(),
       };
 

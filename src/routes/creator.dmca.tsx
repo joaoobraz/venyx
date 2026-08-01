@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/dmca")({
   component: DmcaPage,
@@ -22,6 +23,7 @@ interface Report {
 }
 
 function DmcaPage() {
+  const { locale, tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
   const [url, setUrl] = useState("");
@@ -55,7 +57,7 @@ function DmcaPage() {
 
   const submit = async () => {
     if (!url.trim()) {
-      toast.error("Informe a URL do vazamento");
+      toast.error(tr("Informe a URL do vazamento", "Enter the leaked-content URL"));
       return;
     }
     setBusy(true);
@@ -64,7 +66,9 @@ function DmcaPage() {
       if (file) {
         const ext = file.name.split(".").pop() || "bin";
         const path = `${user.id}/${Date.now()}.${ext}`;
-        const { error: ue } = await supabase.storage.from("dmca-evidence").upload(path, file, { contentType: file.type });
+        const { error: ue } = await supabase.storage
+          .from("dmca-evidence")
+          .upload(path, file, { contentType: file.type });
         if (ue) throw ue;
         evidence_path = path;
       }
@@ -75,13 +79,18 @@ function DmcaPage() {
         evidence_path,
       });
       if (error) throw error;
-      toast.success("Denúncia registrada. Nossa equipe vai analisar.");
+      toast.success(
+        tr(
+          "Denúncia registrada. Nossa equipe vai analisar.",
+          "Report submitted. Our team will review it.",
+        ),
+      );
       setUrl("");
       setDesc("");
       setFile(null);
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setBusy(false);
     }
@@ -95,22 +104,34 @@ function DmcaPage() {
         <div className="rounded-2xl bg-gradient-card p-5 shadow-card">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-accent" />
-            <h1 className="text-xl font-bold text-foreground">Denúncia DMCA</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              {tr("Denúncia DMCA", "DMCA report")}
+            </h1>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Encontrou seu conteúdo vazado em outro site? Envie a URL e nosso time gera a notificação formal de takedown.
+            {tr(
+              "Encontrou seu conteúdo vazado em outro site? Envie a URL e nosso time gera a notificação formal de remoção.",
+              "Found your content leaked on another site? Send the URL and our team will prepare a formal takedown notice.",
+            )}
           </p>
         </div>
 
         <div className="space-y-3 rounded-2xl bg-card p-5">
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">URL onde o conteúdo está vazado</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              {tr("URL onde o conteúdo está vazado", "URL hosting the leaked content")}
+            </label>
             <Input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Descrição (opcional)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              {tr("Descrição (opcional)", "Description (optional)")}
+            </label>
             <Textarea
-              placeholder="Qual conteúdo foi vazado, contexto..."
+              placeholder={tr(
+                "Qual conteúdo foi vazado, contexto...",
+                "What was leaked and any relevant context...",
+              )}
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               maxLength={1000}
@@ -118,23 +139,40 @@ function DmcaPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Prova (screenshot, opcional)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              {tr("Prova (captura de tela, opcional)", "Evidence (screenshot, optional)")}
+            </label>
             <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border bg-background p-3 text-sm text-muted-foreground hover:border-primary">
               <Upload className="h-4 w-4 text-primary" />
-              {file ? file.name : "Anexar arquivo"}
-              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={onFile} />
+              {file ? file.name : tr("Anexar arquivo", "Attach file")}
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={onFile}
+              />
             </label>
           </div>
-          <Button onClick={submit} disabled={busy} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar denúncia"}
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              tr("Enviar denúncia", "Submit report")
+            )}
           </Button>
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-foreground">Suas denúncias</h2>
+          <h2 className="text-sm font-semibold text-foreground">
+            {tr("Suas denúncias", "Your reports")}
+          </h2>
           {reports.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              Nenhuma denúncia ainda.
+              {tr("Nenhuma denúncia ainda.", "No reports yet.")}
             </p>
           ) : (
             reports.map((r) => (
@@ -144,9 +182,11 @@ function DmcaPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm text-foreground">{r.leaked_url}</div>
                     <div className="mt-1 text-[10px] text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString("pt-BR")}
+                      {new Date(r.created_at).toLocaleString(locale)}
                     </div>
-                    {r.admin_notes && <div className="mt-1 text-xs text-foreground">📝 {r.admin_notes}</div>}
+                    {r.admin_notes && (
+                      <div className="mt-1 text-xs text-foreground">📝 {r.admin_notes}</div>
+                    )}
                   </div>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -159,7 +199,13 @@ function DmcaPage() {
                             : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {r.status}
+                    {r.status === "pending"
+                      ? tr("pendente", "pending")
+                      : r.status === "notified"
+                        ? tr("notificado", "notified")
+                        : r.status === "resolved"
+                          ? tr("resolvido", "resolved")
+                          : tr("rejeitado", "rejected")}
                   </span>
                 </div>
               </div>

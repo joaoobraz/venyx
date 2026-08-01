@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CheckCircle2, MessageCircle, Heart, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -12,6 +12,8 @@ import { PostCard, type PostWithRelations } from "@/components/PostCard";
 import { fetchPosts } from "@/lib/posts";
 import { TipModal } from "@/components/TipModal";
 import { SubscribeModal } from "@/components/SubscribeModal";
+import { SafetyMenu } from "@/components/SafetyMenu";
+import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
@@ -21,6 +23,7 @@ function ProfilePage() {
   const { username } = Route.useParams();
   const { t } = useI18n();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"posts" | "media" | "about">("posts");
@@ -47,7 +50,13 @@ function ProfilePage() {
       .eq("username", username)
       .maybeSingle()
       .then(({ data }) => {
-        setProfile((data as Profile) ?? null);
+        const next = (data as Profile) ?? null;
+        if (next && DEMO_MODE) {
+          const demo = getDemoAsset(next.username);
+          setProfile({ ...next, avatar_url: demo.avatar_url, cover_url: demo.cover_url });
+        } else {
+          setProfile(next);
+        }
         setLoading(false);
       });
   }, [username]);
@@ -69,14 +78,14 @@ function ProfilePage() {
       ) : (
         <div className="space-y-5">
           <div className="overflow-hidden rounded-2xl bg-gradient-card shadow-card">
-            <div className="h-44 bg-gradient-primary md:h-56">
+            <div className="h-36 bg-gradient-primary sm:h-44 md:h-56">
               {profile.cover_url && (
                 <img src={profile.cover_url} alt="" className="h-full w-full object-cover" />
               )}
             </div>
-            <div className="relative px-5 pb-5">
-              <div className="-mt-12 flex items-end justify-between">
-                <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-card bg-muted">
+            <div className="relative px-4 pb-5 sm:px-5">
+              <div className="-mt-10 flex items-end justify-between gap-3 sm:-mt-12">
+                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-card bg-muted sm:h-24 sm:w-24">
                   {profile.avatar_url ? (
                     <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -86,12 +95,14 @@ function ProfilePage() {
                   )}
                 </div>
                 {!isMe && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={() => setTipOpen(true)}>
                       <Heart className="mr-1.5 h-4 w-4 text-primary" /> {t("profile.tip")}
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/chat" search={{ with: profile.user_id }}>
+                        <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
+                      </Link>
                     </Button>
                     <Button
                       size="sm"
@@ -100,6 +111,13 @@ function ProfilePage() {
                     >
                       {t("profile.subscribe")}
                     </Button>
+                    <SafetyMenu
+                      targetType="profile"
+                      targetId={profile.user_id}
+                      targetUserId={profile.user_id}
+                      targetLabel={`@${profile.username}`}
+                      onBlocked={() => navigate({ to: "/explore" })}
+                    />
                   </div>
                 )}
               </div>
@@ -115,7 +133,7 @@ function ProfilePage() {
                 )}
               </div>
               <div className="text-sm text-muted-foreground">@{profile.username}</div>
-              {profile.bio && <p className="mt-3 text-sm text-foreground">{profile.bio}</p>}
+              {profile.bio && <p data-user-content className="mt-3 text-sm text-foreground">{profile.bio}</p>}
             </div>
           </div>
 
@@ -137,12 +155,12 @@ function ProfilePage() {
 
           {tab === "about" ? (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              {profile.bio ?? "Sem bio"}
+              {profile.bio ?? t("profile.noBio")}
             </div>
           ) : tab === "media" ? (
             mediaPosts.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                Nenhuma mídia ainda.
+                {t("profile.noMedia")}
               </div>
             ) : (
               <div className="space-y-4">
@@ -151,7 +169,7 @@ function ProfilePage() {
             )
           ) : posts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              Nenhum post ainda.
+              {t("profile.noPosts")}
             </div>
           ) : (
             <div className="space-y-4">

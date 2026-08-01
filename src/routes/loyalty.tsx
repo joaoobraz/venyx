@@ -6,6 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { listMyLoyalty } from "@/_server/loyalty.functions";
 import { TIER_META, type LoyaltyTier } from "@/components/LoyaltyBadge";
+import { useI18n } from "@/lib/i18n";
+import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/loyalty")({
   component: LoyaltyPage,
@@ -20,6 +22,12 @@ const TIER_THRESHOLDS: Record<LoyaltyTier, { next: LoyaltyTier | null; nextAt: n
 
 function LoyaltyPage() {
   const { user, loading } = useAuth();
+  const { tr } = useI18n();
+  const tierLabel = (tier: LoyaltyTier) =>
+    tr(
+      ({ bronze: "Bronze", silver: "Prata", gold: "Ouro", diamond: "Diamante" } as const)[tier],
+      ({ bronze: "Bronze", silver: "Silver", gold: "Gold", diamond: "Diamond" } as const)[tier],
+    );
   const [items, setItems] = useState<Awaited<ReturnType<typeof listMyLoyalty>>["items"]>([]);
   const [busy, setBusy] = useState(true);
   const fn = useServerFn(listMyLoyalty);
@@ -42,7 +50,9 @@ function LoyaltyPage() {
   if (!user) {
     return (
       <AppShell>
-        <div className="p-6 text-center text-muted-foreground">Faça login para ver sua fidelidade.</div>
+        <div className="p-6 text-center text-muted-foreground">
+          {tr("Faça login para ver sua fidelidade.", "Sign in to view your loyalty status.")}
+        </div>
       </AppShell>
     );
   }
@@ -55,27 +65,30 @@ function LoyaltyPage() {
             <Trophy className="h-6 w-6 text-accent" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Programa de fidelidade</h1>
+            <h1 className="text-2xl font-bold text-foreground">{tr("Programa de fidelidade", "Loyalty program")}</h1>
             <p className="text-sm text-muted-foreground">
-              Ganhe pontos com cada criadora. Quanto mais você apoia, maior o seu tier.
+              {tr(
+                "Ganhe pontos com cada criadora. Quanto mais você apoia, maior o seu nível.",
+                "Earn points with each creator. The more you support, the higher your tier.",
+              )}
             </p>
           </div>
         </header>
 
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
-            <Sparkles className="h-4 w-4 text-accent" /> Como ganhar pontos
+            <Sparkles className="h-4 w-4 text-accent" /> {tr("Como ganhar pontos", "How to earn points")}
           </div>
           <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>• 1 ponto por cada R$ 1 gasto (assinatura, PPV, gorjeta)</li>
-            <li>• Tiers: 🥉 Bronze (0+) → 🥈 Prata (500+) → 🥇 Ouro (2.000+) → 💎 Diamante (5.000+)</li>
-            <li>• Diamante entra automático na lista VIP da criadora</li>
+            <li>• {tr("1 ponto por cada R$ 1 gasto (assinatura, PPV, mimo)", "1 point for every R$ 1 spent (subscription, PPV, tip)")}</li>
+            <li>• {tr("Níveis", "Tiers")}: 🥉 Bronze (0+) → 🥈 {tr("Prata", "Silver")} (500+) → 🥇 {tr("Ouro", "Gold")} (2,000+) → 💎 {tr("Diamante", "Diamond")} (5,000+)</li>
+            <li>• {tr("Diamante entra automaticamente na lista VIP da criadora", "Diamond members automatically join the creator's VIP list")}</li>
           </ul>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Você ainda não tem pontos. Apoie uma criadora para começar.
+            {tr("Você ainda não tem pontos. Apoie uma criadora para começar.", "You don't have points yet. Support a creator to get started.")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -94,7 +107,11 @@ function LoyaltyPage() {
                         className="h-12 w-12 overflow-hidden rounded-full bg-muted shrink-0"
                       >
                         {it.profile.avatar_url ? (
-                          <img src={it.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={DEMO_MODE ? getDemoAsset(it.profile.username).avatar_url : it.profile.avatar_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-sm font-bold text-primary">
                             {it.profile.username[0]?.toUpperCase()}
@@ -107,17 +124,17 @@ function LoyaltyPage() {
                         {it.profile?.display_name || it.profile?.username || "—"}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {it.points} pontos
+                        {it.points} {tr("pontos", "points")}
                       </div>
                     </div>
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-bold ${meta.bg} ${meta.color}`}>
-                      <span>{meta.emoji}</span> {meta.label}
+                      <span>{meta.emoji}</span> {tierLabel(tier)}
                     </span>
                   </div>
                   {t.nextAt && (
                     <div className="mt-3 space-y-1">
                       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>Próximo: {TIER_META[t.next as LoyaltyTier].label}</span>
+                        <span>{tr("Próximo", "Next")}: {tierLabel(t.next as LoyaltyTier)}</span>
                         <span>{it.points} / {t.nextAt}</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-muted">

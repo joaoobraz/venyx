@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/coupons")({
   component: CouponsPage,
@@ -28,6 +29,7 @@ function genCode() {
 }
 
 function CouponsPage() {
+  const { tr } = useI18n();
   const { user, isCreator, profile, loading } = useAuth();
   const nav = useNavigate();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -81,10 +83,10 @@ function CouponsPage() {
       else payload.discount_pct = parseInt(discountPct) || 20;
       const { error } = await supabase.from("subscription_coupons").insert(payload);
       if (error) throw error;
-      toast.success("Cupom criado!");
+      toast.success(tr("Cupom criado!", "Coupon created!"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setBusy(false);
     }
@@ -98,7 +100,9 @@ function CouponsPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-xl font-bold text-foreground">Cupons & Trials</h1>
+        <h1 className="text-xl font-bold text-foreground">
+          {tr("Cupons e testes grátis", "Coupons & trials")}
+        </h1>
 
         <div className="space-y-3 rounded-2xl bg-card p-5">
           <div className="flex gap-1 rounded-full bg-background p-1">
@@ -108,7 +112,7 @@ function CouponsPage() {
                 mode === "trial" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
-              <Gift className="mr-1 inline h-3.5 w-3.5" /> Trial grátis
+              <Gift className="mr-1 inline h-3.5 w-3.5" /> {tr("Teste grátis", "Free trial")}
             </button>
             <button
               onClick={() => setMode("discount")}
@@ -116,13 +120,15 @@ function CouponsPage() {
                 mode === "discount" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
-              <Tag className="mr-1 inline h-3.5 w-3.5" /> Desconto %
+              <Tag className="mr-1 inline h-3.5 w-3.5" /> {tr("Desconto %", "Discount %")}
             </button>
           </div>
 
           {mode === "trial" ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Dias grátis (1-30)</span>
+              <span className="text-xs text-muted-foreground">
+                {tr("Dias grátis (1–30)", "Free days (1–30)")}
+              </span>
               <Input
                 type="number"
                 min="1"
@@ -134,7 +140,9 @@ function CouponsPage() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Desconto % (5-90)</span>
+              <span className="text-xs text-muted-foreground">
+                {tr("Desconto % (5–90)", "Discount % (5–90)")}
+              </span>
               <Input
                 type="number"
                 min="5"
@@ -146,7 +154,9 @@ function CouponsPage() {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Limite de usos</span>
+            <span className="text-xs text-muted-foreground">
+              {tr("Limite de usos", "Usage limit")}
+            </span>
             <Input
               type="number"
               min="1"
@@ -155,15 +165,23 @@ function CouponsPage() {
               className="ml-auto h-9 w-24"
             />
           </div>
-          <Button onClick={create} disabled={busy} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar cupom"}
+          <Button
+            onClick={create}
+            disabled={busy}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              tr("Criar cupom", "Create coupon")
+            )}
           </Button>
         </div>
 
         <div className="space-y-2">
           {coupons.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              Nenhum cupom ainda.
+              {tr("Nenhum cupom ainda.", "No coupons yet.")}
             </p>
           ) : (
             coupons.map((c) => {
@@ -177,13 +195,17 @@ function CouponsPage() {
                           {c.code}
                         </code>
                         {c.trial_days ? (
-                          <span className="text-xs text-muted-foreground">🎁 {c.trial_days} dias grátis</span>
+                          <span className="text-xs text-muted-foreground">
+                            🎁 {c.trial_days} {tr("dias grátis", "free days")}
+                          </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">🏷️ {c.discount_pct}% off</span>
+                          <span className="text-xs text-muted-foreground">
+                            🏷️ {c.discount_pct}% off
+                          </span>
                         )}
                       </div>
                       <div className="mt-1 text-[10px] text-muted-foreground">
-                        Usos: {c.uses_count} / {c.max_uses}
+                        {tr("Usos", "Uses")}: {c.uses_count} / {c.max_uses}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -192,7 +214,7 @@ function CouponsPage() {
                         variant="outline"
                         onClick={() => {
                           navigator.clipboard.writeText(link);
-                          toast.success("Link copiado!");
+                          toast.success(tr("Link copiado!", "Link copied!"));
                         }}
                       >
                         <Copy className="h-3.5 w-3.5" />

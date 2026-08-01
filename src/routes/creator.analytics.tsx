@@ -13,6 +13,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/analytics")({
   component: CreatorAnalyticsPage,
@@ -33,6 +34,7 @@ interface TopFan {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 function CreatorAnalyticsPage() {
+  const { tr } = useI18n();
   const { user, isCreator, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -69,14 +71,20 @@ function CreatorAnalyticsPage() {
           .from("subscriptions")
           .select("subscriber_id,status,current_period_end")
           .eq("creator_id", user.id),
-        supabase
-          .from("posts")
-          .select("id,unlocks_count,visibility")
-          .eq("creator_id", user.id),
+        supabase.from("posts").select("id,unlocks_count,visibility").eq("creator_id", user.id),
       ]);
 
-      const txList = (txs ?? []) as { amount_cents: number; type: string; created_at: string; payer_id: string | null }[];
-      const subList = (subs ?? []) as { subscriber_id: string; status: string; current_period_end: string | null }[];
+      const txList = (txs ?? []) as {
+        amount_cents: number;
+        type: string;
+        created_at: string;
+        payer_id: string | null;
+      }[];
+      const subList = (subs ?? []) as {
+        subscriber_id: string;
+        status: string;
+        current_period_end: string | null;
+      }[];
       const postList = (posts ?? []) as { id: string; unlocks_count: number; visibility: string }[];
 
       // Receita 30d
@@ -84,7 +92,9 @@ function CreatorAnalyticsPage() {
 
       // Assinantes ativos / churn
       const activeNow = subList.filter((s) => s.status === "active").length;
-      const expired = subList.filter((s) => s.status === "expired" || s.status === "canceled").length;
+      const expired = subList.filter(
+        (s) => s.status === "expired" || s.status === "canceled",
+      ).length;
 
       // PPV
       const ppvPosts = postList.filter((p) => p.visibility === "ppv");
@@ -122,15 +132,25 @@ function CreatorAnalyticsPage() {
         const { data: profs } = await supabase
           .from("profiles")
           .select("user_id,username,display_name,avatar_url")
-          .in("user_id", topIds.map((t) => t[0]));
+          .in(
+            "user_id",
+            topIds.map((t) => t[0]),
+          );
         const profMap = new Map(
-          ((profs ?? []) as { user_id: string; username: string; display_name: string | null; avatar_url: string | null }[]).map((p) => [p.user_id, p]),
+          (
+            (profs ?? []) as {
+              user_id: string;
+              username: string;
+              display_name: string | null;
+              avatar_url: string | null;
+            }[]
+          ).map((p) => [p.user_id, p]),
         );
         fans = topIds.map(([uid, total]) => {
           const p = profMap.get(uid);
           return {
             user_id: uid,
-            username: p?.username ?? "anônimo",
+            username: p?.username ?? "anonymous",
             display_name: p?.display_name ?? null,
             avatar_url: p?.avatar_url ?? null,
             total_cents: total,
@@ -161,7 +181,7 @@ function CreatorAnalyticsPage() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-            <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
+            <p className="text-xs text-muted-foreground">{tr("Últimos 30 dias", "Last 30 days")}</p>
           </div>
         </header>
 
@@ -172,19 +192,39 @@ function CreatorAnalyticsPage() {
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat icon={DollarSign} label="Receita 30d" value={`R$ ${(revenue / 100).toFixed(2)}`} accent />
-              <Stat icon={Users} label="Assinantes ativos" value={active.toString()} />
-              <Stat icon={TrendingUp} label="Churn (cancel/expir)" value={churned.toString()} />
+              <Stat
+                icon={DollarSign}
+                label={tr("Receita em 30 dias", "30-day revenue")}
+                value={`R$ ${(revenue / 100).toFixed(2)}`}
+                accent
+              />
+              <Stat
+                icon={Users}
+                label={tr("Assinantes ativos", "Active subscribers")}
+                value={active.toString()}
+              />
+              <Stat
+                icon={TrendingUp}
+                label={tr("Cancelados ou expirados", "Canceled or expired")}
+                value={churned.toString()}
+              />
               <Stat
                 icon={Trophy}
-                label="Conversão PPV"
-                value={ppvViews > 0 ? `${Math.round((ppvUnlocks / Math.max(1, ppvViews)) * 100)}%` : "—"}
-                hint={`${ppvUnlocks} desbloqueios em ${ppvViews} posts PPV`}
+                label={tr("Conversão PPV", "PPV conversion")}
+                value={
+                  ppvViews > 0 ? `${Math.round((ppvUnlocks / Math.max(1, ppvViews)) * 100)}%` : "—"
+                }
+                hint={tr(
+                  `${ppvUnlocks} desbloqueios em ${ppvViews} posts PPV`,
+                  `${ppvUnlocks} unlocks across ${ppvViews} PPV posts`,
+                )}
               />
             </div>
 
             <section className="rounded-2xl bg-card p-5 shadow-card">
-              <h2 className="mb-4 text-sm font-semibold text-foreground">Receita por dia (14d)</h2>
+              <h2 className="mb-4 text-sm font-semibold text-foreground">
+                {tr("Receita por dia (14 dias)", "Daily revenue (14 days)")}
+              </h2>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={daily}>
@@ -195,25 +235,45 @@ function CreatorAnalyticsPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    />
                     <YAxis
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                       tickFormatter={(v) => `R$${(v / 100).toFixed(0)}`}
                     />
                     <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                      formatter={(v: number) => [`R$ ${(v / 100).toFixed(2)}`, "Receita"]}
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                      }}
+                      formatter={(v: number) => [
+                        `R$ ${(v / 100).toFixed(2)}`,
+                        tr("Receita", "Revenue"),
+                      ]}
                     />
-                    <Area type="monotone" dataKey="cents" stroke="hsl(var(--primary))" fill="url(#revGrad)" strokeWidth={2} />
+                    <Area
+                      type="monotone"
+                      dataKey="cents"
+                      stroke="hsl(var(--primary))"
+                      fill="url(#revGrad)"
+                      strokeWidth={2}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </section>
 
             <section className="rounded-2xl bg-card p-5 shadow-card">
-              <h2 className="mb-4 text-sm font-semibold text-foreground">🏆 Top fãs (30d)</h2>
+              <h2 className="mb-4 text-sm font-semibold text-foreground">
+                🏆 {tr("Top fãs (30 dias)", "Top fans (30 days)")}
+              </h2>
               {topFans.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">Nenhum fã ainda. Compartilhe seu link!</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  {tr("Nenhum fã ainda. Compartilhe seu link!", "No fans yet. Share your link!")}
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {topFans.map((f, i) => (
@@ -225,7 +285,11 @@ function CreatorAnalyticsPage() {
                       <div className="h-9 w-9 overflow-hidden rounded-full bg-muted">
                         {f.avatar_url ? (
                           <img
-                            src={f.avatar_url.startsWith("http") ? f.avatar_url : `${SUPABASE_URL}/storage/v1/object/public/avatars/${f.avatar_url}`}
+                            src={
+                              f.avatar_url.startsWith("http")
+                                ? f.avatar_url
+                                : `${SUPABASE_URL}/storage/v1/object/public/avatars/${f.avatar_url}`
+                            }
                             alt=""
                             className="h-full w-full object-cover"
                           />
@@ -236,10 +300,14 @@ function CreatorAnalyticsPage() {
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-foreground">{f.display_name || f.username}</div>
+                        <div className="text-sm font-medium text-foreground">
+                          {f.display_name || f.username}
+                        </div>
                         <div className="text-[10px] text-muted-foreground">@{f.username}</div>
                       </div>
-                      <div className="text-sm font-semibold text-primary">R$ {(f.total_cents / 100).toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-primary">
+                        R$ {(f.total_cents / 100).toFixed(2)}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -266,13 +334,23 @@ function Stat({
   accent?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl p-4 shadow-card ${accent ? "bg-gradient-primary text-primary-foreground" : "bg-card text-foreground"}`}>
+    <div
+      className={`rounded-2xl p-4 shadow-card ${accent ? "bg-gradient-primary text-primary-foreground" : "bg-card text-foreground"}`}
+    >
       <div className="mb-2 flex items-center gap-2">
         <Icon className={`h-4 w-4 ${accent ? "" : "text-primary"}`} />
-        <span className={`text-[11px] font-medium ${accent ? "opacity-80" : "text-muted-foreground"}`}>{label}</span>
+        <span
+          className={`text-[11px] font-medium ${accent ? "opacity-80" : "text-muted-foreground"}`}
+        >
+          {label}
+        </span>
       </div>
       <div className="text-2xl font-bold">{value}</div>
-      {hint && <div className={`mt-1 text-[10px] ${accent ? "opacity-70" : "text-muted-foreground"}`}>{hint}</div>}
+      {hint && (
+        <div className={`mt-1 text-[10px] ${accent ? "opacity-70" : "text-muted-foreground"}`}>
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

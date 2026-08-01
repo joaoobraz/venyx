@@ -3,65 +3,31 @@ import { TrendingUp, Compass, Tag } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TopCreators } from "@/components/TopCreators";
 import { useI18n } from "@/lib/i18n";
+import { DEMO_CREATORS } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/explore")({
   component: ExplorePage,
 });
 
-// Vitrine de demonstração (para apresentação a investidores).
-// TODO[lançamento]: substituir por dados reais via searchCreators({ sort: "new" }).
-const TRENDING = [
-  {
-    username: "aline",
-    name: "Aline",
-    avatar: "https://i.pravatar.cc/200?img=47",
-    cover: "https://images.unsplash.com/photo-1488161628813-04466f872be2?w=600",
-  },
-  {
-    username: "lara",
-    name: "Lara",
-    avatar: "https://i.pravatar.cc/200?img=32",
-    cover: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600",
-  },
-  {
-    username: "bia",
-    name: "Bia",
-    avatar: "https://i.pravatar.cc/200?img=20",
-    cover: "https://images.unsplash.com/photo-1521577352947-9bb58764b69a?w=600",
-  },
-  {
-    username: "duda",
-    name: "Duda",
-    avatar: "https://i.pravatar.cc/200?img=49",
-    cover: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600",
-  },
-];
-
-const CATEGORIES = [
-  "Brasileiras",
-  "Loiras",
-  "Morenas",
-  "Ruivas",
-  "Fitness",
-  "Cosplay",
-  "Latinas",
-  "Casais",
-];
-
 function ExplorePage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const categories =
+    locale === "en"
+      ? ["Brazilian", "Blonde", "Brunette", "Redhead", "Fitness", "Cosplay", "Latina", "Couples"]
+      : ["Brasileiras", "Loiras", "Morenas", "Ruivas", "Fitness", "Cosplay", "Latinas", "Casais"];
   return (
     <AppShell>
-      <div className="space-y-10">
-        <TopCreators limit={50} />
+      <div className="space-y-8 sm:space-y-10">
+        <TopCreators limit={15} />
         <section>
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
             <TrendingUp className="h-5 w-5 text-primary" />
             <span>{t("explore.trending")}</span>
           </h2>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {TRENDING.map((c) => (
+          <p className="mb-4 text-sm text-muted-foreground">{t("explore.demoDisclosure")}</p>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {DEMO_CREATORS.map((c) => (
               <Link
                 key={c.username}
                 to="/profile/$username"
@@ -70,15 +36,15 @@ function ExplorePage() {
               >
                 <div className="aspect-[4/5] overflow-hidden">
                   <img
-                    src={c.cover}
-                    alt=""
+                    src={c.cover_url}
+                    alt={c.display_name}
                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
                 </div>
                 <div className="flex items-center gap-2 p-3">
-                  <img src={c.avatar} alt="" className="h-8 w-8 rounded-full" />
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">{c.name}</div>
+                  <img src={c.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-foreground">{c.display_name}</div>
                     <div className="text-xs text-muted-foreground">@{c.username}</div>
                   </div>
                 </div>
@@ -93,7 +59,7 @@ function ExplorePage() {
             <span>{t("explore.new")}</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {TRENDING.slice()
+            {DEMO_CREATORS.slice()
               .reverse()
               .map((c) => (
                 <Link
@@ -102,8 +68,8 @@ function ExplorePage() {
                   params={{ username: c.username }}
                   className="overflow-hidden rounded-2xl bg-gradient-card p-4 text-center shadow-card"
                 >
-                  <img src={c.avatar} alt="" className="mx-auto h-16 w-16 rounded-full" />
-                  <div className="mt-2 text-sm font-semibold text-foreground">{c.name}</div>
+                  <img src={c.avatar_url} alt="" className="mx-auto h-16 w-16 rounded-full object-cover" />
+                  <div className="mt-2 text-sm font-semibold text-foreground">{c.display_name}</div>
                   <div className="text-xs text-muted-foreground">@{c.username}</div>
                 </Link>
               ))}
@@ -116,7 +82,7 @@ function ExplorePage() {
             <span>{t("explore.categories")}</span>
           </h2>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat}
                 to="/search"

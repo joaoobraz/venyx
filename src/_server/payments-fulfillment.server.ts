@@ -69,7 +69,9 @@ export async function fulfillPaidCharge(opts: {
       },
     })
     .eq("id", charge.id)
-    .or(`status.eq.pending,and(status.eq.processing,updated_at.lt.${staleBefore})`)
+    .or(
+      `status.in.(pending,expired,cancelled),and(status.eq.processing,updated_at.lt.${staleBefore})`,
+    )
     .select("id")
     .maybeSingle();
 
@@ -152,6 +154,26 @@ export async function fulfillPaidCharge(opts: {
   }
 }
 
+export async function reconcileRefundedCharge(opts: {
+  chargeId: string;
+  gatewayReference?: string | null;
+  amountCents: number;
+  refundedAt?: string | null;
+}): Promise<{ ok: true; alreadyRefunded: boolean } | { ok: false; reason: string }> {
+  const { data, error } = await supabaseAdmin.rpc("reconcile_pix_refund", {
+    _charge_id: opts.chargeId,
+    _gateway_reference: opts.gatewayReference ?? "",
+    _amount_cents: opts.amountCents,
+    _refunded_at: opts.refundedAt ?? new Date().toISOString(),
+  });
+  if (error) {
+    console.error("[reconcileRefundedCharge] falha", error.code);
+    return { ok: false, reason: "Falha ao reconciliar estorno" };
+  }
+  const result = data as { already_refunded?: boolean } | null;
+  return { ok: true, alreadyRefunded: result?.already_refunded === true };
+}
+
 function labelFor(p: string): string {
   switch (p) {
     case "subscription":
@@ -204,6 +226,20 @@ async function fulfillSubscription(charge: PixCharge) {
     _coupon_id: couponId,
   });
   if (subscriptionError) throw subscriptionError;
+
+  const { error: metadataError } = await supabaseAdmin
+    .from("transactions")
+    .update({
+      metadata: {
+        charge_id: charge.id,
+        months,
+        coupon: couponId,
+        is_trial: isTrial,
+        trial_days: Math.min(30, trialDays),
+      },
+    })
+    .eq("idempotency_key", `${charge.id}:subscription`);
+  if (metadataError) throw metadataError;
 
   // Entrega bumps marcados no checkout
   const bumps = Array.isArray(metadata.bumps)

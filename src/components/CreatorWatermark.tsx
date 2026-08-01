@@ -31,13 +31,12 @@ function getPositionClasses(pos: WatermarkPosition): string {
 }
 
 function getSiteDomain(): string {
-  if (typeof window === "undefined") return "site";
-  return window.location.hostname.replace(/^www\./, "");
+  return import.meta.env.VITE_PUBLIC_SITE_DOMAIN || "Venyx.com.br";
 }
 
 /**
  * Marca d'água aplicada sobre toda mídia enviada por uma criadora.
- * Formato: {dominio}/@{username}
+ * Formato público: Venyx.com.br/profile/{username}
  */
 export function CreatorWatermark({
   username,
@@ -46,7 +45,7 @@ export function CreatorWatermark({
   children,
 }: Props) {
   const domain = getSiteDomain();
-  const text = `${domain}/@${username}`;
+  const text = `${domain}/profile/${username}`;
   const clamped = Math.min(1, Math.max(0.1, opacity));
 
   return (
@@ -54,7 +53,7 @@ export function CreatorWatermark({
       {children}
       <div
         aria-hidden
-        className={`pointer-events-none absolute z-10 select-none rounded-md bg-black/40 px-2 py-1 text-[11px] font-semibold text-white shadow-md ${getPositionClasses(
+        className={`pointer-events-none absolute z-10 max-w-[calc(100%-1rem)] select-none truncate rounded-sm bg-black/45 px-2 py-1 text-[10px] font-semibold text-white shadow-md sm:text-[11px] ${getPositionClasses(
           position,
         )}`}
         style={{
