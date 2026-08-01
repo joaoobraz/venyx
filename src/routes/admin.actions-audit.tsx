@@ -6,10 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  requireAdminServer,
-  listAdminActionsAudit,
-} from "@/_server/admin.functions";
+import { requireAdminServer, listAdminActionsAudit } from "@/_server/admin.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/actions-audit")({
   beforeLoad: async () => {
@@ -24,8 +22,7 @@ export const Route = createFileRoute("/admin/actions-audit")({
       { title: "Auditoria de ações admin" },
       {
         name: "description",
-        content:
-          "Histórico de ações administrativas: KYC, DMCA e atribuição de cargos.",
+        content: "Histórico de ações administrativas: KYC, DMCA e atribuição de cargos.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -46,25 +43,25 @@ type Row = {
   created_at: string;
 };
 
-const FILTERS: { label: string; value: string | null }[] = [
-  { label: "Todas", value: null },
-  { label: "KYC aprovados", value: "kyc_approved" },
-  { label: "KYC rejeitados", value: "kyc_rejected" },
-  { label: "Cargos adicionados", value: "role_added" },
-  { label: "Cargos removidos", value: "role_removed" },
-  { label: "DMCA notificados", value: "dmca_notified" },
-  { label: "DMCA resolvidos", value: "dmca_resolved" },
-  { label: "DMCA rejeitados", value: "dmca_rejected" },
+const FILTERS: { pt: string; en: string; value: string | null }[] = [
+  { pt: "Todas", en: "All", value: null },
+  { pt: "KYC aprovados", en: "Approved KYC", value: "kyc_approved" },
+  { pt: "KYC rejeitados", en: "Rejected KYC", value: "kyc_rejected" },
+  { pt: "Cargos adicionados", en: "Roles added", value: "role_added" },
+  { pt: "Cargos removidos", en: "Roles removed", value: "role_removed" },
+  { pt: "DMCA notificados", en: "DMCA notices sent", value: "dmca_notified" },
+  { pt: "DMCA resolvidos", en: "Resolved DMCA", value: "dmca_resolved" },
+  { pt: "DMCA rejeitados", en: "Rejected DMCA", value: "dmca_rejected" },
 ];
 
 function badgeVariant(action: string): "default" | "destructive" | "secondary" {
   if (action.endsWith("_approved") || action === "role_added") return "default";
-  if (action.endsWith("_rejected") || action === "role_removed")
-    return "destructive";
+  if (action.endsWith("_rejected") || action === "role_removed") return "destructive";
   return "secondary";
 }
 
 function AdminActionsAuditPage() {
+  const { locale, tr } = useI18n();
   const list = useServerFn(listAdminActionsAudit);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,11 +90,13 @@ function AdminActionsAuditPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <ScrollText className="h-7 w-7 text-primary" />
-            Auditoria de ações admin
+            {tr("Auditoria de ações administrativas", "Admin actions audit")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Histórico de aprovações de KYC, atualizações de DMCA e atribuições
-            de cargos (últimos 200 registros).
+            {tr(
+              "Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos (últimos 200 registros).",
+              "KYC approvals, DMCA updates and role assignments (latest 200 records).",
+            )}
           </p>
         </div>
 
@@ -109,7 +108,7 @@ function AdminActionsAuditPage() {
               variant={filter === f.value ? "default" : "outline"}
               onClick={() => setFilter(f.value)}
             >
-              {f.label}
+              {tr(f.pt, f.en)}
             </Button>
           ))}
         </div>
@@ -120,7 +119,10 @@ function AdminActionsAuditPage() {
           </div>
         ) : rows.length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground">
-            Nenhuma ação registrada para este filtro.
+            {tr(
+              "Nenhuma ação registrada para este filtro.",
+              "No actions recorded for this filter.",
+            )}
           </Card>
         ) : (
           <Card className="overflow-hidden">
@@ -128,39 +130,31 @@ function AdminActionsAuditPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Quando</th>
-                    <th className="px-4 py-3 font-semibold">Ação</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Quando", "When")}</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Ação", "Action")}</th>
                     <th className="px-4 py-3 font-semibold">Admin</th>
-                    <th className="px-4 py-3 font-semibold">Alvo</th>
-                    <th className="px-4 py-3 font-semibold">Detalhes</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Alvo", "Target")}</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Detalhes", "Details")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id} className="border-t border-border/40 align-top">
                       <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {new Date(r.created_at).toLocaleString("pt-BR")}
+                        {new Date(r.created_at).toLocaleString(locale)}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={badgeVariant(r.action_type)}>
-                          {r.action_type}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {r.target_type}
-                        </div>
+                        <Badge variant={badgeVariant(r.action_type)}>{r.action_type}</Badge>
+                        <div className="text-xs text-muted-foreground mt-1">{r.target_type}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-medium">
-                          {r.admin_username ?? "—"}
-                        </div>
+                        <div className="font-medium">{r.admin_username ?? "—"}</div>
                         <div className="font-mono text-[11px] text-muted-foreground">
                           {r.admin_id}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-medium">
-                          {r.target_username ?? "—"}
-                        </div>
+                        <div className="font-medium">{r.target_username ?? "—"}</div>
                         <div className="font-mono text-[11px] text-muted-foreground">
                           {r.target_user_id ?? r.target_id ?? "—"}
                         </div>

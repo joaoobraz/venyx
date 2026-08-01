@@ -9,121 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WishlistRouteImport } from './routes/wishlist'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as LoyaltyRouteImport } from './routes/loyalty'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as FeedRouteImport } from './routes/feed'
-import { Route as ExploreRouteImport } from './routes/explore'
-import { Route as DmcaRouteImport } from './routes/dmca'
-import { Route as ChatRouteImport } from './routes/chat'
-import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
-import { Route as R403RouteImport } from './routes/403'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as R403RouteImport } from './routes/403'
+import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as DmcaRouteImport } from './routes/dmca'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FeedRouteImport } from './routes/feed'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
-import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
-import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
-import { Route as RCodeRouteImport } from './routes/r.$code'
-import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
-import { Route as LinksUsernameRouteImport } from './routes/links.$username'
-import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
-import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
-import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
-import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
-import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
-import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
-import { Route as CreatorLinksRouteImport } from './routes/creator.links'
-import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
-import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
-import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
-import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
-import { Route as CCodeRouteImport } from './routes/c.$code'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
-import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
-import { Route as AdminKycRouteImport } from './routes/admin.kyc'
-import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
-import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminActionsAuditRouteImport } from './routes/admin.actions-audit'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
+import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as CCodeRouteImport } from './routes/c.$code'
+import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
+import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
+import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
+import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
+import { Route as CreatorLinksRouteImport } from './routes/creator.links'
+import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
+import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
+import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
+import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
+import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
+import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as LinksUsernameRouteImport } from './routes/links.$username'
+import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
-import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
-import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
 import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
+import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
+import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
 
-const WishlistRoute = WishlistRouteImport.update({
-  id: '/wishlist',
-  path: '/wishlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoyaltyRoute = LoyaltyRouteImport.update({
-  id: '/loyalty',
-  path: '/loyalty',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedRoute = FeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExploreRoute = ExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DmcaRoute = DmcaRouteImport.update({
-  id: '/dmca',
-  path: '/dmca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
-  id: '/become-creator',
-  path: '/become-creator',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const R403Route = R403RouteImport.update({
@@ -131,9 +69,74 @@ const R403Route = R403RouteImport.update({
   path: '/403',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
+  id: '/become-creator',
+  path: '/become-creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DmcaRoute = DmcaRouteImport.update({
+  id: '/dmca',
+  path: '/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -141,44 +144,94 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
-  id: '/settings/security',
-  path: '/settings/security',
+const AdminActionsAuditRoute = AdminActionsAuditRouteImport.update({
+  id: '/admin/actions-audit',
+  path: '/admin/actions-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/settings/profile',
-  path: '/settings/profile',
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SavedPostIdRoute = SavedPostIdRouteImport.update({
-  id: '/saved/$postId',
-  path: '/saved/$postId',
+const AdminDmcaRoute = AdminDmcaRouteImport.update({
+  id: '/admin/dmca',
+  path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RCodeRoute = RCodeRouteImport.update({
-  id: '/r/$code',
-  path: '/r/$code',
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/admin/kyc',
+  path: '/admin/kyc',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
-  id: '/profile/$username',
-  path: '/profile/$username',
+const AdminModerationRoute = AdminModerationRouteImport.update({
+  id: '/admin/moderation',
+  path: '/admin/moderation',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LinksUsernameRoute = LinksUsernameRouteImport.update({
-  id: '/links/$username',
-  path: '/links/$username',
+const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
+  id: '/admin/payouts',
+  path: '/admin/payouts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorWalletRoute = CreatorWalletRouteImport.update({
-  id: '/creator/wallet',
-  path: '/creator/wallet',
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorUpsellsRoute = CreatorUpsellsRouteImport.update({
-  id: '/creator/upsells',
-  path: '/creator/upsells',
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CCodeRoute = CCodeRouteImport.update({
+  id: '/c/$code',
+  path: '/c/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
+  id: '/creator/affiliate',
+  path: '/creator/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorAnalyticsRoute = CreatorAnalyticsRouteImport.update({
+  id: '/creator/analytics',
+  path: '/creator/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
+  id: '/creator/coupons',
+  path: '/creator/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
+  id: '/creator/dmca',
+  path: '/creator/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLinksRoute = CreatorLinksRouteImport.update({
+  id: '/creator/links',
+  path: '/creator/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
+  id: '/creator/loyalty',
+  path: '/creator/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorMailingRoute = CreatorMailingRouteImport.update({
+  id: '/creator/mailing',
+  path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorModerationRoute = CreatorModerationRouteImport.update({
+  id: '/creator/moderation',
+  path: '/creator/moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorPostsRoute = CreatorPostsRouteImport.update({
+  id: '/creator/posts',
+  path: '/creator/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorSubscriptionPlansRoute =
@@ -187,84 +240,49 @@ const CreatorSubscriptionPlansRoute =
     path: '/creator/subscription-plans',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CreatorPostsRoute = CreatorPostsRouteImport.update({
-  id: '/creator/posts',
-  path: '/creator/posts',
+const CreatorUpsellsRoute = CreatorUpsellsRouteImport.update({
+  id: '/creator/upsells',
+  path: '/creator/upsells',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorMailingRoute = CreatorMailingRouteImport.update({
-  id: '/creator/mailing',
-  path: '/creator/mailing',
+const CreatorWalletRoute = CreatorWalletRouteImport.update({
+  id: '/creator/wallet',
+  path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
-  id: '/creator/loyalty',
-  path: '/creator/loyalty',
+const LinksUsernameRoute = LinksUsernameRouteImport.update({
+  id: '/links/$username',
+  path: '/links/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorLinksRoute = CreatorLinksRouteImport.update({
-  id: '/creator/links',
-  path: '/creator/links',
+const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
+  id: '/profile/$username',
+  path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
-  id: '/creator/dmca',
-  path: '/creator/dmca',
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
-  id: '/creator/coupons',
-  path: '/creator/coupons',
+const SavedPostIdRoute = SavedPostIdRouteImport.update({
+  id: '/saved/$postId',
+  path: '/saved/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorAnalyticsRoute = CreatorAnalyticsRouteImport.update({
-  id: '/creator/analytics',
-  path: '/creator/analytics',
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
-  id: '/creator/affiliate',
-  path: '/creator/affiliate',
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CCodeRoute = CCodeRouteImport.update({
-  id: '/c/$code',
-  path: '/c/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
-  id: '/admin/payouts',
-  path: '/admin/payouts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminModerationRoute = AdminModerationRouteImport.update({
-  id: '/admin/moderation',
-  path: '/admin/moderation',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminKycRoute = AdminKycRouteImport.update({
-  id: '/admin/kyc',
-  path: '/admin/kyc',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDmcaRoute = AdminDmcaRouteImport.update({
-  id: '/admin/dmca',
-  path: '/admin/dmca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAuditRoute = AdminAuditRouteImport.update({
-  id: '/admin/audit',
-  path: '/admin/audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminActionsAuditRoute = AdminActionsAuditRouteImport.update({
-  id: '/admin/actions-audit',
-  path: '/admin/actions-audit',
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicNexuspagWebhookRoute =
@@ -273,10 +291,10 @@ const ApiPublicNexuspagWebhookRoute =
     path: '/api/public/nexuspag-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronProcessMassDmRoute =
-  ApiPublicCronProcessMassDmRouteImport.update({
-    id: '/api/public/cron/process-mass-dm',
-    path: '/api/public/cron/process-mass-dm',
+const ApiPublicCronCleanupStoriesRoute =
+  ApiPublicCronCleanupStoriesRouteImport.update({
+    id: '/api/public/cron/cleanup-stories',
+    path: '/api/public/cron/cleanup-stories',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCronExpireSubscriptionsRoute =
@@ -285,10 +303,10 @@ const ApiPublicCronExpireSubscriptionsRoute =
     path: '/api/public/cron/expire-subscriptions',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronCleanupStoriesRoute =
-  ApiPublicCronCleanupStoriesRouteImport.update({
-    id: '/api/public/cron/cleanup-stories',
-    path: '/api/public/cron/cleanup-stories',
+const ApiPublicCronProcessMassDmRoute =
+  ApiPublicCronProcessMassDmRouteImport.update({
+    id: '/api/public/cron/process-mass-dm',
+    path: '/api/public/cron/process-mass-dm',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -315,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -324,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -335,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -363,6 +384,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -372,6 +394,7 @@ export interface FileRoutesByTo {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -383,6 +406,7 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -412,6 +436,7 @@ export interface FileRoutesById {
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
@@ -421,6 +446,7 @@ export interface FileRoutesById {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/moderation': typeof CreatorModerationRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
@@ -432,6 +458,7 @@ export interface FileRoutesById {
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -462,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -471,6 +499,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -482,6 +511,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -510,6 +540,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -519,6 +550,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -530,6 +562,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -558,6 +591,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/moderation'
     | '/admin/payouts'
+    | '/admin/reports'
     | '/admin/users'
     | '/c/$code'
     | '/creator/affiliate'
@@ -567,6 +601,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/moderation'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
@@ -578,6 +613,7 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
+    | '/api/public/health'
     | '/api/public/nexuspag-webhook'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -607,6 +643,7 @@ export interface RootRouteChildren {
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
@@ -616,6 +653,7 @@ export interface RootRouteChildren {
   CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
+  CreatorModerationRoute: typeof CreatorModerationRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
@@ -627,6 +665,7 @@ export interface RootRouteChildren {
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
   ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
   ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
@@ -635,102 +674,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/wishlist': {
-      id: '/wishlist'
-      path: '/wishlist'
-      fullPath: '/wishlist'
-      preLoaderRoute: typeof WishlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/loyalty': {
-      id: '/loyalty'
-      path: '/loyalty'
-      fullPath: '/loyalty'
-      preLoaderRoute: typeof LoyaltyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed': {
-      id: '/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof FeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dmca': {
-      id: '/dmca'
-      path: '/dmca'
-      fullPath: '/dmca'
-      preLoaderRoute: typeof DmcaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/become-creator': {
-      id: '/become-creator'
-      path: '/become-creator'
-      fullPath: '/become-creator'
-      preLoaderRoute: typeof BecomeCreatorRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/403': {
@@ -740,11 +688,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R403RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/become-creator': {
+      id: '/become-creator'
+      path: '/become-creator'
+      fullPath: '/become-creator'
+      preLoaderRoute: typeof BecomeCreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dmca': {
+      id: '/dmca'
+      path: '/dmca'
+      fullPath: '/dmca'
+      preLoaderRoute: typeof DmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -754,165 +793,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/security': {
-      id: '/settings/security'
-      path: '/settings/security'
-      fullPath: '/settings/security'
-      preLoaderRoute: typeof SettingsSecurityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/settings/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saved/$postId': {
-      id: '/saved/$postId'
-      path: '/saved/$postId'
-      fullPath: '/saved/$postId'
-      preLoaderRoute: typeof SavedPostIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/r/$code': {
-      id: '/r/$code'
-      path: '/r/$code'
-      fullPath: '/r/$code'
-      preLoaderRoute: typeof RCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/$username': {
-      id: '/profile/$username'
-      path: '/profile/$username'
-      fullPath: '/profile/$username'
-      preLoaderRoute: typeof ProfileUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/links/$username': {
-      id: '/links/$username'
-      path: '/links/$username'
-      fullPath: '/links/$username'
-      preLoaderRoute: typeof LinksUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/wallet': {
-      id: '/creator/wallet'
-      path: '/creator/wallet'
-      fullPath: '/creator/wallet'
-      preLoaderRoute: typeof CreatorWalletRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/upsells': {
-      id: '/creator/upsells'
-      path: '/creator/upsells'
-      fullPath: '/creator/upsells'
-      preLoaderRoute: typeof CreatorUpsellsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/subscription-plans': {
-      id: '/creator/subscription-plans'
-      path: '/creator/subscription-plans'
-      fullPath: '/creator/subscription-plans'
-      preLoaderRoute: typeof CreatorSubscriptionPlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/posts': {
-      id: '/creator/posts'
-      path: '/creator/posts'
-      fullPath: '/creator/posts'
-      preLoaderRoute: typeof CreatorPostsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/mailing': {
-      id: '/creator/mailing'
-      path: '/creator/mailing'
-      fullPath: '/creator/mailing'
-      preLoaderRoute: typeof CreatorMailingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/loyalty': {
-      id: '/creator/loyalty'
-      path: '/creator/loyalty'
-      fullPath: '/creator/loyalty'
-      preLoaderRoute: typeof CreatorLoyaltyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/links': {
-      id: '/creator/links'
-      path: '/creator/links'
-      fullPath: '/creator/links'
-      preLoaderRoute: typeof CreatorLinksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/dmca': {
-      id: '/creator/dmca'
-      path: '/creator/dmca'
-      fullPath: '/creator/dmca'
-      preLoaderRoute: typeof CreatorDmcaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/coupons': {
-      id: '/creator/coupons'
-      path: '/creator/coupons'
-      fullPath: '/creator/coupons'
-      preLoaderRoute: typeof CreatorCouponsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/analytics': {
-      id: '/creator/analytics'
-      path: '/creator/analytics'
-      fullPath: '/creator/analytics'
-      preLoaderRoute: typeof CreatorAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/affiliate': {
-      id: '/creator/affiliate'
-      path: '/creator/affiliate'
-      fullPath: '/creator/affiliate'
-      preLoaderRoute: typeof CreatorAffiliateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/$code': {
-      id: '/c/$code'
-      path: '/c/$code'
-      fullPath: '/c/$code'
-      preLoaderRoute: typeof CCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/payouts': {
-      id: '/admin/payouts'
-      path: '/admin/payouts'
-      fullPath: '/admin/payouts'
-      preLoaderRoute: typeof AdminPayoutsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/moderation': {
-      id: '/admin/moderation'
-      path: '/admin/moderation'
-      fullPath: '/admin/moderation'
-      preLoaderRoute: typeof AdminModerationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/kyc': {
-      id: '/admin/kyc'
-      path: '/admin/kyc'
-      fullPath: '/admin/kyc'
-      preLoaderRoute: typeof AdminKycRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/dmca': {
-      id: '/admin/dmca'
-      path: '/admin/dmca'
-      fullPath: '/admin/dmca'
-      preLoaderRoute: typeof AdminDmcaRouteImport
+    '/admin/actions-audit': {
+      id: '/admin/actions-audit'
+      path: '/admin/actions-audit'
+      fullPath: '/admin/actions-audit'
+      preLoaderRoute: typeof AdminActionsAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/audit': {
@@ -922,11 +807,186 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/actions-audit': {
-      id: '/admin/actions-audit'
-      path: '/admin/actions-audit'
-      fullPath: '/admin/actions-audit'
-      preLoaderRoute: typeof AdminActionsAuditRouteImport
+    '/admin/dmca': {
+      id: '/admin/dmca'
+      path: '/admin/dmca'
+      fullPath: '/admin/dmca'
+      preLoaderRoute: typeof AdminDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/admin/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/moderation': {
+      id: '/admin/moderation'
+      path: '/admin/moderation'
+      fullPath: '/admin/moderation'
+      preLoaderRoute: typeof AdminModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payouts': {
+      id: '/admin/payouts'
+      path: '/admin/payouts'
+      fullPath: '/admin/payouts'
+      preLoaderRoute: typeof AdminPayoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$code': {
+      id: '/c/$code'
+      path: '/c/$code'
+      fullPath: '/c/$code'
+      preLoaderRoute: typeof CCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/affiliate': {
+      id: '/creator/affiliate'
+      path: '/creator/affiliate'
+      fullPath: '/creator/affiliate'
+      preLoaderRoute: typeof CreatorAffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/analytics': {
+      id: '/creator/analytics'
+      path: '/creator/analytics'
+      fullPath: '/creator/analytics'
+      preLoaderRoute: typeof CreatorAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/coupons': {
+      id: '/creator/coupons'
+      path: '/creator/coupons'
+      fullPath: '/creator/coupons'
+      preLoaderRoute: typeof CreatorCouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/dmca': {
+      id: '/creator/dmca'
+      path: '/creator/dmca'
+      fullPath: '/creator/dmca'
+      preLoaderRoute: typeof CreatorDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/links': {
+      id: '/creator/links'
+      path: '/creator/links'
+      fullPath: '/creator/links'
+      preLoaderRoute: typeof CreatorLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/loyalty': {
+      id: '/creator/loyalty'
+      path: '/creator/loyalty'
+      fullPath: '/creator/loyalty'
+      preLoaderRoute: typeof CreatorLoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/mailing': {
+      id: '/creator/mailing'
+      path: '/creator/mailing'
+      fullPath: '/creator/mailing'
+      preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/moderation': {
+      id: '/creator/moderation'
+      path: '/creator/moderation'
+      fullPath: '/creator/moderation'
+      preLoaderRoute: typeof CreatorModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/posts': {
+      id: '/creator/posts'
+      path: '/creator/posts'
+      fullPath: '/creator/posts'
+      preLoaderRoute: typeof CreatorPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/subscription-plans': {
+      id: '/creator/subscription-plans'
+      path: '/creator/subscription-plans'
+      fullPath: '/creator/subscription-plans'
+      preLoaderRoute: typeof CreatorSubscriptionPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/upsells': {
+      id: '/creator/upsells'
+      path: '/creator/upsells'
+      fullPath: '/creator/upsells'
+      preLoaderRoute: typeof CreatorUpsellsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/wallet': {
+      id: '/creator/wallet'
+      path: '/creator/wallet'
+      fullPath: '/creator/wallet'
+      preLoaderRoute: typeof CreatorWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/links/$username': {
+      id: '/links/$username'
+      path: '/links/$username'
+      fullPath: '/links/$username'
+      preLoaderRoute: typeof LinksUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/$username': {
+      id: '/profile/$username'
+      path: '/profile/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof ProfileUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved/$postId': {
+      id: '/saved/$postId'
+      path: '/saved/$postId'
+      fullPath: '/saved/$postId'
+      preLoaderRoute: typeof SavedPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/nexuspag-webhook': {
@@ -936,11 +996,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/process-mass-dm': {
-      id: '/api/public/cron/process-mass-dm'
-      path: '/api/public/cron/process-mass-dm'
-      fullPath: '/api/public/cron/process-mass-dm'
-      preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
+    '/api/public/cron/cleanup-stories': {
+      id: '/api/public/cron/cleanup-stories'
+      path: '/api/public/cron/cleanup-stories'
+      fullPath: '/api/public/cron/cleanup-stories'
+      preLoaderRoute: typeof ApiPublicCronCleanupStoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/expire-subscriptions': {
@@ -950,11 +1010,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronExpireSubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/cleanup-stories': {
-      id: '/api/public/cron/cleanup-stories'
-      path: '/api/public/cron/cleanup-stories'
-      fullPath: '/api/public/cron/cleanup-stories'
-      preLoaderRoute: typeof ApiPublicCronCleanupStoriesRouteImport
+    '/api/public/cron/process-mass-dm': {
+      id: '/api/public/cron/process-mass-dm'
+      path: '/api/public/cron/process-mass-dm'
+      fullPath: '/api/public/cron/process-mass-dm'
+      preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -983,6 +1043,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminReportsRoute: AdminReportsRoute,
   AdminUsersRoute: AdminUsersRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
@@ -992,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorLinksRoute: CreatorLinksRoute,
   CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
+  CreatorModerationRoute: CreatorModerationRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
@@ -1003,6 +1065,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
   ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
   ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,

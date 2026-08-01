@@ -1,3 +1,4 @@
+import { getGlobalStartContext } from "@tanstack/react-start";
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import "./start";
@@ -56,12 +57,16 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 }
 
 export const getRouter = () => {
+  const globalContext = getGlobalStartContext() as
+    | { cspNonce?: string }
+    | undefined;
   const router = createRouter({
     routeTree,
     context: {},
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: DefaultErrorComponent,
+    ssr: { nonce: globalContext?.cspNonce },
   });
 
   return router;

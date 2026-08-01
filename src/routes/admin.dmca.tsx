@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { requireAdminServer, updateDmcaReportServer } from "@/_server/admin.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {
@@ -32,10 +33,13 @@ interface Report {
 }
 
 function AdminDmcaPage() {
+  const { locale, tr } = useI18n();
   const { user, isAdmin, loading } = useAuth();
   const nav = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
-  const [profiles, setProfiles] = useState<Map<string, { username: string; display_name: string | null }>>(new Map());
+  const [profiles, setProfiles] = useState<
+    Map<string, { username: string; display_name: string | null }>
+  >(new Map());
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
@@ -59,9 +63,9 @@ function AdminDmcaPage() {
         .select("user_id, username, display_name")
         .in("user_id", ids);
       const m = new Map<string, { username: string; display_name: string | null }>();
-      ((profs ?? []) as { user_id: string; username: string; display_name: string | null }[]).forEach((p) =>
-        m.set(p.user_id, { username: p.username, display_name: p.display_name }),
-      );
+      (
+        (profs ?? []) as { user_id: string; username: string; display_name: string | null }[]
+      ).forEach((p) => m.set(p.user_id, { username: p.username, display_name: p.display_name }));
       setProfiles(m);
     }
   };
@@ -78,10 +82,10 @@ function AdminDmcaPage() {
       await updateDmcaReportServer({
         data: { reportId: id, status, adminNotes: notes[id] || null },
       });
-      toast.success("Atualizado");
+      toast.success(tr("Atualizado", "Updated"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setBusy(null);
     }
@@ -89,10 +93,36 @@ function AdminDmcaPage() {
 
   const downloadPdf = (r: Report) => {
     const prof = profiles.get(r.creator_id);
-    const name = prof?.display_name || prof?.username || "Criadora";
-    const text = `NOTIFICAÇÃO DMCA — VENYX
+    const name = prof?.display_name || prof?.username || tr("Criadora", "Creator");
+    const text =
+      locale === "en"
+        ? `DMCA NOTICE — VENYX
+====================
+Date: ${new Date().toLocaleString(locale)}
+
+To the operator of the website or service hosting the infringing content,
+
+Under the Digital Millennium Copyright Act (DMCA), 17 U.S.C. § 512(c)(3), and applicable Brazilian law, we notify you that the following content is being distributed without permission from the copyright owner:
+
+Infringing URL: ${r.leaked_url}
+Copyright owner: ${name} (@${prof?.username ?? ""})
+Original platform: Venyx
+Description: ${r.description ?? "—"}
+
+The owner declares under penalty of perjury:
+1. They are the lawful copyright owner of the identified content.
+2. They did not authorize use of the material at the URL above.
+3. The information in this notice is accurate.
+
+We request the immediate takedown of the infringing content.
+
+Venyx contact: legal@venyx.app
+Administrative notes: ${r.admin_notes ?? "—"}
+
+Digital signature: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`
+        : `NOTIFICAÇÃO DMCA — VENYX
 =========================
-Data: ${new Date().toLocaleString("pt-BR")}
+Data: ${new Date().toLocaleString(locale)}
 
 Para o responsável pelo site/serviço hospedando conteúdo infrator,
 
@@ -100,7 +130,7 @@ Em conformidade com o Digital Millennium Copyright Act (DMCA) — 17 U.S.C. § 5
 
 URL infratora: ${r.leaked_url}
 Titular dos direitos: ${name} (@${prof?.username ?? ""})
-Plataforma original: Venyx (venyx.app)
+Plataforma original: Venyx
 Descrição: ${r.description ?? "—"}
 
 A titular declara, sob pena de perjúrio:
@@ -127,12 +157,14 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-accent" />
-          <h1 className="text-xl font-bold text-foreground">DMCA — Painel Admin</h1>
+          <h1 className="text-xl font-bold text-foreground">
+            {tr("DMCA — Painel administrativo", "DMCA — Admin panel")}
+          </h1>
         </div>
 
         {reports.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Nenhum report.
+            {tr("Nenhuma denúncia DMCA.", "No DMCA reports.")}
           </p>
         ) : (
           reports.map((r) => {
@@ -142,10 +174,12 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-xs text-muted-foreground">
-                      @{prof?.username ?? "?"} • {new Date(r.created_at).toLocaleString("pt-BR")}
+                      @{prof?.username ?? "?"} · {new Date(r.created_at).toLocaleString(locale)}
                     </div>
                     <div className="mt-1 break-all text-sm text-foreground">🔗 {r.leaked_url}</div>
-                    {r.description && <div className="mt-1 text-xs text-muted-foreground">{r.description}</div>}
+                    {r.description && (
+                      <div className="mt-1 text-xs text-muted-foreground">{r.description}</div>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -158,18 +192,25 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
                             : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {r.status}
+                    {r.status === "pending"
+                      ? tr("pendente", "pending")
+                      : r.status === "notified"
+                        ? tr("notificado", "notified")
+                        : r.status === "resolved"
+                          ? tr("resolvido", "resolved")
+                          : tr("rejeitado", "rejected")}
                   </span>
                 </div>
                 <Textarea
-                  placeholder="Notas administrativas..."
+                  placeholder={tr("Notas administrativas...", "Administrative notes...")}
                   value={notes[r.id] ?? r.admin_notes ?? ""}
                   onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })}
                   className="min-h-16 resize-none text-xs"
                 />
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => downloadPdf(r)} variant="outline">
-                    <FileText className="mr-1 h-3.5 w-3.5" /> Gerar notificação
+                    <FileText className="mr-1 h-3.5 w-3.5" />{" "}
+                    {tr("Gerar notificação", "Generate notice")}
                   </Button>
                   <Button
                     size="sm"
@@ -177,7 +218,11 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
                     onClick={() => updateStatus(r.id, "notified")}
                     className="bg-accent text-accent-foreground hover:bg-accent/90"
                   >
-                    {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Marcar notificado"}
+                    {busy === r.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      tr("Marcar notificado", "Mark as notified")
+                    )}
                   </Button>
                   <Button
                     size="sm"
@@ -185,7 +230,7 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
                     onClick={() => updateStatus(r.id, "resolved")}
                     variant="outline"
                   >
-                    Resolvido
+                    {tr("Resolvido", "Resolved")}
                   </Button>
                   <Button
                     size="sm"
@@ -193,7 +238,7 @@ Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
                     onClick={() => updateStatus(r.id, "rejected")}
                     variant="outline"
                   >
-                    Rejeitar
+                    {tr("Rejeitar", "Reject")}
                   </Button>
                 </div>
               </div>

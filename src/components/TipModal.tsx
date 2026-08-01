@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
 const QUICK = [500, 1000, 2500, 5000];
 
@@ -28,6 +29,7 @@ export function TipModal({
   postId?: string;
 }) {
   const { user, session } = useAuth();
+  const { tr } = useI18n();
   const createChargeFn = useServerFn(createTipPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
 
@@ -64,19 +66,19 @@ export function TipModal({
 
   const send = async () => {
     if (!user) {
-      toast.error("Faça login para enviar mimo.");
+      toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
       return;
     }
     const authHeaders = session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
       : null;
     if (!authHeaders) {
-      toast.error("Faça login para enviar mimo.");
+      toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
       return;
     }
     const finalCents = custom ? Math.round(parseFloat(custom) * 100) : amount;
     if (!finalCents || finalCents < 100) {
-      toast.error("Valor mínimo: R$ 1,00");
+      toast.error(tr("Valor mínimo: R$ 1,00", "Minimum amount: R$ 1.00"));
       return;
     }
     setBusy(true);
@@ -92,7 +94,7 @@ export function TipModal({
       });
 
       if ("ok" in res && res.ok === false) {
-        toast.error(res.error || "Não foi possível gerar o Pix.");
+        toast.error(res.error || tr("Não foi possível gerar o Pix.", "We couldn't create the Pix charge."));
         return;
       }
 
@@ -109,11 +111,16 @@ export function TipModal({
             const s = await getStatusFn({ data: { chargeId: res.chargeId }, headers: authHeaders });
             if (s.status === "paid") {
               if (pollRef.current) clearInterval(pollRef.current);
-              toast.success(`Mimo de R$ ${(finalCents / 100).toFixed(2)} enviado para ${creatorName}!`);
+              toast.success(
+                tr(
+                  `Mimo de R$ ${(finalCents / 100).toFixed(2)} enviado para ${creatorName}!`,
+                  `R$ ${(finalCents / 100).toFixed(2)} tip sent to ${creatorName}!`,
+                ),
+              );
               onOpenChange(false);
             } else if (s.status === "expired" || s.status === "cancelled") {
               if (pollRef.current) clearInterval(pollRef.current);
-              toast.error("Pix expirou. Gere uma nova cobrança.");
+              toast.error(tr("Pix expirou. Gere uma nova cobrança.", "Pix expired. Create a new charge."));
               setStep("form");
               setPix(null);
             }
@@ -125,13 +132,13 @@ export function TipModal({
     } catch (e) {
       console.error("[TipModal] error", e);
       if (e instanceof Response) {
-        if (e.status === 401) toast.error("Faça login para enviar mimo.");
+        if (e.status === 401) toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
         else {
           const txt = await e.text().catch(() => "");
           toast.error(txt || `Erro ${e.status}`);
         }
       } else {
-        toast.error(e instanceof Error ? e.message : "Erro ao enviar mimo");
+        toast.error(e instanceof Error ? e.message : tr("Erro ao enviar mimo", "Could not send tip"));
       }
     } finally {
       setBusy(false);
@@ -151,7 +158,9 @@ export function TipModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary" />
-            {step === "pix" ? "Pague com Pix" : `Enviar mimo para ${creatorName}`}
+            {step === "pix"
+              ? tr("Pague com Pix", "Pay with Pix")
+              : tr(`Enviar mimo para ${creatorName}`, `Send a tip to ${creatorName}`)}
           </DialogTitle>
         </DialogHeader>
 
@@ -177,20 +186,24 @@ export function TipModal({
               ))}
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Valor personalizado (R$)</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {tr("Valor personalizado (R$)", "Custom amount (R$)")}
+              </label>
               <Input
                 type="number"
                 min="1"
                 step="0.50"
-                placeholder="Outro valor..."
+                placeholder={tr("Outro valor...", "Other amount...")}
                 value={custom}
                 onChange={(e) => setCustom(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Mensagem (opcional)</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {tr("Mensagem (opcional)", "Message (optional)")}
+              </label>
               <Textarea
-                placeholder="Você é incrível! 💜"
+                placeholder={tr("Você é incrível! 💜", "You're amazing! 💜")}
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
                 maxLength={200}
@@ -202,7 +215,7 @@ export function TipModal({
               disabled={busy}
               className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-95"
             >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💝 Pagar com Pix"}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("💝 Pagar com Pix", "💝 Pay with Pix")}
             </Button>
           </div>
         )}
@@ -210,7 +223,7 @@ export function TipModal({
         {step === "pix" && pix && (
           <div className="space-y-3">
             <div className="rounded-xl bg-muted p-3 text-center text-sm">
-              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-xs text-muted-foreground">{tr("Total", "Total")}</div>
               <div className="text-2xl font-bold text-foreground">
                 R$ {(pix.amountCents / 100).toFixed(2)}
               </div>
@@ -238,7 +251,9 @@ export function TipModal({
 
             {pix.qrCode && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Ou copie o código Pix:</p>
+                <p className="text-xs text-muted-foreground">
+                  {tr("Ou copie o código Pix:", "Or copy the Pix code:")}
+                </p>
                 <div className="flex gap-2">
                   <input
                     readOnly
@@ -254,7 +269,7 @@ export function TipModal({
 
             <div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Aguardando pagamento…
+              {tr("Aguardando pagamento…", "Waiting for payment…")}
             </div>
           </div>
         )}

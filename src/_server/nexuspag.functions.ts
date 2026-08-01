@@ -1,17 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE_URL = "https://nexuspag.com";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
 
 // URL pública estável do projeto (Lovable). Ajuste para custom domain quando configurar.
-const PROJECT_ID = "59549983-d8c7-43dd-bb65-ffb37fd041ca";
 function getWebhookUrl(): string {
-  const envUrl = process.env.PUBLIC_WEBHOOK_URL;
-  if (envUrl) return envUrl;
-  return `https://project--${PROJECT_ID}.lovable.app/api/public/nexuspag-webhook`;
+  const configured = process.env.PUBLIC_WEBHOOK_URL;
+  if (!configured) throw new Error("PUBLIC_WEBHOOK_URL não configurada");
+  const url = new URL(configured);
+  const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  if (
+    (url.protocol !== "https:" && !localHttp) ||
+    url.pathname !== "/api/public/nexuspag-webhook"
+  ) {
+    throw new Error("PUBLIC_WEBHOOK_URL inválida");
+  }
+  return url.toString();
 }
 
 function getApiKey(): string {
@@ -38,18 +45,20 @@ function safeError(error: unknown) {
  * Sem isso, qualquer pessoa poderia POSTar direto na server function e gerar cobranças
  * reais usando NEXUSPAG_API_KEY.
  */
-async function assertSellerOrAdmin(userId: string): Promise<void> {
+async function assertPaymentTestAdmin(userId: string): Promise<void> {
+  if (process.env.ENABLE_PAYMENT_TEST_ENDPOINTS !== "true") {
+    throw new Error("Os endpoints de teste de pagamento estão desativados");
+  }
+
   const { data: roles, error } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", userId);
 
   if (error) throw new Error("Falha ao verificar permissões");
-  const allowed = (roles ?? []).some(
-    (r) => r.role === "seller" || r.role === "admin",
-  );
+  const allowed = (roles ?? []).some((r) => r.role === "admin");
   if (!allowed) {
-    throw new Error("Acesso negado: apenas vendedores ou administradores");
+    throw new Error("Acesso negado: apenas administradores");
   }
 }
 
@@ -61,17 +70,17 @@ const createPixSchema = z.object({
 });
 
 export const createPixCharge = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => createPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
-      await assertSellerOrAdmin(context.userId);
+      await assertPaymentTestAdmin(context.userId);
 
       const body = {
         amount: data.amount,
         description: data.description ?? "Teste NexusPag",
         external_id: data.external_id ?? `test-${Date.now()}`,
-        expiration_seconds: data.expiration_seconds ?? 1800,
+        expiration: data.expiration_seconds ?? 1800,
         webhook_url: getWebhookUrl(),
       };
 
@@ -101,26 +110,27 @@ export const createPixCharge = createServerFn({ method: "POST" })
   });
 
 const getStatusSchema = z.object({
-  id: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_\-]+$/),
+  id: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-zA-Z0-9_-]+$/),
 });
 
 export const getPixStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) => getStatusSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
-      await assertSellerOrAdmin(context.userId);
+      await assertPaymentTestAdmin(context.userId);
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), NEXUSPAG_TIMEOUT_MS);
-      const res = await fetch(
-        `${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`,
-        {
-          method: "GET",
-          headers: { "x-api-key": getApiKey() },
-          signal: controller.signal,
-        },
-      ).finally(() => clearTimeout(timeout));
+      const res = await fetch(`${BASE_URL}/api/pix/${encodeURIComponent(data.id)}`, {
+        method: "GET",
+        headers: { "x-api-key": getApiKey() },
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
       const json = await readJsonResponse(res);
       if (!res.ok) {
         console.warn("[nexuspag-test] status falhou", res.status, json);

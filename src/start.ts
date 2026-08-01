@@ -7,22 +7,18 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
  * Plataforma adulta: CSP restritivo é obrigatório para mitigar XSS.
  */
 const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => {
-  const headers = new Headers();
-  headers.set("X-Frame-Options", "DENY");
-  headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains; preload",
-  );
-  // CSP intencionalmente permissivo para imagens/mídia (Supabase Storage + URLs assinadas)
-  headers.set(
-    "Content-Security-Policy",
-    [
+  const cspNonce = crypto.randomUUID().replaceAll("-", "");
+  const headers = {
+    "x-frame-options": "DENY",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "strict-transport-security":
+      "max-age=31536000; includeSubDomains; preload",
+    // CSP permite imagens/mídia externas porque o Storage usa URLs assinadas.
+    "content-security-policy": [
       "default-src 'self'",
-      // Inline script de tema usa hash CSP em vez de 'unsafe-inline'
-      "script-src 'self' 'sha256-szfWHYoOn5tAdFFisCc0Q4JfDbV5o6wkpU8XsQTSdjg='",
+      `script-src 'self' 'nonce-${cspNonce}' 'sha256-szfWHYoOn5tAdFFisCc0Q4JfDbV5o6wkpU8XsQTSdjg='`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
@@ -32,9 +28,11 @@ const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => 
       "base-uri 'self'",
       "form-action 'self'",
     ].join("; "),
+  };
+  setResponseHeaders(
+    headers as unknown as Parameters<typeof setResponseHeaders>[0],
   );
-  setResponseHeaders(headers);
-  return next();
+  return next({ context: { cspNonce } });
 });
 
 export const startInstance = createStart(() => ({

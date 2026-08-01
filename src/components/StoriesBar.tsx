@@ -1,11 +1,14 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryViewer, type StoryGroup } from "@/components/StoryViewer";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getStoryMediaUrls } from "@/_server/media.functions";
+import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { useI18n } from "@/lib/i18n";
+import { moderateBeforeUpload } from "@/lib/moderation";
 
 interface RawStory {
   id: string;
@@ -19,11 +22,13 @@ interface RawStory {
 
 export function StoriesBar() {
   const { user, isCreator } = useAuth();
+  const { tr } = useI18n();
+  const storyMediaFn = useServerFn(getStoryMediaUrls);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data: stories } = await supabase
       .from("stories")
       .select("*")
@@ -34,41 +39,59 @@ export function StoriesBar() {
       setGroups([]);
       return;
     }
+    let urlsByStoryId: Record<string, { url: string; mime_type: string }> = {};
+    try {
+      const signed = await storyMediaFn({
+        data: { storyIds: list.map((story) => story.id) },
+      });
+      urlsByStoryId = signed.urlsByStoryId;
+    } catch {
+      setGroups([]);
+      return;
+    }
     const ids = Array.from(new Set(list.map((s) => s.creator_id)));
     const { data: profs } = await supabase
       .from("profiles")
       .select("user_id, username, display_name, avatar_url")
       .in("user_id", ids);
     const profById = new Map(
-      ((profs ?? []) as { user_id: string; username: string; display_name: string | null; avatar_url: string | null }[]).map(
-        (p) => [p.user_id, p],
-      ),
+      (
+        (profs ?? []) as {
+          user_id: string;
+          username: string;
+          display_name: string | null;
+          avatar_url: string | null;
+        }[]
+      ).map((p) => [p.user_id, p]),
     );
     const grouped = new Map<string, StoryGroup>();
     list.forEach((s) => {
+      const signed = urlsByStoryId[s.id];
+      if (!signed) return;
       const p = profById.get(s.creator_id);
       if (!p) return;
+      const demo = DEMO_MODE ? getDemoAsset(p.username) : null;
       const g = grouped.get(s.creator_id) ?? {
         creator_id: s.creator_id,
         username: p.username,
         display_name: p.display_name,
-        avatar_url: p.avatar_url,
+        avatar_url: demo?.avatar_url ?? p.avatar_url,
         stories: [],
       };
       g.stories.push({
         id: s.id,
-        url: `${SUPABASE_URL}/storage/v1/object/public/stories/${s.media_path}`,
-        mime: s.mime_type,
+        url: demo?.cover_url ?? signed.url,
+        mime: demo ? "image/webp" : signed.mime_type,
         created_at: s.created_at,
       });
       grouped.set(s.creator_id, g);
     });
     setGroups(Array.from(grouped.values()));
-  };
+  }, [storyMediaFn]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const upload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!user) return;
@@ -76,9 +99,19 @@ export function StoriesBar() {
     if (!f) return;
     setUploading(true);
     try {
+      const moderation = await moderateBeforeUpload(f, "story", user.id);
+      if (!moderation.allowed) {
+        toast.error(
+          moderation.reason ||
+            tr("Não foi possível aprovar esta mídia.", "This media could not be approved."),
+        );
+        return;
+      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
+      const { error: ue } = await supabase.storage
+        .from("stories")
+        .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
       const { error: ie } = await supabase.from("stories").insert({
         creator_id: user.id,
@@ -87,10 +120,10 @@ export function StoriesBar() {
         visibility: "public",
       });
       if (ie) throw ie;
-      toast.success("Story publicado!");
+      toast.success(tr("Story publicado!", "Story published!"));
       load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
+      toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -111,7 +144,9 @@ export function StoriesBar() {
                 <Plus className="h-6 w-6 text-primary" />
               )}
             </div>
-            <span className="text-[10px] font-medium text-muted-foreground">Seu story</span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {tr("Seu story", "Your story")}
+            </span>
             <input type="file" accept="image/*,video/*" className="hidden" onChange={upload} />
           </label>
         )}
@@ -139,11 +174,7 @@ export function StoriesBar() {
         ))}
       </div>
       {openIdx !== null && groups[openIdx] && (
-        <StoryViewer
-          groups={groups}
-          startIdx={openIdx}
-          onClose={() => setOpenIdx(null)}
-        />
+        <StoryViewer groups={groups} startIdx={openIdx} onClose={() => setOpenIdx(null)} />
       )}
     </>
   );

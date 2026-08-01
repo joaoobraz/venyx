@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/subscription-plans")({
   component: PlansPage,
@@ -20,14 +21,15 @@ interface Plan {
   is_active: boolean;
 }
 
-const PRESETS: { months: 1 | 3 | 6 | 12; defaultDiscount: number; label: string }[] = [
-  { months: 1, defaultDiscount: 0, label: "1 mês (preço cheio)" },
-  { months: 3, defaultDiscount: 10, label: "3 meses (-10%)" },
-  { months: 6, defaultDiscount: 20, label: "6 meses (-20%)" },
-  { months: 12, defaultDiscount: 30, label: "12 meses (-30%)" },
+const PRESETS: { months: 1 | 3 | 6 | 12; defaultDiscount: number }[] = [
+  { months: 1, defaultDiscount: 0 },
+  { months: 3, defaultDiscount: 10 },
+  { months: 6, defaultDiscount: 20 },
+  { months: 12, defaultDiscount: 30 },
 ];
 
 function PlansPage() {
+  const { tr } = useI18n();
   const { user, isCreator, profile, loading } = useAuth();
   const nav = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -52,7 +54,8 @@ function PlansPage() {
 
   useEffect(() => {
     if (user) load();
-    if (profile?.subscription_price_cents) setBasePrice((profile.subscription_price_cents / 100).toFixed(2));
+    if (profile?.subscription_price_cents)
+      setBasePrice((profile.subscription_price_cents / 100).toFixed(2));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile]);
 
@@ -63,11 +66,14 @@ function PlansPage() {
     try {
       const base = Math.round(parseFloat(basePrice) * 100);
       if (base < 100) {
-        toast.error("Preço base mínimo: R$ 1,00");
+        toast.error(tr("Preço base mínimo: R$ 1,00", "Minimum base price: R$ 1.00"));
         return;
       }
       // atualiza preço base no perfil
-      await supabase.from("profiles").update({ subscription_price_cents: base }).eq("user_id", user.id);
+      await supabase
+        .from("profiles")
+        .update({ subscription_price_cents: base })
+        .eq("user_id", user.id);
       // upsert nos 4 planos
       for (const p of PRESETS) {
         const finalCents = Math.round(base * (1 - p.defaultDiscount / 100));
@@ -87,10 +93,10 @@ function PlansPage() {
           });
         }
       }
-      toast.success("Planos atualizados!");
+      toast.success(tr("Planos atualizados!", "Plans updated!"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setBusy(false);
     }
@@ -104,11 +110,16 @@ function PlansPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-xl font-bold text-foreground">Planos de assinatura</h1>
+        <h1 className="text-xl font-bold text-foreground">
+          {tr("Planos de assinatura", "Subscription plans")}
+        </h1>
 
         <div className="space-y-3 rounded-2xl bg-card p-5">
           <p className="text-xs text-muted-foreground">
-            Defina seu preço base mensal. Ao salvar, geramos automaticamente os bundles 1/3/6/12 meses com descontos progressivos.
+            {tr(
+              "Defina seu preço base mensal. Ao salvar, geramos automaticamente os pacotes de 1/3/6/12 meses com descontos progressivos.",
+              "Set your monthly base price. When you save, we automatically create 1/3/6/12-month bundles with progressive discounts.",
+            )}
           </p>
           <div className="flex items-center gap-2">
             <span className="text-sm text-foreground">R$</span>
@@ -120,9 +131,17 @@ function PlansPage() {
               onChange={(e) => setBasePrice(e.target.value)}
               className="w-32"
             />
-            <span className="text-xs text-muted-foreground">/mês</span>
-            <Button onClick={seedAll} disabled={busy} className="ml-auto bg-primary text-primary-foreground">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar planos"}
+            <span className="text-xs text-muted-foreground">/{tr("mês", "month")}</span>
+            <Button
+              onClick={seedAll}
+              disabled={busy}
+              className="ml-auto bg-primary text-primary-foreground"
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                tr("Salvar planos", "Save plans")
+              )}
             </Button>
           </div>
         </div>
@@ -130,7 +149,7 @@ function PlansPage() {
         <div className="space-y-2">
           {plans.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              Nenhum plano configurado.
+              {tr("Nenhum plano configurado.", "No plans configured.")}
             </p>
           ) : (
             plans.map((p) => (
@@ -138,11 +157,14 @@ function PlansPage() {
                 <Crown className="h-5 w-5 text-accent" />
                 <div className="flex-1">
                   <div className="text-sm font-bold text-foreground">
-                    {p.months} {p.months === 1 ? "mês" : "meses"}
+                    {p.months} {p.months === 1 ? tr("mês", "month") : tr("meses", "months")}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    R$ {(p.price_cents / 100).toFixed(2)}/mês • Total R$ {((p.price_cents * p.months) / 100).toFixed(2)}
-                    {p.discount_pct > 0 && <span className="ml-2 text-accent">-{p.discount_pct}%</span>}
+                    R$ {(p.price_cents / 100).toFixed(2)}/{tr("mês", "month")} ·{" "}
+                    {tr("Total", "Total")} R$ {((p.price_cents * p.months) / 100).toFixed(2)}
+                    {p.discount_pct > 0 && (
+                      <span className="ml-2 text-accent">-{p.discount_pct}%</span>
+                    )}
                   </div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => remove(p.id)}>

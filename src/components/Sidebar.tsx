@@ -25,19 +25,21 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { BecomeCreatorBanner } from "@/components/BecomeCreatorBanner";
+import { useUnreadCounts } from "@/lib/use-unread-counts";
 
 export function Sidebar() {
   const { profile, isCreator, isAdmin, isAmbassador } = useAuth();
   const { t } = useI18n();
   const loc = useLocation();
+  const unread = useUnreadCounts();
 
   const items = [
     { to: "/feed", label: t("nav.feed"), icon: Home },
     { to: "/explore", label: t("nav.explore"), icon: Compass },
     { to: "/chat", label: t("nav.chat"), icon: MessageCircle },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
-    { to: "/wishlist", label: "Wishlist", icon: Heart },
-    { to: "/loyalty", label: "Fidelidade", icon: Trophy },
+    { to: "/wishlist", label: t("nav.wishlist"), icon: Heart },
+    { to: "/loyalty", label: t("nav.loyalty"), icon: Trophy },
   ];
 
   const linkCls = (active: boolean) =>
@@ -56,7 +58,16 @@ export function Sidebar() {
           return (
             <Link key={it.to} to={it.to} className={linkCls(active)}>
               <Icon className="h-5 w-5" />
-              {it.label}
+              <span className="min-w-0 flex-1">{it.label}</span>
+              {(it.to === "/chat" ? unread.messages : it.to === "/notifications" ? unread.notifications : 0) > 0 && (
+                <span className="rounded-full bg-primary px-1.5 text-[10px] font-bold leading-5 text-primary-foreground">
+                  {(it.to === "/chat" ? unread.messages : unread.notifications) > 99
+                    ? "99+"
+                    : it.to === "/chat"
+                      ? unread.messages
+                      : unread.notifications}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -73,7 +84,7 @@ export function Sidebar() {
         {isCreator && (
           <>
             <Link to="/creator/posts" className={linkCls(loc.pathname === "/creator/posts")}>
-              <PenSquare className="h-5 w-5" /> Novo post
+              <PenSquare className="h-5 w-5" /> {t("nav.newPost")}
             </Link>
             <Link to="/creator/wallet" className={linkCls(loc.pathname === "/creator/wallet")}>
               <Wallet className="h-5 w-5" /> {t("nav.wallet")}
@@ -82,29 +93,32 @@ export function Sidebar() {
               <BarChart3 className="h-5 w-5" /> Analytics
             </Link>
             <Link to="/creator/subscription-plans" className={linkCls(loc.pathname === "/creator/subscription-plans")}>
-              <Layers className="h-5 w-5" /> Planos
+              <Layers className="h-5 w-5" /> {t("nav.plans")}
             </Link>
             <Link to="/creator/coupons" className={linkCls(loc.pathname === "/creator/coupons")}>
-              <Tag className="h-5 w-5" /> Cupons
+              <Tag className="h-5 w-5" /> {t("nav.coupons")}
             </Link>
             <Link to="/creator/upsells" className={linkCls(loc.pathname === "/creator/upsells")}>
               <Sparkles className="h-5 w-5" /> Bumps & Upsells
             </Link>
             <Link to="/creator/mailing" className={linkCls(loc.pathname === "/creator/mailing")}>
-              <Mail className="h-5 w-5" /> Mailing
+              <Mail className="h-5 w-5" /> {t("nav.mailing")}
             </Link>
             <Link to="/creator/loyalty" className={linkCls(loc.pathname === "/creator/loyalty")}>
-              <Trophy className="h-5 w-5" /> Top fãs
+              <Trophy className="h-5 w-5" /> {t("nav.topFans")}
             </Link>
             <Link to="/creator/links" className={linkCls(loc.pathname === "/creator/links")}>
-              <Link2 className="h-5 w-5" /> Árvore de Links
+              <Link2 className="h-5 w-5" /> {t("nav.linkTree")}
             </Link>
             <Link to="/creator/dmca" className={linkCls(loc.pathname === "/creator/dmca")}>
               <ShieldAlert className="h-5 w-5" /> DMCA
             </Link>
+            <Link to="/creator/moderation" className={linkCls(loc.pathname === "/creator/moderation")}>
+              <UserCog className="h-5 w-5" /> {t("nav.commentModeration")}
+            </Link>
             {isAmbassador && (
               <Link to="/creator/affiliate" className={linkCls(loc.pathname === "/creator/affiliate")}>
-                <Crown className="h-5 w-5 text-accent" /> Afiliado
+                  <Crown className="h-5 w-5 text-accent" /> {t("nav.affiliate")}
               </Link>
             )}
           </>
@@ -113,7 +127,7 @@ export function Sidebar() {
           <Settings className="h-5 w-5" /> {t("nav.settings")}
         </Link>
         <Link to="/settings/security" className={linkCls(loc.pathname === "/settings/security")}>
-          <ShieldCheck className="h-5 w-5" /> Segurança
+          <ShieldCheck className="h-5 w-5" /> {t("nav.security")}
         </Link>
         {/* Admin links ocultos — acesso somente via URL /admin */}
         <div className="pt-4">

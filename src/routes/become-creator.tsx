@@ -15,7 +15,7 @@ export const Route = createFileRoute("/become-creator")({
 });
 
 function BecomeCreatorPage() {
-  const { t } = useI18n();
+  const { t, tr } = useI18n();
   const { user, isCreator, kyc, loading, refresh } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState<"intro" | "form">("intro");
@@ -32,24 +32,32 @@ function BecomeCreatorPage() {
         {isCreator ? (
           <div className="rounded-2xl bg-gradient-card p-8 text-center shadow-card">
             <Check className="mx-auto h-10 w-10 text-primary" />
-            <h2 className="mt-3 text-xl font-bold text-foreground">Você já é criadora!</h2>
+            <h2 className="mt-3 text-xl font-bold text-foreground">
+              {tr("Você já é criadora!", "You're already a creator!")}
+            </h2>
           </div>
         ) : kyc?.status === "pending" ? (
           <div className="rounded-2xl border border-primary/30 bg-card p-8 text-center">
             <Clock className="mx-auto h-10 w-10 text-primary" />
             <h2 className="mt-3 text-xl font-bold text-foreground">{t("becomeCreator.banner.pending")}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Avisaremos por e-mail assim que aprovado.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tr("Avisaremos por e-mail assim que for aprovado.", "We'll email you as soon as it is approved.")}
+            </p>
           </div>
         ) : kyc?.status === "rejected" ? (
           <div className="rounded-2xl border border-destructive/30 bg-card p-8">
             <XCircle className="mx-auto h-10 w-10 text-destructive" />
-            <h2 className="mt-3 text-center text-xl font-bold text-foreground">Verificação rejeitada</h2>
+            <h2 className="mt-3 text-center text-xl font-bold text-foreground">
+              {tr("Verificação rejeitada", "Verification rejected")}
+            </h2>
             {kyc.rejection_reason && (
-              <p className="mt-2 text-center text-sm text-muted-foreground">Motivo: {kyc.rejection_reason}</p>
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                {tr("Motivo", "Reason")}: {kyc.rejection_reason}
+              </p>
             )}
             <div className="mt-6 text-center">
               <Button onClick={() => setStep("form")} className="bg-primary text-primary-foreground">
-                Reenviar verificação
+                {tr("Reenviar verificação", "Resubmit verification")}
               </Button>
             </div>
           </div>
@@ -95,7 +103,7 @@ function Intro({ onStart }: { onStart: () => void }) {
 }
 
 function KycForm({ onDone }: { onDone: () => void }) {
-  const { t } = useI18n();
+  const { t, tr } = useI18n();
   const { user } = useAuth();
   const [docType, setDocType] = useState("RG");
   const [front, setFront] = useState<File | null>(null);
@@ -109,8 +117,8 @@ function KycForm({ onDone }: { onDone: () => void }) {
 
   const upload = async (file: File, name: string) => {
     if (!user) throw new Error("no user");
-    if (file.size > MAX_SIZE) throw new Error(`${name}: arquivo maior que 8MB`);
-    if (!ALLOWED.includes(file.type)) throw new Error(`${name}: formato não aceito (use JPG/PNG/WEBP)`);
+    if (file.size > MAX_SIZE) throw new Error(`${name}: ${tr("arquivo maior que 8MB", "file is larger than 8MB")}`);
+    if (!ALLOWED.includes(file.type)) throw new Error(`${name}: ${tr("formato não aceito (use JPG/PNG/WEBP)", "unsupported format (use JPG/PNG/WEBP)")}`);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${user.id}/${Date.now()}-${name}.${ext}`;
     const { error } = await supabase.storage.from("kyc").upload(path, file, { upsert: false, contentType: file.type });
@@ -121,7 +129,7 @@ function KycForm({ onDone }: { onDone: () => void }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!front || !selfie || !accepted) {
-      toast.error("Preencha todos os campos obrigatórios.");
+      toast.error(tr("Preencha todos os campos obrigatórios.", "Complete all required fields."));
       return;
     }
     setLoading(true);
@@ -159,7 +167,7 @@ function KycForm({ onDone }: { onDone: () => void }) {
         >
           <option value="RG">RG</option>
           <option value="CNH">CNH</option>
-          <option value="Passport">Passaporte</option>
+          <option value="Passport">{tr("Passaporte", "Passport")}</option>
         </select>
       </div>
       <FileField label={t("becomeCreator.kyc.front")} onChange={setFront} />
@@ -182,10 +190,11 @@ function KycForm({ onDone }: { onDone: () => void }) {
 }
 
 function FileField({ label, onChange, optional }: { label: string; onChange: (f: File | null) => void; optional?: boolean }) {
+  const { tr } = useI18n();
   return (
     <div>
       <Label>
-        {label} {optional && <span className="text-xs text-muted-foreground">(opcional)</span>}
+        {label} {optional && <span className="text-xs text-muted-foreground">({tr("opcional", "optional")})</span>}
       </Label>
       <Input
         type="file"

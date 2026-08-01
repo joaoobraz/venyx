@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction } from "@/_server/admin-audit.server";
 
@@ -18,7 +18,7 @@ async function assertAdmin(userId: string) {
 }
 
 export const listUsersAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -77,7 +77,7 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
   });
 
 export const updateUserRoleAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -126,7 +126,7 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
   });
 
 export const adminDashboardStats = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
 

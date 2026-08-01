@@ -1,6 +1,20 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Wallet as WalletIcon, ArrowDownToLine, TrendingUp, Clock, CheckCircle2, XCircle, AlertCircle, Pencil, Receipt, Lock, Heart, Crown, Gift } from "lucide-react";
+import {
+  Wallet as WalletIcon,
+  ArrowDownToLine,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Pencil,
+  Receipt,
+  Lock,
+  Heart,
+  Crown,
+  Gift,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
@@ -29,6 +43,7 @@ import {
   requestWithdrawal,
   cancelWithdrawal,
 } from "@/_server/withdrawals.functions";
+import { useI18n, type Locale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/wallet")({
   component: WalletPage,
@@ -79,10 +94,11 @@ interface PlatformSettings {
   hold_days: number;
 }
 
-const fmt = (cents: number) =>
-  `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (cents: number, locale: Locale) =>
+  `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function WalletPage() {
+  const { locale, tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
 
@@ -92,7 +108,10 @@ function WalletPage() {
   const [kycApproved, setKycApproved] = useState(false);
   const [txs, setTxs] = useState<TxRow[]>([]);
   const [payerNames, setPayerNames] = useState<Record<string, string>>({});
-  const [settings, setSettings] = useState<PlatformSettings>({ platform_fee_pct: 15, hold_days: 1 });
+  const [settings, setSettings] = useState<PlatformSettings>({
+    platform_fee_pct: 15,
+    hold_days: 1,
+  });
 
   const [keyOpen, setKeyOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -121,7 +140,14 @@ function WalletPage() {
 
   const loadAll = useCallback(async () => {
     if (!user) return;
-    const [{ data: bal }, { data: k }, { data: ws }, { data: kyc }, { data: txList }, { data: ps }] = await Promise.all([
+    const [
+      { data: bal },
+      { data: k },
+      { data: ws },
+      { data: kyc },
+      { data: txList },
+      { data: ps },
+    ] = await Promise.all([
       supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
       supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
@@ -175,9 +201,11 @@ function WalletPage() {
         .select("user_id, username, display_name")
         .in("user_id", payerIds);
       const map: Record<string, string> = {};
-      (profs ?? []).forEach((p: { user_id: string; username: string; display_name: string | null }) => {
-        map[p.user_id] = p.display_name || p.username;
-      });
+      (profs ?? []).forEach(
+        (p: { user_id: string; username: string; display_name: string | null }) => {
+          map[p.user_id] = p.display_name || p.username;
+        },
+      );
       setPayerNames(map);
     } else {
       setPayerNames({});
@@ -194,11 +222,11 @@ function WalletPage() {
     setSubmitting(true);
     try {
       await upsertKeyFn({ data: keyForm });
-      toast.success("Chave PIX salva");
+      toast.success(tr("Chave Pix salva", "Pix key saved"));
       setKeyOpen(false);
       await loadAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+      toast.error(e instanceof Error ? e.message : tr("Erro ao salvar", "Could not save"));
     } finally {
       setSubmitting(false);
     }
@@ -207,31 +235,38 @@ function WalletPage() {
   const handleRequest = async () => {
     const amount = Math.round(parseFloat(amountStr.replace(",", ".")) * 100);
     if (isNaN(amount) || amount < 3000) {
-      toast.error("Valor mínimo: R$ 30,00");
+      toast.error(tr("Valor mínimo: R$ 30,00", "Minimum amount: R$ 30.00"));
       return;
     }
     setSubmitting(true);
     try {
       await requestFn({ data: { amount_cents: amount } });
-      toast.success("Saque solicitado! Aguarde aprovação do administrador.");
+      toast.success(
+        tr(
+          "Saque solicitado! Aguarde a aprovação da administração.",
+          "Withdrawal requested! Wait for admin approval.",
+        ),
+      );
       setWithdrawOpen(false);
       setAmountStr("");
       await loadAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao solicitar");
+      toast.error(
+        e instanceof Error ? e.message : tr("Erro ao solicitar", "Could not submit request"),
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Cancelar este saque?")) return;
+    if (!confirm(tr("Cancelar este saque?", "Cancel this withdrawal?"))) return;
     try {
       await cancelFn({ data: { withdrawal_id: id } });
-      toast.success("Saque cancelado");
+      toast.success(tr("Saque cancelado", "Withdrawal canceled"));
       await loadAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao cancelar");
+      toast.error(e instanceof Error ? e.message : tr("Erro ao cancelar", "Could not cancel"));
     }
   };
 
@@ -243,26 +278,32 @@ function WalletPage() {
         {/* Saldo principal */}
         <div className="rounded-2xl bg-gradient-primary p-6 text-primary-foreground shadow-glow">
           <div className="flex items-center gap-2 text-sm font-medium opacity-90">
-            <WalletIcon className="h-4 w-4" /> Saldo disponível
+            <WalletIcon className="h-4 w-4" /> {tr("Saldo disponível", "Available balance")}
           </div>
-          <div className="mt-2 text-4xl font-bold">{fmt(balance?.available_cents ?? 0)}</div>
+          <div className="mt-2 text-4xl font-bold">
+            {fmt(balance?.available_cents ?? 0, locale)}
+          </div>
           <div className="mt-1 text-xs opacity-80">
-            Já com taxa da plataforma (15%) descontada · Liberado após D+1
+            {tr(
+              "Taxa da plataforma já descontada · Liberação após D+1",
+              "Platform fee already deducted · Released after D+1",
+            )}
           </div>
           <Button
             onClick={() => setWithdrawOpen(true)}
             disabled={!canRequest}
             className="mt-4 bg-black/20 backdrop-blur-sm hover:bg-black/30 disabled:opacity-50"
           >
-            <ArrowDownToLine className="mr-2 h-4 w-4" /> Solicitar saque PIX
+            <ArrowDownToLine className="mr-2 h-4 w-4" />{" "}
+            {tr("Solicitar saque Pix", "Request Pix withdrawal")}
           </Button>
           {!kycApproved && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-black/20 p-2 text-xs">
               <AlertCircle className="h-3.5 w-3.5" />
               <span>
-                KYC obrigatório para sacar.{" "}
+                {tr("KYC obrigatório para sacar.", "KYC is required for withdrawals.")}{" "}
                 <Link to="/settings/security" className="underline">
-                  Enviar documentos
+                  {tr("Enviar documentos", "Submit documents")}
                 </Link>
               </span>
             </div>
@@ -270,56 +311,84 @@ function WalletPage() {
           {kycApproved && !key && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-black/20 p-2 text-xs">
               <AlertCircle className="h-3.5 w-3.5" />
-              <span>Cadastre sua chave PIX abaixo para habilitar saques.</span>
+              <span>
+                {tr(
+                  "Cadastre sua chave Pix abaixo para habilitar saques.",
+                  "Add your Pix key below to enable withdrawals.",
+                )}
+              </span>
             </div>
           )}
         </div>
 
         {/* Mini-cards */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MiniCard label="Pendente (D+1)" value={fmt(balance?.pending_cents ?? 0)} icon={Clock} />
-          <MiniCard label="Em saque" value={fmt(balance?.in_flight_cents ?? 0)} icon={ArrowDownToLine} />
-          <MiniCard label="Total sacado" value={fmt(balance?.total_withdrawn_cents ?? 0)} icon={CheckCircle2} />
-          <MiniCard label="Ganhos líquidos" value={fmt(balance?.net_lifetime_cents ?? 0)} icon={TrendingUp} />
+          <MiniCard
+            label={tr("Pendente (D+1)", "Pending (D+1)")}
+            value={fmt(balance?.pending_cents ?? 0, locale)}
+            icon={Clock}
+          />
+          <MiniCard
+            label={tr("Em saque", "In withdrawal")}
+            value={fmt(balance?.in_flight_cents ?? 0, locale)}
+            icon={ArrowDownToLine}
+          />
+          <MiniCard
+            label={tr("Total sacado", "Total withdrawn")}
+            value={fmt(balance?.total_withdrawn_cents ?? 0, locale)}
+            icon={CheckCircle2}
+          />
+          <MiniCard
+            label={tr("Ganhos líquidos", "Net earnings")}
+            value={fmt(balance?.net_lifetime_cents ?? 0, locale)}
+            icon={TrendingUp}
+          />
         </div>
 
         {/* Chave PIX */}
         <div className="rounded-2xl bg-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <WalletIcon className="h-4 w-4 text-primary" /> Chave PIX para saque
+              <WalletIcon className="h-4 w-4 text-primary" />{" "}
+              {tr("Chave Pix para saque", "Withdrawal Pix key")}
             </div>
             <Button size="sm" variant="ghost" onClick={() => setKeyOpen(true)}>
-              <Pencil className="mr-1 h-3.5 w-3.5" /> {key ? "Editar" : "Cadastrar"}
+              <Pencil className="mr-1 h-3.5 w-3.5" />{" "}
+              {key ? tr("Editar", "Edit") : tr("Cadastrar", "Add")}
             </Button>
           </div>
           {key ? (
             <div className="mt-3 space-y-1 text-sm">
               <div>
-                <span className="text-muted-foreground">Tipo:</span>{" "}
+                <span className="text-muted-foreground">{tr("Tipo", "Type")}:</span>{" "}
                 <span className="font-medium uppercase">{key.pix_key_type}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Chave:</span>{" "}
+                <span className="text-muted-foreground">{tr("Chave", "Key")}:</span>{" "}
                 <span className="font-medium">{key.pix_key}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Titular:</span>{" "}
+                <span className="text-muted-foreground">{tr("Titular", "Account holder")}:</span>{" "}
                 <span className="font-medium">{key.holder_name}</span>
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-muted-foreground">Nenhuma chave cadastrada.</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {tr("Nenhuma chave cadastrada.", "No key registered.")}
+            </p>
           )}
         </div>
 
         {/* Histórico de saques */}
         <div className="rounded-2xl bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <ArrowDownToLine className="h-4 w-4 text-primary" /> Meus saques
+            <ArrowDownToLine className="h-4 w-4 text-primary" />{" "}
+            {tr("Meus saques", "My withdrawals")}
           </div>
           {withdrawals.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">Nenhum saque ainda.</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {tr("Nenhum saque ainda.", "No withdrawals yet.")}
+            </p>
           ) : (
             <div className="mt-3 space-y-2">
               {withdrawals.map((w) => (
@@ -328,13 +397,13 @@ function WalletPage() {
                   className="flex items-center justify-between rounded-lg bg-background p-3 text-sm"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-foreground">{fmt(w.amount_cents)}</div>
+                    <div className="font-medium text-foreground">{fmt(w.amount_cents, locale)}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {new Date(w.created_at).toLocaleString("pt-BR")} · {w.pix_key}
+                      {new Date(w.created_at).toLocaleString(locale)} · {w.pix_key}
                     </div>
                     {w.rejection_reason && (
                       <div className="mt-1 text-[11px] text-destructive">
-                        Motivo: {w.rejection_reason}
+                        {tr("Motivo", "Reason")}: {w.rejection_reason}
                       </div>
                     )}
                   </div>
@@ -347,7 +416,7 @@ function WalletPage() {
                         className="h-7 px-2 text-xs"
                         onClick={() => handleCancel(w.id)}
                       >
-                        Cancelar
+                        {tr("Cancelar", "Cancel")}
                       </Button>
                     )}
                   </div>
@@ -360,14 +429,20 @@ function WalletPage() {
         {/* Histórico detalhado de transações */}
         <div className="rounded-2xl bg-card p-6">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Receipt className="h-4 w-4 text-primary" /> Histórico de transações
+            <Receipt className="h-4 w-4 text-primary" />{" "}
+            {tr("Histórico de transações", "Transaction history")}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cada venda paga, com a taxa da plataforma ({settings.platform_fee_pct}%) descontada e o
-            status do hold de D+{settings.hold_days}.
+            {tr(
+              "Cada venda paga, com a taxa da plataforma descontada e o status da retenção",
+              "Every paid sale, with the platform fee deducted and hold status",
+            )}{" "}
+            ({settings.platform_fee_pct}% · D+{settings.hold_days}).
           </p>
           {txs.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Nenhuma venda registrada ainda.</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {tr("Nenhuma venda registrada ainda.", "No sales recorded yet.")}
+            </p>
           ) : (
             <div className="mt-4 space-y-2">
               {txs.map((t) => {
@@ -385,34 +460,39 @@ function WalletPage() {
                         <TxIcon type={t.type} />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-medium text-foreground">{txLabel(t.type)}</span>
+                            <span className="font-medium text-foreground">
+                              {txLabel(t.type, tr)}
+                            </span>
                             {t.payer_id && payerNames[t.payer_id] && (
                               <span className="text-xs text-muted-foreground">
-                                de @{payerNames[t.payer_id]}
+                                {tr("de", "from")} @{payerNames[t.payer_id]}
                               </span>
                             )}
                           </div>
                           <div className="mt-0.5 text-[11px] text-muted-foreground">
-                            {new Date(t.created_at).toLocaleString("pt-BR")}
+                            {new Date(t.created_at).toLocaleString(locale)}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-foreground">+{fmt(net)}</div>
+                        <div className="font-semibold text-foreground">+{fmt(net, locale)}</div>
                         <div className="text-[10px] text-muted-foreground">
-                          bruto {fmt(t.amount_cents)} − taxa {fmt(fee)}
+                          {tr("bruto", "gross")} {fmt(t.amount_cents, locale)} − {tr("taxa", "fee")}{" "}
+                          {fmt(fee, locale)}
                         </div>
                       </div>
                     </div>
                     <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
                       {isAvailable ? (
                         <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-600">
-                          <CheckCircle2 className="h-3 w-3" /> Liberado em disponível
+                          <CheckCircle2 className="h-3 w-3" />{" "}
+                          {tr("Liberado no saldo disponível", "Released to available balance")}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-[10px] font-medium text-yellow-600">
-                          <Lock className="h-3 w-3" /> Pendente · libera{" "}
-                          {releaseAt.toLocaleString("pt-BR", {
+                          <Lock className="h-3 w-3" />{" "}
+                          {tr("Pendente · libera", "Pending · releases")}{" "}
+                          {releaseAt.toLocaleString(locale, {
                             day: "2-digit",
                             month: "2-digit",
                             hour: "2-digit",
@@ -433,15 +513,17 @@ function WalletPage() {
       <Dialog open={keyOpen} onOpenChange={setKeyOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Chave PIX para saque</DialogTitle>
+            <DialogTitle>{tr("Chave Pix para saque", "Withdrawal Pix key")}</DialogTitle>
             <DialogDescription>
-              Esta chave receberá os pagamentos quando você solicitar saque. Os dados do titular
-              precisam bater com o KYC aprovado.
+              {tr(
+                "Esta chave receberá os pagamentos dos seus saques. Os dados do titular devem corresponder ao KYC aprovado.",
+                "Withdrawal payments will be sent to this key. The account-holder details must match the approved KYC.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Tipo de chave</Label>
+              <Label>{tr("Tipo de chave", "Key type")}</Label>
               <Select
                 value={keyForm.pix_key_type}
                 onValueChange={(v) =>
@@ -455,42 +537,42 @@ function WalletPage() {
                   <SelectItem value="cpf">CPF</SelectItem>
                   <SelectItem value="cnpj">CNPJ</SelectItem>
                   <SelectItem value="email">E-mail</SelectItem>
-                  <SelectItem value="phone">Telefone</SelectItem>
-                  <SelectItem value="random">Chave aleatória</SelectItem>
+                  <SelectItem value="phone">{tr("Telefone", "Phone")}</SelectItem>
+                  <SelectItem value="random">{tr("Chave aleatória", "Random key")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Chave PIX</Label>
+              <Label>{tr("Chave Pix", "Pix key")}</Label>
               <Input
                 value={keyForm.pix_key}
                 onChange={(e) => setKeyForm((f) => ({ ...f, pix_key: e.target.value }))}
-                placeholder="Digite a chave"
+                placeholder={tr("Digite a chave", "Enter the key")}
               />
             </div>
             <div>
-              <Label>Nome do titular</Label>
+              <Label>{tr("Nome do titular", "Account-holder name")}</Label>
               <Input
                 value={keyForm.holder_name}
                 onChange={(e) => setKeyForm((f) => ({ ...f, holder_name: e.target.value }))}
-                placeholder="Nome completo"
+                placeholder={tr("Nome completo", "Full name")}
               />
             </div>
             <div>
-              <Label>CPF/CNPJ do titular</Label>
+              <Label>{tr("CPF/CNPJ do titular", "Account-holder CPF/CNPJ")}</Label>
               <Input
                 value={keyForm.holder_document}
                 onChange={(e) => setKeyForm((f) => ({ ...f, holder_document: e.target.value }))}
-                placeholder="Apenas números"
+                placeholder={tr("Apenas números", "Numbers only")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setKeyOpen(false)}>
-              Cancelar
+              {tr("Cancelar", "Cancel")}
             </Button>
             <Button onClick={handleSaveKey} disabled={submitting}>
-              {submitting ? "Salvando..." : "Salvar"}
+              {submitting ? tr("Salvando...", "Saving...") : tr("Salvar", "Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -500,15 +582,16 @@ function WalletPage() {
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Solicitar saque</DialogTitle>
+            <DialogTitle>{tr("Solicitar saque", "Request withdrawal")}</DialogTitle>
             <DialogDescription>
-              Saque mínimo: R$ 30,00 · Disponível: {fmt(balance?.available_cents ?? 0)} · Será
-              enviado para: <strong>{key?.pix_key}</strong>
+              {tr("Saque mínimo", "Minimum withdrawal")}: R$ 30,00 · {tr("Disponível", "Available")}
+              : {fmt(balance?.available_cents ?? 0, locale)} ·{" "}
+              {tr("Será enviado para", "Will be sent to")}: <strong>{key?.pix_key}</strong>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Valor (R$)</Label>
+              <Label>{tr("Valor (R$)", "Amount (R$)")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -522,23 +605,24 @@ function WalletPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setAmountStr(((balance?.available_cents ?? 0) / 100).toFixed(2))
-                }
+                onClick={() => setAmountStr(((balance?.available_cents ?? 0) / 100).toFixed(2))}
               >
-                Sacar tudo
+                {tr("Sacar tudo", "Withdraw all")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Após solicitar, o admin aprova e o PIX é enviado em até 1 dia útil.
+              {tr(
+                "Após a solicitação, a administração aprova e o Pix é enviado em até um dia útil.",
+                "After your request, an admin approves it and the Pix payment is sent within one business day.",
+              )}
             </p>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setWithdrawOpen(false)}>
-              Cancelar
+              {tr("Cancelar", "Cancel")}
             </Button>
             <Button onClick={handleRequest} disabled={submitting}>
-              {submitting ? "Enviando..." : "Solicitar"}
+              {submitting ? tr("Enviando...", "Submitting...") : tr("Solicitar", "Request")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -567,32 +651,55 @@ function MiniCard({
 }
 
 function StatusBadge({ status }: { status: Withdrawal["status"] }) {
+  const { tr } = useI18n();
   const map = {
-    pending: { label: "Pendente", cls: "bg-yellow-500/15 text-yellow-600", Icon: Clock },
-    approved: { label: "Aprovado", cls: "bg-blue-500/15 text-blue-600", Icon: CheckCircle2 },
-    processing: { label: "Processando", cls: "bg-blue-500/15 text-blue-600", Icon: Clock },
-    paid: { label: "Pago", cls: "bg-green-500/15 text-green-600", Icon: CheckCircle2 },
-    rejected: { label: "Rejeitado", cls: "bg-destructive/15 text-destructive", Icon: XCircle },
-    canceled: { label: "Cancelado", cls: "bg-muted text-muted-foreground", Icon: XCircle },
+    pending: {
+      label: tr("Pendente", "Pending"),
+      cls: "bg-yellow-500/15 text-yellow-600",
+      Icon: Clock,
+    },
+    approved: {
+      label: tr("Aprovado", "Approved"),
+      cls: "bg-blue-500/15 text-blue-600",
+      Icon: CheckCircle2,
+    },
+    processing: {
+      label: tr("Processando", "Processing"),
+      cls: "bg-blue-500/15 text-blue-600",
+      Icon: Clock,
+    },
+    paid: { label: tr("Pago", "Paid"), cls: "bg-green-500/15 text-green-600", Icon: CheckCircle2 },
+    rejected: {
+      label: tr("Rejeitado", "Rejected"),
+      cls: "bg-destructive/15 text-destructive",
+      Icon: XCircle,
+    },
+    canceled: {
+      label: tr("Cancelado", "Canceled"),
+      cls: "bg-muted text-muted-foreground",
+      Icon: XCircle,
+    },
   } as const;
   const m = map[status];
   return (
-    <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.cls}`}>
+    <span
+      className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.cls}`}
+    >
       <m.Icon className="h-3 w-3" /> {m.label}
     </span>
   );
 }
 
-function txLabel(type: string): string {
+function txLabel(type: string, tr: (pt: string, en: string) => string): string {
   switch (type) {
     case "subscription":
-      return "Assinatura";
+      return tr("Assinatura", "Subscription");
     case "ppv":
       return "Pay-per-view";
     case "tip":
-      return "Tip recebido";
+      return tr("Mimo recebido", "Tip received");
     case "affiliate_commission":
-      return "Comissão de afiliado";
+      return tr("Comissão de afiliado", "Affiliate commission");
     default:
       return type;
   }

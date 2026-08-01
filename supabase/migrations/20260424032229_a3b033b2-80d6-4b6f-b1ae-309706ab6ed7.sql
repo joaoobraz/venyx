@@ -1,3 +1,6 @@
+-- Fresh projects do not have pg_cron enabled by default.
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
 -- Remove qualquer agendamento antigo que chamava o endpoint HTTP
 DO $$
 DECLARE

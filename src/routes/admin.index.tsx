@@ -11,10 +11,12 @@ import {
   Store,
   Crown,
   Loader2,
+  Flag,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/lib/i18n";
 import {
   requireAdminServer,
 } from "@/_server/admin.functions";
@@ -47,6 +49,7 @@ type Stats = {
 };
 
 function AdminHomePage() {
+  const { tr } = useI18n();
   const getStats = useServerFn(adminDashboardStats);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,28 +62,28 @@ function AdminHomePage() {
 
   const cards = [
     {
-      title: "KYC pendentes",
+      title: tr("KYC pendentes", "Pending KYC"),
       value: stats?.pendingKyc ?? 0,
       icon: ShieldCheck,
       link: "/admin/kyc",
       tone: "amber",
     },
     {
-      title: "Saques pendentes",
+      title: tr("Saques pendentes", "Pending payouts"),
       value: stats?.pendingWithdrawals ?? 0,
       icon: Banknote,
       link: "/admin/payouts",
       tone: "amber",
     },
     {
-      title: "Denúncias DMCA",
+      title: tr("Denúncias DMCA", "DMCA reports"),
       value: stats?.pendingDmca ?? 0,
       icon: FileWarning,
       link: "/admin/dmca",
       tone: "rose",
     },
     {
-      title: "Moderação",
+      title: tr("Moderação", "Moderation"),
       value: "—",
       icon: Eye,
       link: "/admin/moderation",
@@ -90,45 +93,51 @@ function AdminHomePage() {
 
   const sections = [
     {
-      title: "Usuários & Cargos",
+      title: tr("Usuários & Cargos", "Users & Roles"),
       description:
-        "Gerenciar usuários, atribuir cargos (Seller, Creator, Admin, Embaixadora).",
+        tr("Gerenciar usuários, atribuir cargos (Seller, Creator, Admin, Embaixadora).", "Manage users and assign Seller, Creator, Admin and Ambassador roles."),
       icon: UserCog,
       link: "/admin/users",
     },
     {
       title: "KYC",
-      description: "Aprovar ou rejeitar verificações de identidade.",
+      description: tr("Aprovar ou rejeitar verificações de identidade.", "Approve or reject identity checks."),
       icon: ShieldCheck,
       link: "/admin/kyc",
     },
     {
-      title: "Saques",
-      description: "Aprovar, marcar como pago ou rejeitar saques de criadoras.",
+      title: tr("Saques", "Payouts"),
+      description: tr("Aprovar, marcar como pago ou rejeitar saques de criadoras.", "Approve, pay or reject creator payouts."),
       icon: Banknote,
       link: "/admin/payouts",
     },
     {
       title: "DMCA",
-      description: "Revisar denúncias de conteúdo vazado.",
+      description: tr("Revisar denúncias de conteúdo vazado.", "Review leaked-content reports."),
       icon: FileWarning,
       link: "/admin/dmca",
     },
     {
-      title: "Moderação",
-      description: "Revisar mídias sinalizadas pela moderação automática.",
+      title: tr("Denúncias de usuários", "User reports"),
+      description: tr("Revisar denúncias de posts, perfis, mensagens e conversas.", "Review reports about posts, profiles, messages and conversations."),
+      icon: Flag,
+      link: "/admin/reports",
+    },
+    {
+      title: tr("Moderação", "Moderation"),
+      description: tr("Revisar mídias sinalizadas pela moderação automática.", "Review media flagged by automated moderation."),
       icon: Eye,
       link: "/admin/moderation",
     },
     {
-      title: "Auditoria de acessos",
-      description: "Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.",
+      title: tr("Auditoria de acessos", "Access audit"),
+      description: tr("Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.", "Allowed and denied access attempts to /admin routes, including IP."),
       icon: ShieldCheck,
       link: "/admin/audit",
     },
     {
-      title: "Auditoria de ações",
-      description: "Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.",
+      title: tr("Auditoria de ações", "Action audit"),
+      description: tr("Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.", "History of KYC decisions, DMCA updates and role assignments."),
       icon: ShieldCheck,
       link: "/admin/actions-audit",
     },
@@ -141,10 +150,10 @@ function AdminHomePage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <ShieldCheck className="h-7 w-7 text-primary" />
-              Painel Admin
+              {tr("Painel Admin", "Admin Dashboard")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Visão geral e atalhos para todas as áreas administrativas.
+              {tr("Visão geral e atalhos para todas as áreas administrativas.", "Overview and shortcuts to every administrative area.")}
             </p>
           </div>
         </div>
@@ -152,13 +161,13 @@ function AdminHomePage() {
         {/* Stats top row */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <StatCard
-            label="Usuários"
+            label={tr("Usuários", "Users")}
             value={stats?.totalUsers ?? 0}
             icon={Users}
             loading={loading}
           />
           <StatCard
-            label="Criadoras"
+            label={tr("Criadoras", "Creators")}
             value={stats?.totalCreators ?? 0}
             icon={Crown}
             loading={loading}
@@ -173,7 +182,7 @@ function AdminHomePage() {
 
         {/* Pending alerts */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Pendências</h2>
+          <h2 className="text-lg font-semibold mb-3">{tr("Pendências", "Pending items")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {cards.map((c) => (
               <Link key={c.link} to={c.link}>
@@ -196,7 +205,7 @@ function AdminHomePage() {
 
         {/* Sections grid */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Áreas administrativas</h2>
+          <h2 className="text-lg font-semibold mb-3">{tr("Áreas administrativas", "Administrative areas")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {sections.map((s) => (
               <Link key={s.link} to={s.link}>

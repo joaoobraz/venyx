@@ -11,12 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +25,7 @@ import {
   markWithdrawalPaid,
   rejectWithdrawal,
 } from "@/_server/withdrawals.functions";
+import { useI18n, type Locale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/payouts")({
   beforeLoad: async () => {
@@ -64,10 +60,11 @@ interface CreatorMini {
   display_name: string | null;
 }
 
-const fmt = (cents: number) =>
-  `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+const fmt = (cents: number, locale: Locale) =>
+  `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
 
 function AdminPayoutsPage() {
+  const { locale, tr } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -140,10 +137,15 @@ function AdminPayoutsPage() {
   const handleApprove = async (id: string) => {
     try {
       await approveFn({ data: { withdrawal_id: id, notes: null } });
-      toast.success("Aprovado. Agora pague o PIX e marque como pago.");
+      toast.success(
+        tr(
+          "Aprovado. Agora pague o Pix e marque como pago.",
+          "Approved. Send the Pix payment, then mark it as paid.",
+        ),
+      );
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     }
   };
 
@@ -158,12 +160,12 @@ function AdminPayoutsPage() {
           notes: null,
         },
       });
-      toast.success("Saque marcado como pago");
+      toast.success(tr("Saque marcado como pago", "Withdrawal marked as paid"));
       setPaying(null);
       setReceipt("");
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setSubmitting(false);
     }
@@ -174,12 +176,12 @@ function AdminPayoutsPage() {
     setSubmitting(true);
     try {
       await rejectFn({ data: { withdrawal_id: rejecting.id, reason: reason.trim() } });
-      toast.success("Saque rejeitado");
+      toast.success(tr("Saque rejeitado", "Withdrawal rejected"));
       setRejecting(null);
       setReason("");
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setSubmitting(false);
     }
@@ -187,7 +189,7 @@ function AdminPayoutsPage() {
 
   const copy = (txt: string) => {
     navigator.clipboard.writeText(txt);
-    toast.success("Copiado");
+    toast.success(tr("Copiado", "Copied"));
   };
 
   return (
@@ -195,25 +197,29 @@ function AdminPayoutsPage() {
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center gap-2">
           <ArrowDownToLine className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-bold">Saques (Admin)</h1>
+          <h1 className="text-2xl font-bold">{tr("Saques (Admin)", "Withdrawals (Admin)")}</h1>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
             <TabsTrigger value="pending">
-              Pendentes ({items.filter((w) => w.status === "pending").length})
+              {tr("Pendentes", "Pending")} ({items.filter((w) => w.status === "pending").length})
             </TabsTrigger>
             <TabsTrigger value="approved">
-              Em pagamento (
+              {tr("Em pagamento", "Processing")} (
               {items.filter((w) => w.status === "approved" || w.status === "processing").length})
             </TabsTrigger>
-            <TabsTrigger value="paid">Pagos</TabsTrigger>
-            <TabsTrigger value="rejected">Rejeitados/Cancelados</TabsTrigger>
+            <TabsTrigger value="paid">{tr("Pagos", "Paid")}</TabsTrigger>
+            <TabsTrigger value="rejected">
+              {tr("Rejeitados/Cancelados", "Rejected/Canceled")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4 space-y-3">
             {filtered.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum item nesta lista.</p>
+              <p className="text-sm text-muted-foreground">
+                {tr("Nenhum item nesta lista.", "No items in this list.")}
+              </p>
             )}
             {filtered.map((w) => {
               const c = creators[w.creator_id];
@@ -221,30 +227,29 @@ function AdminPayoutsPage() {
                 <div key={w.id} className="rounded-xl bg-card p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="text-lg font-bold text-foreground">{fmt(w.amount_cents)}</div>
+                      <div className="text-lg font-bold text-foreground">
+                        {fmt(w.amount_cents, locale)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {c ? `@${c.username}` : w.creator_id} ·{" "}
-                        {new Date(w.created_at).toLocaleString("pt-BR")}
+                        {new Date(w.created_at).toLocaleString(locale)}
                       </div>
                     </div>
                     <div className="flex gap-2">
                       {w.status === "pending" && (
                         <>
                           <Button size="sm" onClick={() => handleApprove(w.id)}>
-                            Aprovar
+                            {tr("Aprovar", "Approve")}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setRejecting(w)}
-                          >
-                            Rejeitar
+                          <Button size="sm" variant="outline" onClick={() => setRejecting(w)}>
+                            {tr("Rejeitar", "Reject")}
                           </Button>
                         </>
                       )}
                       {(w.status === "approved" || w.status === "processing") && (
                         <Button size="sm" onClick={() => setPaying(w)}>
-                          <Check className="mr-1 h-3.5 w-3.5" /> Marcar como pago
+                          <Check className="mr-1 h-3.5 w-3.5" />{" "}
+                          {tr("Marcar como pago", "Mark as paid")}
                         </Button>
                       )}
                       {w.status === "paid" && w.receipt_url && (
@@ -254,16 +259,20 @@ function AdminPayoutsPage() {
                           rel="noreferrer"
                           className="text-xs text-primary underline flex items-center gap-1"
                         >
-                          Comprovante <ExternalLink className="h-3 w-3" />
+                          {tr("Comprovante", "Receipt")} <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                     </div>
                   </div>
 
                   <div className="mt-3 grid gap-2 rounded-lg bg-background p-3 text-xs sm:grid-cols-2">
-                    <Field label="Tipo" value={w.pix_key_type.toUpperCase()} />
-                    <Field label="Chave PIX" value={w.pix_key} onCopy={() => copy(w.pix_key)} />
-                    <Field label="Titular" value={w.holder_name} />
+                    <Field label={tr("Tipo", "Type")} value={w.pix_key_type.toUpperCase()} />
+                    <Field
+                      label={tr("Chave Pix", "Pix key")}
+                      value={w.pix_key}
+                      onCopy={() => copy(w.pix_key)}
+                    />
+                    <Field label={tr("Titular", "Account holder")} value={w.holder_name} />
                     <Field
                       label="CPF/CNPJ"
                       value={w.holder_document}
@@ -273,12 +282,12 @@ function AdminPayoutsPage() {
 
                   {w.rejection_reason && (
                     <div className="mt-2 text-xs text-destructive">
-                      Rejeição: {w.rejection_reason}
+                      {tr("Rejeição", "Rejection")}: {w.rejection_reason}
                     </div>
                   )}
                   {w.paid_at && (
                     <div className="mt-2 text-xs text-green-600">
-                      Pago em {new Date(w.paid_at).toLocaleString("pt-BR")}
+                      {tr("Pago em", "Paid on")} {new Date(w.paid_at).toLocaleString(locale)}
                     </div>
                   )}
                 </div>
@@ -292,14 +301,16 @@ function AdminPayoutsPage() {
       <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Marcar como pago</DialogTitle>
+            <DialogTitle>{tr("Marcar como pago", "Mark as paid")}</DialogTitle>
             <DialogDescription>
-              Confirme que você enviou o PIX de {paying && fmt(paying.amount_cents)} para{" "}
-              <strong>{paying?.pix_key}</strong>. Isso debita o saldo da criadora.
+              {tr("Confirme que você enviou o Pix de", "Confirm that you sent the Pix payment of")}{" "}
+              {paying && fmt(paying.amount_cents, locale)} {tr("para", "to")}{" "}
+              <strong>{paying?.pix_key}</strong>.{" "}
+              {tr("Isso debita o saldo da criadora.", "This deducts the creator's balance.")}
             </DialogDescription>
           </DialogHeader>
           <div>
-            <Label>Link do comprovante (opcional)</Label>
+            <Label>{tr("Link do comprovante (opcional)", "Receipt link (optional)")}</Label>
             <Input
               value={receipt}
               onChange={(e) => setReceipt(e.target.value)}
@@ -308,10 +319,10 @@ function AdminPayoutsPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPaying(null)}>
-              Cancelar
+              {tr("Cancelar", "Cancel")}
             </Button>
             <Button onClick={handlePay} disabled={submitting}>
-              Confirmar pagamento
+              {tr("Confirmar pagamento", "Confirm payment")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -321,27 +332,33 @@ function AdminPayoutsPage() {
       <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rejeitar saque</DialogTitle>
+            <DialogTitle>{tr("Rejeitar saque", "Reject withdrawal")}</DialogTitle>
             <DialogDescription>
-              Informe o motivo. A criadora verá esse texto no histórico.
+              {tr(
+                "Informe o motivo. A criadora verá esse texto no histórico.",
+                "Enter a reason. The creator will see it in their history.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Ex: chave PIX não bate com o nome do KYC"
+            placeholder={tr(
+              "Ex.: a chave Pix não corresponde ao nome do KYC",
+              "E.g. Pix key does not match the KYC name",
+            )}
             rows={4}
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRejecting(null)}>
-              Cancelar
+              {tr("Cancelar", "Cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleReject}
               disabled={submitting || reason.trim().length < 3}
             >
-              Rejeitar
+              {tr("Rejeitar", "Reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -350,15 +367,7 @@ function AdminPayoutsPage() {
   );
 }
 
-function Field({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  onCopy?: () => void;
-}) {
+function Field({ label, value, onCopy }: { label: string; value: string; onCopy?: () => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">

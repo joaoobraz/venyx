@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crown, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_CREATORS, DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { useI18n } from "@/lib/i18n";
 
 interface TopCreator {
   user_id: string;
@@ -12,19 +14,48 @@ interface TopCreator {
   score: number;
 }
 
-export function TopCreators({ limit = 50, compact = false }: { limit?: number; compact?: boolean }) {
+const MAX_RANKING_SIZE = 15;
+const RANKING_CACHE_MS = 6 * 60 * 60 * 1000;
+const RANKING_CACHE_KEY = "venyx:top-creators:v2";
+
+export function TopCreators({ limit = 15, compact = false }: { limit?: number; compact?: boolean }) {
+  const { t } = useI18n();
   const [creators, setCreators] = useState<TopCreator[]>([]);
   const [loading, setLoading] = useState(true);
+  const safeLimit = Math.min(MAX_RANKING_SIZE, Math.max(1, limit));
 
   useEffect(() => {
     (async () => {
-      // Buscar criadoras (quem tem role 'creator')
-      const { data: roles } = await supabase
+      try {
+        const cached = localStorage.getItem(RANKING_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached) as { savedAt: number; creators: TopCreator[] };
+          if (Date.now() - parsed.savedAt < RANKING_CACHE_MS) {
+            setCreators(parsed.creators.slice(0, safeLimit));
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Cache is only an optimization.
+      }
+
+      const [{ data: roles }, { data: plans }] = await Promise.all([
+        supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "creator");
-      const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
+        .eq("role", "creator"),
+        supabase
+          .from("subscription_plans")
+          .select("creator_id")
+          .eq("is_active", true),
+      ]);
+      const planIds = new Set((plans ?? []).map((plan) => plan.creator_id));
+      const ids = Array.from(
+        new Set((roles ?? []).map((role) => role.user_id).filter((id) => planIds.has(id))),
+      );
       if (ids.length === 0) {
+        if (DEMO_MODE) setCreators(DEMO_CREATORS.slice(0, safeLimit));
         setLoading(false);
         return;
       }
@@ -49,27 +80,44 @@ export function TopCreators({ limit = 50, compact = false }: { limit?: number; c
       const ranked: TopCreator[] = (profs ?? [])
         .map((p) => ({
           ...p,
+          avatar_url: DEMO_MODE ? getDemoAsset(p.username).avatar_url : p.avatar_url,
           score:
             (followCount.get(p.user_id) ?? 0) * 100 +
             (likesSum.get(p.user_id) ?? 0) +
             (p.is_verified ? 500 : 0),
         }))
         .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+        .slice(0, safeLimit);
       setCreators(ranked);
+      try {
+        localStorage.setItem(
+          RANKING_CACHE_KEY,
+          JSON.stringify({ savedAt: Date.now(), creators: ranked }),
+        );
+      } catch {
+        // Cache is only an optimization.
+      }
       setLoading(false);
     })();
-  }, [limit]);
+  }, [safeLimit]);
 
   if (loading) return null;
-  if (creators.length === 0) return null;
+  if (creators.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-border p-6 text-center">
+        <h2 className="font-display text-lg font-semibold text-foreground">{t("top.empty.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("top.empty.body")}</p>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
         <Trophy className="h-5 w-5 text-primary" />
-        <span className="text-gradient-gold font-display">Top {limit} Criadoras</span>
+        <span className="text-gradient-gold font-display">{t("top.title")}</span>
       </h2>
+      <p className="text-xs text-muted-foreground">{t("top.refresh")}</p>
       <div className={compact ? "flex gap-3 overflow-x-auto pb-2" : "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"}>
         {creators.map((c, idx) => (
           <Link
