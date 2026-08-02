@@ -107,11 +107,6 @@ function ProfilePage() {
       setLoading(false);
       return;
     }
-    if (DEMO_MODE) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
     supabase
       .from("profiles")
       .select("*")
