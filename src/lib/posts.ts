@@ -1,26 +1,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { PostWithRelations } from "@/components/PostCard";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
-
-function demoCommentsCount(postId: string) {
-  if (!DEMO_MODE || typeof window === "undefined") return 0;
-  try {
-    const comments = JSON.parse(
-      localStorage.getItem(`venyx-demo-comments:${postId}`) ?? "[]",
-    ) as unknown[];
-    return comments.length;
-  } catch {
-    return 0;
-  }
-}
+import { DEMO_MODE } from "@/lib/demo-creators";
+import { getDemoPosts, type DemoLocale } from "@/lib/demo-content";
 
 export async function fetchPosts(opts: {
   creatorId?: string;
   postId?: string;
   viewerId?: string | null;
   limit?: number;
+  locale?: DemoLocale;
 }): Promise<PostWithRelations[]> {
-  const { creatorId, postId, viewerId, limit = 30 } = opts;
+  const { creatorId, postId, viewerId, limit = 30, locale = "pt-BR" } = opts;
+  if (DEMO_MODE) {
+    return getDemoPosts({ creatorId, postId, viewerId, limit, locale });
+  }
   let q = supabase
     .from("posts")
     .select("id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at")
@@ -113,7 +106,6 @@ export async function fetchPosts(opts: {
       if (hiddenCreators.has(p.creator_id)) return null;
       const a = authorByUid.get(p.creator_id);
       if (!a) return null;
-      const demo = DEMO_MODE ? getDemoAsset(a.username) : null;
       const goal = goalByPost.get(p.id);
       return {
         id: p.id,
@@ -122,9 +114,9 @@ export async function fetchPosts(opts: {
         visibility: p.visibility,
         price_cents: p.price_cents,
         likes_count: p.likes_count,
-        comments_count: DEMO_MODE ? demoCommentsCount(p.id) : p.comments_count,
+        comments_count: p.comments_count,
         created_at: p.created_at,
-        author: demo ? { ...a, avatar_url: demo.avatar_url } : a,
+        author: a,
         media: (mediaByPost.get(p.id) ?? []).sort((a, b) => a.position - b.position),
         unlocked: unlocks.has(p.id),
         subscribed: subs.has(p.creator_id),

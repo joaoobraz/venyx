@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -14,6 +14,9 @@ import {
   Star,
   ExternalLink,
 } from "lucide-react";
+import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
+import { normalizeCreatorLinkUrl } from "@/lib/creator-link-url";
+import { recordPublicLinkEvent } from "@/lib/link-analytics";
 
 export const Route = createFileRoute("/links/$username")({
   component: PublicLinksPage,
@@ -48,20 +51,33 @@ interface ProfileLite {
 
 function getIcon(id: string | null) {
   switch (id) {
-    case "instagram": return Instagram;
-    case "tiktok": return Music2;
-    case "twitter": return Twitter;
-    case "youtube": return Youtube;
-    case "telegram": return Send;
-    case "spotify": return Music2;
-    case "venyx": return Crown;
-    case "heart": return Heart;
-    case "shopping": return ShoppingBag;
-    default: return Globe;
+    case "instagram":
+      return Instagram;
+    case "tiktok":
+      return Music2;
+    case "twitter":
+      return Twitter;
+    case "youtube":
+      return Youtube;
+    case "telegram":
+      return Send;
+    case "spotify":
+      return Music2;
+    case "venyx":
+      return Crown;
+    case "heart":
+      return Heart;
+    case "shopping":
+      return ShoppingBag;
+    default:
+      return Globe;
   }
 }
 
-const THEMES: Record<string, { bg: string; text: string; btn: string; btnText: string; ring: string }> = {
+const THEMES: Record<
+  string,
+  { bg: string; text: string; btn: string; btnText: string; ring: string }
+> = {
   champagne: {
     bg: "linear-gradient(160deg, #1a0e0a 0%, #2a1b14 60%, #3a2418 100%)",
     text: "#F8E9C8",
@@ -94,10 +110,14 @@ const THEMES: Record<string, { bg: string; text: string; btn: string; btnText: s
 
 function buttonRadius(style: string) {
   switch (style) {
-    case "pill": return "9999px";
-    case "square": return "8px";
-    case "outline": return "16px";
-    default: return "20px";
+    case "pill":
+      return "9999px";
+    case "square":
+      return "8px";
+    case "outline":
+      return "16px";
+    default:
+      return "20px";
   }
 }
 
@@ -106,11 +126,52 @@ function PublicLinksPage() {
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [page, setPage] = useState<PageRow | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
+  const [giftListPublished, setGiftListPublished] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const demo = DEMO_MODE ? getDemoCreator(username) : null;
+      if (demo) {
+        setProfile(demo);
+        setPage({
+          user_id: demo.user_id,
+          bio: demo.bio,
+          theme: "champagne",
+          button_style: "rounded",
+          cover_url: demo.cover_url,
+          avatar_url: demo.avatar_url,
+          show_avatar: true,
+          is_published: true,
+        });
+        setLinks([
+          {
+            id: `demo-link-profile-${demo.username}`,
+            title: "Meu perfil na Venyx",
+            url: `${window.location.origin}/profile/${demo.username}`,
+            icon: "venyx",
+            is_featured: true,
+          },
+          {
+            id: `demo-link-instagram-${demo.username}`,
+            title: "Instagram",
+            url: "https://instagram.com/",
+            icon: "instagram",
+            is_featured: false,
+          },
+          {
+            id: `demo-link-tiktok-${demo.username}`,
+            title: "TikTok",
+            url: "https://tiktok.com/",
+            icon: "tiktok",
+            is_featured: false,
+          },
+        ]);
+        setGiftListPublished(true);
+        setLoading(false);
+        return;
+      }
       const { data: prof } = await supabase
         .from("profiles")
         .select("user_id,username,display_name,avatar_url,bio")
@@ -121,7 +182,7 @@ function PublicLinksPage() {
         return;
       }
       setProfile(prof as ProfileLite);
-      const [{ data: pg }, { data: lks }] = await Promise.all([
+      const [{ data: pg }, { data: lks }, { data: gifts }] = await Promise.all([
         supabase.from("creator_link_pages").select("*").eq("user_id", prof.user_id).maybeSingle(),
         supabase
           .from("creator_links")
@@ -129,18 +190,20 @@ function PublicLinksPage() {
           .eq("user_id", prof.user_id)
           .eq("is_active", true)
           .order("position"),
+        supabase
+          .from("creator_gift_settings")
+          .select("is_published")
+          .eq("creator_id", prof.user_id)
+          .eq("is_published", true)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       setPage((pg as PageRow) ?? null);
       setLinks((lks as LinkRow[]) ?? []);
+      setGiftListPublished(!!gifts);
       setLoading(false);
-      // increment view counter (fire and forget)
       if (pg) {
-        supabase
-          .from("creator_link_pages")
-          .update({ views_count: ((pg as PageRow as any).views_count ?? 0) + 1 })
-          .eq("user_id", prof.user_id)
-          .then(() => {});
+        recordPublicLinkEvent({ eventType: "view", creatorId: prof.user_id });
       }
     })();
     return () => {
@@ -148,13 +211,23 @@ function PublicLinksPage() {
     };
   }, [username]);
 
-  const trackClick = (id: string, currentClicks?: number) => {
-    supabase.from("creator_links").update({ clicks_count: (currentClicks ?? 0) + 1 }).eq("id", id).then(() => {});
+  const trackClick = (id: string) => {
+    if (!profile || profile.user_id.startsWith("demo-")) return;
+    recordPublicLinkEvent({ eventType: "click", creatorId: profile.user_id, linkId: id });
   };
 
   if (loading) {
     return (
-      <div style={{ background: "#1a0e0a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#F8E9C8" }}>
+      <div
+        style={{
+          background: "#1a0e0a",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#F8E9C8",
+        }}
+      >
         Carregando…
       </div>
     );
@@ -162,10 +235,23 @@ function PublicLinksPage() {
 
   if (!profile || !page || !page.is_published) {
     return (
-      <div style={{ background: "#1a0e0a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#F8E9C8", padding: 24, textAlign: "center" }}>
+      <div
+        style={{
+          background: "#1a0e0a",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#F8E9C8",
+          padding: 24,
+          textAlign: "center",
+        }}
+      >
         <div>
           <h1 style={{ fontSize: 32, fontWeight: 700 }}>Página não encontrada</h1>
-          <p style={{ marginTop: 8, opacity: 0.7 }}>Esta criadora ainda não publicou sua página de links.</p>
+          <p style={{ marginTop: 8, opacity: 0.7 }}>
+            Esta criadora ainda não publicou sua página de links.
+          </p>
         </div>
       </div>
     );
@@ -184,7 +270,16 @@ function PublicLinksPage() {
         padding: "48px 16px 80px",
       }}
     >
-      <main style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+      <main
+        style={{
+          maxWidth: 520,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 24,
+        }}
+      >
         {page.show_avatar && (page.avatar_url || profile.avatar_url) && (
           <img
             src={page.avatar_url || profile.avatar_url || ""}
@@ -205,22 +300,51 @@ function PublicLinksPage() {
           </h1>
           <p style={{ fontSize: 14, opacity: 0.7, marginTop: 4 }}>@{profile.username}</p>
           {(page.bio || profile.bio) && (
-            <p style={{ fontSize: 15, marginTop: 12, opacity: 0.9, lineHeight: 1.5, maxWidth: 380 }}>
+            <p
+              style={{ fontSize: 15, marginTop: 12, opacity: 0.9, lineHeight: 1.5, maxWidth: 380 }}
+            >
               {page.bio ?? profile.bio}
             </p>
           )}
         </div>
 
-        <nav style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
-          {links.length === 0 && (
+        <nav
+          style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}
+        >
+          {giftListPublished && (
+            <a
+              href={`/gifts/${profile.username}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                background: t.btn,
+                color: t.btnText,
+                border: `1.5px solid ${t.ring}`,
+                borderRadius: radius,
+                padding: "16px 20px",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: 15,
+                boxShadow: `0 8px 24px -6px ${t.ring}`,
+              }}
+            >
+              <Heart size={20} fill="currentColor" />
+              <span style={{ flex: 1 }}>Minha Lista de Mimos</span>
+              <Star size={16} fill="currentColor" />
+            </a>
+          )}
+          {links.length === 0 && !giftListPublished && (
             <p style={{ textAlign: "center", opacity: 0.6, padding: 24 }}>Sem links ainda.</p>
           )}
           {links.map((l) => {
             const Icon = getIcon(l.icon);
+            const safeUrl = normalizeCreatorLinkUrl(l.url);
+            if (!safeUrl) return null;
             return (
               <a
                 key={l.id}
-                href={l.url}
+                href={safeUrl}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => trackClick(l.id)}
@@ -246,7 +370,9 @@ function PublicLinksPage() {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = l.is_featured ? `0 8px 24px -6px ${t.ring}` : "none";
+                  e.currentTarget.style.boxShadow = l.is_featured
+                    ? `0 8px 24px -6px ${t.ring}`
+                    : "none";
                 }}
               >
                 <Icon size={20} style={{ flexShrink: 0 }} />

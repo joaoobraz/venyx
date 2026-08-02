@@ -53,8 +53,16 @@ function previewStorageKey(email: string) {
 
 function isDemoPreviewAllowed(email?: string) {
   if (!email) return false;
+  const localPreviewAccess =
+    import.meta.env.DEV &&
+    import.meta.env.VITE_ENABLE_LOCAL_PREVIEW_ACCESS === "true" &&
+    typeof window !== "undefined" &&
+    ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (localPreviewAccess) return true;
+
   const enabled =
-    import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_PREVIEW === "true";
+    import.meta.env.VITE_APP_ENV === "staging" &&
+    import.meta.env.VITE_ENABLE_DEMO_PREVIEW === "true";
   if (!enabled) return false;
 
   const allowlist = (
@@ -79,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setDemoPreviewRole = (role: DemoPreviewRole | null) => {
     if (!canUseDemoPreview || !user?.email || typeof window === "undefined") return;
+    if (role && !DEMO_PREVIEW_ROLES.includes(role)) return;
     const key = previewStorageKey(user.email);
     if (role) {
       window.localStorage.setItem(key, role);
@@ -156,21 +165,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const effectiveRoles = canUseDemoPreview && demoPreviewRole ? [demoPreviewRole] : roles;
-
   return (
     <Ctx.Provider
       value={{
         user,
         session,
         profile,
-        roles: effectiveRoles,
+        roles,
         kyc,
         loading,
-        isCreator: effectiveRoles.includes("creator"),
-        isAdmin: effectiveRoles.includes("admin"),
-        isAmbassador: effectiveRoles.includes("ambassador"),
-        isSeller: effectiveRoles.includes("seller"),
+        isCreator: roles.includes("creator"),
+        isAdmin: roles.includes("admin"),
+        isAmbassador: roles.includes("ambassador"),
+        isSeller: roles.includes("seller"),
         mfaEnabled,
         canUseDemoPreview,
         demoPreviewRole,

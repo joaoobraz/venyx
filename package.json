@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
     "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "test:load": "node scripts/light-load-test.mjs",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run build",
     "lint": "eslint .",

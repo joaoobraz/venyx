@@ -1,21 +1,28 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Bell, Compass, Home, MessageCircle, User } from "lucide-react";
+import { Bell, Compass, Home, LayoutDashboard, MessageCircle, Settings, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 
 export function MobileNav() {
-  const { profile } = useAuth();
+  const { profile, demoPreviewRole } = useAuth();
   const { t } = useI18n();
   const location = useLocation();
   const unread = useUnreadCounts();
 
-  const items = [
+  const subscriberItems = [
     { to: "/feed", label: t("nav.feed"), icon: Home },
     { to: "/explore", label: t("nav.explore"), icon: Compass },
     { to: "/chat", label: t("nav.chat"), icon: MessageCircle },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
-  ] as const;
+  ];
+  const previewItems = [
+    { to: "/presentation/overview", label: t("preview.openPanel"), icon: LayoutDashboard },
+    { to: "/chat", label: t("nav.chat"), icon: MessageCircle },
+    { to: "/notifications", label: t("nav.notifications"), icon: Bell },
+    { to: "/settings/profile", label: t("nav.settings"), icon: Settings },
+  ];
+  const items = demoPreviewRole && demoPreviewRole !== "subscriber" ? previewItems : subscriberItems;
 
   return (
     <nav
@@ -24,11 +31,11 @@ export function MobileNav() {
     >
       <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
         {items.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to;
+          const active = location.pathname === to || (to === "/presentation/overview" && location.pathname.startsWith("/presentation/"));
           return (
             <Link
               key={to}
-              to={to}
+              to={to as never}
               aria-label={label}
               className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors ${
                 active ? "text-primary" : "text-muted-foreground"

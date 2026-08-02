@@ -5,6 +5,7 @@ import {
   Eye,
   Heart,
   Layers,
+  LayoutDashboard,
   LogOut,
   Menu,
   MessageCircle,
@@ -12,6 +13,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  ReceiptText,
   Trophy,
   Wallet,
 } from "lucide-react";
@@ -28,7 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 
 export function Header() {
@@ -47,9 +48,11 @@ export function Header() {
   const roleSelect = (className: string) => (
     <select
       value={demoPreviewRole ?? ""}
-      onChange={(event) =>
-        setDemoPreviewRole((event.target.value || null) as DemoPreviewRole | null)
-      }
+      onChange={(event) => {
+        const role = (event.target.value || null) as DemoPreviewRole | null;
+        setDemoPreviewRole(role);
+        navigate({ to: role ? "/presentation" : "/feed" });
+      }}
       className={className}
       aria-label={t("preview.viewAs")}
     >
@@ -139,7 +142,7 @@ export function Header() {
                 >
                   {profile.avatar_url ? (
                     <img
-                      src={DEMO_MODE ? getDemoAsset(profile.username).avatar_url : profile.avatar_url}
+                      src={profile.avatar_url}
                       alt=""
                       className="h-full w-full object-cover"
                     />
@@ -187,13 +190,21 @@ export function Header() {
                       <DropdownMenuSeparator />
                     </>
                   )}
+                  {demoPreviewRole && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/presentation">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        {t("preview.openPanel")}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/wishlist"><Heart className="mr-2 h-4 w-4" />{t("nav.wishlist")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/loyalty"><Trophy className="mr-2 h-4 w-4" />{t("nav.loyalty")}</Link>
                   </DropdownMenuItem>
-                  {isCreator && (
+                  {isCreator && !demoPreviewRole && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>{t("nav.creatorArea")}</DropdownMenuLabel>
@@ -217,6 +228,9 @@ export function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/settings/profile"><Settings className="mr-2 h-4 w-4" />{t("nav.settings")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings/payments"><ReceiptText className="mr-2 h-4 w-4" />{t("nav.payments")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/settings/security"><ShieldCheck className="mr-2 h-4 w-4" />{t("nav.security")}</Link>

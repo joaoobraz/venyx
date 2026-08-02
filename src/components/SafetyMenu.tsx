@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { DEMO_MODE } from "@/lib/demo-creators";
+import { recordDemoReport } from "@/lib/demo-operations";
 
 type SafetyTargetType = "post" | "profile" | "message" | "conversation" | "comment";
-type ReportReason = "spam" | "harassment" | "impersonation" | "underage" | "illegal" | "other";
+type ReportReason = "spam" | "harassment" | "impersonation" | "underage" | "non_consensual" | "illegal" | "other";
 
 interface SafetyMenuProps {
   targetType: SafetyTargetType;
@@ -54,6 +55,7 @@ export function SafetyMenu({
     if (DEMO_MODE) {
       setBlocked(localStorage.getItem(`venyx:demo:block:${user.id}:${targetUserId}`) === "1");
       setMuted(localStorage.getItem(`venyx:demo:mute:${user.id}:${targetUserId}`) === "1");
+      return;
     }
     Promise.all([
       supabase
@@ -78,6 +80,16 @@ export function SafetyMenu({
 
   const toggleBlock = async () => {
     setBusy(true);
+    if (DEMO_MODE) {
+      const key = `venyx:demo:block:${user.id}:${targetUserId}`;
+      if (blocked) localStorage.removeItem(key);
+      else localStorage.setItem(key, "1");
+      setBusy(false);
+      setBlocked(!blocked);
+      toast.success(blocked ? t("safety.unblocked") : t("safety.blocked"));
+      if (!blocked) onBlocked?.();
+      return;
+    }
     const result = blocked
       ? await supabase
           .from("user_blocks")
@@ -89,14 +101,9 @@ export function SafetyMenu({
           blocked_id: targetUserId,
         });
     setBusy(false);
-    if (result.error && !DEMO_MODE) {
+    if (result.error) {
       toast.error(t("safety.error"));
       return;
-    }
-    if (DEMO_MODE) {
-      const key = `venyx:demo:block:${user.id}:${targetUserId}`;
-      if (blocked) localStorage.removeItem(key);
-      else localStorage.setItem(key, "1");
     }
     setBlocked(!blocked);
     toast.success(blocked ? t("safety.unblocked") : t("safety.blocked"));
@@ -105,6 +112,15 @@ export function SafetyMenu({
 
   const toggleMute = async () => {
     setBusy(true);
+    if (DEMO_MODE) {
+      const key = `venyx:demo:mute:${user.id}:${targetUserId}`;
+      if (muted) localStorage.removeItem(key);
+      else localStorage.setItem(key, "1");
+      setBusy(false);
+      setMuted(!muted);
+      toast.success(muted ? t("safety.unmuted") : t("safety.muted"));
+      return;
+    }
     const result = muted
       ? await supabase
           .from("user_mutes")
@@ -116,14 +132,9 @@ export function SafetyMenu({
           muted_user_id: targetUserId,
         });
     setBusy(false);
-    if (result.error && !DEMO_MODE) {
+    if (result.error) {
       toast.error(t("safety.error"));
       return;
-    }
-    if (DEMO_MODE) {
-      const key = `venyx:demo:mute:${user.id}:${targetUserId}`;
-      if (muted) localStorage.removeItem(key);
-      else localStorage.setItem(key, "1");
     }
     setMuted(!muted);
     toast.success(muted ? t("safety.unmuted") : t("safety.muted"));
@@ -131,6 +142,22 @@ export function SafetyMenu({
 
   const submitReport = async () => {
     setBusy(true);
+    if (DEMO_MODE) {
+      recordDemoReport({
+        userId: user.id,
+        targetType,
+        targetId,
+        targetUserId,
+        targetLabel,
+        reason,
+        details,
+      });
+      setBusy(false);
+      setReportOpen(false);
+      setDetails("");
+      toast.success(t("safety.reported"));
+      return;
+    }
     const { error } = await supabase.from("content_reports").insert({
       reporter_id: user.id,
       target_type: targetType,
@@ -140,14 +167,9 @@ export function SafetyMenu({
       details: details.trim() || null,
     });
     setBusy(false);
-    if (error && !DEMO_MODE) {
+    if (error) {
       toast.error(t("safety.error"));
       return;
-    }
-    if (DEMO_MODE) {
-      const reports = JSON.parse(localStorage.getItem("venyx:demo:reports") || "[]") as unknown[];
-      reports.push({ targetType, targetId, targetUserId, reason, details, createdAt: new Date().toISOString() });
-      localStorage.setItem("venyx:demo:reports", JSON.stringify(reports.slice(-50)));
     }
     setReportOpen(false);
     setDetails("");
@@ -197,6 +219,7 @@ export function SafetyMenu({
               <option value="harassment">{t("safety.reason.harassment")}</option>
               <option value="impersonation">{t("safety.reason.impersonation")}</option>
               <option value="underage">{t("safety.reason.underage")}</option>
+              <option value="non_consensual">{t("safety.reason.nonConsensual")}</option>
               <option value="illegal">{t("safety.reason.illegal")}</option>
               <option value="other">{t("safety.reason.other")}</option>
             </select>

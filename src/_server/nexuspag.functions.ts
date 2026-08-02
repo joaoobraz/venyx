@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const BASE_URL = "https://nexuspag.com";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
 
-// URL pública estável do projeto (Lovable). Ajuste para custom domain quando configurar.
+// A URL pública do webhook deve ser configurada explicitamente em cada ambiente.
 function getWebhookUrl(): string {
   const configured = process.env.PUBLIC_WEBHOOK_URL;
   if (!configured) throw new Error("PUBLIC_WEBHOOK_URL não configurada");

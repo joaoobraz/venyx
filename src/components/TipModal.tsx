@@ -9,7 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import { recordDemoTip } from "@/lib/demo-tips";
+import { addDemoNotification } from "@/lib/demo-notifications";
 
 const QUICK = [500, 1000, 2500, 5000];
 
@@ -21,12 +25,14 @@ export function TipModal({
   creatorId,
   creatorName,
   postId,
+  giftItem,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   creatorId: string;
   creatorName: string;
   postId?: string;
+  giftItem?: { id: string; title: string; amountCents: number; emoji?: string };
 }) {
   const { user, session } = useAuth();
   const { tr } = useI18n();
@@ -45,7 +51,9 @@ export function TipModal({
     amountCents: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [understoodGift, setUnderstoodGift] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isLocalTip = DEMO_MODE && creatorId.startsWith("demo-");
 
   useEffect(() => {
     if (!open) {
@@ -54,6 +62,7 @@ export function TipModal({
       setMsg("");
       setCustom("");
       setCopied(false);
+      setUnderstoodGift(false);
       if (pollRef.current) clearInterval(pollRef.current);
     }
   }, [open]);
@@ -69,16 +78,54 @@ export function TipModal({
       toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
       return;
     }
+    const finalCents =
+      giftItem?.amountCents ?? (custom ? Math.round(parseFloat(custom) * 100) : amount);
+    if (!finalCents || finalCents < 100) {
+      toast.error(tr("Valor mínimo: R$ 1,00", "Minimum amount: R$ 1.00"));
+      return;
+    }
+    if (giftItem && !understoodGift) {
+      toast.error(
+        tr(
+          "Confirme que entendeu como o mimo simbólico funciona.",
+          "Confirm that you understand how the symbolic gift works.",
+        ),
+      );
+      return;
+    }
+    if (isLocalTip) {
+      setBusy(true);
+      recordDemoTip({
+        userId: user.id,
+        creatorId,
+        creatorName,
+        postId,
+        amountCents: finalCents,
+        message: giftItem ? `${giftItem.title}${msg.trim() ? ` — ${msg.trim()}` : ""}` : msg,
+      });
+      addDemoNotification(user.id, {
+        type: "sale",
+        title: `Mimo enviado para ${creatorName}`,
+        title_en: `Tip sent to ${creatorName}`,
+        body: `A carteira da Modelo recebeu R$ ${(finalCents / 100).toFixed(2)} na demonstração.`,
+        body_en: `The Creator wallet received BRL ${(finalCents / 100).toFixed(2)} in the demo.`,
+        link: "/presentation/wallet",
+      });
+      toast.success(
+        tr(
+          `Mimo de R$ ${(finalCents / 100).toFixed(2)} enviado para ${creatorName}!`,
+          `R$ ${(finalCents / 100).toFixed(2)} tip sent to ${creatorName}!`,
+        ),
+      );
+      setBusy(false);
+      onOpenChange(false);
+      return;
+    }
     const authHeaders = session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
       : null;
     if (!authHeaders) {
       toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
-      return;
-    }
-    const finalCents = custom ? Math.round(parseFloat(custom) * 100) : amount;
-    if (!finalCents || finalCents < 100) {
-      toast.error(tr("Valor mínimo: R$ 1,00", "Minimum amount: R$ 1.00"));
       return;
     }
     setBusy(true);
@@ -89,12 +136,15 @@ export function TipModal({
           amountCents: finalCents,
           postId: postId ?? null,
           message: msg || null,
+          giftItemId: giftItem?.id,
         },
         headers: authHeaders,
       });
 
       if ("ok" in res && res.ok === false) {
-        toast.error(res.error || tr("Não foi possível gerar o Pix.", "We couldn't create the Pix charge."));
+        toast.error(
+          res.error || tr("Não foi possível gerar o Pix.", "We couldn't create the Pix charge."),
+        );
         return;
       }
 
@@ -113,14 +163,20 @@ export function TipModal({
               if (pollRef.current) clearInterval(pollRef.current);
               toast.success(
                 tr(
-                  `Mimo de R$ ${(finalCents / 100).toFixed(2)} enviado para ${creatorName}!`,
-                  `R$ ${(finalCents / 100).toFixed(2)} tip sent to ${creatorName}!`,
+                  giftItem
+                    ? `${giftItem.title} enviado para ${creatorName}!`
+                    : `Mimo de R$ ${(finalCents / 100).toFixed(2)} enviado para ${creatorName}!`,
+                  giftItem
+                    ? `${giftItem.title} sent to ${creatorName}!`
+                    : `R$ ${(finalCents / 100).toFixed(2)} tip sent to ${creatorName}!`,
                 ),
               );
               onOpenChange(false);
             } else if (s.status === "expired" || s.status === "cancelled") {
               if (pollRef.current) clearInterval(pollRef.current);
-              toast.error(tr("Pix expirou. Gere uma nova cobrança.", "Pix expired. Create a new charge."));
+              toast.error(
+                tr("Pix expirou. Gere uma nova cobrança.", "Pix expired. Create a new charge."),
+              );
               setStep("form");
               setPix(null);
             }
@@ -132,13 +188,16 @@ export function TipModal({
     } catch (e) {
       console.error("[TipModal] error", e);
       if (e instanceof Response) {
-        if (e.status === 401) toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
+        if (e.status === 401)
+          toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
         else {
           const txt = await e.text().catch(() => "");
           toast.error(txt || `Erro ${e.status}`);
         }
       } else {
-        toast.error(e instanceof Error ? e.message : tr("Erro ao enviar mimo", "Could not send tip"));
+        toast.error(
+          e instanceof Error ? e.message : tr("Erro ao enviar mimo", "Could not send tip"),
+        );
       }
     } finally {
       setBusy(false);
@@ -160,44 +219,64 @@ export function TipModal({
             <Heart className="h-5 w-5 text-primary" />
             {step === "pix"
               ? tr("Pague com Pix", "Pay with Pix")
-              : tr(`Enviar mimo para ${creatorName}`, `Send a tip to ${creatorName}`)}
+              : giftItem
+                ? tr(`Enviar mimo para ${creatorName}`, `Send a gift to ${creatorName}`)
+                : tr(`Enviar mimo para ${creatorName}`, `Send a tip to ${creatorName}`)}
           </DialogTitle>
         </DialogHeader>
 
         {step === "form" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-2">
-              {QUICK.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => {
-                    setAmount(v);
-                    setCustom("");
-                  }}
-                  className={`rounded-xl border-2 p-3 text-sm font-bold transition-all ${
-                    amount === v && !custom
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border bg-card text-foreground hover:border-primary/50"
-                  }`}
-                >
-                  R$ {(v / 100).toFixed(0)}
-                </button>
-              ))}
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
-                {tr("Valor personalizado (R$)", "Custom amount (R$)")}
-              </label>
-              <Input
-                type="number"
-                min="1"
-                step="0.50"
-                placeholder={tr("Outro valor...", "Other amount...")}
-                value={custom}
-                onChange={(e) => setCustom(e.target.value)}
-              />
-            </div>
+            {giftItem ? (
+              <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-2xl">
+                    {giftItem.emoji || "🎁"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-foreground">{giftItem.title}</div>
+                    <div className="text-xl font-bold text-primary">
+                      R$ {(giftItem.amountCents / 100).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  {QUICK.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => {
+                        setAmount(v);
+                        setCustom("");
+                      }}
+                      className={`rounded-xl border-2 p-3 text-sm font-bold transition-all ${
+                        amount === v && !custom
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border bg-card text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      R$ {(v / 100).toFixed(0)}
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">
+                    {tr("Valor personalizado (R$)", "Custom amount (R$)")}
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="0.50"
+                    placeholder={tr("Outro valor...", "Other amount...")}
+                    value={custom}
+                    onChange={(e) => setCustom(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
                 {tr("Mensagem (opcional)", "Message (optional)")}
@@ -210,12 +289,39 @@ export function TipModal({
                 className="resize-none"
               />
             </div>
+            {giftItem && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-foreground">
+                <Checkbox
+                  className="mt-0.5"
+                  checked={understoodGift}
+                  onCheckedChange={(value) => setUnderstoodGift(value === true)}
+                />
+                <span>
+                  {tr(
+                    "Entendi que este é um mimo simbólico: nenhum produto físico será comprado ou enviado, e a criadora receberá o valor líquido na carteira após as taxas.",
+                    "I understand this is a symbolic gift: no physical product is purchased or shipped, and the creator receives the net amount in her wallet after fees.",
+                  )}
+                </span>
+              </label>
+            )}
             <Button
               onClick={send}
-              disabled={busy}
+              disabled={busy || (!!giftItem && !understoodGift)}
               className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-95"
             >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("💝 Pagar com Pix", "💝 Pay with Pix")}
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isLocalTip ? (
+                giftItem ? (
+                  tr("🎁 Enviar mimo simbólico", "🎁 Send symbolic gift")
+                ) : (
+                  tr("💝 Enviar mimo", "💝 Send tip")
+                )
+              ) : giftItem ? (
+                tr("🎁 Enviar este mimo com Pix", "🎁 Send this gift with Pix")
+              ) : (
+                tr("💝 Pagar com Pix", "💝 Pay with Pix")
+              )}
             </Button>
           </div>
         )}

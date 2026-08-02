@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Check, ShieldCheck, DollarSign, MessageCircle, Crown, Clock, XCircle } from "lucide-react";
+import { Check, ShieldCheck, DollarSign, MessageCircle, Crown, Clock, XCircle, ArrowRight } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
@@ -9,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { submitCreatorKyc } from "@/_server/creator-onboarding.functions";
 
 export const Route = createFileRoute("/become-creator")({
   component: BecomeCreatorPage,
@@ -35,6 +37,18 @@ function BecomeCreatorPage() {
             <h2 className="mt-3 text-xl font-bold text-foreground">
               {tr("Você já é criadora!", "You're already a creator!")}
             </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tr(
+                "Confira as etapas necessárias antes de começar a monetizar.",
+                "Review the required steps before monetization.",
+              )}
+            </p>
+            <Button asChild className="mt-5">
+              <Link to="/creator/onboarding">
+                {tr("Continuar configuração", "Continue setup")}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         ) : kyc?.status === "pending" ? (
           <div className="rounded-2xl border border-primary/30 bg-card p-8 text-center">
@@ -105,11 +119,14 @@ function Intro({ onStart }: { onStart: () => void }) {
 function KycForm({ onDone }: { onDone: () => void }) {
   const { t, tr } = useI18n();
   const { user } = useAuth();
+  const submitKycFn = useServerFn(submitCreatorKyc);
   const [docType, setDocType] = useState("RG");
   const [front, setFront] = useState<File | null>(null);
   const [back, setBack] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
-  const [accepted, setAccepted] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
+  const [confirmedContentRights, setConfirmedContentRights] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const MAX_SIZE = 8 * 1024 * 1024; // 8MB
@@ -128,7 +145,7 @@ function KycForm({ onDone }: { onDone: () => void }) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!front || !selfie || !accepted) {
+    if (!front || !selfie || !acceptedTerms || !confirmedAdult || !confirmedContentRights) {
       toast.error(tr("Preencha todos os campos obrigatórios.", "Complete all required fields."));
       return;
     }
@@ -137,14 +154,17 @@ function KycForm({ onDone }: { onDone: () => void }) {
       const frontPath = await upload(front, "front");
       const backPath = back ? await upload(back, "back") : null;
       const selfiePath = await upload(selfie, "selfie");
-      const { error } = await supabase.from("kyc_requests").insert({
-        user_id: user!.id,
-        document_type: docType,
-        document_front_url: frontPath,
-        document_back_url: backPath,
-        selfie_url: selfiePath,
+      await submitKycFn({
+        data: {
+          documentType: docType as "RG" | "CNH" | "Passport",
+          documentFrontPath: frontPath,
+          documentBackPath: backPath,
+          selfiePath,
+          acceptedTerms: true,
+          confirmedAdult: true,
+          confirmedContentRights: true,
+        },
       });
-      if (error) throw error;
       toast.success(t("becomeCreator.kyc.success"));
       onDone();
     } catch (err) {
@@ -176,11 +196,40 @@ function KycForm({ onDone }: { onDone: () => void }) {
       <label className="flex items-start gap-2 text-sm text-foreground">
         <input
           type="checkbox"
-          checked={accepted}
-          onChange={(e) => setAccepted(e.target.checked)}
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
           className="mt-0.5 h-4 w-4 accent-[oklch(0.72_0.19_47)]"
         />
-        {t("becomeCreator.kyc.terms")}
+        <span>
+          {t("becomeCreator.kyc.terms")} {" "}
+          <Link to="/terms" target="_blank" className="text-primary underline">{tr("Termos", "Terms")}</Link>
+          {" "}{tr("e", "and")}{" "}
+          <Link to="/privacy" target="_blank" className="text-primary underline">{tr("Privacidade", "Privacy")}</Link>.
+        </span>
+      </label>
+      <label className="flex items-start gap-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          checked={confirmedAdult}
+          onChange={(e) => setConfirmedAdult(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-[oklch(0.72_0.19_47)]"
+        />
+        {tr(
+          "Confirmo que tenho 18 anos ou mais e que meus documentos são verdadeiros.",
+          "I confirm that I am at least 18 and that my documents are authentic.",
+        )}
+      </label>
+      <label className="flex items-start gap-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          checked={confirmedContentRights}
+          onChange={(e) => setConfirmedContentRights(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-[oklch(0.72_0.19_47)]"
+        />
+        {tr(
+          "Confirmo que só publicarei conteúdo próprio, consentido e com todas as pessoas retratadas maiores de 18 anos.",
+          "I confirm I will only publish owned, consensual content featuring adults aged 18 or older.",
+        )}
       </label>
       <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
         {loading ? t("common.loading") : t("becomeCreator.kyc.submit")}

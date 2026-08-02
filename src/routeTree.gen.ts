@@ -16,9 +16,11 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as FeedRouteImport } from './routes/feed'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PresentationRouteImport } from './routes/presentation'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SearchRouteImport } from './routes/search'
@@ -31,33 +33,47 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
 import { Route as AdminKycRouteImport } from './routes/admin.kyc'
 import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
+import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminReconciliationRouteImport } from './routes/admin.reconciliation'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as CCodeRouteImport } from './routes/c.$code'
 import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
 import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
 import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
 import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
+import { Route as CreatorGiftsRouteImport } from './routes/creator.gifts'
 import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
 import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
+import { Route as CreatorOnboardingRouteImport } from './routes/creator.onboarding'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as GiftsUsernameRouteImport } from './routes/gifts.$username'
 import { Route as LinksUsernameRouteImport } from './routes/links.$username'
+import { Route as PresentationSectionRouteImport } from './routes/presentation.$section'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
 import { Route as RCodeRouteImport } from './routes/r.$code'
 import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
+import { Route as SettingsPaymentsRouteImport } from './routes/settings.payments'
+import { Route as SettingsPrivacyRouteImport } from './routes/settings.privacy'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
+import { Route as ApiPublicLinkEventRouteImport } from './routes/api.public.link-event'
 import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
+import { Route as ApiPublicTelemetryRouteImport } from './routes/api.public.telemetry'
 import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
 import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
 import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
+import { Route as ApiPublicCronReconcilePixRouteImport } from './routes/api.public.cron.reconcile-pix'
+import { Route as ApiPublicCronSubscriptionRemindersRouteImport } from './routes/api.public.cron.subscription-reminders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +110,11 @@ const FeedRoute = FeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -107,6 +128,11 @@ const LoyaltyRoute = LoyaltyRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresentationRoute = PresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -169,9 +195,19 @@ const AdminModerationRoute = AdminModerationRouteImport.update({
   path: '/admin/moderation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOperationsRoute = AdminOperationsRouteImport.update({
+  id: '/admin/operations',
+  path: '/admin/operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
   id: '/admin/payouts',
   path: '/admin/payouts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReconciliationRoute = AdminReconciliationRouteImport.update({
+  id: '/admin/reconciliation',
+  path: '/admin/reconciliation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -179,9 +215,19 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/admin/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/admin/support',
+  path: '/admin/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CCodeRoute = CCodeRouteImport.update({
@@ -209,6 +255,11 @@ const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
   path: '/creator/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorGiftsRoute = CreatorGiftsRouteImport.update({
+  id: '/creator/gifts',
+  path: '/creator/gifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorLinksRoute = CreatorLinksRouteImport.update({
   id: '/creator/links',
   path: '/creator/links',
@@ -227,6 +278,11 @@ const CreatorMailingRoute = CreatorMailingRouteImport.update({
 const CreatorModerationRoute = CreatorModerationRouteImport.update({
   id: '/creator/moderation',
   path: '/creator/moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorOnboardingRoute = CreatorOnboardingRouteImport.update({
+  id: '/creator/onboarding',
+  path: '/creator/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorPostsRoute = CreatorPostsRouteImport.update({
@@ -250,10 +306,20 @@ const CreatorWalletRoute = CreatorWalletRouteImport.update({
   path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GiftsUsernameRoute = GiftsUsernameRouteImport.update({
+  id: '/gifts/$username',
+  path: '/gifts/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LinksUsernameRoute = LinksUsernameRouteImport.update({
   id: '/links/$username',
   path: '/links/$username',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PresentationSectionRoute = PresentationSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => PresentationRoute,
 } as any)
 const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   id: '/profile/$username',
@@ -268,6 +334,16 @@ const RCodeRoute = RCodeRouteImport.update({
 const SavedPostIdRoute = SavedPostIdRouteImport.update({
   id: '/saved/$postId',
   path: '/saved/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPaymentsRoute = SettingsPaymentsRouteImport.update({
+  id: '/settings/payments',
+  path: '/settings/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPrivacyRoute = SettingsPrivacyRouteImport.update({
+  id: '/settings/privacy',
+  path: '/settings/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
@@ -285,12 +361,22 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLinkEventRoute = ApiPublicLinkEventRouteImport.update({
+  id: '/api/public/link-event',
+  path: '/api/public/link-event',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNexuspagWebhookRoute =
   ApiPublicNexuspagWebhookRouteImport.update({
     id: '/api/public/nexuspag-webhook',
     path: '/api/public/nexuspag-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTelemetryRoute = ApiPublicTelemetryRouteImport.update({
+  id: '/api/public/telemetry',
+  path: '/api/public/telemetry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronCleanupStoriesRoute =
   ApiPublicCronCleanupStoriesRouteImport.update({
     id: '/api/public/cron/cleanup-stories',
@@ -309,6 +395,18 @@ const ApiPublicCronProcessMassDmRoute =
     path: '/api/public/cron/process-mass-dm',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronReconcilePixRoute =
+  ApiPublicCronReconcilePixRouteImport.update({
+    id: '/api/public/cron/reconcile-pix',
+    path: '/api/public/cron/reconcile-pix',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronSubscriptionRemindersRoute =
+  ApiPublicCronSubscriptionRemindersRouteImport.update({
+    id: '/api/public/cron/subscription-reminders',
+    path: '/api/public/cron/subscription-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -318,9 +416,11 @@ export interface FileRoutesByFullPath {
   '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/presentation': typeof PresentationRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -332,34 +432,48 @@ export interface FileRoutesByFullPath {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -369,9 +483,11 @@ export interface FileRoutesByTo {
   '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/presentation': typeof PresentationRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -383,34 +499,48 @@ export interface FileRoutesByTo {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -421,9 +551,11 @@ export interface FileRoutesById {
   '/dmca': typeof DmcaRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/presentation': typeof PresentationRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
@@ -435,34 +567,48 @@ export interface FileRoutesById {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
   '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
   '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -474,9 +620,11 @@ export interface FileRouteTypes {
     | '/dmca'
     | '/explore'
     | '/feed'
+    | '/help'
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/presentation'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -488,34 +636,48 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/auth/callback'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/gifts/$username'
     | '/links/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
     | '/api/public/health'
+    | '/api/public/link-event'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -525,9 +687,11 @@ export interface FileRouteTypes {
     | '/dmca'
     | '/explore'
     | '/feed'
+    | '/help'
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/presentation'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -539,34 +703,48 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/auth/callback'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/gifts/$username'
     | '/links/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
     | '/api/public/health'
+    | '/api/public/link-event'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   id:
     | '__root__'
     | '/'
@@ -576,9 +754,11 @@ export interface FileRouteTypes {
     | '/dmca'
     | '/explore'
     | '/feed'
+    | '/help'
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/presentation'
     | '/privacy'
     | '/reset-password'
     | '/search'
@@ -590,34 +770,48 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/auth/callback'
     | '/c/$code'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
     | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/gifts/$username'
     | '/links/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
     | '/api/public/health'
+    | '/api/public/link-event'
     | '/api/public/nexuspag-webhook'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -628,9 +822,11 @@ export interface RootRouteChildren {
   DmcaRoute: typeof DmcaRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
+  HelpRoute: typeof HelpRoute
   LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
+  PresentationRoute: typeof PresentationRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
@@ -642,34 +838,47 @@ export interface RootRouteChildren {
   AdminDmcaRoute: typeof AdminDmcaRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
+  AdminOperationsRoute: typeof AdminOperationsRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminReconciliationRoute: typeof AdminReconciliationRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CCodeRoute: typeof CCodeRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
+  CreatorGiftsRoute: typeof CreatorGiftsRoute
   CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
   CreatorModerationRoute: typeof CreatorModerationRoute
+  CreatorOnboardingRoute: typeof CreatorOnboardingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
+  GiftsUsernameRoute: typeof GiftsUsernameRoute
   LinksUsernameRoute: typeof LinksUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   RCodeRoute: typeof RCodeRoute
   SavedPostIdRoute: typeof SavedPostIdRoute
+  SettingsPaymentsRoute: typeof SettingsPaymentsRoute
+  SettingsPrivacyRoute: typeof SettingsPrivacyRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicLinkEventRoute: typeof ApiPublicLinkEventRoute
   ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
+  ApiPublicTelemetryRoute: typeof ApiPublicTelemetryRoute
   ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
   ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
   ApiPublicCronProcessMassDmRoute: typeof ApiPublicCronProcessMassDmRoute
+  ApiPublicCronReconcilePixRoute: typeof ApiPublicCronReconcilePixRoute
+  ApiPublicCronSubscriptionRemindersRoute: typeof ApiPublicCronSubscriptionRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -723,6 +932,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -742,6 +958,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presentation': {
+      id: '/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -828,11 +1051,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminModerationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/operations': {
+      id: '/admin/operations'
+      path: '/admin/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AdminOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/payouts': {
       id: '/admin/payouts'
       path: '/admin/payouts'
       fullPath: '/admin/payouts'
       preLoaderRoute: typeof AdminPayoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reconciliation': {
+      id: '/admin/reconciliation'
+      path: '/admin/reconciliation'
+      fullPath: '/admin/reconciliation'
+      preLoaderRoute: typeof AdminReconciliationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/reports': {
@@ -842,11 +1079,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/admin/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/$code': {
@@ -884,6 +1135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/gifts': {
+      id: '/creator/gifts'
+      path: '/creator/gifts'
+      fullPath: '/creator/gifts'
+      preLoaderRoute: typeof CreatorGiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/links': {
       id: '/creator/links'
       path: '/creator/links'
@@ -910,6 +1168,13 @@ declare module '@tanstack/react-router' {
       path: '/creator/moderation'
       fullPath: '/creator/moderation'
       preLoaderRoute: typeof CreatorModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/onboarding': {
+      id: '/creator/onboarding'
+      path: '/creator/onboarding'
+      fullPath: '/creator/onboarding'
+      preLoaderRoute: typeof CreatorOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator/posts': {
@@ -940,12 +1205,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gifts/$username': {
+      id: '/gifts/$username'
+      path: '/gifts/$username'
+      fullPath: '/gifts/$username'
+      preLoaderRoute: typeof GiftsUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/links/$username': {
       id: '/links/$username'
       path: '/links/$username'
       fullPath: '/links/$username'
       preLoaderRoute: typeof LinksUsernameRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/presentation/$section': {
+      id: '/presentation/$section'
+      path: '/$section'
+      fullPath: '/presentation/$section'
+      preLoaderRoute: typeof PresentationSectionRouteImport
+      parentRoute: typeof PresentationRoute
     }
     '/profile/$username': {
       id: '/profile/$username'
@@ -966,6 +1245,20 @@ declare module '@tanstack/react-router' {
       path: '/saved/$postId'
       fullPath: '/saved/$postId'
       preLoaderRoute: typeof SavedPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/payments': {
+      id: '/settings/payments'
+      path: '/settings/payments'
+      fullPath: '/settings/payments'
+      preLoaderRoute: typeof SettingsPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/privacy': {
+      id: '/settings/privacy'
+      path: '/settings/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof SettingsPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/profile': {
@@ -989,11 +1282,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/link-event': {
+      id: '/api/public/link-event'
+      path: '/api/public/link-event'
+      fullPath: '/api/public/link-event'
+      preLoaderRoute: typeof ApiPublicLinkEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/nexuspag-webhook': {
       id: '/api/public/nexuspag-webhook'
       path: '/api/public/nexuspag-webhook'
       fullPath: '/api/public/nexuspag-webhook'
       preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telemetry': {
+      id: '/api/public/telemetry'
+      path: '/api/public/telemetry'
+      fullPath: '/api/public/telemetry'
+      preLoaderRoute: typeof ApiPublicTelemetryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/cleanup-stories': {
@@ -1017,8 +1324,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/reconcile-pix': {
+      id: '/api/public/cron/reconcile-pix'
+      path: '/api/public/cron/reconcile-pix'
+      fullPath: '/api/public/cron/reconcile-pix'
+      preLoaderRoute: typeof ApiPublicCronReconcilePixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/subscription-reminders': {
+      id: '/api/public/cron/subscription-reminders'
+      path: '/api/public/cron/subscription-reminders'
+      fullPath: '/api/public/cron/subscription-reminders'
+      preLoaderRoute: typeof ApiPublicCronSubscriptionRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface PresentationRouteChildren {
+  PresentationSectionRoute: typeof PresentationSectionRoute
+}
+
+const PresentationRouteChildren: PresentationRouteChildren = {
+  PresentationSectionRoute: PresentationSectionRoute,
+}
+
+const PresentationRouteWithChildren = PresentationRoute._addFileChildren(
+  PresentationRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1028,9 +1361,11 @@ const rootRouteChildren: RootRouteChildren = {
   DmcaRoute: DmcaRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
+  HelpRoute: HelpRoute,
   LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
+  PresentationRoute: PresentationRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
@@ -1042,34 +1377,48 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDmcaRoute: AdminDmcaRoute,
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
+  AdminOperationsRoute: AdminOperationsRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminReconciliationRoute: AdminReconciliationRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CCodeRoute: CCodeRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
+  CreatorGiftsRoute: CreatorGiftsRoute,
   CreatorLinksRoute: CreatorLinksRoute,
   CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
   CreatorModerationRoute: CreatorModerationRoute,
+  CreatorOnboardingRoute: CreatorOnboardingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
+  GiftsUsernameRoute: GiftsUsernameRoute,
   LinksUsernameRoute: LinksUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   RCodeRoute: RCodeRoute,
   SavedPostIdRoute: SavedPostIdRoute,
+  SettingsPaymentsRoute: SettingsPaymentsRoute,
+  SettingsPrivacyRoute: SettingsPrivacyRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicLinkEventRoute: ApiPublicLinkEventRoute,
   ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
+  ApiPublicTelemetryRoute: ApiPublicTelemetryRoute,
   ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
   ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,
   ApiPublicCronProcessMassDmRoute: ApiPublicCronProcessMassDmRoute,
+  ApiPublicCronReconcilePixRoute: ApiPublicCronReconcilePixRoute,
+  ApiPublicCronSubscriptionRemindersRoute:
+    ApiPublicCronSubscriptionRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

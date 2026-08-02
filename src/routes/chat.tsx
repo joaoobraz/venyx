@@ -29,7 +29,7 @@ import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal"
 import { TranslateButton } from "@/components/TranslateButton";
 import { detectExternalContact, contactBlockMessage } from "@/lib/contact-guard";
 import { SafetyMenu } from "@/components/SafetyMenu";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { DEMO_MODE } from "@/lib/demo-creators";
 import { NotificationMuteButton } from "@/components/NotificationMuteButton";
 import { notifyUnreadCountsChanged } from "@/lib/use-unread-counts";
 import { moderateBeforeUpload } from "@/lib/moderation";
@@ -52,6 +52,7 @@ export const Route = createFileRoute("/chat")({
 
 interface Thread {
   id: string;
+  actor_id: string;
   user_a: string;
   user_b: string;
   last_message_at: string;
@@ -75,7 +76,7 @@ function mergeMessages(...lists: Message[][]) {
 
 function ChatPage() {
   const { with: requestedUserId, thread: requestedThreadId } = Route.useSearch();
-  const { user, session, loading } = useAuth();
+  const { user, session, loading, demoPreviewRole } = useAuth();
   const { t, tr, locale } = useI18n();
   const nav = useNavigate();
   const unlockChatFn = useServerFn(createChatPpvPixCharge);
@@ -108,6 +109,45 @@ function ChatPage() {
 
   const loadThreads = async () => {
     if (!user) return;
+    if (DEMO_MODE) {
+      const perspective = demoPreviewRole === "creator" ? "creator" : "subscriber";
+      const presentationThreads: Thread[] = demoThreadDetails(user.id, perspective)
+        .flatMap((item) => {
+          const counterpart = perspective === "creator" ? item.lead : item.creator;
+          if (!counterpart || !item.creator || !item.lastMessage) return [];
+          const locallyBlocked =
+            localStorage.getItem(`venyx:demo:block:${user.id}:${counterpart.user_id}`) === "1";
+          if (locallyBlocked) return [];
+          return [
+            {
+              id: item.id,
+              actor_id: item.actorId,
+              user_a: item.creatorId,
+              user_b: item.lead.user_id,
+              last_message_at: item.lastMessage.created_at,
+              other_id: counterpart.user_id,
+              other_username: counterpart.username,
+              other_name: counterpart.display_name,
+              other_avatar: counterpart.avatar_url,
+              subscribed: perspective === "creator" ? item.lead.subscribed : item.subscribed,
+              last_preview:
+                localizedDemoMessageBody(item.lastMessage, locale) ?? tr("Mídia", "Media"),
+              unread_count: item.unreadCount,
+              is_demo: true,
+            },
+          ];
+        })
+        .sort(
+          (first, second) =>
+            new Date(second.last_message_at).getTime() - new Date(first.last_message_at).getTime(),
+        );
+      if (requestedThreadId) {
+        const requested = presentationThreads.find((thread) => thread.id === requestedThreadId);
+        if (requested) setActiveId(requested.id);
+      }
+      setThreads(presentationThreads);
+      return;
+    }
     const { data: ths } = await supabase
       .from("chat_threads")
       .select("*")
@@ -119,7 +159,7 @@ function ChatPage() {
       user_b: string;
       last_message_at: string;
     }[];
-    if (list.length === 0 && !requestedUserId && !requestedThreadId && !DEMO_MODE) {
+    if (list.length === 0 && !requestedUserId && !requestedThreadId) {
       setThreads([]);
       return;
     }
@@ -188,9 +228,7 @@ function ChatPage() {
     let nextThreads = list
       .filter((thread) => {
         const otherId = thread.user_a === user.id ? thread.user_b : thread.user_a;
-        const locallyBlocked =
-          DEMO_MODE && localStorage.getItem(`venyx:demo:block:${user.id}:${otherId}`) === "1";
-        return !blockedSet.has(otherId) && !locallyBlocked;
+        return !blockedSet.has(otherId);
       })
       .map((t) => {
         const other_id = t.user_a === user.id ? t.user_b : t.user_a;
@@ -205,49 +243,20 @@ function ChatPage() {
               : `@${p?.username ?? "usuario"}`;
         return {
           id: t.id,
+          actor_id: user.id,
           user_a: t.user_a,
           user_b: t.user_b,
           last_message_at: t.last_message_at,
           other_id,
           other_username: p?.username ?? "?",
           other_name: p?.display_name || p?.username || "?",
-          other_avatar:
-            DEMO_MODE && p?.username
-              ? getDemoAsset(p.username).avatar_url
-              : (p?.avatar_url ?? null),
+          other_avatar: p?.avatar_url ?? null,
           subscribed: subSet.has(other_id),
           last_preview: preview,
           unread_count: unreadByThread.get(t.id) ?? 0,
           is_demo: false,
         };
       });
-
-    if (DEMO_MODE) {
-      const demoThreads: Thread[] = demoThreadDetails(user.id).flatMap((demo) => {
-        if (!demo.creator || !demo.lastMessage) return [];
-        return [
-          {
-            id: demo.id,
-            user_a: user.id,
-            user_b: demo.creatorId,
-            last_message_at: demo.lastMessage.created_at,
-            other_id: demo.creatorId,
-            other_username: demo.creator.username,
-            other_name: demo.creator.display_name,
-            other_avatar: demo.creator.avatar_url,
-            subscribed: demo.subscribed,
-            last_preview:
-              localizedDemoMessageBody(demo.lastMessage, locale) ?? tr("Mídia", "Media"),
-            unread_count: demo.unreadCount,
-            is_demo: true,
-          },
-        ];
-      });
-      nextThreads = [...nextThreads, ...demoThreads].sort(
-        (first, second) =>
-          new Date(second.last_message_at).getTime() - new Date(first.last_message_at).getTime(),
-      );
-    }
 
     if (requestedUserId && requestedUserId !== user.id) {
       let requestedThread = nextThreads.find((thread) => thread.other_id === requestedUserId);
@@ -262,16 +271,14 @@ function ChatPage() {
           const requestedProfile = profMap.get(requestedUserId);
           requestedThread = {
             id: created.id,
+            actor_id: user.id,
             user_a: created.user_a,
             user_b: created.user_b,
             last_message_at: created.last_message_at,
             other_id: requestedUserId,
             other_username: requestedProfile?.username ?? "?",
             other_name: requestedProfile?.display_name || requestedProfile?.username || "?",
-            other_avatar:
-              DEMO_MODE && requestedProfile?.username
-                ? getDemoAsset(requestedProfile.username).avatar_url
-                : (requestedProfile?.avatar_url ?? null),
+            other_avatar: requestedProfile?.avatar_url ?? null,
             subscribed: subSet.has(requestedUserId),
             last_preview: `@${requestedProfile?.username ?? "usuario"}`,
             unread_count: 0,
@@ -292,9 +299,10 @@ function ChatPage() {
   const loadMessages = async (threadId: string) => {
     if (!user) return;
     if (DEMO_MODE && isDemoChatThreadId(threadId)) {
+      const actorId = threads.find((thread) => thread.id === threadId)?.actor_id ?? user.id;
       const readAt = new Date().toISOString();
       const demoRows = readDemoChatMessages(user.id, threadId).map((message) =>
-        message.sender_id !== user.id && !message.read_at
+        message.sender_id !== actorId && !message.read_at
           ? { ...message, read_at: readAt }
           : message,
       );
@@ -382,7 +390,7 @@ function ChatPage() {
   useEffect(() => {
     if (user) loadThreads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, requestedUserId, requestedThreadId]);
+  }, [user, requestedUserId, requestedThreadId, demoPreviewRole]);
 
   useEffect(() => {
     if (!user) return;
@@ -491,16 +499,17 @@ function ChatPage() {
     const detection = detectExternalContact(body);
     if (detection.blocked) {
       toast.error(contactBlockMessage(detection), { duration: 6000 });
-      // registrar tentativa para auditoria do admin
-      await supabase.from("moderation_logs").insert({
-        user_id: user.id,
-        surface: "chat",
-        category: "contact_share",
-        reason: detection.matches
-          .map((m) => `${m.label}: ${m.sample}`)
-          .join(" | ")
-          .slice(0, 500),
-      });
+      if (!DEMO_MODE) {
+        await supabase.from("moderation_logs").insert({
+          user_id: user.id,
+          surface: "chat",
+          category: "contact_share",
+          reason: detection.matches
+            .map((m) => `${m.label}: ${m.sample}`)
+            .join(" | ")
+            .slice(0, 500),
+        });
+      }
       return;
     }
 
@@ -508,7 +517,7 @@ function ChatPage() {
       const demoMessage: Message = {
         id: crypto.randomUUID(),
         thread_id: active.id,
-        sender_id: user.id,
+        sender_id: active.actor_id,
         body,
         media_path: null,
         mime_type: null,
@@ -671,8 +680,8 @@ function ChatPage() {
     if (active.is_demo) {
       toast.info(
         tr(
-          "O envio de mídia está desativado nesta conversa de exemplo.",
-          "Media uploads are disabled in this sample conversation.",
+          "O envio de mídia está indisponível nesta conversa.",
+          "Media uploads are unavailable in this conversation.",
         ),
       );
       e.target.value = "";
@@ -765,7 +774,9 @@ function ChatPage() {
       (m) =>
         m.media_path &&
         !mediaUrls[m.id] &&
-        (m.sender_id === user.id || m.unlocked || (m.subscribers_only && active?.subscribed)),
+        (m.sender_id === active?.actor_id ||
+          m.unlocked ||
+          (m.subscribers_only && active?.subscribed)),
     );
     if (toFetch.length === 0) return;
     let cancel = false;
@@ -919,20 +930,18 @@ function ChatPage() {
                     </span>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="hidden sm:inline-flex"
-                  disabled={active.is_demo}
-                  title={
-                    active.is_demo
-                      ? tr("Indisponível nesta conversa", "Unavailable in this conversation")
-                      : undefined
-                  }
-                  onClick={() => setTipOpen(true)}
-                >
-                  <DollarSign className="mr-1 h-3.5 w-3.5" /> {t("feed.tip")}
-                </Button>
+                {demoPreviewRole !== "creator" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 w-9 p-0 sm:w-auto sm:px-3"
+                    onClick={() => setTipOpen(true)}
+                    aria-label={t("feed.tip")}
+                  >
+                    <DollarSign className="h-3.5 w-3.5 sm:mr-1" />
+                    <span className="hidden sm:inline">{t("feed.tip")}</span>
+                  </Button>
+                )}
                 <NotificationMuteButton targetType="thread" targetId={active.id} compact />
                 <SafetyMenu
                   targetType="conversation"
@@ -948,7 +957,7 @@ function ChatPage() {
 
               <div className="flex-1 space-y-2 overflow-y-auto bg-background/30 p-4">
                 {messages.map((m) => {
-                  const fromMe = m.sender_id === user.id;
+                  const fromMe = m.sender_id === active.actor_id;
                   const isLockedMedia =
                     m.media_path &&
                     !m.unlocked &&
@@ -1199,12 +1208,14 @@ function ChatPage() {
                 )}
               </footer>
 
-              <TipModal
-                open={tipOpen}
-                onOpenChange={setTipOpen}
-                creatorId={active.other_id}
-                creatorName={active.other_name}
-              />
+              {demoPreviewRole !== "creator" && (
+                <TipModal
+                  open={tipOpen}
+                  onOpenChange={setTipOpen}
+                  creatorId={active.other_id}
+                  creatorName={active.other_name}
+                />
+              )}
               <PixCheckoutModal
                 open={pixOpen}
                 onOpenChange={setPixOpen}

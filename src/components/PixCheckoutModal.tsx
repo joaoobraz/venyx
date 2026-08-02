@@ -8,6 +8,7 @@ import { getChargeStatus } from "@/_server/checkout.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { trackClientError, trackProductEvent } from "@/lib/telemetry";
 
 export interface PixCharge {
   chargeId: string;
@@ -41,6 +42,13 @@ export function PixCheckoutModal({
 
   useEffect(() => {
     if (!open || !charge) return;
+    trackProductEvent("checkout_started", {
+      amountRange: charge.amountCents < 5_000
+        ? "under_50"
+        : charge.amountCents < 20_000
+          ? "50_to_199"
+          : "200_plus",
+    });
     const authHeaders = session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
       : null;
@@ -61,13 +69,14 @@ export function PixCheckoutModal({
         }
       } catch (err) {
         console.error("[PixCheckoutModal] poll", err);
+        trackClientError("client_error", err, { flow: "pix_status_poll" });
       }
     }, 4000);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [open, charge, session, getStatusFn, onOpenChange, onPaid]);
+  }, [open, charge, session, getStatusFn, onOpenChange, onPaid, tr]);
 
   const copyPix = () => {
     if (!charge?.qrCode) return;

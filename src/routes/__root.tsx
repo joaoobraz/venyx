@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ContentProtection } from "@/components/ContentProtection";
 import { Toaster } from "@/components/ui/sonner";
+import { ProductTelemetry } from "@/components/ProductTelemetry";
 
 function NotFoundComponent() {
   return (
@@ -43,8 +44,8 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Venyx — Plataforma de criadoras +18" },
       { name: "twitter:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Venyx." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e42cc4c2-86e6-424a-8bfe-0715d2eed87f/id-preview-5d4a5440--59549983-d8c7-43dd-bb65-ffb37fd041ca.lovable.app-1777023288099.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e42cc4c2-86e6-424a-8bfe-0715d2eed87f/id-preview-5d4a5440--59549983-d8c7-43dd-bb65-ffb37fd041ca.lovable.app-1777023288099.png" },
+      { property: "og:image", content: "/venyx-social-card.svg" },
+      { name: "twitter:image", content: "/venyx-social-card.svg" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -77,6 +78,7 @@ function RootComponent() {
     <ThemeProvider>
       <I18nProvider>
         <AuthProvider>
+          <ProductTelemetry />
           <ContentProtection />
           <Outlet />
           <CookieBanner />

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/feed")({
 
 function FeedPage() {
   const { user, loading, isCreator } = useAuth();
-  const { t, tr } = useI18n();
+  const { t, tr, locale } = useI18n();
   const nav = useNavigate();
   const [posts, setPosts] = useState<PostWithRelations[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -31,12 +31,12 @@ function FeedPage() {
     if (!user) return;
     setLoadingPosts(true);
     try {
-      const list = await fetchPosts({ viewerId: user.id });
+      const list = await fetchPosts({ viewerId: user.id, locale });
       setPosts(list);
     } finally {
       setLoadingPosts(false);
     }
-  }, [user]);
+  }, [user, locale]);
 
   useEffect(() => {
     if (user) load();

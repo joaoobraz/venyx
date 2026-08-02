@@ -1,8 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { CircleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
+import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
+import { getPasswordLoginError } from "@/lib/auth-errors";
+import { trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +19,22 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { t } = useI18n();
+  const { t, tr, locale } = useI18n();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoverySent, setRecoverySent] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) navigate({ to: "/feed" });
+  }, [user, navigate]);
 
   const prepareMfaChallenge = async (): Promise<boolean> => {
     const { data: aal, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -38,16 +53,58 @@ function LoginPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
+    setRecoverySent(false);
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const normalizedEmail = email.trim().toLowerCase();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
       if (error) throw error;
       if (await prepareMfaChallenge()) return;
       navigate({ to: "/feed" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível entrar.");
+      trackProductEvent("login_failed", {
+        method: "password",
+        reason: error instanceof Error ? error.name : "unknown",
+      });
+      const message = getPasswordLoginError(error, locale);
+      setLoginError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendPasswordRecovery = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
+
+    setRecoveryLoading(true);
+    setRecoverySent(false);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setRecoverySent(true);
+      toast.success(
+        tr(
+          "Enviamos o link para ativar ou redefinir a senha da Venyx.",
+          "We sent the link to activate or reset your Venyx password.",
+        ),
+      );
+    } catch {
+      toast.error(
+        tr(
+          "Não foi possível enviar o link agora. Tente novamente em alguns minutos.",
+          "We could not send the link right now. Try again in a few minutes.",
+        ),
+      );
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -77,11 +134,26 @@ function LoginPage() {
   };
 
   const onGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/feed` },
-    });
-    if (error) toast.error(error.message);
+    setGoogleLoading(true);
+    try {
+      await ensureGoogleAuthIsEnabled();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: createOAuthCallbackUrl(window.location.origin),
+          queryParams: { prompt: "select_account" },
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("O Google não retornou uma página de login.");
+      window.location.assign(data.url);
+    } catch (error) {
+      setGoogleLoading(false);
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível abrir o login do Google.",
+      );
+    }
   };
 
   return (
@@ -125,7 +197,11 @@ function LoginPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setLoginError(null);
+                  setRecoverySent(false);
+                }}
                 className="mt-1.5"
               />
             </div>
@@ -137,9 +213,18 @@ function LoginPage() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setLoginError(null);
+                }}
                 className="mt-1.5"
               />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {tr(
+                  "Use a senha criada para a Venyx, não a senha do Gmail.",
+                  "Use your Venyx password, not your Gmail password.",
+                )}
+              </p>
             </div>
             <Button
               type="submit"
@@ -149,6 +234,50 @@ function LoginPage() {
               {loading ? t("common.loading") : t("auth.login.button")}
             </Button>
           </form>
+        )}
+
+        {loginError && !mfaFactorId && (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+          >
+            <div className="flex gap-3">
+              <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-medium text-foreground">{loginError}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {tr(
+                    "Se ainda não criou uma conta Venyx, faça o cadastro. Se já criou, redefina a senha.",
+                    "Create a Venyx account if you do not have one yet, or reset its password.",
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button asChild type="button" size="sm">
+                <Link to="/signup">{tr("Criar conta Venyx", "Create Venyx account")}</Link>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={recoveryLoading}
+                onClick={sendPasswordRecovery}
+              >
+                {recoveryLoading
+                  ? t("common.loading")
+                  : tr("Ativar/redefinir senha", "Activate/reset password")}
+              </Button>
+            </div>
+            {recoverySent && (
+              <p className="mt-3 text-xs font-medium text-foreground" role="status">
+                {tr(
+                  "Confira a caixa de entrada e o spam. Abra o link no mesmo computador para escolher a senha da Venyx.",
+                  "Check your inbox and spam. Open the link on this computer to choose your Venyx password.",
+                )}
+              </p>
+            )}
+          </div>
         )}
 
         <Link
@@ -164,8 +293,14 @@ function LoginPage() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <Button variant="outline" onClick={onGoogle} className="w-full">
-          {t("auth.google")}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onGoogle}
+          disabled={googleLoading}
+          className="w-full"
+        >
+          {googleLoading ? t("common.loading") : t("auth.google")}
         </Button>
 
         <p className="mt-8 text-center text-sm text-muted-foreground">

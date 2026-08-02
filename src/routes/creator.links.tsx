@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { AppShell } from "@/components/AppShell";
 import { useI18n } from "@/lib/i18n";
+import { normalizeCreatorLinkUrl } from "@/lib/creator-link-url";
 
 export const Route = createFileRoute("/creator/links")({
   component: CreatorLinksPage,
@@ -160,11 +161,21 @@ function CreatorLinksPage() {
       toast.error(tr("Preencha o título e a URL", "Enter a title and URL"));
       return;
     }
+    const safeUrl = normalizeCreatorLinkUrl(newUrl);
+    if (!safeUrl) {
+      toast.error(
+        tr(
+          "Use um endereço válido começando com https://",
+          "Use a valid address starting with https://",
+        ),
+      );
+      return;
+    }
     const pos = links.length;
     const { error } = await supabase.from("creator_links").insert({
       user_id: user.id,
       title: newTitle.trim(),
-      url: newUrl.trim(),
+      url: safeUrl,
       icon: newIcon,
       position: pos,
     });
@@ -179,7 +190,22 @@ function CreatorLinksPage() {
   };
 
   const updateLink = async (id: string, patch: Partial<LinkRow>) => {
-    await supabase.from("creator_links").update(patch).eq("id", id);
+    if (typeof patch.url === "string") {
+      const safeUrl = normalizeCreatorLinkUrl(patch.url);
+      if (!safeUrl) {
+        toast.error(
+          tr(
+            "Link inválido. Use apenas endereços HTTP ou HTTPS.",
+            "Invalid link. Use only HTTP or HTTPS addresses.",
+          ),
+        );
+        await load();
+        return;
+      }
+      patch = { ...patch, url: safeUrl };
+    }
+    const { error } = await supabase.from("creator_links").update(patch).eq("id", id);
+    if (error) toast.error(error.message);
     load();
   };
 
@@ -224,10 +250,15 @@ function CreatorLinksPage() {
     )
       return;
     const start = links.length;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
     const rows = TEMPLATES.map((t, i) => ({
       user_id: user.id,
       title: tr(t.pt, t.en),
-      url: t.url || `https://venyx.app/profile/${profile.username}`,
+      url:
+        t.url ||
+        (t.icon === "heart"
+          ? `${origin}/gifts/${profile.username}`
+          : `${origin}/profile/${profile.username}`),
       icon: t.icon,
       position: start + i,
       is_featured: !!t.featured,
@@ -242,10 +273,7 @@ function CreatorLinksPage() {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">
-          {tr(
-            "Apenas criadoras podem usar a árvore de links.",
-            "Only creators can use the link page.",
-          )}
+          {tr("Apenas criadoras podem usar o Venyx Links.", "Only creators can use the link page.")}
         </p>
         <Link to="/become-creator" className="mt-4 inline-block text-primary underline">
           {tr("Tornar-se criadora", "Become a creator")}
@@ -266,11 +294,11 @@ function CreatorLinksPage() {
               <Link2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{tr("Árvore de links", "Link page")}</h1>
+              <h1 className="text-2xl font-bold">Venyx Links</h1>
               <p className="text-sm text-muted-foreground">
                 {tr(
-                  "Sua página de links segura para compartilhar nas redes.",
-                  "Your safe link page to share across social networks.",
+                  "Seu mini perfil para compartilhar na bio de todas as redes.",
+                  "Your mini profile to share in every social bio.",
                 )}
               </p>
             </div>
@@ -329,7 +357,7 @@ function CreatorLinksPage() {
                 )}
               </div>
               <div className="flex-1 space-y-2">
-                <Label className="block">{tr("Foto da árvore de links", "Link page photo")}</Label>
+                <Label className="block">{tr("Foto do Venyx Links", "Venyx Links photo")}</Label>
                 <p className="text-xs text-muted-foreground">
                   {page.avatar_url
                     ? tr(

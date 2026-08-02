@@ -8,7 +8,9 @@ import { listMyWishlist } from "@/_server/wishlist.functions";
 import { getFirstMediaForPosts } from "@/_server/media.functions";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useI18n } from "@/lib/i18n";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { DEMO_MODE, getDemoAsset, getDemoCreatorById } from "@/lib/demo-creators";
+import { getDemoPosts } from "@/lib/demo-content";
+import { readDemoWishlist } from "@/lib/demo-wishlist";
 
 export const Route = createFileRoute("/wishlist")({
   component: WishlistPage,
@@ -30,6 +32,54 @@ function WishlistPage() {
 
   useEffect(() => {
     if (!user || !session?.access_token) return;
+    if (DEMO_MODE) {
+      const syncLocalWishlist = () => {
+        const items = readDemoWishlist(user.id);
+        const creators = items
+          .filter((item) => item.target_type === "creator")
+          .map((item) => getDemoCreatorById(item.target_id))
+          .filter((item): item is NonNullable<typeof item> => Boolean(item))
+          .map((item) => ({
+            user_id: item.user_id,
+            username: item.username,
+            display_name: item.display_name,
+            avatar_url: item.avatar_url,
+            subscription_price_cents: item.subscription_price_cents,
+            is_verified: item.is_verified,
+          }));
+        const posts = items
+          .filter((item) => item.target_type === "post")
+          .flatMap((item) => getDemoPosts({ postId: item.target_id, viewerId: user.id, locale }))
+          .map((post) => ({
+            id: post.id,
+            creator_id: post.creator_id,
+            body: post.body,
+            visibility: post.visibility,
+            price_cents: post.price_cents,
+            created_at: post.created_at,
+            author: post.author,
+          }));
+        setData({ creators, posts, mediaByPostId: {} });
+        setPreviewMap(
+          Object.fromEntries(
+            posts.map((post) => [
+              post.id,
+              {
+                url: getDemoAsset(post.author.username).cover_url,
+                mime_type: "image/webp",
+                is_video: false,
+                has_custom_cover: true,
+              },
+            ]),
+          ),
+        );
+        setBusy(false);
+      };
+      syncLocalWishlist();
+      window.addEventListener("venyx:presentation:wishlist-changed", syncLocalWishlist);
+      return () =>
+        window.removeEventListener("venyx:presentation:wishlist-changed", syncLocalWishlist);
+    }
     const headers = { Authorization: `Bearer ${session.access_token}` };
     fn({ headers }).then((res) => {
       setData(res);
@@ -44,7 +94,7 @@ function WishlistPage() {
           });
       }
     }).finally(() => setBusy(false));
-  }, [user, session?.access_token, fn, mediaFn]);
+  }, [user, session?.access_token, fn, mediaFn, locale]);
 
   if (loading || busy) {
     return (
@@ -189,7 +239,7 @@ function WishlistPage() {
                       ) : demoPreview ? (
                         <img
                           src={demoPreview}
-                          alt={tr("Prévia demonstrativa do conteúdo salvo", "Demo preview of saved content")}
+                          alt={tr("Prévia do conteúdo salvo", "Saved content preview")}
                           className="h-full w-full object-cover"
                         />
                       ) : (

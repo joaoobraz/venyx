@@ -8,6 +8,54 @@ export type Database = {
   };
   public: {
     Tables: {
+      backup_verification_runs: {
+        Row: {
+          backup_provider: string;
+          backup_reference: string;
+          completed_at: string;
+          created_at: string;
+          id: string;
+          note: string;
+          restore_environment: string;
+          row_count_checks: Json;
+          source_environment: string;
+          started_at: string;
+          status: string;
+          storage_checks: Json;
+          verified_by: string;
+        };
+        Insert: {
+          backup_provider: string;
+          backup_reference: string;
+          completed_at: string;
+          created_at?: string;
+          id?: string;
+          note: string;
+          restore_environment: string;
+          row_count_checks?: Json;
+          source_environment: string;
+          started_at: string;
+          status: string;
+          storage_checks?: Json;
+          verified_by: string;
+        };
+        Update: {
+          backup_provider?: string;
+          backup_reference?: string;
+          completed_at?: string;
+          created_at?: string;
+          id?: string;
+          note?: string;
+          restore_environment?: string;
+          row_count_checks?: Json;
+          source_environment?: string;
+          started_at?: string;
+          status?: string;
+          storage_checks?: Json;
+          verified_by?: string;
+        };
+        Relationships: [];
+      };
       admin_access_audit: {
         Row: {
           created_at: string;
@@ -272,45 +320,111 @@ export type Database = {
         };
         Relationships: [];
       };
-      content_reports: {
+      account_recovery_requests: {
         Row: {
+          admin_notes: string | null;
+          contact_email: string;
           created_at: string;
-          details: string | null;
+          details: string;
           id: string;
-          reason: string;
-          reported_user_id: string | null;
-          reporter_id: string;
+          issue_type: string;
+          login_email: string;
+          protocol: string;
+          request_ip_hash: string;
           reviewed_at: string | null;
           reviewed_by: string | null;
           status: string;
-          target_id: string;
-          target_type: string;
+          updated_at: string;
         };
         Insert: {
+          admin_notes?: string | null;
+          contact_email: string;
+          created_at?: string;
+          details: string;
+          id?: string;
+          issue_type: string;
+          login_email: string;
+          protocol?: string;
+          request_ip_hash: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          admin_notes?: string | null;
+          contact_email?: string;
+          created_at?: string;
+          details?: string;
+          id?: string;
+          issue_type?: string;
+          login_email?: string;
+          protocol?: string;
+          request_ip_hash?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      content_reports: {
+        Row: {
+          assigned_to: string | null;
+          created_at: string;
+          details: string | null;
+          escalated_at: string | null;
+          id: string;
+          priority: string;
+          reason: string;
+          reported_user_id: string | null;
+          reporter_id: string;
+          resolution_note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          sla_due_at: string | null;
+          status: string;
+          target_id: string;
+          target_type: string;
+          updated_at: string;
+        };
+        Insert: {
+          assigned_to?: string | null;
           created_at?: string;
           details?: string | null;
+          escalated_at?: string | null;
           id?: string;
+          priority?: string;
           reason: string;
           reported_user_id?: string | null;
           reporter_id: string;
+          resolution_note?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          sla_due_at?: string | null;
           status?: string;
           target_id: string;
           target_type: string;
+          updated_at?: string;
         };
         Update: {
+          assigned_to?: string | null;
           created_at?: string;
           details?: string | null;
+          escalated_at?: string | null;
           id?: string;
+          priority?: string;
           reason?: string;
           reported_user_id?: string | null;
           reporter_id?: string;
+          resolution_note?: string | null;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          sla_due_at?: string | null;
           status?: string;
           target_id?: string;
           target_type?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -372,6 +486,173 @@ export type Database = {
           value?: string | null;
         };
         Relationships: [];
+      };
+      creator_gift_contributions: {
+        Row: {
+          amount_cents: number;
+          created_at: string;
+          creator_id: string;
+          id: string;
+          item_id: string;
+          message: string | null;
+          paid_at: string;
+          pix_charge_id: string;
+          supporter_id: string;
+        };
+        Insert: {
+          amount_cents: number;
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          item_id: string;
+          message?: string | null;
+          paid_at?: string;
+          pix_charge_id: string;
+          supporter_id: string;
+        };
+        Update: {
+          amount_cents?: number;
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          item_id?: string;
+          message?: string | null;
+          paid_at?: string;
+          pix_charge_id?: string;
+          supporter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_gift_contributions_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "creator_gift_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "creator_gift_contributions_pix_charge_id_fkey";
+            columns: ["pix_charge_id"];
+            isOneToOne: true;
+            referencedRelation: "pix_charges";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      creator_gift_items: {
+        Row: {
+          category: string;
+          created_at: string;
+          creator_id: string;
+          description: string;
+          emoji: string;
+          id: string;
+          is_active: boolean;
+          position: number;
+          received_cents: number;
+          received_count: number;
+          title: string;
+          updated_at: string;
+          value_cents: number;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          creator_id: string;
+          description?: string;
+          emoji?: string;
+          id?: string;
+          is_active?: boolean;
+          position?: number;
+          received_cents?: number;
+          received_count?: number;
+          title: string;
+          updated_at?: string;
+          value_cents: number;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          creator_id?: string;
+          description?: string;
+          emoji?: string;
+          id?: string;
+          is_active?: boolean;
+          position?: number;
+          received_cents?: number;
+          received_count?: number;
+          title?: string;
+          updated_at?: string;
+          value_cents?: number;
+        };
+        Relationships: [];
+      };
+      creator_gift_settings: {
+        Row: {
+          created_at: string;
+          creator_id: string;
+          intro: string;
+          is_published: boolean;
+          thank_you_message: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id: string;
+          intro?: string;
+          is_published?: boolean;
+          thank_you_message?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          intro?: string;
+          is_published?: boolean;
+          thank_you_message?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      creator_link_events: {
+        Row: {
+          created_at: string;
+          event_day: string;
+          event_type: string;
+          id: string;
+          link_id: string | null;
+          page_owner_id: string;
+          visitor_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_day?: string;
+          event_type: string;
+          id?: string;
+          link_id?: string | null;
+          page_owner_id: string;
+          visitor_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          event_day?: string;
+          event_type?: string;
+          id?: string;
+          link_id?: string | null;
+          page_owner_id?: string;
+          visitor_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_link_events_link_id_fkey";
+            columns: ["link_id"];
+            isOneToOne: false;
+            referencedRelation: "creator_links";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       creator_link_pages: {
         Row: {
@@ -1022,6 +1303,183 @@ export type Database = {
         };
         Relationships: [];
       };
+      financial_reconciliation_issues: {
+        Row: {
+          attempt_count: number;
+          charge_id: string;
+          created_at: string;
+          details: Json;
+          first_detected_at: string;
+          gateway_status: string | null;
+          id: string;
+          issue_code: string;
+          last_detected_at: string;
+          local_status: string;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          severity: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          charge_id: string;
+          created_at?: string;
+          details?: Json;
+          first_detected_at?: string;
+          gateway_status?: string | null;
+          id?: string;
+          issue_code: string;
+          last_detected_at?: string;
+          local_status: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempt_count?: number;
+          charge_id?: string;
+          created_at?: string;
+          details?: Json;
+          first_detected_at?: string;
+          gateway_status?: string | null;
+          id?: string;
+          issue_code?: string;
+          last_detected_at?: string;
+          local_status?: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          severity?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      financial_reconciliation_runs: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          error_code: string | null;
+          expired_count: number;
+          id: string;
+          issue_count: number;
+          recovered_count: number;
+          scanned_count: number;
+          source: string;
+          started_at: string;
+          status: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          error_code?: string | null;
+          expired_count?: number;
+          id?: string;
+          issue_count?: number;
+          recovered_count?: number;
+          scanned_count?: number;
+          source: string;
+          started_at?: string;
+          status: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          error_code?: string | null;
+          expired_count?: number;
+          id?: string;
+          issue_count?: number;
+          recovered_count?: number;
+          scanned_count?: number;
+          source?: string;
+          started_at?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      operational_alerts: {
+        Row: {
+          acknowledged_at: string | null;
+          acknowledged_by: string | null;
+          created_at: string;
+          event_id: string;
+          id: string;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      operational_events: {
+        Row: {
+          anonymous_id_hash: string | null;
+          created_at: string;
+          device_family: string | null;
+          event_kind: string;
+          event_name: string;
+          fingerprint: string | null;
+          id: string;
+          metadata: Json;
+          route: string | null;
+          severity: string;
+          user_id: string | null;
+        };
+        Insert: {
+          anonymous_id_hash?: string | null;
+          created_at?: string;
+          device_family?: string | null;
+          event_kind: string;
+          event_name: string;
+          fingerprint?: string | null;
+          id?: string;
+          metadata?: Json;
+          route?: string | null;
+          severity?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          anonymous_id_hash?: string | null;
+          created_at?: string;
+          device_family?: string | null;
+          event_kind?: string;
+          event_name?: string;
+          fingerprint?: string | null;
+          id?: string;
+          metadata?: Json;
+          route?: string | null;
+          severity?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       pix_charges: {
         Row: {
           amount_cents: number;
@@ -1368,6 +1826,60 @@ export type Database = {
           },
         ];
       };
+      privacy_requests: {
+        Row: {
+          admin_notes: string | null;
+          completed_at: string | null;
+          created_at: string;
+          download_expires_at: string | null;
+          download_path: string | null;
+          id: string;
+          protocol: string;
+          request_type: string;
+          retention_exceptions: Json;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          user_note: string | null;
+        };
+        Insert: {
+          admin_notes?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          download_expires_at?: string | null;
+          download_path?: string | null;
+          id?: string;
+          protocol?: string;
+          request_type: string;
+          retention_exceptions?: Json;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          user_note?: string | null;
+        };
+        Update: {
+          admin_notes?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          download_expires_at?: string | null;
+          download_path?: string | null;
+          id?: string;
+          protocol?: string;
+          request_type?: string;
+          retention_exceptions?: Json;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          user_note?: string | null;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -1541,6 +2053,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      support_requests: {
+        Row: {
+          admin_notes: string | null;
+          assigned_to: string | null;
+          category: string;
+          created_at: string;
+          id: string;
+          message: string;
+          priority: string;
+          protocol: string;
+          resolved_at: string | null;
+          status: string;
+          subject: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          admin_notes?: string | null;
+          assigned_to?: string | null;
+          category: string;
+          created_at?: string;
+          id?: string;
+          message: string;
+          priority?: string;
+          protocol?: string;
+          resolved_at?: string | null;
+          status?: string;
+          subject: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          admin_notes?: string | null;
+          assigned_to?: string | null;
+          category?: string;
+          created_at?: string;
+          id?: string;
+          message?: string;
+          priority?: string;
+          protocol?: string;
+          resolved_at?: string | null;
+          status?: string;
+          subject?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       subscription_coupons: {
         Row: {
           code: string;
@@ -1631,8 +2191,77 @@ export type Database = {
         };
         Relationships: [];
       };
+      safety_incident_evidence: {
+        Row: {
+          chain_of_custody: Json;
+          created_at: string;
+          id: string;
+          legal_hold: boolean;
+          preserved_at: string;
+          report_id: string;
+          retention_until: string;
+          snapshot: Json;
+          target_id: string;
+          target_type: string;
+        };
+        Insert: {
+          chain_of_custody?: Json;
+          created_at?: string;
+          id?: string;
+          legal_hold?: boolean;
+          preserved_at?: string;
+          report_id: string;
+          retention_until?: string;
+          snapshot?: Json;
+          target_id: string;
+          target_type: string;
+        };
+        Update: {
+          chain_of_custody?: Json;
+          created_at?: string;
+          id?: string;
+          legal_hold?: boolean;
+          preserved_at?: string;
+          report_id?: string;
+          retention_until?: string;
+          snapshot?: Json;
+          target_id?: string;
+          target_type?: string;
+        };
+        Relationships: [];
+      };
+      subscription_renewal_reminders: {
+        Row: {
+          days_before: number;
+          id: string;
+          period_end: string;
+          sent_at: string;
+          subscriber_id: string;
+          subscription_id: string;
+        };
+        Insert: {
+          days_before: number;
+          id?: string;
+          period_end: string;
+          sent_at?: string;
+          subscriber_id: string;
+          subscription_id: string;
+        };
+        Update: {
+          days_before?: number;
+          id?: string;
+          period_end?: string;
+          sent_at?: string;
+          subscriber_id?: string;
+          subscription_id?: string;
+        };
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
+          cancel_at_period_end: boolean;
+          cancel_requested_at: string | null;
+          cancellation_reason: string | null;
           created_at: string;
           creator_id: string;
           current_period_start: string | null;
@@ -1647,6 +2276,9 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          cancel_at_period_end?: boolean;
+          cancel_requested_at?: string | null;
+          cancellation_reason?: string | null;
           created_at?: string;
           creator_id: string;
           current_period_start?: string | null;
@@ -1661,6 +2293,9 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          cancel_at_period_end?: boolean;
+          cancel_requested_at?: string | null;
+          cancellation_reason?: string | null;
           created_at?: string;
           creator_id?: string;
           current_period_start?: string | null;
@@ -1848,6 +2483,42 @@ export type Database = {
         Update: {
           created_at?: string;
           muted_user_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      user_consents: {
+        Row: {
+          accepted_at: string;
+          consent_type: string;
+          created_at: string;
+          document_version: string;
+          evidence: Json;
+          id: string;
+          ip_address: unknown | null;
+          user_agent_hash: string | null;
+          user_id: string;
+        };
+        Insert: {
+          accepted_at?: string;
+          consent_type: string;
+          created_at?: string;
+          document_version: string;
+          evidence?: Json;
+          id?: string;
+          ip_address?: unknown | null;
+          user_agent_hash?: string | null;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          consent_type?: string;
+          created_at?: string;
+          document_version?: string;
+          evidence?: Json;
+          id?: string;
+          ip_address?: unknown | null;
+          user_agent_hash?: string | null;
           user_id?: string;
         };
         Relationships: [];
@@ -2083,6 +2754,70 @@ export type Database = {
           deleted_paths: string[];
         }[];
       };
+      create_account_recovery_request: {
+        Args: {
+          _contact_email: string;
+          _details: string;
+          _issue_type: string;
+          _login_email: string;
+          _request_ip_hash: string;
+        };
+        Returns: string;
+      };
+      creator_onboarding_status: {
+        Args: { _user_id: string };
+        Returns: {
+          consent_complete: boolean;
+          first_post_created: boolean;
+          kyc_approved: boolean;
+          monetization_ready: boolean;
+          payout_key_configured: boolean;
+          price_configured: boolean;
+          profile_complete: boolean;
+        }[];
+      };
+      assert_creator_monetization_ready: {
+        Args: { _creator_id: string };
+        Returns: undefined;
+      };
+      fulfill_symbolic_gift: {
+        Args: {
+          _amount_cents: number;
+          _charge_id: string;
+          _creator_id: string;
+          _item_id: string;
+          _message?: string | null;
+          _supporter_id: string;
+        };
+        Returns: boolean;
+      };
+      record_creator_consents: {
+        Args: {
+          _creator_policy_version: string;
+          _ip_address?: string | null;
+          _privacy_version: string;
+          _source?: string;
+          _terms_version: string;
+          _user_agent_hash?: string | null;
+          _user_id: string;
+        };
+        Returns: number;
+      };
+      submit_creator_kyc_with_consent: {
+        Args: {
+          _creator_policy_version: string;
+          _document_back_url: string | null;
+          _document_front_url: string;
+          _document_type: string;
+          _ip_address?: string | null;
+          _privacy_version: string;
+          _selfie_url: string;
+          _terms_version: string;
+          _user_agent_hash?: string | null;
+          _user_id: string;
+        };
+        Returns: string;
+      };
       enqueue_mass_dm: {
         Args: {
           _body: string;
@@ -2107,6 +2842,48 @@ export type Database = {
           expired_count: number;
         }[];
       };
+      dispatch_subscription_renewal_reminders: {
+        Args: never;
+        Returns: number;
+      };
+      report_financial_reconciliation_issue: {
+        Args: {
+          _charge_id: string;
+          _details?: Json;
+          _gateway_status: string | null;
+          _issue_code: string;
+          _local_status: string;
+          _severity: string;
+        };
+        Returns: string;
+      };
+      record_operational_event: {
+        Args: {
+          _anonymous_id_hash: string | null;
+          _device_family: string | null;
+          _event_kind: string;
+          _event_name: string;
+          _fingerprint: string | null;
+          _metadata: Json;
+          _route: string | null;
+          _severity: string;
+          _user_id: string | null;
+        };
+        Returns: string;
+      };
+      review_safety_report: {
+        Args: {
+          _note?: string | null;
+          _report_id: string;
+          _reviewer_id: string;
+          _status: string;
+        };
+        Returns: boolean;
+      };
+      resolve_financial_reconciliation_issues_for_charge: {
+        Args: { _charge_id: string; _note?: string };
+        Returns: number;
+      };
       get_platform_fee_pct: { Args: never; Returns: number };
       has_role: {
         Args: {
@@ -2128,6 +2905,14 @@ export type Database = {
           _trial_days: number;
         };
         Returns: string;
+      };
+      schedule_my_subscription_cancellation: {
+        Args: { _reason?: string | null; _subscription_id: string };
+        Returns: Json;
+      };
+      undo_my_subscription_cancellation: {
+        Args: { _subscription_id: string };
+        Returns: Json;
       };
       reconcile_pix_refund: {
         Args: {

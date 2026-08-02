@@ -12,6 +12,7 @@ import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWa
 import { Switch } from "@/components/ui/switch";
 import { Gift } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { trackProductEvent } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/settings/profile")({
   component: SettingsProfile,
@@ -68,6 +69,9 @@ function SettingsProfile() {
     setSaving(false);
     if (error) toast.error(error.message);
     else {
+      if (displayName.trim().length >= 2 && bio.trim().length >= 20) {
+        trackProductEvent("profile_completed", { creator: isCreator });
+      }
       toast.success(tr("Perfil atualizado!", "Profile updated!"));
       await refresh();
     }

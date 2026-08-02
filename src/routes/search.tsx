@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { CreatorCard, type CreatorSummary } from "@/components/CreatorCard";
 import { searchCreators } from "@/_server/discovery.functions";
 import { useI18n } from "@/lib/i18n";
+import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (s: Record<string, unknown>): { q?: string } => ({
@@ -28,6 +29,19 @@ function SearchPage() {
   useEffect(() => {
     const term = query.trim();
     const id = ++reqId.current;
+    if (DEMO_MODE) {
+      const normalized = term.toLocaleLowerCase();
+      const creators = DEMO_CREATORS.filter((creator) =>
+        [creator.display_name, creator.username, creator.category, creator.category_en]
+          .join(" ")
+          .toLocaleLowerCase()
+          .includes(normalized),
+      );
+      setResults(creators);
+      setSearched(true);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const handle = setTimeout(async () => {
       try {

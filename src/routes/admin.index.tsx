@@ -12,6 +12,9 @@ import {
   Crown,
   Loader2,
   Flag,
+  CircleDollarSign,
+  Headphones,
+  Activity,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -140,6 +143,33 @@ function AdminHomePage() {
       description: tr("Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.", "History of KYC decisions, DMCA updates and role assignments."),
       icon: ShieldCheck,
       link: "/admin/actions-audit",
+    },
+    {
+      title: tr("Conciliação financeira", "Financial reconciliation"),
+      description: tr(
+        "Conferir cobranças PIX pendentes, recuperar entregas e tratar divergências da NexusPag.",
+        "Check pending PIX charges, recover deliveries, and review NexusPag mismatches.",
+      ),
+      icon: CircleDollarSign,
+      link: "/admin/reconciliation",
+    },
+    {
+      title: tr("Central de atendimento", "Service desk"),
+      description: tr(
+        "Acompanhar chamados, recuperação de conta e solicitações de privacidade.",
+        "Track tickets, account recovery, and privacy requests.",
+      ),
+      icon: Headphones,
+      link: "/admin/support",
+    },
+    {
+      title: tr("Operação & estabilidade", "Operations & reliability"),
+      description: tr(
+        "Acompanhar funil, erros, alertas, SLA e evidências de restauração.",
+        "Track funnel, errors, alerts, SLA, and restore evidence.",
+      ),
+      icon: Activity,
+      link: "/admin/operations",
     },
   ];
 

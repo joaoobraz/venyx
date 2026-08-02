@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { CaptionSuggest } from "@/components/CaptionSuggest";
 import { moderateBeforeUpload } from "@/lib/moderation";
 import { useI18n } from "@/lib/i18n";
+import { trackProductEvent } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
@@ -96,6 +97,7 @@ function CreatorPostsPage() {
       for (const draft of mediaDrafts) {
         const mod = await moderateBeforeUpload(draft.file, "post", user.id);
         if (!mod.allowed) {
+          trackProductEvent("moderation_failed", { flow: "post", target: "media" });
           toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
           setSubmitting(false);
           return;
@@ -103,6 +105,7 @@ function CreatorPostsPage() {
         if (draft.coverFile) {
           const coverMod = await moderateBeforeUpload(draft.coverFile, "post", user.id);
           if (!coverMod.allowed) {
+            trackProductEvent("moderation_failed", { flow: "post", target: "cover" });
             toast.error(`${tr("Capa bloqueada", "Cover blocked")}: ${coverMod.reason || tr("violação de política", "policy violation")}`);
             setSubmitting(false);
             return;
@@ -197,6 +200,7 @@ function CreatorPostsPage() {
     try {
       const mod = await moderateBeforeUpload(f, "story", user.id);
       if (!mod.allowed) {
+        trackProductEvent("moderation_failed", { flow: "story", target: "media" });
         toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
         setSubmitting(false);
         return;

@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/auth";
 import { toggleWishlist, getMyWishlistIds } from "@/_server/wishlist.functions";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import { readDemoWishlist, toggleDemoWishlist } from "@/lib/demo-wishlist";
 
 export function WishlistButton({
   targetType,
@@ -26,13 +28,29 @@ export function WishlistButton({
   const [busy, setBusy] = useState(false);
   const toggleFn = useServerFn(toggleWishlist);
   const listFn = useServerFn(getMyWishlistIds);
+  const isLocalTarget = DEMO_MODE && targetId.startsWith("demo-");
 
   useEffect(() => {
     if (!user || !session?.access_token) return;
+    if (isLocalTarget) {
+      setActive(
+        readDemoWishlist(user.id).some(
+          (item) => item.target_type === targetType && item.target_id === targetId,
+        ),
+      );
+      const refresh = () =>
+        setActive(
+          readDemoWishlist(user.id).some(
+            (item) => item.target_type === targetType && item.target_id === targetId,
+          ),
+        );
+      window.addEventListener("venyx:presentation:wishlist-changed", refresh);
+      return () => window.removeEventListener("venyx:presentation:wishlist-changed", refresh);
+    }
     listFn({ headers: { Authorization: `Bearer ${session.access_token}` } }).then((res) => {
       setActive(res.items.some((i) => i.target_type === targetType && i.target_id === targetId));
     }).catch(() => {});
-  }, [user, session?.access_token, targetType, targetId, listFn]);
+  }, [isLocalTarget, user, session?.access_token, targetType, targetId, listFn]);
 
   const onClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -42,6 +60,17 @@ export function WishlistButton({
       return;
     }
     setBusy(true);
+    if (isLocalTarget) {
+      const added = toggleDemoWishlist(user.id, targetType, targetId);
+      setActive(added);
+      toast.success(
+        added
+          ? tr("Adicionado aos favoritos 💕", "Added to favorites 💕")
+          : tr("Removido dos favoritos", "Removed from favorites"),
+      );
+      setBusy(false);
+      return;
+    }
     try {
       const res = await toggleFn({
         data: { targetType, targetId },

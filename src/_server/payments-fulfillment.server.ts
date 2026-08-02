@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database, Json, Tables } from "@/integrations/supabase/types";
+import { recordOperationalEvent } from "@/_server/observability.server";
 
 type PixCharge = Tables<"pix_charges">;
 type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
@@ -142,9 +143,32 @@ export async function fulfillPaidCharge(opts: {
       console.error("[fulfillPaidCharge] notificação falhou", notificationError);
     }
 
+    await recordOperationalEvent({
+      eventKind: "product",
+      eventName: "payment_completed",
+      userId: charge.payer_id,
+      metadata: {
+        purpose: charge.purpose,
+        amountRange:
+          charge.amount_cents < 5_000
+            ? "under_50"
+            : charge.amount_cents < 20_000
+              ? "50_to_199"
+              : "200_plus",
+      },
+    });
+
     return { ok: true, alreadyFulfilled: false, chargeId: charge.id };
   } catch (e) {
     console.error("[fulfillPaidCharge] erro no efeito colateral", e);
+    await recordOperationalEvent({
+      eventKind: "error",
+      eventName: "payment_fulfillment_failed",
+      severity: "critical",
+      userId: charge.payer_id,
+      metadata: { purpose: charge.purpose, error: e instanceof Error ? e.message : "unknown" },
+      fingerprint: `payment_fulfillment:${charge.purpose}`,
+    });
     await supabaseAdmin
       .from("pix_charges")
       .update({ status: "pending" })
@@ -388,6 +412,20 @@ async function fulfillPpv(charge: PixCharge) {
 
 async function fulfillTip(charge: PixCharge) {
   const metadata = metadataOf(charge);
+  const isSymbolicGift = metadata.kind === "symbolic_gift";
+  if (isSymbolicGift) {
+    const giftItemId = typeof metadata.gift_item_id === "string" ? metadata.gift_item_id : null;
+    if (!giftItemId) throw new Error("Mimo simbólico sem item associado");
+    const { error } = await supabaseAdmin.rpc("fulfill_symbolic_gift", {
+      _charge_id: charge.id,
+      _item_id: giftItemId,
+      _creator_id: charge.payee_id,
+      _supporter_id: charge.payer_id,
+      _amount_cents: charge.amount_cents,
+      _message: typeof metadata.message === "string" ? metadata.message : null,
+    });
+    if (error) throw error;
+  }
   await insertTransaction({
     payer_id: charge.payer_id,
     payee_id: charge.payee_id,
@@ -398,7 +436,14 @@ async function fulfillTip(charge: PixCharge) {
     gateway: "nexuspag",
     gateway_ref: charge.gateway_transaction_id,
     idempotency_key: `${charge.id}:tip`,
-    metadata: { charge_id: charge.id, message: metadata.message ?? null },
+    metadata: {
+      charge_id: charge.id,
+      message: metadata.message ?? null,
+      kind: isSymbolicGift ? "symbolic_gift" : "tip",
+      gift_item_id: isSymbolicGift ? (metadata.gift_item_id ?? null) : null,
+      gift_title: isSymbolicGift ? (metadata.gift_title ?? null) : null,
+      gift_category: isSymbolicGift ? (metadata.gift_category ?? null) : null,
+    },
   });
 }
 

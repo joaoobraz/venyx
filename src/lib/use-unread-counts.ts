@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { countDemoUnreadMessages } from "@/lib/demo-chat";
+import { countDemoUnreadNotifications } from "@/lib/demo-notifications";
 
 export function notifyUnreadCountsChanged() {
   if (typeof window !== "undefined") {
@@ -11,7 +12,7 @@ export function notifyUnreadCountsChanged() {
 }
 
 export function useUnreadCounts() {
-  const { user } = useAuth();
+  const { user, demoPreviewRole } = useAuth();
   const channelSuffix = useRef(Math.random().toString(36).slice(2));
   const [messages, setMessages] = useState(0);
   const [notifications, setNotifications] = useState(0);
@@ -20,6 +21,16 @@ export function useUnreadCounts() {
     if (!user) {
       setMessages(0);
       setNotifications(0);
+      return;
+    }
+    if (DEMO_MODE) {
+      setMessages(
+        countDemoUnreadMessages(
+          user.id,
+          demoPreviewRole === "creator" ? "creator" : "subscriber",
+        ),
+      );
+      setNotifications(countDemoUnreadNotifications(user.id));
       return;
     }
     const [{ count: notificationCount }, { data: threadRows }] = await Promise.all([
@@ -39,14 +50,18 @@ export function useUnreadCounts() {
           .neq("sender_id", user.id)
           .is("read_at", null)
       : { count: 0 };
-    const demoCount = DEMO_MODE ? countDemoUnreadMessages(user.id) : 0;
     setNotifications(notificationCount ?? 0);
-    setMessages((messageCount ?? 0) + demoCount);
-  }, [user]);
+    setMessages(messageCount ?? 0);
+  }, [demoPreviewRole, user]);
 
   useEffect(() => {
     load();
     if (!user) return;
+    if (DEMO_MODE) {
+      const onLocalChange = () => load();
+      window.addEventListener("venyx:unread-counts-changed", onLocalChange);
+      return () => window.removeEventListener("venyx:unread-counts-changed", onLocalChange);
+    }
     const channel = supabase
       .channel(`unread-counts-${user.id}-${channelSuffix.current}`)
       .on(

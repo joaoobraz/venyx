@@ -13,13 +13,15 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE } from "@/lib/demo-creators";
+import { getDemoCommentSeeds, type DemoLocale } from "@/lib/demo-content";
 import { detectExternalContact } from "@/lib/contact-guard";
 import { Input } from "@/components/ui/input";
 import { SafetyMenu } from "@/components/SafetyMenu";
 import { NotificationMuteButton } from "@/components/NotificationMuteButton";
 
 const PAGE_SIZE = 20;
-const demoKey = (postId: string) => `venyx-demo-comments:${postId}`;
+const demoKey = (postId: string, locale: DemoLocale) =>
+  `venyx-demo-comments:v3:${locale}:${postId}`;
 
 function normalizeDemoComment(comment: PostComment): PostComment {
   return {
@@ -32,18 +34,24 @@ function normalizeDemoComment(comment: PostComment): PostComment {
   };
 }
 
-function readDemoComments(postId: string): PostComment[] {
+function readDemoComments(postId: string, locale: DemoLocale): PostComment[] {
   if (typeof window === "undefined") return [];
   try {
-    return (JSON.parse(localStorage.getItem(demoKey(postId)) ?? "[]") as PostComment[])
-      .map(normalizeDemoComment);
+    const key = demoKey(postId, locale);
+    const existing = localStorage.getItem(key);
+    if (existing) {
+      return (JSON.parse(existing) as PostComment[]).map(normalizeDemoComment);
+    }
+    const seeded = getDemoCommentSeeds(postId, locale).map(normalizeDemoComment);
+    localStorage.setItem(key, JSON.stringify(seeded));
+    return seeded;
   } catch {
     return [];
   }
 }
 
-function writeDemoComments(postId: string, comments: PostComment[]) {
-  localStorage.setItem(demoKey(postId), JSON.stringify(comments.slice(-500)));
+function writeDemoComments(postId: string, locale: DemoLocale, comments: PostComment[]) {
+  localStorage.setItem(demoKey(postId, locale), JSON.stringify(comments.slice(-500)));
 }
 
 function demoCreatorModerationBlock(creatorId: string, userId: string, body: string) {
@@ -136,6 +144,7 @@ export function PostComments({
 }) {
   const { user, session, profile } = useAuth();
   const { tr, locale } = useI18n();
+  const isLocalDemoPost = DEMO_MODE && postId.startsWith("demo-post-");
   const [comments, setComments] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -170,6 +179,15 @@ export function PostComments({
   useEffect(() => {
     if (!open || loaded || !user || !headers) return;
     setLoading(true);
+    if (isLocalDemoPost) {
+      const stored = readDemoComments(postId, locale);
+      setComments(stored);
+      setNextCursor(null);
+      onCommentsCountChange(stored.length);
+      setLoaded(true);
+      setLoading(false);
+      return;
+    }
     listFn({ data: { postId, limit: PAGE_SIZE }, headers })
       .then((result) => {
         setComments(result.comments);
@@ -179,7 +197,7 @@ export function PostComments({
       })
       .catch(() => {
         if (DEMO_MODE) {
-          const stored = readDemoComments(postId);
+          const stored = readDemoComments(postId, locale);
           setComments(stored);
           setNextCursor(null);
           onCommentsCountChange(stored.length);
@@ -189,7 +207,7 @@ export function PostComments({
         toast.error(tr("Não foi possível carregar os comentários.", "Couldn't load comments."));
       })
       .finally(() => setLoading(false));
-  }, [headers, listFn, loaded, onCommentsCountChange, open, postId, tr, user]);
+  }, [headers, isLocalDemoPost, listFn, loaded, locale, onCommentsCountChange, open, postId, tr, user]);
 
   const loadPrevious = async () => {
     if (!headers || !nextCursor || loadingMore) return;
@@ -235,6 +253,7 @@ export function PostComments({
 
     setSubmitting(true);
     try {
+      if (isLocalDemoPost) throw new Error("local-only");
       const result = await addFn({
         data: {
           postId,
@@ -343,7 +362,7 @@ export function PostComments({
       };
       const next = [...comments, fallback];
       setComments(next);
-      writeDemoComments(postId, next);
+      writeDemoComments(postId, locale, next);
       onCommentsCountChange(next.length);
       setDraft("");
       setReplyTo(null);
@@ -356,6 +375,7 @@ export function PostComments({
   const remove = async (comment: PostComment) => {
     if (!headers) return;
     try {
+      if (isLocalDemoPost) throw new Error("local-only");
       const result = await deleteFn({ data: { commentId: comment.id }, headers });
       setComments((current) => current.filter((item) => item.id !== comment.id));
       onCommentsCountChange(result.commentsCount);
@@ -372,7 +392,7 @@ export function PostComments({
             : item,
         );
       setComments(next);
-      writeDemoComments(postId, next);
+      writeDemoComments(postId, locale, next);
       onCommentsCountChange(next.length);
     }
   };
@@ -392,6 +412,7 @@ export function PostComments({
     if (!user || !headers || !body || editingBusy) return;
     setEditingBusy(true);
     try {
+      if (isLocalDemoPost) throw new Error("local-only");
       const result = await editFn({
         data: { commentId: comment.id, body },
         headers,
@@ -467,7 +488,7 @@ export function PostComments({
           : item,
       );
       setComments(next);
-      writeDemoComments(postId, next);
+      writeDemoComments(postId, locale, next);
       cancelEdit();
     } finally {
       setEditingBusy(false);

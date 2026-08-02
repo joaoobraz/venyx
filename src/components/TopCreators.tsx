@@ -12,6 +12,8 @@ interface TopCreator {
   avatar_url: string | null;
   is_verified: boolean;
   score: number;
+  rank?: number;
+  status?: "online" | "recent";
 }
 
 const MAX_RANKING_SIZE = 15;
@@ -133,7 +135,7 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
             }`}
           >
             <div className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-xs font-bold text-primary backdrop-blur">
-              #{idx + 1}
+              #{c.rank ?? idx + 1}
             </div>
             <div className="aspect-square overflow-hidden">
               {c.avatar_url ? (
@@ -146,6 +148,12 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
                 <div className="flex h-full w-full items-center justify-center bg-muted text-3xl font-bold text-primary">
                   {c.username[0]?.toUpperCase()}
                 </div>
+              )}
+              {c.status === "online" && (
+                <span
+                  className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-background bg-emerald-500"
+                  aria-label="online"
+                />
               )}
             </div>
             <div className="p-2.5">

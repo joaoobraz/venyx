@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { createPpvPixCharge, createGoalPixCharge } from "@/_server/checkout.functions";
 import { getPostMediaUrls } from "@/_server/media.functions";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TipModal } from "@/components/TipModal";
 import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
@@ -18,6 +19,8 @@ import { TranslateButton } from "@/components/TranslateButton";
 import { PostComments } from "@/components/PostComments";
 import { togglePostLike } from "@/_server/post-interactions.functions";
 import { DEMO_MODE } from "@/lib/demo-creators";
+import { recordDemoPurchase } from "@/lib/demo-operations";
+import { addDemoNotification } from "@/lib/demo-notifications";
 
 export interface PostMedia {
   id: string;
@@ -73,11 +76,14 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const [visible, setVisible] = useState(true);
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const [pixTitle, setPixTitle] = useState(() => tr("Pague com Pix", "Pay with Pix"));
+  const [demoCheckoutOpen, setDemoCheckoutOpen] = useState(false);
+  const [demoUnlocked, setDemoUnlocked] = useState(Boolean(post.unlocked));
 
   const ppvFn = useServerFn(createPpvPixCharge);
   const goalFn = useServerFn(createGoalPixCharge);
   const mediaFn = useServerFn(getPostMediaUrls);
   const likeFn = useServerFn(togglePostLike);
+  const isDemoContent = DEMO_MODE && post.creator_id.startsWith("demo-");
 
   const isOwner = user?.id === post.creator_id;
   const isPpv = post.visibility === "ppv";
@@ -86,7 +92,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const goalUnlocked = isGoal && (post.goal?.is_unlocked || post.goal_contributed);
   const locked =
     !isOwner &&
-    ((isPpv && !post.unlocked) ||
+    ((isPpv && !post.unlocked && !demoUnlocked) ||
       (isSubsOnly && !post.subscribed) ||
       (isGoal && !goalUnlocked));
 
@@ -94,6 +100,11 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   useEffect(() => {
     let cancel = false;
     if (locked || post.media.length === 0) return;
+    const localMedia = post.media.filter((item) => item.storage_path.startsWith("/"));
+    if (localMedia.length === post.media.length) {
+      setSignedUrls(Object.fromEntries(localMedia.map((item) => [item.id, item.storage_path])));
+      return;
+    }
     mediaFn({ data: { postId: post.id } })
       .then((res) => {
         if (cancel) return;
@@ -109,7 +120,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     return () => {
       cancel = true;
     };
-  }, [post.id, locked, post.media.length, mediaFn]);
+  }, [post.id, locked, post.media, mediaFn]);
 
   const authHeaders = () =>
     session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
@@ -119,6 +130,10 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     setCommentsCount(post.comments_count);
     setLiked(Boolean(post.liked));
   }, [post.id, post.likes_count, post.comments_count, post.liked]);
+
+  useEffect(() => {
+    setDemoUnlocked(Boolean(post.unlocked));
+  }, [post.id, post.unlocked]);
 
   useEffect(() => {
     if (!DEMO_MODE || !user || post.liked) return;
@@ -149,6 +164,23 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     setLikeBusy(true);
     setLiked(nextLiked);
     setLikesCount(Math.max(0, previousCount + (nextLiked ? 1 : -1)));
+
+    if (isDemoContent) {
+      const key = `venyx-demo-liked-posts:${user.id}`;
+      const ids = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
+        } catch {
+          return [] as string[];
+        }
+      })();
+      const nextIds = nextLiked
+        ? Array.from(new Set([...ids, post.id]))
+        : ids.filter((id) => id !== post.id);
+      localStorage.setItem(key, JSON.stringify(nextIds));
+      setLikeBusy(false);
+      return;
+    }
 
     try {
       const result = await likeFn({ data: { postId: post.id }, headers });
@@ -185,6 +217,10 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const unlockPpv = async () => {
     if (!user) {
       toast.error("Faça login para desbloquear.");
+      return;
+    }
+    if (isDemoContent) {
+      setDemoCheckoutOpen(true);
       return;
     }
     const headers = authHeaders();
@@ -291,7 +327,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             {post.author.display_name || post.author.username}
             {post.author.is_verified && <Crown className="h-3.5 w-3.5 text-primary" />}
-            <LoyaltyBadge creatorId={post.creator_id} className="ml-1" />
+            {!isDemoContent && <LoyaltyBadge creatorId={post.creator_id} className="ml-1" />}
           </div>
           <div className="text-xs text-muted-foreground">@{post.author.username}</div>
         </div>
@@ -471,6 +507,57 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           onChange?.();
         }}
       />
+      <Dialog open={demoCheckoutOpen} onOpenChange={setDemoCheckoutOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{tr("Desbloquear conteúdo PPV", "Unlock PPV content")}</DialogTitle>
+            <DialogDescription>
+              {tr(
+                "Pagamento demonstrativo: nenhum Pix ou cobrança real será criado.",
+                "Demo payment: no real Pix charge or payment will be created.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-border bg-background p-4">
+            <div className="text-sm font-semibold text-foreground">{post.author.display_name || post.author.username}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{tr("Conteúdo exclusivo", "Exclusive content")}</div>
+            <div className="mt-4 text-2xl font-bold text-primary">R$ {(post.price_cents / 100).toFixed(2)}</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDemoCheckoutOpen(false)}>
+              {tr("Cancelar", "Cancel")}
+            </Button>
+            <Button
+              onClick={() => {
+                if (!user) return;
+                recordDemoPurchase({
+                  kind: "ppv",
+                  buyer_id: user.id,
+                  creator_id: post.creator_id,
+                  creator_name: post.author.display_name || post.author.username,
+                  reference_id: post.id,
+                  label: tr("Conteúdo PPV", "PPV content"),
+                  amount_cents: post.price_cents,
+                });
+                addDemoNotification(user.id, {
+                  type: "sale",
+                  title: "Conteúdo PPV desbloqueado",
+                  title_en: "PPV content unlocked",
+                  body: `${post.author.display_name || post.author.username} · R$ ${(post.price_cents / 100).toFixed(2)}`,
+                  body_en: `${post.author.display_name || post.author.username} · BRL ${(post.price_cents / 100).toFixed(2)}`,
+                  link: "/presentation/wallet",
+                });
+                setDemoUnlocked(true);
+                setDemoCheckoutOpen(false);
+                toast.success(tr("Pagamento simulado confirmado. Conteúdo liberado!", "Simulated payment confirmed. Content unlocked!"));
+                onChange?.();
+              }}
+            >
+              {tr("Confirmar pagamento simulado", "Confirm simulated payment")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </article>
   );
 }

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Venyx</title>
+  <desc id="description">Conteudos exclusivos e conexoes autenticas.</desc>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="42%" r="68%">
+      <stop offset="0" stop-color="#4f263b"/>
+      <stop offset="0.55" stop-color="#21151e"/>
+      <stop offset="1" stop-color="#100d11"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#f7d99b"/>
+      <stop offset="0.5" stop-color="#d9ad59"/>
+      <stop offset="1" stop-color="#9b6829"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <circle cx="1010" cy="92" r="250" fill="#be7d73" opacity="0.08"/>
+  <circle cx="130" cy="610" r="300" fill="#d9ad59" opacity="0.06"/>
+  <g filter="url(#shadow)">
+    <rect x="132" y="132" width="112" height="112" rx="30" fill="url(#gold)"/>
+    <path d="M166 172l22 54 22-54h20l-34 76h-18l-32-76z" fill="#171116"/>
+  </g>
+  <text x="284" y="224" fill="#f8f3f5" font-family="Georgia, serif" font-size="104" font-weight="700">Ven<tspan fill="url(#gold)" font-style="italic">yx</tspan></text>
+  <text x="140" y="350" fill="#f8f3f5" font-family="Arial, sans-serif" font-size="48" font-weight="600">Conteudos exclusivos.</text>
+  <text x="140" y="414" fill="#d2c4cb" font-family="Arial, sans-serif" font-size="40">Conexoes autenticas.</text>
+  <rect x="140" y="474" width="184" height="5" rx="2.5" fill="url(#gold)"/>
+</svg>

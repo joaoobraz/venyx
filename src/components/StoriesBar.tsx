@@ -6,9 +6,11 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryViewer, type StoryGroup } from "@/components/StoryViewer";
 import { getStoryMediaUrls } from "@/_server/media.functions";
-import { DEMO_MODE, getDemoAsset } from "@/lib/demo-creators";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import { getDemoStoryGroups } from "@/lib/demo-content";
 import { useI18n } from "@/lib/i18n";
 import { moderateBeforeUpload } from "@/lib/moderation";
+import { trackProductEvent } from "@/lib/telemetry";
 
 interface RawStory {
   id: string;
@@ -22,13 +24,17 @@ interface RawStory {
 
 export function StoriesBar() {
   const { user, isCreator } = useAuth();
-  const { tr } = useI18n();
+  const { tr, locale } = useI18n();
   const storyMediaFn = useServerFn(getStoryMediaUrls);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
+    if (DEMO_MODE) {
+      setGroups(getDemoStoryGroups(locale));
+      return;
+    }
     const { data: stories } = await supabase
       .from("stories")
       .select("*")
@@ -70,24 +76,23 @@ export function StoriesBar() {
       if (!signed) return;
       const p = profById.get(s.creator_id);
       if (!p) return;
-      const demo = DEMO_MODE ? getDemoAsset(p.username) : null;
       const g = grouped.get(s.creator_id) ?? {
         creator_id: s.creator_id,
         username: p.username,
         display_name: p.display_name,
-        avatar_url: demo?.avatar_url ?? p.avatar_url,
+        avatar_url: p.avatar_url,
         stories: [],
       };
       g.stories.push({
         id: s.id,
-        url: demo?.cover_url ?? signed.url,
-        mime: demo ? "image/webp" : signed.mime_type,
+        url: signed.url,
+        mime: signed.mime_type,
         created_at: s.created_at,
       });
       grouped.set(s.creator_id, g);
     });
     setGroups(Array.from(grouped.values()));
-  }, [storyMediaFn]);
+  }, [locale, storyMediaFn]);
 
   useEffect(() => {
     load();
@@ -101,6 +106,7 @@ export function StoriesBar() {
     try {
       const moderation = await moderateBeforeUpload(f, "story", user.id);
       if (!moderation.allowed) {
+        trackProductEvent("moderation_failed", { flow: "story_bar", target: "media" });
         toast.error(
           moderation.reason ||
             tr("Não foi possível aprovar esta mídia.", "This media could not be approved."),
@@ -135,7 +141,7 @@ export function StoriesBar() {
   return (
     <>
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {isCreator && (
+        {isCreator && !DEMO_MODE && (
           <label className="flex shrink-0 cursor-pointer flex-col items-center gap-1.5">
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-primary/50 bg-card hover:border-primary">
               {uploading ? (

@@ -1,6 +1,6 @@
 # Venyx — checklist de lançamento
 
-Atualizado em 31/07/2026.
+Atualizado em 02/08/2026.
 
 ## Bloco 1 — experiência, demonstração e segurança
 
@@ -43,6 +43,8 @@ Atualizado em 31/07/2026.
 - [x] Remover dependências operacionais da Lovable e gerar um build portátil para hospedagem própria.
 - [x] Completar a tradução PT/EN do backoffice interno de criadoras e administradores.
 - [x] Restringir o seletor temporário cliente/modelo/moderador à conta autorizada, sem elevar permissões reais.
+- [x] Isolar feed, stories, perfis, favoritos, chat, notificações e painéis de apresentação em armazenamento local.
+- [x] Bloquear o modo de apresentação quando `VITE_APP_ENV=production`, mesmo com flags copiadas por engano.
 
 ## Bloco 2 — P0 antes de abrir ao público
 
@@ -67,3 +69,26 @@ Atualizado em 31/07/2026.
 - [ ] Ativar monitoramento e alertas externos e validar restauração de backup no provedor escolhido.
 - [ ] Rodar teste completo em iPhone/Android e nos principais navegadores.
 - [ ] Fazer lançamento gradual com grupo pequeno antes de liberar todo o tráfego.
+
+## Bloco 4 — fechamento do MVP em 02/08/2026
+
+- [x] Tornar indivisível o envio do KYC e dos consentimentos atuais de termos, privacidade, maioridade e direitos sobre o conteúdo.
+- [x] Criar jornada de onboarding da criadora com KYC, consentimentos, perfil, preço, saque e primeira publicação.
+- [x] Bloquear monetização no banco e no servidor enquanto a criadora não estiver pronta.
+- [x] Priorizar denúncias de menor e conteúdo não consentido com SLA crítico de 15 minutos.
+- [x] Preservar evidências, retenção e cadeia de custódia para incidentes de segurança.
+- [x] Criar central de ajuda, protocolos, recuperação de conta e fila administrativa.
+- [x] Criar solicitações rastreáveis de exportação e exclusão de dados com MFA.
+- [x] Registrar erros e funil sem e-mail, documento, token, cookie ou chave Pix.
+- [x] Criar painel administrativo de operação, alertas, SLA, dispositivos e restauração de backup.
+- [x] Validar build, 22 testes automatizados e carga local de 120 requisições sem falhas.
+- [x] Validar as telas locais de ajuda e apresentação em desktop e viewport 390 × 844 sem rolagem lateral.
+- [x] Aplicar e conferir as quatro migrações de fechamento no Supabase staging.
+- [ ] Contratar e configurar o provedor real de moderação e sua equipe de plantão.
+- [ ] Obter parecer jurídico escrito sobre termos, privacidade, conteúdo, maioridade, DMCA e política sem estorno voluntário.
+- [ ] Selecionar, verificar e acompanhar 5–10 criadoras reais no piloto.
+- [ ] Ativar backup no plano/provedor e registrar uma restauração real aprovada no painel.
+- [ ] Executar a matriz em iPhone, Android e Safari físicos e anexar evidências.
+- [ ] Executar os pagamentos reais ponta a ponta quando a rodada financeira for retomada.
+
+Os procedimentos e critérios de evidência estão em `docs/operations/`. Itens externos permanecem abertos até existir contrato, parecer, pessoa real, aparelho real ou restauração real; uma tela pronta não substitui essa evidência.

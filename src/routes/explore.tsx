@@ -1,16 +1,57 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { TrendingUp, Compass, Tag } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TopCreators } from "@/components/TopCreators";
 import { useI18n } from "@/lib/i18n";
-import { DEMO_CREATORS } from "@/lib/demo-creators";
+import { DEMO_CREATORS, DEMO_MODE, type DemoCreator } from "@/lib/demo-creators";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/explore")({
   component: ExplorePage,
 });
 
+type DiscoverCreator = Pick<
+  DemoCreator,
+  "user_id" | "username" | "display_name" | "avatar_url" | "cover_url" | "is_verified"
+>;
+
 function ExplorePage() {
   const { t, locale } = useI18n();
+  const [discoverCreators, setDiscoverCreators] = useState<DiscoverCreator[]>(
+    DEMO_MODE ? DEMO_CREATORS : [],
+  );
+  useEffect(() => {
+    if (DEMO_MODE) {
+      setDiscoverCreators(DEMO_CREATORS);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [{ data: roleRows }, { data: planRows }] = await Promise.all([
+        supabase.from("user_roles").select("user_id").eq("role", "creator"),
+        supabase.from("subscription_plans").select("creator_id").eq("is_active", true),
+      ]);
+      const creatorsWithPlans = new Set((planRows ?? []).map((row) => row.creator_id));
+      const ids = (roleRows ?? [])
+        .map((row) => row.user_id)
+        .filter((id) => creatorsWithPlans.has(id));
+      if (!ids.length) {
+        if (!cancelled) setDiscoverCreators([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name, avatar_url, cover_url, is_verified")
+        .in("user_id", ids)
+        .eq("is_verified", true)
+        .limit(30);
+      if (!cancelled) setDiscoverCreators((data ?? []) as DiscoverCreator[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const categories =
     locale === "en"
       ? ["Brazilian", "Blonde", "Brunette", "Redhead", "Fitness", "Cosplay", "Latina", "Couples"]
@@ -26,7 +67,7 @@ function ExplorePage() {
           </h2>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {DEMO_CREATORS.map((c) => (
+            {discoverCreators.map((c) => (
               <Link
                 key={c.username}
                 to="/profile/$username"
@@ -58,7 +99,7 @@ function ExplorePage() {
             <span>{t("explore.new")}</span>
           </h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {DEMO_CREATORS.slice()
+            {discoverCreators.slice()
               .reverse()
               .map((c) => (
                 <Link

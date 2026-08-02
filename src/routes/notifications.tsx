@@ -19,6 +19,13 @@ import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import { useI18n } from "@/lib/i18n";
 import { notifyUnreadCountsChanged } from "@/lib/use-unread-counts";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import {
+  DEMO_NOTIFICATIONS_CHANGED_EVENT,
+  markAllDemoNotificationsRead,
+  markDemoNotificationRead,
+  readDemoNotifications,
+} from "@/lib/demo-notifications";
 
 export const Route = createFileRoute("/notifications")({
   component: NotifPage,
@@ -28,7 +35,9 @@ type Notification = {
   id: string;
   type: string;
   title: string;
+  title_en?: string;
   body: string | null;
+  body_en?: string | null;
   link: string | null;
   read_at: string | null;
   created_at: string;
@@ -69,6 +78,11 @@ function NotifPage() {
 
   const load = async () => {
     if (!user) return;
+    if (DEMO_MODE) {
+      setItems(readDemoNotifications(user.id));
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("notifications")
       .select("id, type, title, body, link, read_at, created_at, metadata")
@@ -112,10 +126,19 @@ function NotifPage() {
 
   useEffect(() => {
     load();
+    if (!DEMO_MODE) return;
+    const onChange = () => load();
+    window.addEventListener(DEMO_NOTIFICATIONS_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(DEMO_NOTIFICATIONS_CHANGED_EVENT, onChange);
   }, [user?.id]);
 
   const markAllRead = async () => {
     if (!user) return;
+    if (DEMO_MODE) {
+      setItems(markAllDemoNotificationsRead(user.id));
+      notifyUnreadCountsChanged();
+      return;
+    }
     await supabase
       .from("notifications")
       .update({ read_at: new Date().toISOString() })
@@ -129,6 +152,11 @@ function NotifPage() {
 
   const markRead = async (id: string) => {
     if (!user) return;
+    if (DEMO_MODE) {
+      setItems(markDemoNotificationRead(user.id, id));
+      notifyUnreadCountsChanged();
+      return;
+    }
     setItems((current) =>
       current.map((item) =>
         item.id === id ? { ...item, read_at: item.read_at ?? new Date().toISOString() } : item,
@@ -208,7 +236,11 @@ function NotifPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">{displayTitle(n)}</p>
-                    {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
+                    {(locale === "en" ? n.body_en ?? n.body : n.body) && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {locale === "en" ? n.body_en ?? n.body : n.body}
+                      </p>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(n.created_at), {

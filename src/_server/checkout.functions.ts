@@ -193,6 +193,23 @@ async function checkNexusPagStatus(lookupId: string): Promise<NexusPagPixRespons
   }
 }
 
+async function assertCreatorCanMonetize(creatorId: string) {
+  const { data, error } = await supabaseAdmin.rpc("creator_onboarding_status", {
+    _user_id: creatorId,
+  });
+  if (error) {
+    console.error("[checkout.creator-readiness]", error.code);
+    throw new Error("Não foi possível verificar a configuração da criadora.");
+  }
+  const status = Array.isArray(data) ? data[0] : data;
+  if (!status?.kyc_approved) throw new Error("Esta criadora ainda não concluiu o KYC.");
+  if (!status?.consent_complete)
+    throw new Error("Esta criadora ainda não atualizou os consentimentos obrigatórios.");
+  if (!status?.profile_complete) throw new Error("Esta criadora ainda não concluiu o perfil.");
+  if (!status?.payout_key_configured)
+    throw new Error("Esta criadora ainda não cadastrou uma chave de recebimento válida.");
+}
+
 // =====================================================
 // Cobrança Pix da assinatura (com bumps opcionais)
 // =====================================================
@@ -212,6 +229,7 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     if (data.creatorId === userId) throw new Error("Você não pode assinar a si mesmo");
+    await assertCreatorCanMonetize(data.creatorId);
 
     // SECURITY: preço canônico vem do banco, NUNCA do cliente.
     const { data: creatorProfile, error: profileErr } = await supabaseAdmin
@@ -378,6 +396,7 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!offer || !offer.is_active) throw new Error("Oferta indisponível");
     if (offer.creator_id === userId) throw new Error("Você não pode comprar sua própria oferta");
+    await assertCreatorCanMonetize(offer.creator_id);
 
     const externalId = `ups_${userId.slice(0, 8)}_${Date.now()}`;
     const gateway = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
@@ -418,12 +437,17 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
 // =====================================================
 // Cobrança Pix de gorjeta (mimo)
 // =====================================================
-const tipPixSchema = z.object({
-  creatorId: z.string().uuid(),
-  amountCents: z.number().int().min(100).max(1_000_000),
-  postId: z.string().uuid().optional().nullable(),
-  message: z.string().max(200).optional().nullable(),
-});
+const tipPixSchema = z
+  .object({
+    creatorId: z.string().uuid(),
+    amountCents: z.number().int().min(100).max(1_000_000),
+    postId: z.string().uuid().optional().nullable(),
+    giftItemId: z.string().uuid().optional(),
+    message: z.string().max(200).optional().nullable(),
+  })
+  .refine((value) => !(value.postId && value.giftItemId), {
+    message: "Um mimo simbólico não pode estar associado a uma publicação",
+  });
 
 export const createTipPixCharge = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
@@ -431,10 +455,34 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     if (data.creatorId === userId) throw new Error("Você não pode enviar gorjeta para si mesmo");
+    await assertCreatorCanMonetize(data.creatorId);
 
-    const externalId = `tip_${userId.slice(0, 8)}_${Date.now()}`;
-    const description = `Mimo R$ ${(data.amountCents / 100).toFixed(2)}`;
-    const gateway = await callNexusPag(data.amountCents / 100, description, externalId);
+    let amountCents = data.amountCents;
+    let gift: { id: string; title: string; category: string; value_cents: number } | null = null;
+    if (data.giftItemId) {
+      const { data: item, error: giftError } = await supabaseAdmin
+        .from("creator_gift_items")
+        .select("id,title,category,value_cents,creator_id,is_active")
+        .eq("id", data.giftItemId)
+        .eq("creator_id", data.creatorId)
+        .eq("is_active", true)
+        .maybeSingle();
+      const { data: list } = await supabaseAdmin
+        .from("creator_gift_settings")
+        .select("is_published")
+        .eq("creator_id", data.creatorId)
+        .eq("is_published", true)
+        .maybeSingle();
+      if (giftError || !item || !list) throw new Error("Este mimo não está mais disponível.");
+      gift = item;
+      amountCents = item.value_cents;
+    }
+
+    const externalId = `${gift ? "gift" : "tip"}_${userId.slice(0, 8)}_${Date.now()}`;
+    const description = gift
+      ? `Mimo simbólico: ${gift.title}`
+      : `Mimo R$ ${(amountCents / 100).toFixed(2)}`;
+    const gateway = await callNexusPag(amountCents / 100, description, externalId);
     if (!gateway.ok) return gateway;
     const px = gateway.pix;
 
@@ -446,13 +494,20 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
         payer_id: userId,
         payee_id: data.creatorId,
         purpose: "tip",
-        amount_cents: data.amountCents,
+        amount_cents: amountCents,
         status: "pending",
         qr_code: px.qrCode,
         qr_code_base64: px.qrCodeBase64,
         expires_at: px.expiresAt,
-        reference_id: data.postId ?? null,
-        metadata: { message: data.message ?? null, post_id: data.postId ?? null },
+        reference_id: gift?.id ?? data.postId ?? null,
+        metadata: {
+          message: data.message ?? null,
+          post_id: data.postId ?? null,
+          kind: gift ? "symbolic_gift" : "tip",
+          gift_item_id: gift?.id ?? null,
+          gift_title: gift?.title ?? null,
+          gift_category: gift?.category ?? null,
+        },
       })
       .select("id, qr_code, qr_code_base64, expires_at, external_id")
       .single();
@@ -468,7 +523,7 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
       qrCode: charge.qr_code,
       qrCodeBase64: charge.qr_code_base64,
       expiresAt: charge.expires_at,
-      amountCents: data.amountCents,
+      amountCents,
     };
   });
 
@@ -494,6 +549,7 @@ export const createPpvPixCharge = createServerFn({ method: "POST" })
     if (post.visibility !== "ppv") throw new Error("Este post não é PPV");
     if (post.creator_id === userId) throw new Error("Você não pode comprar seu próprio post");
     if (!post.price_cents || post.price_cents < 100) throw new Error("Preço PPV inválido");
+    await assertCreatorCanMonetize(post.creator_id);
 
     // Já desbloqueado?
     const { data: existing } = await supabaseAdmin
@@ -567,6 +623,7 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
     if (!post) throw new Error("Post não encontrado");
     if (post.visibility !== "goal") throw new Error("Este post não tem meta");
     if (post.creator_id === userId) throw new Error("Você não pode contribuir no seu próprio post");
+    await assertCreatorCanMonetize(post.creator_id);
 
     const { data: goal } = await supabaseAdmin
       .from("post_goals")
@@ -638,6 +695,7 @@ export const createChatPpvPixCharge = createServerFn({ method: "POST" })
     if (!msg) throw new Error("Mensagem não encontrada");
     if (msg.sender_id === userId) throw new Error("Você não pode comprar sua própria mídia");
     if (!msg.ppv_price_cents || msg.ppv_price_cents < 100) throw new Error("Mensagem não é PPV");
+    await assertCreatorCanMonetize(msg.sender_id);
 
     // Confirma que o usuário é participante da thread
     const { data: thread } = await supabaseAdmin
