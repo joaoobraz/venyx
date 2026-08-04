@@ -63,6 +63,13 @@ interface PayoutKey {
   pix_key_type: "cpf" | "cnpj" | "email" | "phone" | "random";
   holder_name: string;
   holder_document: string;
+  key_changed_at?: string;
+  withdrawal_eligible_at?: string;
+}
+
+interface VerifiedIdentity {
+  cpf: string;
+  full_name: string;
 }
 
 interface Withdrawal {
@@ -104,6 +111,7 @@ function WalletPage() {
 
   const [balance, setBalance] = useState<Balance | null>(null);
   const [key, setKey] = useState<PayoutKey | null>(null);
+  const [identity, setIdentity] = useState<VerifiedIdentity | null>(null);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [kycApproved, setKycApproved] = useState(false);
   const [txs, setTxs] = useState<TxRow[]>([]);
@@ -147,6 +155,7 @@ function WalletPage() {
       { data: kyc },
       { data: txList },
       { data: ps },
+      { data: verifiedIdentity },
     ] = await Promise.all([
       supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
       supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
@@ -171,6 +180,12 @@ function WalletPage() {
         .order("created_at", { ascending: false })
         .limit(100),
       supabase.rpc("get_platform_fee_pct"),
+      supabase
+        .from("identity_verifications")
+        .select("cpf, full_name")
+        .eq("user_id", user.id)
+        .eq("status", "verified")
+        .maybeSingle(),
     ]);
     setBalance(
       (bal as Balance | null) ?? {
@@ -186,6 +201,15 @@ function WalletPage() {
       const kk = k as PayoutKey;
       setKey(kk);
       setKeyForm(kk);
+    }
+    const verified = (verifiedIdentity as VerifiedIdentity | null) ?? null;
+    setIdentity(verified);
+    if (!k && verified) {
+      setKeyForm((current) => ({
+        ...current,
+        holder_name: verified.full_name,
+        holder_document: verified.cpf,
+      }));
     }
     setWithdrawals((ws ?? []) as Withdrawal[]);
     setKycApproved(!!(kyc as KycRow | null));
@@ -221,8 +245,16 @@ function WalletPage() {
   const handleSaveKey = async () => {
     setSubmitting(true);
     try {
-      await upsertKeyFn({ data: keyForm });
-      toast.success(tr("Chave Pix salva", "Pix key saved"));
+      const result = await upsertKeyFn({ data: keyForm });
+      const eligibleAt = new Date(result.withdrawal_eligible_at).getTime();
+      toast.success(
+        eligibleAt > Date.now() + 60_000
+          ? tr(
+              "Chave Pix alterada. Saques para a nova chave serão liberados em 48 horas.",
+              "Pix key changed. Withdrawals to the new key will be available in 48 hours.",
+            )
+          : tr("Chave Pix salva", "Pix key saved"),
+      );
       setKeyOpen(false);
       await loadAll();
     } catch (e) {
@@ -270,7 +302,12 @@ function WalletPage() {
     }
   };
 
-  const canRequest = kycApproved && !!key && (balance?.available_cents ?? 0) >= 3000;
+  const cooldownUntil = key?.withdrawal_eligible_at
+    ? new Date(key.withdrawal_eligible_at)
+    : null;
+  const keyCooldownActive = !!cooldownUntil && cooldownUntil.getTime() > Date.now();
+  const canRequest =
+    kycApproved && !!key && !keyCooldownActive && (balance?.available_cents ?? 0) >= 3000;
 
   return (
     <AppShell>
@@ -316,6 +353,18 @@ function WalletPage() {
                   "Cadastre sua chave Pix abaixo para habilitar saques.",
                   "Add your Pix key below to enable withdrawals.",
                 )}
+              </span>
+            </div>
+          )}
+          {keyCooldownActive && cooldownUntil && (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-black/20 p-2 text-xs">
+              <Lock className="h-3.5 w-3.5" />
+              <span>
+                {tr(
+                  "Chave Pix alterada. Saques bloqueados por segurança até",
+                  "Pix key changed. Withdrawals are locked for security until",
+                )}{" "}
+                <strong>{cooldownUntil.toLocaleString(locale)}</strong>.
               </span>
             </div>
           )}
@@ -370,6 +419,12 @@ function WalletPage() {
               <div>
                 <span className="text-muted-foreground">{tr("Titular", "Account holder")}:</span>{" "}
                 <span className="font-medium">{key.holder_name}</span>
+              </div>
+              <div className="rounded-lg bg-primary/10 p-2 text-xs text-muted-foreground">
+                {tr(
+                  "A chave só pode pertencer ao CPF verificado nesta conta. Se ela for alterada, novos saques ficam bloqueados por 48 horas.",
+                  "The key must belong to the CPF verified on this account. If changed, new withdrawals are locked for 48 hours.",
+                )}
               </div>
             </div>
           ) : (
@@ -554,24 +609,32 @@ function WalletPage() {
               <Label>{tr("Nome do titular", "Account-holder name")}</Label>
               <Input
                 value={keyForm.holder_name}
-                onChange={(e) => setKeyForm((f) => ({ ...f, holder_name: e.target.value }))}
                 placeholder={tr("Nome completo", "Full name")}
+                disabled
               />
             </div>
             <div>
               <Label>{tr("CPF/CNPJ do titular", "Account-holder CPF/CNPJ")}</Label>
               <Input
                 value={keyForm.holder_document}
-                onChange={(e) => setKeyForm((f) => ({ ...f, holder_document: e.target.value }))}
                 placeholder={tr("Apenas números", "Numbers only")}
+                disabled
               />
+              {!identity && (
+                <p className="mt-1 text-xs text-destructive">
+                  {tr(
+                    "Confirme sua identidade e seu CPF antes de cadastrar a chave Pix.",
+                    "Verify your identity and CPF before adding a Pix key.",
+                  )}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setKeyOpen(false)}>
               {tr("Cancelar", "Cancel")}
             </Button>
-            <Button onClick={handleSaveKey} disabled={submitting}>
+            <Button onClick={handleSaveKey} disabled={submitting || !identity}>
               {submitting ? tr("Salvando...", "Saving...") : tr("Salvar", "Save")}
             </Button>
           </DialogFooter>

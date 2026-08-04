@@ -6,9 +6,16 @@ export interface DemoChatMessage {
   thread_id: string;
   sender_id: string;
   body: string | null;
+  message_kind?: "text" | "gift";
+  gift_amount_cents?: number | null;
+  gift_message?: string | null;
+  financial_transaction_id?: string | null;
+  payment_status?: "paid";
+  payment_method?: "demo_balance" | "pix";
   media_path: string | null;
   mime_type: string | null;
   ppv_price_cents: number;
+  ppv_paid_at?: string | null;
   subscribers_only: boolean;
   unlocked: boolean;
   read_at: string | null;
@@ -56,17 +63,111 @@ const LEAD_NAMES = [
   ["daniel_araujo", "Daniel Araújo"],
 ] as const;
 
-export const DEMO_CHAT_LEADS: DemoChatLead[] = LEAD_NAMES.map(
-  ([username, displayName], index) => ({
-    user_id: `demo-lead-${index + 1}`,
-    username,
-    display_name: displayName,
-    avatar_url: null,
-    subscribed: index < 8 || index % 3 === 0,
-  }),
-);
+export const DEMO_CHAT_LEADS: DemoChatLead[] = LEAD_NAMES.map(([username, displayName], index) => ({
+  user_id: `demo-lead-${index + 1}`,
+  username,
+  display_name: displayName,
+  avatar_url: null,
+  subscribed: index < 8 || index % 3 === 0,
+}));
 
 const STORAGE_VERSION = "v3";
+const MEDIA_DB_NAME = "venyx-demo-chat-media";
+const MEDIA_STORE_NAME = "media";
+const MEDIA_PATH_PREFIX = "demo-chat-media:";
+export const DEMO_CHAT_CHANGED_EVENT = "venyx:demo-chat-changed";
+
+const LEGACY_GIFT_PATTERN = /^🎁\s+.+?\s+enviou um mimo de R\$\s*([\d.,]+)\s+para\s+.+?\.?$/i;
+
+function legacyGiftAmountCents(body: string | null) {
+  const value = body?.match(LEGACY_GIFT_PATTERN)?.[1];
+  if (!value) return null;
+  const parsed = Number(value.replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.round(parsed * 100) : null;
+}
+
+function canonicalDemoGiftBody(threadId: string, amountCents: number) {
+  const threadIndex = DEMO_CHAT_THREADS.findIndex((thread) => thread.id === threadId);
+  const thread = DEMO_CHAT_THREADS[threadIndex];
+  const leadName = DEMO_CHAT_LEADS[threadIndex]?.display_name ?? "Lead";
+  const creator = thread ? getDemoCreator(thread.username) : null;
+  const creatorName = creator?.display_name || creator?.username || "modelo";
+  const formattedAmount = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(amountCents / 100);
+  return `🎁 ${leadName} enviou um mimo de ${formattedAmount} para ${creatorName}.`;
+}
+
+function normalizeDemoChatMessage(message: DemoChatMessage, threadId: string): DemoChatMessage {
+  if (message.message_kind === "gift" && message.gift_amount_cents) {
+    return {
+      ...message,
+      body: canonicalDemoGiftBody(threadId, message.gift_amount_cents),
+      payment_status: message.payment_status ?? "paid",
+      payment_method: message.payment_method ?? "demo_balance",
+    };
+  }
+  const amountCents = legacyGiftAmountCents(message.body);
+  return amountCents
+    ? {
+        ...message,
+        body: canonicalDemoGiftBody(threadId, amountCents),
+        message_kind: "gift",
+        gift_amount_cents: amountCents,
+        payment_status: "paid",
+        payment_method: "demo_balance",
+      }
+    : message;
+}
+
+function openDemoMediaDb() {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(MEDIA_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+        database.createObjectStore(MEDIA_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () =>
+      reject(request.error ?? new Error("Não foi possível abrir a mídia local."));
+  });
+}
+
+export function demoChatMediaPath(messageId: string) {
+  return `${MEDIA_PATH_PREFIX}${messageId}`;
+}
+
+export function isDemoChatMediaPath(path: string | null) {
+  return Boolean(path?.startsWith(MEDIA_PATH_PREFIX));
+}
+
+export async function saveDemoChatMedia(messageId: string, file: File) {
+  const database = await openDemoMediaDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(MEDIA_STORE_NAME, "readwrite");
+    transaction.objectStore(MEDIA_STORE_NAME).put(file, messageId);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error("Não foi possível salvar a mídia local."));
+  });
+  database.close();
+}
+
+export async function readDemoChatMediaUrl(messageId: string) {
+  const database = await openDemoMediaDb();
+  const blob = await new Promise<Blob | null>((resolve, reject) => {
+    const transaction = database.transaction(MEDIA_STORE_NAME, "readonly");
+    const request = transaction.objectStore(MEDIA_STORE_NAME).get(messageId);
+    request.onsuccess = () => resolve(request.result instanceof Blob ? request.result : null);
+    request.onerror = () =>
+      reject(request.error ?? new Error("Não foi possível ler a mídia local."));
+  });
+  database.close();
+  return blob ? URL.createObjectURL(blob) : null;
+}
 
 const BODY_TRANSLATIONS: Record<string, string> = {
   "Oi, Aline! Conheci seu perfil hoje 😊": "Hi, Aline! I found your profile today 😊",
@@ -162,8 +263,20 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
     return [
       message(1, userId, "Oi, Aline! Conheci seu perfil hoje 😊", 42, isoMinutesAgo(40)),
       message(2, thread.creatorId, "Oi! Que bom ter você por aqui 💕", 37, isoMinutesAgo(35)),
-      message(3, thread.creatorId, "Preparei algumas novidades para esta semana.", 20, isoMinutesAgo(18)),
-      message(4, thread.creatorId, "Acabei de publicar um bastidor exclusivo para assinantes.", 7, null),
+      message(
+        3,
+        thread.creatorId,
+        "Preparei algumas novidades para esta semana.",
+        20,
+        isoMinutesAgo(18),
+      ),
+      message(
+        4,
+        thread.creatorId,
+        "Acabei de publicar um bastidor exclusivo para assinantes.",
+        7,
+        null,
+      ),
     ];
   }
 
@@ -171,7 +284,13 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
     return [
       message(1, thread.creatorId, "Bem-vindo ao meu espaço!", 88, isoMinutesAgo(86)),
       message(2, userId, "Obrigado, Duda! Já estou explorando o perfil.", 81, isoMinutesAgo(79)),
-      message(3, thread.creatorId, "Qualquer dúvida, pode falar comigo por aqui.", 64, isoMinutesAgo(62)),
+      message(
+        3,
+        thread.creatorId,
+        "Qualquer dúvida, pode falar comigo por aqui.",
+        64,
+        isoMinutesAgo(62),
+      ),
     ];
   }
 
@@ -179,15 +298,39 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
     return [
       message(1, userId, "Oi, Lara! Tudo bem?", 54, isoMinutesAgo(52)),
       message(2, thread.creatorId, "Tudo ótimo! Obrigada pela mensagem ✨", 36, isoMinutesAgo(34)),
-      message(3, thread.creatorId, "Hoje estou liberando uma sessão especial para quem acompanha de perto.", 16, null),
+      message(
+        3,
+        thread.creatorId,
+        "Hoje estou liberando uma sessão especial para quem acompanha de perto.",
+        16,
+        null,
+      ),
     ];
   }
 
   if (thread.username === "camila") {
     return [
-      message(1, thread.creatorId, "Oi! Sua presença já está anotada no meu calendário ✨", 76, isoMinutesAgo(74)),
-      message(2, userId, "Fico feliz! Quero acompanhar seu conteúdo com mais calma.", 60, isoMinutesAgo(58)),
-      message(3, thread.creatorId, "Perfeito. Também gosto de conversar antes de cada lançamento.", 28, null),
+      message(
+        1,
+        thread.creatorId,
+        "Oi! Sua presença já está anotada no meu calendário ✨",
+        76,
+        isoMinutesAgo(74),
+      ),
+      message(
+        2,
+        userId,
+        "Fico feliz! Quero acompanhar seu conteúdo com mais calma.",
+        60,
+        isoMinutesAgo(58),
+      ),
+      message(
+        3,
+        thread.creatorId,
+        "Perfeito. Também gosto de conversar antes de cada lançamento.",
+        28,
+        null,
+      ),
     ];
   }
 
@@ -195,23 +338,53 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
     return [
       message(1, thread.creatorId, "Tenho uma novidade para você hoje.", 118, isoMinutesAgo(116)),
       message(2, userId, "Que ótimo, Marina! Estou curiosa para ver.", 94, isoMinutesAgo(92)),
-      message(3, thread.creatorId, "Vou enviar um convite para o conteúdo mais recente assim que estiver pronto.", 46, null),
+      message(
+        3,
+        thread.creatorId,
+        "Vou enviar um convite para o conteúdo mais recente assim que estiver pronto.",
+        46,
+        null,
+      ),
     ];
   }
 
   if (thread.username === "valentina") {
     return [
       message(1, userId, "Oi, Valentina! Adorei a energia do seu perfil.", 72, isoMinutesAgo(70)),
-      message(2, thread.creatorId, "Que carinho! Gosto de manter uma comunicação próxima.", 55, isoMinutesAgo(53)),
-      message(3, thread.creatorId, "Posso indicar as melhores formas de acompanhar meus novos posts.", 32, null),
+      message(
+        2,
+        thread.creatorId,
+        "Que carinho! Gosto de manter uma comunicação próxima.",
+        55,
+        isoMinutesAgo(53),
+      ),
+      message(
+        3,
+        thread.creatorId,
+        "Posso indicar as melhores formas de acompanhar meus novos posts.",
+        32,
+        null,
+      ),
     ];
   }
 
   const minutesBase = 140 + threadIndex * 23;
   const lastRead = threadIndex % 2 === 0 ? null : isoMinutesAgo(minutesBase - 42);
   return [
-    message(1, thread.creatorId, "Obrigada por acompanhar meu trabalho.", minutesBase, isoMinutesAgo(minutesBase - 2)),
-    message(2, userId, "Eu que agradeço. Gostei muito das novidades.", minutesBase - 24, isoMinutesAgo(minutesBase - 22)),
+    message(
+      1,
+      thread.creatorId,
+      "Obrigada por acompanhar meu trabalho.",
+      minutesBase,
+      isoMinutesAgo(minutesBase - 2),
+    ),
+    message(
+      2,
+      userId,
+      "Eu que agradeço. Gostei muito das novidades.",
+      minutesBase - 24,
+      isoMinutesAgo(minutesBase - 22),
+    ),
     message(
       3,
       thread.creatorId,
@@ -246,7 +419,9 @@ export function readDemoChatMessages(userId: string, threadId: string): DemoChat
   if (typeof window === "undefined" || !isDemoChatThreadId(threadId)) return [];
   try {
     const value = JSON.parse(localStorage.getItem(demoChatStorageKey(userId, threadId)) ?? "[]");
-    return Array.isArray(value) ? (value as DemoChatMessage[]) : [];
+    return Array.isArray(value)
+      ? (value as DemoChatMessage[]).map((message) => normalizeDemoChatMessage(message, threadId))
+      : [];
   } catch {
     return [];
   }
@@ -259,6 +434,62 @@ export function writeDemoChatMessages(
 ) {
   if (typeof window === "undefined" || !isDemoChatThreadId(threadId)) return;
   localStorage.setItem(demoChatStorageKey(userId, threadId), JSON.stringify(messages.slice(-500)));
+}
+
+export function recordDemoGiftChatConfirmation(input: {
+  userId: string;
+  creatorId: string;
+  creatorName: string;
+  senderName: string;
+  amountCents: number;
+  message?: string;
+  transactionId: string;
+  createdAt: string;
+}) {
+  if (typeof window === "undefined") return null;
+  const thread = getDemoChatThreadForCreator(input.creatorId);
+  if (!thread) return null;
+  ensureDemoChatSeed(input.userId);
+  const current = readDemoChatMessages(input.userId, thread.id);
+  const existing = current.find(
+    (message) => message.financial_transaction_id === input.transactionId,
+  );
+  if (existing) return existing;
+
+  const formattedAmount = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(input.amountCents / 100);
+  const confirmation: DemoChatMessage = {
+    id: `demo-gift-message-${input.transactionId}`,
+    thread_id: thread.id,
+    sender_id: input.userId,
+    body: `🎁 ${input.senderName} enviou um mimo de ${formattedAmount} para ${input.creatorName}.`,
+    message_kind: "gift",
+    gift_amount_cents: input.amountCents,
+    gift_message: input.message?.trim() || null,
+    financial_transaction_id: input.transactionId,
+    payment_status: "paid",
+    payment_method: "demo_balance",
+    media_path: null,
+    mime_type: null,
+    ppv_price_cents: 0,
+    subscribers_only: false,
+    unlocked: true,
+    read_at: null,
+    edited_at: null,
+    created_at: input.createdAt,
+  };
+  const next = [...current, confirmation].sort(
+    (first, second) => new Date(first.created_at).getTime() - new Date(second.created_at).getTime(),
+  );
+  writeDemoChatMessages(input.userId, thread.id, next);
+  window.dispatchEvent(
+    new CustomEvent(DEMO_CHAT_CHANGED_EVENT, {
+      detail: { userId: input.userId, threadId: thread.id },
+    }),
+  );
+  return confirmation;
 }
 
 export function ensureDemoChatSeed(userId: string) {
@@ -278,18 +509,15 @@ export function countDemoUnreadMessages(
 ) {
   if (typeof window === "undefined") return 0;
   ensureDemoChatSeed(userId);
-  return DEMO_CHAT_THREADS.reduce(
-    (total, thread) => {
-      const actorId = perspective === "creator" ? thread.creatorId : userId;
-      return (
+  return DEMO_CHAT_THREADS.reduce((total, thread) => {
+    const actorId = perspective === "creator" ? thread.creatorId : userId;
+    return (
       total +
       readDemoChatMessages(userId, thread.id).filter(
         (message) => message.sender_id !== actorId && !message.read_at,
       ).length
-      );
-    },
-    0,
-  );
+    );
+  }, 0);
 }
 
 export function demoThreadDetails(

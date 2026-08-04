@@ -16,7 +16,10 @@ export async function fetchPosts(opts: {
   }
   let q = supabase
     .from("posts")
-    .select("id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at")
+    .select(
+      "id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at",
+    )
+    .is("archived_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (postId) {
@@ -32,44 +35,66 @@ export async function fetchPosts(opts: {
   const ids = posts.map((p) => p.id);
   const creatorIds = Array.from(new Set(posts.map((p) => p.creator_id)));
 
-  const [{ data: media }, { data: authors }, { data: goals }, { data: likedRows }] = await Promise.all([
-    supabase
-      .from("post_media")
-      .select("id, post_id, storage_path, mime_type, position")
-      .in("post_id", ids),
-    supabase
-      .from("profiles")
-      .select("user_id, username, display_name, avatar_url, is_verified, watermark_position, watermark_opacity")
-      .in("user_id", creatorIds),
-    supabase
-      .from("post_goals")
-      .select("post_id, target_cents, raised_cents, unlock_price_cents, is_unlocked")
-      .in("post_id", ids),
-    viewerId
-      ? supabase
-          .from("post_likes")
-          .select("post_id")
-          .eq("user_id", viewerId)
-          .in("post_id", ids)
-      : Promise.resolve({ data: [] as Array<{ post_id: string }>, error: null }),
-  ]);
+  const [{ data: media }, { data: authors }, { data: goals }, { data: likedRows }] =
+    await Promise.all([
+      supabase
+        .from("post_media")
+        .select("id, post_id, storage_path, mime_type, position")
+        .in("post_id", ids),
+      supabase
+        .from("profiles")
+        .select(
+          "user_id, username, display_name, avatar_url, is_verified, watermark_position, watermark_opacity",
+        )
+        .in("user_id", creatorIds),
+      supabase
+        .from("post_goals")
+        .select("post_id, target_cents, raised_cents, unlock_price_cents, is_unlocked")
+        .in("post_id", ids),
+      viewerId
+        ? supabase.from("post_likes").select("post_id").eq("user_id", viewerId).in("post_id", ids)
+        : Promise.resolve({ data: [] as Array<{ post_id: string }>, error: null }),
+    ]);
 
-  const mediaByPost = new Map<string, { id: string; storage_path: string; mime_type: string; position: number }[]>();
+  const mediaByPost = new Map<
+    string,
+    { id: string; storage_path: string; mime_type: string; position: number }[]
+  >();
   (media ?? []).forEach((m) => {
     const list = mediaByPost.get(m.post_id) ?? [];
-    list.push({ id: m.id, storage_path: m.storage_path, mime_type: m.mime_type, position: m.position });
+    list.push({
+      id: m.id,
+      storage_path: m.storage_path,
+      mime_type: m.mime_type,
+      position: m.position,
+    });
     mediaByPost.set(m.post_id, list);
   });
-  const authorByUid = new Map<string, { username: string; display_name: string | null; avatar_url: string | null; is_verified: boolean; watermark_position: string; watermark_opacity: number }>();
-  (authors ?? []).forEach((a) => authorByUid.set(a.user_id, {
-    username: a.username,
-    display_name: a.display_name,
-    avatar_url: a.avatar_url,
-    is_verified: a.is_verified,
-    watermark_position: a.watermark_position ?? "bottom-right",
-    watermark_opacity: Number(a.watermark_opacity ?? 0.6),
-  }));
-  const goalByPost = new Map<string, { target_cents: number; raised_cents: number; unlock_price_cents: number; is_unlocked: boolean }>();
+  const authorByUid = new Map<
+    string,
+    {
+      username: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      is_verified: boolean;
+      watermark_position: string;
+      watermark_opacity: number;
+    }
+  >();
+  (authors ?? []).forEach((a) =>
+    authorByUid.set(a.user_id, {
+      username: a.username,
+      display_name: a.display_name,
+      avatar_url: a.avatar_url,
+      is_verified: a.is_verified,
+      watermark_position: a.watermark_position ?? "bottom-right",
+      watermark_opacity: Number(a.watermark_opacity ?? 0.6),
+    }),
+  );
+  const goalByPost = new Map<
+    string,
+    { target_cents: number; raised_cents: number; unlock_price_cents: number; is_unlocked: boolean }
+  >();
   (goals ?? []).forEach((g) =>
     goalByPost.set(g.post_id, {
       target_cents: g.target_cents,
@@ -87,7 +112,11 @@ export async function fetchPosts(opts: {
   if (viewerId) {
     const [{ data: u }, { data: s }, { data: c }, { data: b }, { data: m }] = await Promise.all([
       supabase.from("ppv_unlocks").select("post_id").eq("user_id", viewerId),
-      supabase.from("subscriptions").select("creator_id").eq("subscriber_id", viewerId).eq("status", "active"),
+      supabase
+        .from("subscriptions")
+        .select("creator_id")
+        .eq("subscriber_id", viewerId)
+        .eq("status", "active"),
       supabase.from("post_goal_contributions").select("post_id").eq("user_id", viewerId),
       supabase.from("user_blocks").select("blocked_id").eq("blocker_id", viewerId),
       supabase.from("user_mutes").select("muted_user_id").eq("user_id", viewerId),

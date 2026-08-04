@@ -84,7 +84,7 @@ function SearchPage() {
         {results.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {results.map((c) => (
-              <CreatorCard key={c.user_id} c={c} />
+              <CreatorCard key={c.user_id} c={c} visitSource="venyx_search" />
             ))}
           </div>
         ) : (

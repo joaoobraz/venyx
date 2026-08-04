@@ -18,6 +18,7 @@ import { detectExternalContact } from "@/lib/contact-guard";
 import { Input } from "@/components/ui/input";
 import { SafetyMenu } from "@/components/SafetyMenu";
 import { NotificationMuteButton } from "@/components/NotificationMuteButton";
+import { awardDemoLoyaltyPoints } from "@/lib/demo-loyalty";
 
 const PAGE_SIZE = 20;
 const demoKey = (postId: string, locale: DemoLocale) =>
@@ -67,10 +68,7 @@ function demoCreatorModerationBlock(creatorId: string, userId: string, body: str
     const normalizedBody = body.toLocaleLowerCase("pt-BR");
     if (
       rules.some(
-        (rule) =>
-          rule.is_active &&
-          rule.kind === "user" &&
-          rule.blocked_user_id === userId,
+        (rule) => rule.is_active && rule.kind === "user" && rule.blocked_user_id === userId,
       )
     ) {
       return "user";
@@ -103,9 +101,7 @@ function uniqueComments(comments: PostComment[]) {
 }
 
 function CommentText({ comment }: { comment: PostComment }) {
-  const mentionNames = new Set(
-    comment.mentions.map((mention) => mention.username.toLowerCase()),
-  );
+  const mentionNames = new Set(comment.mentions.map((mention) => mention.username.toLowerCase()));
   return (
     <p data-user-content className="mt-0.5 whitespace-pre-wrap break-words text-sm text-foreground">
       {comment.body.split(/(@[a-zA-Z0-9_.]{3,30})/g).map((part, index) => {
@@ -207,7 +203,18 @@ export function PostComments({
         toast.error(tr("Não foi possível carregar os comentários.", "Couldn't load comments."));
       })
       .finally(() => setLoading(false));
-  }, [headers, isLocalDemoPost, listFn, loaded, locale, onCommentsCountChange, open, postId, tr, user]);
+  }, [
+    headers,
+    isLocalDemoPost,
+    listFn,
+    loaded,
+    locale,
+    onCommentsCountChange,
+    open,
+    postId,
+    tr,
+    user,
+  ]);
 
   const loadPrevious = async () => {
     if (!headers || !nextCursor || loadingMore) return;
@@ -363,6 +370,14 @@ export function PostComments({
       const next = [...comments, fallback];
       setComments(next);
       writeDemoComments(postId, locale, next);
+      awardDemoLoyaltyPoints({
+        userId: user.id,
+        creatorId,
+        points: 2,
+        reason: "post_comment",
+        label: "Comentário aprovado em uma publicação",
+        refId: fallback.id,
+      });
       onCommentsCountChange(next.length);
       setDraft("");
       setReplyTo(null);
@@ -381,7 +396,11 @@ export function PostComments({
       onCommentsCountChange(result.commentsCount);
     } catch (error) {
       if (!DEMO_MODE) {
-        toast.error(error instanceof Error ? error.message : tr("Não foi possível excluir.", "Couldn't delete."));
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : tr("Não foi possível excluir.", "Couldn't delete."),
+        );
         return;
       }
       const next = comments
@@ -434,9 +453,7 @@ export function PostComments({
     } catch (error) {
       if (!DEMO_MODE) {
         toast.error(
-          error instanceof Error
-            ? error.message
-            : tr("Não foi possível editar.", "Couldn't edit."),
+          error instanceof Error ? error.message : tr("Não foi possível editar.", "Couldn't edit."),
         );
         return;
       }
@@ -518,7 +535,10 @@ export function PostComments({
   }
 
   return (
-    <section className="border-t border-border/40 px-4 py-3" aria-label={tr("Comentários", "Comments")}>
+    <section
+      className="border-t border-border/40 px-4 py-3"
+      aria-label={tr("Comentários", "Comments")}
+    >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {tr("Comentários", "Comments")} ({commentsCount})
@@ -729,7 +749,10 @@ export function PostComments({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           maxLength={1000}
-          placeholder={tr("Escreva um comentário ou @mencione alguém...", "Write a comment or @mention someone...")}
+          placeholder={tr(
+            "Escreva um comentário ou @mencione alguém...",
+            "Write a comment or @mention someone...",
+          )}
           className="h-9 min-w-0 flex-1 rounded-full"
           disabled={submitting}
         />

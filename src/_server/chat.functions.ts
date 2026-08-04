@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdultVerification } from "@/_server/access-control.server";
 import { detectExternalContact } from "@/lib/contact-guard";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { assertAccountsActive } from "@/_server/account-pause.server";
 
 const SendMessageSchema = z.object({
   threadId: z.string().uuid(),
@@ -48,6 +49,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     ) {
       throw new Error("Conversa não encontrada ou sem permissão.");
     }
+    await assertAccountsActive([thread.user_a, thread.user_b]);
 
     const [{ count: recentCount }, { data: duplicate }] = await Promise.all([
       supabase
@@ -124,6 +126,13 @@ export const editChatMessage = createServerFn({ method: "POST" })
     if (lookupError || !current || current.sender_id !== userId) {
       throw new Error("Mensagem não encontrada ou sem permissão.");
     }
+    const { data: thread } = await supabaseAdmin
+      .from("chat_threads")
+      .select("user_a,user_b")
+      .eq("id", current.thread_id)
+      .maybeSingle();
+    if (!thread) throw new Error("Conversa não encontrada.");
+    await assertAccountsActive([thread.user_a, thread.user_b]);
     if (current.media_path) {
       throw new Error("Mensagens com mídia não podem ser editadas.");
     }

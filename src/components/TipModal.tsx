@@ -13,11 +13,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { recordDemoTip } from "@/lib/demo-tips";
+import { recordDemoGiftChatConfirmation } from "@/lib/demo-chat";
 import { addDemoNotification } from "@/lib/demo-notifications";
 
 const QUICK = [500, 1000, 2500, 5000];
 
 type Step = "form" | "pix";
+
+export interface ConfirmedTip {
+  amountCents: number;
+  message: string | null;
+  giftTitle: string | null;
+  transactionId: string;
+}
 
 export function TipModal({
   open,
@@ -26,6 +34,7 @@ export function TipModal({
   creatorName,
   postId,
   giftItem,
+  onConfirmed,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -33,8 +42,9 @@ export function TipModal({
   creatorName: string;
   postId?: string;
   giftItem?: { id: string; title: string; amountCents: number; emoji?: string };
+  onConfirmed?: (tip: ConfirmedTip) => void;
 }) {
-  const { user, session } = useAuth();
+  const { user, session, accountPaused } = useAuth();
   const { tr } = useI18n();
   const createChargeFn = useServerFn(createTipPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
@@ -78,6 +88,15 @@ export function TipModal({
       toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
       return;
     }
+    if (accountPaused) {
+      toast.info(
+        tr(
+          "Reative sua conta antes de enviar um mimo.",
+          "Reactivate your account before sending a tip.",
+        ),
+      );
+      return;
+    }
     const finalCents =
       giftItem?.amountCents ?? (custom ? Math.round(parseFloat(custom) * 100) : amount);
     if (!finalCents || finalCents < 100) {
@@ -95,13 +114,37 @@ export function TipModal({
     }
     if (isLocalTip) {
       setBusy(true);
-      recordDemoTip({
+      const metadata = user.user_metadata as Record<string, unknown> | undefined;
+      const senderName =
+        (typeof metadata?.display_name === "string" && metadata.display_name.trim()) ||
+        (typeof metadata?.full_name === "string" && metadata.full_name.trim()) ||
+        user.email?.split("@")[0] ||
+        tr("Lead", "Fan");
+      const recordedTip = recordDemoTip({
         userId: user.id,
         creatorId,
         creatorName,
+        senderName,
         postId,
         amountCents: finalCents,
-        message: giftItem ? `${giftItem.title}${msg.trim() ? ` — ${msg.trim()}` : ""}` : msg,
+        message: msg,
+        giftTitle: giftItem?.title,
+      });
+      recordDemoGiftChatConfirmation({
+        userId: user.id,
+        creatorId,
+        creatorName,
+        senderName,
+        amountCents: finalCents,
+        message: msg,
+        transactionId: recordedTip.id,
+        createdAt: recordedTip.created_at,
+      });
+      onConfirmed?.({
+        amountCents: finalCents,
+        message: msg.trim() || null,
+        giftTitle: giftItem?.title ?? null,
+        transactionId: recordedTip.id,
       });
       addDemoNotification(user.id, {
         type: "sale",
@@ -161,6 +204,12 @@ export function TipModal({
             const s = await getStatusFn({ data: { chargeId: res.chargeId }, headers: authHeaders });
             if (s.status === "paid") {
               if (pollRef.current) clearInterval(pollRef.current);
+              onConfirmed?.({
+                amountCents: finalCents,
+                message: msg.trim() || null,
+                giftTitle: giftItem?.title ?? null,
+                transactionId: res.chargeId,
+              });
               toast.success(
                 tr(
                   giftItem

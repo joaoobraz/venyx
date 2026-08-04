@@ -18,6 +18,7 @@ test("registra e soma mimos somente no armazenamento local", () => {
     userId: "viewer-1",
     creatorId: "demo-aline",
     creatorName: "Aline",
+    senderName: "João",
     amountCents: 2500,
     message: "Adorei o conteúdo!",
   });
@@ -25,12 +26,15 @@ test("registra e soma mimos somente no armazenamento local", () => {
     userId: "viewer-1",
     creatorId: "demo-aline",
     creatorName: "Aline",
+    senderName: "João",
     amountCents: 1000,
   });
 
   assert.equal(readDemoTips("viewer-1").length, 2);
   assert.equal(getDemoTipTotal("viewer-1"), 3500);
   assert.equal(readDemoTips("viewer-1")[0]?.message, "Adorei o conteúdo!");
+  assert.equal(readDemoTips("viewer-1")[0]?.payment_method, "demo_balance");
+  assert.equal(readDemoTips("viewer-1")[0]?.sender_name, "João");
 
   Reflect.deleteProperty(globalThis, "localStorage");
   Reflect.deleteProperty(globalThis, "window");

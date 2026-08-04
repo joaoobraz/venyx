@@ -11,6 +11,7 @@ import {
   Images,
   Clock3,
   Gift,
+  PauseCircle,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BecomeCreatorBanner } from "@/components/BecomeCreatorBanner";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/profile/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const { t, tr, locale } = useI18n();
-  const { user } = useAuth();
+  const { user, accountPaused } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,26 @@ function ProfilePage() {
   const [demoSubscribed, setDemoSubscribed] = useState(false);
   const [demoSubscriptionOpen, setDemoSubscriptionOpen] = useState(false);
   const [demoCouponCode, setDemoCouponCode] = useState("");
+  const [profilePaused, setProfilePaused] = useState(false);
+
+  useEffect(() => {
+    if (!profile) {
+      setProfilePaused(false);
+      return;
+    }
+    if (profile.user_id === user?.id) {
+      setProfilePaused(accountPaused);
+      return;
+    }
+    if (profile.user_id.startsWith("demo-")) {
+      setProfilePaused(false);
+      return;
+    }
+    void (supabase as any)
+      .rpc("is_account_paused", { _user_id: profile.user_id })
+      .then(({ data }: { data: boolean | null }) => setProfilePaused(data === true))
+      .catch(() => setProfilePaused(false));
+  }, [accountPaused, profile, user?.id]);
 
   useEffect(() => {
     if (!profile) return;
@@ -155,6 +176,30 @@ function ProfilePage() {
         <div className="text-center text-muted-foreground">404 — perfil não encontrado</div>
       ) : (
         <div className="space-y-5">
+          {profilePaused && (
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <PauseCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-semibold">
+                    {isMe
+                      ? tr("Seu perfil está pausado", "Your profile is paused")
+                      : tr("Esta conta está temporariamente pausada", "This account is temporarily paused")}
+                  </p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    {isMe
+                      ? tr("Ele não aparece publicamente e não aceita novas compras ou mensagens.", "It is not public and cannot receive new purchases or messages.")
+                      : tr("O conteúdo já contratado continua disponível até o vencimento, sem novas compras ou mensagens.", "Already purchased content remains available until expiration, with no new purchases or messages.")}
+                  </p>
+                </div>
+              </div>
+              {isMe && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/settings/privacy">{tr("Gerenciar pausa", "Manage pause")}</Link>
+                </Button>
+              )}
+            </div>
+          )}
           <div className="overflow-hidden rounded-2xl bg-gradient-card shadow-card">
             <div className="h-36 bg-gradient-primary sm:h-44 md:h-56">
               {profile.cover_url && (
@@ -174,7 +219,7 @@ function ProfilePage() {
                 </div>
                 {!isMe && (
                   <div className="flex flex-wrap justify-end gap-2">
-                    {giftListAvailable && (
+                    {giftListAvailable && !profilePaused && (
                       <Button variant="outline" size="sm" asChild>
                         <Link to="/gifts/$username" params={{ username: profile.username }}>
                           <Gift className="mr-1.5 h-4 w-4 text-primary" />{" "}
@@ -182,21 +227,27 @@ function ProfilePage() {
                         </Link>
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => setTipOpen(true)}>
+                    <Button variant="outline" size="sm" disabled={profilePaused || accountPaused} onClick={() => setTipOpen(true)}>
                       <Heart className="mr-1.5 h-4 w-4 text-primary" /> {t("profile.tip")}
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link
-                        to="/chat"
-                        search={
-                          isDemoProfile && demoThread
-                            ? { thread: demoThread.id }
-                            : { with: profile.user_id }
-                        }
-                      >
+                    {profilePaused || accountPaused ? (
+                      <Button variant="outline" size="sm" disabled>
                         <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
-                      </Link>
-                    </Button>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          to="/chat"
+                          search={
+                            isDemoProfile && demoThread
+                              ? { thread: demoThread.id }
+                              : { with: profile.user_id }
+                          }
+                        >
+                          <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
+                        </Link>
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       onClick={() => {
@@ -211,8 +262,11 @@ function ProfilePage() {
                         setSubOpen(true);
                       }}
                       className="bg-primary text-primary-foreground hover:bg-primary/90"
+                      disabled={profilePaused || accountPaused}
                     >
-                      {isDemoProfile && demoSubscribed
+                      {profilePaused
+                        ? tr("Conta pausada", "Account paused")
+                        : isDemoProfile && demoSubscribed
                         ? tr("Assinatura ativa", "Active subscription")
                         : t("profile.subscribe")}
                     </Button>

@@ -123,7 +123,6 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
         <Trophy className="h-5 w-5 text-primary" />
         <span className="text-gradient-gold font-display">{t("top.title")}</span>
       </h2>
-      <p className="text-xs text-muted-foreground">{t("top.refresh")}</p>
       <div className={compact ? "flex gap-3 overflow-x-auto pb-2" : "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"}>
         {creators.map((c, idx) => (
           <Link

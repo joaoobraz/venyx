@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
+import { onlyDigits } from "@/lib/cpf";
 
 function safeError(internal: unknown, msg = "Operação falhou. Tente novamente."): Error {
   console.error("[withdrawals]", internal);
@@ -55,18 +56,41 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     const isCreator = (roles ?? []).some((r) => r.role === "creator");
     if (!isCreator) throw new Error("Apenas criadoras podem cadastrar chave PIX");
 
-    const { error } = await supabaseAdmin.from("creator_payout_keys").upsert(
-      {
-        user_id: userId,
-        pix_key: data.pix_key.trim(),
-        pix_key_type: data.pix_key_type,
-        holder_name: data.holder_name.trim(),
-        holder_document: data.holder_document.replace(/\D/g, ""),
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) throw safeError(error);
-    return { ok: true };
+    const { data: identity, error: identityError } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("cpf, full_name, status")
+      .eq("user_id", userId)
+      .eq("status", "verified")
+      .maybeSingle();
+    if (identityError || !identity) {
+      throw new Error("Confirme sua identidade e seu CPF antes de cadastrar a chave Pix");
+    }
+
+    const verifiedCpf = onlyDigits(identity.cpf);
+    const informedDocument = onlyDigits(data.holder_document);
+    if (informedDocument !== verifiedCpf) {
+      throw new Error("O CPF do titular deve ser o mesmo CPF verificado na sua conta");
+    }
+    if (data.pix_key_type === "cpf" && onlyDigits(data.pix_key) !== verifiedCpf) {
+      throw new Error("A chave Pix do tipo CPF deve ser o CPF verificado na sua conta");
+    }
+
+    const { data: payoutKey, error } = await supabaseAdmin
+      .from("creator_payout_keys")
+      .upsert(
+        {
+          user_id: userId,
+          pix_key: data.pix_key.trim(),
+          pix_key_type: data.pix_key_type,
+          holder_name: identity.full_name.trim(),
+          holder_document: verifiedCpf,
+        },
+        { onConflict: "user_id" },
+      )
+      .select("withdrawal_eligible_at")
+      .single();
+    if (error || !payoutKey) throw safeError(error);
+    return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at };
   });
 
 // ===================== Pedido de saque (criadora) =====================
@@ -93,6 +117,12 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       }
       if (message.includes("VENYX_PIX_KEY_REQUIRED")) {
         throw new Error("Cadastre sua chave PIX antes de solicitar saque");
+      }
+      if (message.includes("VENYX_PIX_KEY_COOLDOWN")) {
+        throw new Error("A chave Pix foi alterada. Por segurança, aguarde 48 horas para sacar");
+      }
+      if (message.includes("VENYX_PIX_IDENTITY_MISMATCH")) {
+        throw new Error("A chave Pix precisa pertencer ao CPF verificado na sua conta");
       }
       if (message.includes("VENYX_INSUFFICIENT_BALANCE")) {
         throw new Error("Saldo insuficiente para este saque");

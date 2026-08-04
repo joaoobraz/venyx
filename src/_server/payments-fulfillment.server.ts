@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Database, Json, Tables } from "@/integrations/supabase/types";
 import { recordOperationalEvent } from "@/_server/observability.server";
+import { pausedAccountIds } from "@/_server/account-pause.server";
 
 type PixCharge = Tables<"pix_charges">;
 type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
@@ -13,9 +14,72 @@ function metadataOf(charge: PixCharge): { [key: string]: Json | undefined } {
     : {};
 }
 
-async function insertTransaction(row: TransactionInsert): Promise<void> {
-  const { error } = await supabaseAdmin.from("transactions").insert(row);
+async function insertTransaction(row: TransactionInsert): Promise<string | null> {
+  const { data, error } = await supabaseAdmin
+    .from("transactions")
+    .insert(row)
+    .select("id")
+    .maybeSingle();
   if (error && error.code !== "23505") throw error;
+  if (data?.id) return data.id;
+  if (!row.idempotency_key) return null;
+
+  const { data: existing, error: lookupError } = await supabaseAdmin
+    .from("transactions")
+    .select("id")
+    .eq("idempotency_key", row.idempotency_key)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  return existing?.id ?? null;
+}
+
+async function insertGiftChatConfirmation(opts: {
+  transactionId: string;
+  payerId: string;
+  payeeId: string;
+  amountCents: number;
+  message: string | null;
+}) {
+  const [userA, userB] = [opts.payerId, opts.payeeId].sort();
+  const [{ data: payer }, { data: payee }] = await Promise.all([
+    supabaseAdmin
+      .from("profiles")
+      .select("display_name, username")
+      .eq("user_id", opts.payerId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("profiles")
+      .select("display_name, username")
+      .eq("user_id", opts.payeeId)
+      .maybeSingle(),
+  ]);
+  const payerName = payer?.display_name || payer?.username || "Lead";
+  const payeeName = payee?.display_name || payee?.username || "modelo";
+  const formattedAmount = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(opts.amountCents / 100);
+
+  const { data: thread, error: threadError } = await supabaseAdmin
+    .from("chat_threads")
+    .upsert(
+      { user_a: userA, user_b: userB },
+      { onConflict: "user_a,user_b", ignoreDuplicates: false },
+    )
+    .select("id")
+    .single();
+  if (threadError) throw threadError;
+
+  const { error: messageError } = await supabaseAdmin.from("chat_messages").insert({
+    thread_id: thread.id,
+    sender_id: opts.payerId,
+    body: `🎁 ${payerName} enviou um mimo de ${formattedAmount} para ${payeeName}.`,
+    message_kind: "gift",
+    gift_amount_cents: opts.amountCents,
+    gift_message: opts.message,
+    financial_transaction_id: opts.transactionId,
+  });
+  if (messageError && messageError.code !== "23505") throw messageError;
 }
 
 /**
@@ -54,6 +118,16 @@ export async function fulfillPaidCharge(opts: {
   // 2) Idempotência: já marcada como paga?
   if (charge.status === "paid") {
     return { ok: true, alreadyFulfilled: true, chargeId: charge.id };
+  }
+
+  const paused = await pausedAccountIds([charge.payer_id, charge.payee_id]);
+  if (paused.size > 0) {
+    await supabaseAdmin
+      .from("pix_charges")
+      .update({ status: "cancelled" })
+      .eq("id", charge.id)
+      .in("status", ["pending", "processing"]);
+    return { ok: false, reason: "Conta pausada; cobrança não pode ser efetivada" };
   }
 
   // 3) Reserva a cobrança de forma atômica. Uma execução travada pode ser
@@ -426,7 +500,7 @@ async function fulfillTip(charge: PixCharge) {
     });
     if (error) throw error;
   }
-  await insertTransaction({
+  const transactionId = await insertTransaction({
     payer_id: charge.payer_id,
     payee_id: charge.payee_id,
     type: "tip",
@@ -444,6 +518,15 @@ async function fulfillTip(charge: PixCharge) {
       gift_title: isSymbolicGift ? (metadata.gift_title ?? null) : null,
       gift_category: isSymbolicGift ? (metadata.gift_category ?? null) : null,
     },
+  });
+  if (!transactionId) throw new Error("Transação do mimo não encontrada");
+  await insertGiftChatConfirmation({
+    transactionId,
+    payerId: charge.payer_id,
+    payeeId: charge.payee_id,
+    amountCents: charge.amount_cents,
+    message:
+      typeof metadata.message === "string" ? metadata.message.trim().slice(0, 200) || null : null,
   });
 }
 

@@ -1,13 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { trackClientError, trackProductEvent } from "@/lib/telemetry";
+import { visitAttributionMetadata } from "@/lib/visit-attribution";
 
 export function ProductTelemetry() {
   const location = useLocation();
+  const previousRoute = useRef<string | null>(null);
 
   useEffect(() => {
-    trackProductEvent("page_view", { path: location.pathname });
-  }, [location.pathname]);
+    const referrer = previousRoute.current
+      ? new URL(previousRoute.current, window.location.origin).toString()
+      : document.referrer;
+    trackProductEvent("page_view", {
+      path: location.pathname,
+      ...visitAttributionMetadata({
+        landingUrl: window.location.href,
+        referrer,
+        siteOrigin: window.location.origin,
+      }),
+    });
+    previousRoute.current = `${location.pathname}${window.location.search}`;
+  }, [location.href, location.pathname]);
 
   useEffect(() => {
     const onError = (event: ErrorEvent) => {

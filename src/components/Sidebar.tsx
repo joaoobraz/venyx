@@ -28,6 +28,7 @@ import {
   HelpCircle,
   Database,
   Gift,
+  Images,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -56,6 +57,7 @@ export function Sidebar() {
       icon: LayoutDashboard,
     },
     { to: "/presentation/posts", search: undefined, label: t("nav.newPost"), icon: PenSquare },
+    { to: "/presentation/media-library", search: undefined, label: "Acervo", icon: Images },
     { to: "/presentation/analytics", search: undefined, label: "Analytics", icon: BarChart3 },
     { to: "/presentation/wallet", search: undefined, label: t("nav.wallet"), icon: Wallet },
     { to: "/presentation/subscriptions", search: undefined, label: t("nav.plans"), icon: Layers },
@@ -63,6 +65,7 @@ export function Sidebar() {
     { to: "/presentation/gifts", search: undefined, label: t("nav.gifts"), icon: Gift },
     { to: "/presentation/mailing", search: undefined, label: t("nav.mailing"), icon: Mail },
     { to: "/presentation/coupons", search: undefined, label: t("nav.coupons"), icon: Tag },
+    { to: "/presentation/loyalty", search: undefined, label: t("nav.loyalty"), icon: Trophy },
     {
       to: "/presentation/moderation",
       search: undefined,
@@ -160,6 +163,12 @@ export function Sidebar() {
             </Link>
             <Link to="/creator/posts" className={linkCls(loc.pathname === "/creator/posts")}>
               <PenSquare className="h-5 w-5" /> {t("nav.newPost")}
+            </Link>
+            <Link
+              to="/creator/media-library"
+              className={linkCls(loc.pathname === "/creator/media-library")}
+            >
+              <Images className="h-5 w-5" /> Acervo
             </Link>
             <Link to="/creator/wallet" className={linkCls(loc.pathname === "/creator/wallet")}>
               <Wallet className="h-5 w-5" /> {t("nav.wallet")}

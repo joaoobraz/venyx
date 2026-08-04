@@ -17,6 +17,7 @@ import {
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 import { normalizeCreatorLinkUrl } from "@/lib/creator-link-url";
 import { recordPublicLinkEvent } from "@/lib/link-analytics";
+import { withVenyxLinkAttribution } from "@/lib/visit-attribution";
 
 export const Route = createFileRoute("/links/$username")({
   component: PublicLinksPage,
@@ -215,6 +216,7 @@ function PublicLinksPage() {
     if (!profile || profile.user_id.startsWith("demo-")) return;
     recordPublicLinkEvent({ eventType: "click", creatorId: profile.user_id, linkId: id });
   };
+  const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
 
   if (loading) {
     return (
@@ -313,7 +315,7 @@ function PublicLinksPage() {
         >
           {giftListPublished && (
             <a
-              href={`/gifts/${profile.username}`}
+              href={withVenyxLinkAttribution(`/gifts/${profile.username}`, siteOrigin)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -341,10 +343,11 @@ function PublicLinksPage() {
             const Icon = getIcon(l.icon);
             const safeUrl = normalizeCreatorLinkUrl(l.url);
             if (!safeUrl) return null;
+            const attributedUrl = withVenyxLinkAttribution(safeUrl, siteOrigin);
             return (
               <a
                 key={l.id}
-                href={safeUrl}
+                href={attributedUrl}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => trackClick(l.id)}

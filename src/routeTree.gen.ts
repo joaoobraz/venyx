@@ -49,6 +49,7 @@ import { Route as CreatorGiftsRouteImport } from './routes/creator.gifts'
 import { Route as CreatorLinksRouteImport } from './routes/creator.links'
 import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
 import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorMediaLibraryRouteImport } from './routes/creator.media-library'
 import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
 import { Route as CreatorOnboardingRouteImport } from './routes/creator.onboarding'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
@@ -275,6 +276,11 @@ const CreatorMailingRoute = CreatorMailingRouteImport.update({
   path: '/creator/mailing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorMediaLibraryRoute = CreatorMediaLibraryRouteImport.update({
+  id: '/creator/media-library',
+  path: '/creator/media-library',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorModerationRoute = CreatorModerationRouteImport.update({
   id: '/creator/moderation',
   path: '/creator/moderation',
@@ -448,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -515,6 +522,7 @@ export interface FileRoutesByTo {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -583,6 +591,7 @@ export interface FileRoutesById {
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
@@ -652,6 +661,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
@@ -719,6 +729,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
@@ -854,6 +866,7 @@ export interface RootRouteChildren {
   CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
+  CreatorMediaLibraryRoute: typeof CreatorMediaLibraryRoute
   CreatorModerationRoute: typeof CreatorModerationRoute
   CreatorOnboardingRoute: typeof CreatorOnboardingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
@@ -1163,6 +1176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorMailingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/media-library': {
+      id: '/creator/media-library'
+      path: '/creator/media-library'
+      fullPath: '/creator/media-library'
+      preLoaderRoute: typeof CreatorMediaLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/moderation': {
       id: '/creator/moderation'
       path: '/creator/moderation'
@@ -1393,6 +1413,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorLinksRoute: CreatorLinksRoute,
   CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
+  CreatorMediaLibraryRoute: CreatorMediaLibraryRoute,
   CreatorModerationRoute: CreatorModerationRoute,
   CreatorOnboardingRoute: CreatorOnboardingRoute,
   CreatorPostsRoute: CreatorPostsRoute,

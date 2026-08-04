@@ -80,7 +80,15 @@ function SecurityPage() {
       setCode("");
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : tr("Código inválido", "Invalid code"));
+      const message = e instanceof Error ? e.message : "";
+      toast.error(
+        /invalid totp code entered/i.test(message)
+          ? tr(
+              "Código de autenticação inválido. Confira os 6 dígitos e tente novamente.",
+              "Invalid authentication code. Check the 6 digits and try again.",
+            )
+          : message || tr("Código inválido", "Invalid code"),
+      );
     } finally {
       setBusy(false);
     }

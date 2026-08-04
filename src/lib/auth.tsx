@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import {
+  ACCOUNT_PAUSE_CHANGED_EVENT,
+  readDemoAccountPause,
+} from "@/lib/account-pause";
 
 export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 export type DemoPreviewRole = Extract<AppRole, "subscriber" | "creator" | "admin">;
@@ -35,6 +40,8 @@ interface AuthCtx {
   isAmbassador: boolean;
   isSeller: boolean;
   mfaEnabled: boolean;
+  accountPaused: boolean;
+  accountPausedAt: string | null;
   canUseDemoPreview: boolean;
   demoPreviewRole: DemoPreviewRole | null;
   setDemoPreviewRole: (role: DemoPreviewRole | null) => void;
@@ -81,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [kyc, setKyc] = useState<KycRequest | null>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [accountPaused, setAccountPaused] = useState(false);
+  const [accountPausedAt, setAccountPausedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [demoPreviewRole, setDemoPreviewRoleState] = useState<DemoPreviewRole | null>(null);
   const canUseDemoPreview = isDemoPreviewAllowed(user?.email);
@@ -109,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [canUseDemoPreview, user?.email]);
 
   const loadUserData = async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }] =
+    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }, lifecycle] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -121,12 +130,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .limit(1)
           .maybeSingle(),
         supabase.auth.mfa.listFactors(),
+        DEMO_MODE
+          ? Promise.resolve({ data: null })
+          : (supabase as any)
+              .from("account_lifecycle")
+              .select("status,paused_at")
+              .eq("user_id", uid)
+              .maybeSingle(),
       ]);
     setProfile((prof as Profile) ?? null);
     setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
     setKyc((kycRow as KycRequest) ?? null);
     setMfaEnabled((factors?.all ?? []).some((factor) => factor.status === "verified"));
+    const pause = DEMO_MODE ? readDemoAccountPause(uid) : null;
+    setAccountPaused(pause ? pause.paused : lifecycle.data?.status === "paused");
+    setAccountPausedAt(pause ? pause.pausedAt : (lifecycle.data?.paused_at ?? null));
   };
+
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+    const syncPause = () => {
+      const state = readDemoAccountPause(user.id);
+      setAccountPaused(state.paused);
+      setAccountPausedAt(state.pausedAt);
+    };
+    window.addEventListener(ACCOUNT_PAUSE_CHANGED_EVENT, syncPause);
+    return () => window.removeEventListener(ACCOUNT_PAUSE_CHANGED_EVENT, syncPause);
+  }, [user]);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
@@ -141,6 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRoles([]);
         setKyc(null);
         setMfaEnabled(false);
+        setAccountPaused(false);
+        setAccountPausedAt(null);
       }
     });
 
@@ -179,6 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAmbassador: roles.includes("ambassador"),
         isSeller: roles.includes("seller"),
         mfaEnabled,
+        accountPaused,
+        accountPausedAt,
         canUseDemoPreview,
         demoPreviewRole,
         setDemoPreviewRole,

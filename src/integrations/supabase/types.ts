@@ -220,8 +220,12 @@ export type Database = {
           campaign_id: string | null;
           created_at: string;
           edited_at: string | null;
+          financial_transaction_id: string | null;
+          gift_amount_cents: number | null;
+          gift_message: string | null;
           id: string;
           media_path: string | null;
+          message_kind: string;
           mime_type: string | null;
           ppv_price_cents: number;
           read_at: string | null;
@@ -234,8 +238,12 @@ export type Database = {
           campaign_id?: string | null;
           created_at?: string;
           edited_at?: string | null;
+          financial_transaction_id?: string | null;
+          gift_amount_cents?: number | null;
+          gift_message?: string | null;
           id?: string;
           media_path?: string | null;
+          message_kind?: string;
           mime_type?: string | null;
           ppv_price_cents?: number;
           read_at?: string | null;
@@ -248,8 +256,12 @@ export type Database = {
           campaign_id?: string | null;
           created_at?: string;
           edited_at?: string | null;
+          financial_transaction_id?: string | null;
+          gift_amount_cents?: number | null;
+          gift_message?: string | null;
           id?: string;
           media_path?: string | null;
+          message_kind?: string;
           mime_type?: string | null;
           ppv_price_cents?: number;
           read_at?: string | null;
@@ -317,6 +329,135 @@ export type Database = {
           last_message_at?: string;
           user_a?: string;
           user_b?: string;
+        };
+        Relationships: [];
+      };
+      creator_media_assets: {
+        Row: {
+          category: string;
+          cover_storage_path: string | null;
+          created_at: string;
+          creator_id: string;
+          id: string;
+          is_archived: boolean;
+          mime_type: string;
+          source_message_id: string | null;
+          source_post_id: string | null;
+          source_type: string;
+          storage_bucket: string;
+          storage_path: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          category?: string;
+          cover_storage_path?: string | null;
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          is_archived?: boolean;
+          mime_type: string;
+          source_message_id?: string | null;
+          source_post_id?: string | null;
+          source_type?: string;
+          storage_bucket: string;
+          storage_path: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          cover_storage_path?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          is_archived?: boolean;
+          mime_type?: string;
+          source_message_id?: string | null;
+          source_post_id?: string | null;
+          source_type?: string;
+          storage_bucket?: string;
+          storage_path?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_media_assets_source_message_id_fkey";
+            columns: ["source_message_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "creator_media_assets_source_post_id_fkey";
+            columns: ["source_post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      creator_media_collection_items: {
+        Row: {
+          asset_id: string;
+          collection_id: string;
+          created_at: string;
+          position: number;
+        };
+        Insert: {
+          asset_id: string;
+          collection_id: string;
+          created_at?: string;
+          position?: number;
+        };
+        Update: {
+          asset_id?: string;
+          collection_id?: string;
+          created_at?: string;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_media_collection_items_asset_id_fkey";
+            columns: ["asset_id"];
+            isOneToOne: false;
+            referencedRelation: "creator_media_assets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "creator_media_collection_items_collection_id_fkey";
+            columns: ["collection_id"];
+            isOneToOne: false;
+            referencedRelation: "creator_media_collections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      creator_media_collections: {
+        Row: {
+          created_at: string;
+          creator_id: string;
+          description: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -453,6 +594,61 @@ export type Database = {
             columns: ["coupon_id"];
             isOneToOne: false;
             referencedRelation: "subscription_coupons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      coupon_reservations: {
+        Row: {
+          coupon_id: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          pix_charge_id: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          coupon_id: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          pix_charge_id: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          coupon_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          pix_charge_id?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coupon_reservations_coupon_id_fkey";
+            columns: ["coupon_id"];
+            isOneToOne: false;
+            referencedRelation: "subscription_coupons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_financial_transaction_id_fkey";
+            columns: ["financial_transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "coupon_reservations_pix_charge_id_fkey";
+            columns: ["pix_charge_id"];
+            isOneToOne: true;
+            referencedRelation: "pix_charges";
             referencedColumns: ["id"];
           },
         ];
@@ -785,28 +981,34 @@ export type Database = {
           created_at: string;
           holder_document: string;
           holder_name: string;
+          key_changed_at: string;
           pix_key: string;
           pix_key_type: Database["public"]["Enums"]["pix_key_type"];
           updated_at: string;
           user_id: string;
+          withdrawal_eligible_at: string;
         };
         Insert: {
           created_at?: string;
           holder_document: string;
           holder_name: string;
+          key_changed_at?: string;
           pix_key: string;
           pix_key_type: Database["public"]["Enums"]["pix_key_type"];
           updated_at?: string;
           user_id: string;
+          withdrawal_eligible_at?: string;
         };
         Update: {
           created_at?: string;
           holder_document?: string;
           holder_name?: string;
+          key_changed_at?: string;
           pix_key?: string;
           pix_key_type?: Database["public"]["Enums"]["pix_key_type"];
           updated_at?: string;
           user_id?: string;
+          withdrawal_eligible_at?: string;
         };
         Relationships: [];
       };
@@ -1014,6 +1216,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      loyalty_global_points: {
+        Row: {
+          points: number;
+          tier: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          points?: number;
+          tier?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          points?: number;
+          tier?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       loyalty_points: {
         Row: {
           creator_id: string;
@@ -1035,6 +1258,122 @@ export type Database = {
           tier?: string;
           updated_at?: string;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      loyalty_programs: {
+        Row: {
+          created_at: string;
+          creator_id: string;
+          enabled: boolean;
+          interaction_points_enabled: boolean;
+          show_global_tier: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id: string;
+          enabled?: boolean;
+          interaction_points_enabled?: boolean;
+          show_global_tier?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          enabled?: boolean;
+          interaction_points_enabled?: boolean;
+          show_global_tier?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      loyalty_reward_claims: {
+        Row: {
+          claimed_at: string;
+          creator_id: string;
+          id: string;
+          metadata: Json;
+          reward_id: string;
+          status: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          claimed_at?: string;
+          creator_id: string;
+          id?: string;
+          metadata?: Json;
+          reward_id: string;
+          status?: string;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          claimed_at?: string;
+          creator_id?: string;
+          id?: string;
+          metadata?: Json;
+          reward_id?: string;
+          status?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_reward_claims_reward_id_fkey";
+            columns: ["reward_id"];
+            isOneToOne: false;
+            referencedRelation: "loyalty_rewards";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loyalty_rewards: {
+        Row: {
+          active: boolean;
+          config: Json;
+          created_at: string;
+          creator_id: string;
+          description: string;
+          expires_at: string | null;
+          id: string;
+          minimum_tier: string;
+          redeemed_count: number;
+          reward_type: string;
+          stock: number | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          config?: Json;
+          created_at?: string;
+          creator_id: string;
+          description: string;
+          expires_at?: string | null;
+          id?: string;
+          minimum_tier: string;
+          redeemed_count?: number;
+          reward_type: string;
+          stock?: number | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          config?: Json;
+          created_at?: string;
+          creator_id?: string;
+          description?: string;
+          expires_at?: string | null;
+          id?: string;
+          minimum_tier?: string;
+          redeemed_count?: number;
+          reward_type?: string;
+          stock?: number | null;
+          title?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -1757,6 +2096,7 @@ export type Database = {
       };
       posts: {
         Row: {
+          archived_at: string | null;
           body: string | null;
           comments_count: number;
           created_at: string;
@@ -1769,6 +2109,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["post_visibility"];
         };
         Insert: {
+          archived_at?: string | null;
           body?: string | null;
           comments_count?: number;
           created_at?: string;
@@ -1781,6 +2122,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["post_visibility"];
         };
         Update: {
+          archived_at?: string | null;
           body?: string | null;
           comments_count?: number;
           created_at?: string;
@@ -2108,9 +2450,11 @@ export type Database = {
           creator_id: string;
           discount_pct: number | null;
           duration_months: number;
+          fixed_price_cents: number | null;
           id: string;
           is_active: boolean;
           max_uses: number;
+          new_subscribers_only: boolean;
           trial_days: number | null;
           uses_count: number;
         };
@@ -2120,9 +2464,11 @@ export type Database = {
           creator_id: string;
           discount_pct?: number | null;
           duration_months?: number;
+          fixed_price_cents?: number | null;
           id?: string;
           is_active?: boolean;
           max_uses?: number;
+          new_subscribers_only?: boolean;
           trial_days?: number | null;
           uses_count?: number;
         };
@@ -2132,9 +2478,11 @@ export type Database = {
           creator_id?: string;
           discount_pct?: number | null;
           duration_months?: number;
+          fixed_price_cents?: number | null;
           id?: string;
           is_active?: boolean;
           max_uses?: number;
+          new_subscribers_only?: boolean;
           trial_days?: number | null;
           uses_count?: number;
         };
@@ -2740,6 +3088,10 @@ export type Database = {
         Returns: Json;
       };
       calc_loyalty_tier: { Args: { _points: number }; Returns: string };
+      claim_loyalty_reward: {
+        Args: { _reward_id: string };
+        Returns: Json;
+      };
       can_view_post: {
         Args: { _post_id: string; _viewer_id: string };
         Returns: boolean;
@@ -2780,6 +3132,7 @@ export type Database = {
         Args: { _creator_id: string };
         Returns: undefined;
       };
+      loyalty_tier_rank: { Args: { _tier: string }; Returns: number };
       fulfill_symbolic_gift: {
         Args: {
           _amount_cents: number;
@@ -2954,9 +3307,14 @@ export type Database = {
           body: string;
           campaign_id: string;
           created_at: string;
+          financial_transaction_id: string;
+          gift_amount_cents: number;
+          gift_message: string;
           id: string;
           media_path: string;
+          message_kind: string;
           mime_type: string;
+          ppv_paid_at: string;
           ppv_price_cents: number;
           read_at: string;
           sender_id: string;
@@ -2971,9 +3329,14 @@ export type Database = {
           body: string;
           campaign_id: string;
           created_at: string;
+          financial_transaction_id: string;
+          gift_amount_cents: number;
+          gift_message: string;
           id: string;
           media_path: string;
+          message_kind: string;
           mime_type: string;
+          ppv_paid_at: string;
           ppv_price_cents: number;
           read_at: string;
           sender_id: string;
@@ -3043,6 +3406,19 @@ export type Database = {
       };
       create_withdrawal_request: {
         Args: { _amount_cents: number; _creator_id: string };
+        Returns: string;
+      };
+      release_coupon_reservation: {
+        Args: { _pix_charge_id: string };
+        Returns: undefined;
+      };
+      reserve_coupon_use: {
+        Args: {
+          _coupon_id: string;
+          _expires_at: string;
+          _pix_charge_id: string;
+          _user_id: string;
+        };
         Returns: string;
       };
       storage_path_to_post_id: { Args: { _path: string }; Returns: string };

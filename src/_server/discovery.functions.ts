@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { pausedAccountIds } from "@/_server/account-pause.server";
 
 /**
  * Descoberta / busca pública de criadoras.
@@ -33,7 +34,9 @@ export const searchCreators = createServerFn({ method: "POST" })
       .from("user_roles")
       .select("user_id")
       .eq("role", "creator");
-    const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
+    const creatorIds = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
+    const pausedIds = await pausedAccountIds(creatorIds);
+    const ids = creatorIds.filter((id) => !pausedIds.has(id));
     if (ids.length === 0) return { creators: [] };
 
     // 2) perfis públicos dessas criadoras

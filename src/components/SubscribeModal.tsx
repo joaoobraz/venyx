@@ -27,9 +27,11 @@ interface CouponInfo {
   code: string;
   trial_days: number | null;
   discount_pct: number | null;
+  fixed_price_cents: number | null;
   duration_months: number;
   max_uses: number;
   uses_count: number;
+  new_subscribers_only: boolean;
 }
 
 interface BumpOffer {
@@ -62,7 +64,7 @@ export function SubscribeModal({
   basePriceCents: number;
   onSubscribed?: () => void;
 }) {
-  const { user, session } = useAuth();
+  const { user, session, accountPaused } = useAuth();
   const createChargeFn = useServerFn(createSubscriptionPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
   const listOffersFn = useServerFn(listCreatorOffers);
@@ -142,8 +144,15 @@ export function SubscribeModal({
         .eq("is_active", true)
         .maybeSingle()
         .then(({ data }) => {
-          if (data && (data as CouponInfo).uses_count < (data as CouponInfo).max_uses) {
+          if (
+            data &&
+            ((data as CouponInfo).max_uses === 0 ||
+              (data as CouponInfo).uses_count < (data as CouponInfo).max_uses)
+          ) {
             setCoupon(data as CouponInfo);
+            if (!(data as CouponInfo).trial_days) {
+              setSelected((data as CouponInfo).duration_months);
+            }
           }
         });
     }
@@ -184,6 +193,10 @@ export function SubscribeModal({
   };
 
   const activateTrial = async () => {
+    if (accountPaused) {
+      toast.info("Reative sua conta antes de iniciar uma assinatura.");
+      return;
+    }
     setTrialBusy(true);
     try {
       const res = await startTrialFn({ data: { creatorId } });
@@ -203,10 +216,15 @@ export function SubscribeModal({
 
   const plan = plans.find((p) => p.months === selected) ?? plans[0];
   const subSubtotal = plan ? plan.price_cents * plan.months : 0;
-  const subDiscounted = coupon?.discount_pct
-    ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100))
-    : subSubtotal;
-  const isTrial = !!coupon?.trial_days;
+  const couponApplies =
+    !!coupon && (!!coupon.trial_days || coupon.duration_months === plan?.months);
+  const subDiscounted =
+    couponApplies && coupon?.fixed_price_cents
+      ? coupon.fixed_price_cents
+      : couponApplies && coupon?.discount_pct
+        ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100))
+        : subSubtotal;
+  const isTrial = couponApplies && !!coupon?.trial_days;
   const bumpsTotal = bumps
     .filter((b) => selectedBumps.has(b.id))
     .reduce((s, b) => s + b.price_cents, 0);
@@ -223,6 +241,10 @@ export function SubscribeModal({
 
   const startCheckout = async () => {
     if (!plan) return;
+    if (accountPaused) {
+      toast.info("Reative sua conta antes de iniciar uma assinatura.");
+      return;
+    }
     const authHeaders = session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
       : null;
@@ -237,7 +259,7 @@ export function SubscribeModal({
           creatorId,
           months: plan.months,
           pricePerMonthCents: plan.price_cents,
-          couponCode: coupon?.code ?? null,
+          couponCode: couponApplies ? (coupon?.code ?? null) : null,
           bumpOfferIds: Array.from(selectedBumps),
         },
         headers: authHeaders,
@@ -300,7 +322,14 @@ export function SubscribeModal({
           toast.error(txt || `Erro ${e.status}`);
         }
       } else {
-        toast.error(e instanceof Error ? e.message : "Erro ao iniciar pagamento");
+        const message = e instanceof Error ? e.message : "Erro ao iniciar pagamento";
+        if (message.toLowerCase().includes("vagas desta oferta acabaram")) {
+          document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
+          setCoupon(null);
+          toast.info("A promoção terminou. O valor normal do plano já foi restaurado.");
+        } else {
+          toast.error(message);
+        }
       }
     } finally {
       setBusy(false);
@@ -352,7 +381,7 @@ export function SubscribeModal({
                   </p>
                 </div>
               )}
-              {coupon && (
+              {coupon && couponApplies && (
                 <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
                   {isTrial ? (
                     <Gift className="h-4 w-4 text-accent" />
@@ -362,7 +391,9 @@ export function SubscribeModal({
                   <span className="text-foreground">
                     {isTrial
                       ? `🎁 Trial de ${coupon.trial_days} dias grátis aplicado!`
-                      : `🏷️ ${coupon.discount_pct}% de desconto aplicado!`}
+                      : coupon.fixed_price_cents
+                        ? `🏷️ Preço promocional de R$ ${(coupon.fixed_price_cents / 100).toFixed(2)} aplicado!`
+                        : `🏷️ ${coupon.discount_pct}% de desconto aplicado!`}
                   </span>
                 </div>
               )}

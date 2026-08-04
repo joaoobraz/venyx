@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { TrendingUp, Compass, Tag } from "lucide-react";
+import { TrendingUp, Compass } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TopCreators } from "@/components/TopCreators";
 import { useI18n } from "@/lib/i18n";
@@ -17,7 +17,7 @@ type DiscoverCreator = Pick<
 >;
 
 function ExplorePage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [discoverCreators, setDiscoverCreators] = useState<DiscoverCreator[]>(
     DEMO_MODE ? DEMO_CREATORS : [],
   );
@@ -52,10 +52,6 @@ function ExplorePage() {
       cancelled = true;
     };
   }, []);
-  const categories =
-    locale === "en"
-      ? ["Brazilian", "Blonde", "Brunette", "Redhead", "Fitness", "Cosplay", "Latina", "Couples"]
-      : ["Brasileiras", "Loiras", "Morenas", "Ruivas", "Fitness", "Cosplay", "Latinas", "Casais"];
   return (
     <AppShell>
       <div className="space-y-8 sm:space-y-10">
@@ -113,25 +109,6 @@ function ExplorePage() {
                   <div className="text-xs text-muted-foreground">@{c.username}</div>
                 </Link>
               ))}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-            <Tag className="h-5 w-5 text-primary" />
-            <span>{t("explore.categories")}</span>
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <Link
-                key={cat}
-                to="/search"
-                search={{ q: cat }}
-                className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                {cat}
-              </Link>
-            ))}
           </div>
         </section>
       </div>

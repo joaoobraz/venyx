@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdultVerification } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
+import { assertAccountsActive } from "@/_server/account-pause.server";
 
 const BASE_URL = "https://nexuspag.com";
 const NEXUSPAG_TIMEOUT_MS = 20_000;
@@ -193,7 +194,8 @@ async function checkNexusPagStatus(lookupId: string): Promise<NexusPagPixRespons
   }
 }
 
-async function assertCreatorCanMonetize(creatorId: string) {
+async function assertCreatorCanMonetize(creatorId: string, payerId?: string) {
+  await assertAccountsActive([creatorId, payerId]);
   const { data, error } = await supabaseAdmin.rpc("creator_onboarding_status", {
     _user_id: creatorId,
   });
@@ -215,9 +217,9 @@ async function assertCreatorCanMonetize(creatorId: string) {
 // =====================================================
 const subPixSchema = z.object({
   creatorId: z.string().uuid(),
-  months: z.number().int().min(1).max(24),
+  months: z.number().int().refine((value) => [1, 3, 6, 12].includes(value)),
   // pricePerMonthCents é IGNORADO no servidor — mantido só para compat com chamadas antigas.
-  // O preço canônico vem de profiles.subscription_price_cents.
+  // O preço canônico vem de subscription_plans.
   pricePerMonthCents: z.number().int().min(0).max(1_000_000).optional(),
   couponCode: z.string().trim().min(1).max(50).optional().nullable(),
   bumpOfferIds: z.array(z.string().uuid()).max(3).default([]),
@@ -229,28 +231,35 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     if (data.creatorId === userId) throw new Error("Você não pode assinar a si mesmo");
-    await assertCreatorCanMonetize(data.creatorId);
+    await assertCreatorCanMonetize(data.creatorId, userId);
 
     // SECURITY: preço canônico vem do banco, NUNCA do cliente.
-    const { data: creatorProfile, error: profileErr } = await supabaseAdmin
-      .from("profiles")
-      .select("subscription_price_cents")
-      .eq("user_id", data.creatorId)
+    const { data: selectedPlan, error: planError } = await supabaseAdmin
+      .from("subscription_plans")
+      .select("id, months, price_cents, discount_pct")
+      .eq("creator_id", data.creatorId)
+      .eq("months", data.months)
+      .eq("is_active", true)
       .maybeSingle();
-    if (profileErr || !creatorProfile) throw new Error("Criadora não encontrada");
-    const pricePerMonthCents = creatorProfile.subscription_price_cents ?? 0;
+    if (planError || !selectedPlan) {
+      throw new Error("Este plano não está mais disponível. Escolha outro período.");
+    }
+    const pricePerMonthCents = selectedPlan.price_cents;
     if (pricePerMonthCents < 100) {
-      throw new Error("Esta criadora ainda não definiu um preço de assinatura.");
+      throw new Error("Este plano possui um preço inválido.");
     }
 
     // Cupom (validar trial / desconto no servidor)
     let trialDays = 0;
     let discountPct = 0;
+    let fixedPriceCents: number | null = null;
     let couponId: string | null = null;
     if (data.couponCode) {
       const { data: c } = await supabaseAdmin
         .from("subscription_coupons")
-        .select("id, trial_days, discount_pct, max_uses, uses_count, is_active")
+        .select(
+          "id, trial_days, discount_pct, fixed_price_cents, duration_months, max_uses, uses_count, new_subscribers_only, is_active",
+        )
         .eq("code", data.couponCode)
         .eq("creator_id", data.creatorId)
         .eq("is_active", true)
@@ -262,10 +271,23 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
           .eq("coupon_id", c.id)
           .eq("user_id", userId)
           .maybeSingle();
-        if (!existingRedemption) {
+        const durationMatches = !!c.trial_days || c.duration_months === data.months;
+        let isNewSubscriber = true;
+        if (c.new_subscribers_only) {
+          const { data: previousSubscription } = await supabaseAdmin
+            .from("subscriptions")
+            .select("id")
+            .eq("creator_id", data.creatorId)
+            .eq("subscriber_id", userId)
+            .limit(1)
+            .maybeSingle();
+          isNewSubscriber = !previousSubscription;
+        }
+        if (!existingRedemption && durationMatches && isNewSubscriber) {
           couponId = c.id;
           trialDays = c.trial_days ?? 0;
           discountPct = c.discount_pct ?? 0;
+          fixedPriceCents = c.fixed_price_cents ?? null;
         }
       }
       if (!couponId) {
@@ -274,9 +296,14 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
     }
 
     const subSubtotal = pricePerMonthCents * data.months;
-    const subDiscounted = discountPct
-      ? Math.round(subSubtotal * (1 - discountPct / 100))
-      : subSubtotal;
+    if (fixedPriceCents && fixedPriceCents > subSubtotal) {
+      throw new Error("O preço promocional não pode superar o valor normal do plano");
+    }
+    const subDiscounted = fixedPriceCents
+      ? fixedPriceCents
+      : discountPct
+        ? Math.round(subSubtotal * (1 - discountPct / 100))
+        : subSubtotal;
     const isTrial = trialDays > 0;
 
     // Bumps: validar ofertas pertencem à criadora
@@ -350,8 +377,13 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
         qr_code_base64: px.qrCodeBase64,
         expires_at: px.expiresAt,
         metadata: {
+          plan_id: selectedPlan.id,
+          plan_unit_price_cents: selectedPlan.price_cents,
+          plan_discount_pct: selectedPlan.discount_pct,
           months: data.months,
           coupon: couponId,
+          coupon_discount_pct: discountPct || null,
+          coupon_fixed_price_cents: fixedPriceCents,
           bumps: validatedBumps,
           sub_amount_cents: isTrial ? 0 : subDiscounted,
           is_trial: isTrial,
@@ -364,6 +396,32 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
     if (ce || !charge) {
       console.error("[createSubscriptionPixCharge] erro", ce);
       throw new Error("Falha ao registrar cobrança");
+    }
+
+    if (couponId) {
+      const reservationExpiry =
+        charge.expires_at ?? new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const { error: reservationError } = await supabaseAdmin.rpc("reserve_coupon_use", {
+        _coupon_id: couponId,
+        _user_id: userId,
+        _pix_charge_id: charge.id,
+        _expires_at: reservationExpiry,
+      });
+      if (reservationError) {
+        await supabaseAdmin
+          .from("pix_charges")
+          .update({ status: "cancelled" })
+          .eq("id", charge.id)
+          .eq("status", "pending");
+        const message = reservationError.message ?? "";
+        if (message.includes("VENYX_COUPON_ALREADY_RESERVED")) {
+          throw new Error("Você já possui um Pix pendente usando este cupom");
+        }
+        if (message.includes("VENYX_COUPON_ALREADY_USED")) {
+          throw new Error("Você já utilizou este cupom");
+        }
+        throw new Error("As vagas desta oferta acabaram");
+      }
     }
 
     return {
@@ -396,7 +454,7 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!offer || !offer.is_active) throw new Error("Oferta indisponível");
     if (offer.creator_id === userId) throw new Error("Você não pode comprar sua própria oferta");
-    await assertCreatorCanMonetize(offer.creator_id);
+    await assertCreatorCanMonetize(offer.creator_id, userId);
 
     const externalId = `ups_${userId.slice(0, 8)}_${Date.now()}`;
     const gateway = await callNexusPag(offer.price_cents / 100, offer.title, externalId);
@@ -455,7 +513,7 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     if (data.creatorId === userId) throw new Error("Você não pode enviar gorjeta para si mesmo");
-    await assertCreatorCanMonetize(data.creatorId);
+    await assertCreatorCanMonetize(data.creatorId, userId);
 
     let amountCents = data.amountCents;
     let gift: { id: string; title: string; category: string; value_cents: number } | null = null;
@@ -549,7 +607,7 @@ export const createPpvPixCharge = createServerFn({ method: "POST" })
     if (post.visibility !== "ppv") throw new Error("Este post não é PPV");
     if (post.creator_id === userId) throw new Error("Você não pode comprar seu próprio post");
     if (!post.price_cents || post.price_cents < 100) throw new Error("Preço PPV inválido");
-    await assertCreatorCanMonetize(post.creator_id);
+    await assertCreatorCanMonetize(post.creator_id, userId);
 
     // Já desbloqueado?
     const { data: existing } = await supabaseAdmin
@@ -623,7 +681,7 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
     if (!post) throw new Error("Post não encontrado");
     if (post.visibility !== "goal") throw new Error("Este post não tem meta");
     if (post.creator_id === userId) throw new Error("Você não pode contribuir no seu próprio post");
-    await assertCreatorCanMonetize(post.creator_id);
+    await assertCreatorCanMonetize(post.creator_id, userId);
 
     const { data: goal } = await supabaseAdmin
       .from("post_goals")
@@ -695,7 +753,7 @@ export const createChatPpvPixCharge = createServerFn({ method: "POST" })
     if (!msg) throw new Error("Mensagem não encontrada");
     if (msg.sender_id === userId) throw new Error("Você não pode comprar sua própria mídia");
     if (!msg.ppv_price_cents || msg.ppv_price_cents < 100) throw new Error("Mensagem não é PPV");
-    await assertCreatorCanMonetize(msg.sender_id);
+    await assertCreatorCanMonetize(msg.sender_id, userId);
 
     // Confirma que o usuário é participante da thread
     const { data: thread } = await supabaseAdmin
@@ -821,6 +879,9 @@ export const getChargeStatus = createServerFn({ method: "POST" })
           .update({ status: gatewayCharge.status })
           .eq("id", charge.id)
           .eq("status", "pending");
+        await supabaseAdmin.rpc("release_coupon_reservation", {
+          _pix_charge_id: charge.id,
+        });
         return { status: gatewayCharge.status, paidAt: null };
       }
     }

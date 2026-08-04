@@ -10,6 +10,7 @@ import {
   Heart,
   Gift,
   IdCard,
+  Images,
   LayoutDashboard,
   Link2,
   Mail,
@@ -19,6 +20,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Tags,
+  Trophy,
   Users,
   Wallet,
 } from "lucide-react";
@@ -34,6 +36,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CreatorOperations } from "@/components/presentation/CreatorOperations";
+import { CreatorMediaLibrary } from "@/components/CreatorMediaLibrary";
+import { CreatorLoyaltyOperations } from "@/components/presentation/CreatorLoyaltyOperations";
 import { ModeratorOperations } from "@/components/presentation/ModeratorOperations";
 import { useAuth, type DemoPreviewRole } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -73,8 +77,8 @@ const CREATOR_SECTIONS: Section[] = [
     id: "overview",
     label: "Visão geral",
     labelEn: "Overview",
-    description: "Desempenho consolidado dos últimos 30 dias.",
-    descriptionEn: "Consolidated performance for the last 30 days.",
+    description: "Desempenho consolidado no período selecionado.",
+    descriptionEn: "Consolidated performance for the selected period.",
     icon: LayoutDashboard,
     value: "R$ 18.740",
   },
@@ -88,11 +92,20 @@ const CREATOR_SECTIONS: Section[] = [
     value: "42",
   },
   {
+    id: "media-library",
+    label: "Acervo",
+    labelEn: "Media library",
+    description: "Fotos, vídeos, PPVs reutilizáveis e coleções.",
+    descriptionEn: "Photos, videos, reusable PPVs and collections.",
+    icon: Images,
+    value: "8",
+  },
+  {
     id: "analytics",
     label: "Métricas",
     labelEn: "Analytics",
-    description: "Alcance, retenção e conversão.",
-    descriptionEn: "Reach, retention and conversion.",
+    description: "Faturamento, audiência, vendas e conversão por período.",
+    descriptionEn: "Revenue, audience, sales, and conversion by period.",
     icon: BarChart3,
     value: "+12,8%",
   },
@@ -149,6 +162,15 @@ const CREATOR_SECTIONS: Section[] = [
     descriptionEn: "Active offers and attributed conversions.",
     icon: Tags,
     value: "8,4%",
+  },
+  {
+    id: "loyalty",
+    label: "Fidelidade",
+    labelEn: "Loyalty",
+    description: "Níveis, benefícios, fãs e segmentos para PPV.",
+    descriptionEn: "Tiers, benefits, fans and PPV segments.",
+    icon: Trophy,
+    value: "327",
   },
   {
     id: "moderation",
@@ -300,7 +322,7 @@ export function PresentationPage({ section = "overview" }: { section?: string })
           <ClientView userId={user.id} />
         ) : (
           <>
-            {selected.id === "overview" ? (
+            {selected.id === "overview" && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {sections.map((item) => {
                   const Icon = item.icon;
@@ -328,30 +350,6 @@ export function PresentationPage({ section = "overview" }: { section?: string })
                   );
                 })}
               </div>
-            ) : (
-              <nav
-                aria-label={tr("Seções do painel", "Dashboard sections")}
-                className="flex gap-2 overflow-x-auto rounded-2xl border border-border bg-card p-2 shadow-card"
-              >
-                {sections.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.id}
-                      to="/presentation/$section"
-                      params={{ section: item.id }}
-                      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                        selected.id === item.id
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {locale === "en" ? item.labelEn : item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
             )}
 
             <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
@@ -373,7 +371,13 @@ export function PresentationPage({ section = "overview" }: { section?: string })
                   {tr("Simulação local ativa", "Local simulation active")}
                 </span>
               </div>
-              {activeRole === "creator" ? (
+              {activeRole === "creator" && selected.id === "media-library" ? (
+                <div className="mt-5">
+                  <CreatorMediaLibrary userId={user.id} />
+                </div>
+              ) : activeRole === "creator" && selected.id === "loyalty" ? (
+                <CreatorLoyaltyOperations userId={user.id} />
+              ) : activeRole === "creator" ? (
                 <CreatorOperations section={selected.id} userId={user.id} />
               ) : (
                 <ModeratorOperations section={selected.id} userId={user.id} />

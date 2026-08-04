@@ -1,9 +1,12 @@
+import { awardDemoPurchaseLoyalty } from "./demo-loyalty.ts";
+
 export type DemoItemStatus =
   | "active"
   | "paused"
   | "draft"
   | "scheduled"
   | "published"
+  | "archived"
   | "sent"
   | "pending"
   | "approved"
@@ -15,7 +18,7 @@ export type DemoItemStatus =
 export interface DemoCreatorPost {
   id: string;
   title: string;
-  status: "draft" | "scheduled" | "published";
+  status: "draft" | "scheduled" | "published" | "archived";
   views: number;
   created_at: string;
 }
@@ -23,7 +26,9 @@ export interface DemoCreatorPost {
 export interface DemoPlan {
   id: string;
   name: string;
+  months: 1 | 3 | 6 | 12;
   price_cents: number;
+  discount_percent: number;
   subscribers: number;
   active: boolean;
 }
@@ -56,8 +61,14 @@ export interface DemoCampaign {
 export interface DemoCoupon {
   id: string;
   code: string;
-  discount_percent: number;
+  kind: "fixed" | "discount" | "trial";
+  discount_percent?: number;
+  fixed_price_cents?: number;
+  trial_days?: number;
+  duration_months: 1 | 3 | 6 | 12;
   uses: number;
+  max_uses: number;
+  new_subscribers_only: boolean;
   active: boolean;
 }
 
@@ -134,7 +145,7 @@ export interface DemoOperationsState {
   audit: DemoAuditEntry[];
 }
 
-const STORAGE_VERSION = "v1";
+const STORAGE_VERSION = "v4";
 export const DEMO_OPERATIONS_CHANGED_EVENT = "venyx:demo-operations-changed";
 export const DEMO_EXPERIENCE_RESET_EVENT = "venyx:demo-experience-reset";
 
@@ -182,22 +193,37 @@ export function createDemoOperationsSeed(): DemoOperationsState {
     plans: [
       {
         id: "plan-monthly",
-        name: "Plano mensal",
-        price_cents: 3_990,
+        name: "Mensal",
+        months: 1,
+        price_cents: 4_900,
+        discount_percent: 0,
         subscribers: 248,
         active: true,
       },
       {
         id: "plan-quarterly",
-        name: "Plano trimestral",
-        price_cents: 9_990,
+        name: "Trimestral",
+        months: 3,
+        price_cents: 4_165,
+        discount_percent: 15,
         subscribers: 61,
         active: true,
       },
       {
+        id: "plan-semiannual",
+        name: "Semestral",
+        months: 6,
+        price_cents: 3_675,
+        discount_percent: 25,
+        subscribers: 34,
+        active: true,
+      },
+      {
         id: "plan-yearly",
-        name: "Plano anual",
-        price_cents: 32_990,
+        name: "Anual",
+        months: 12,
+        price_cents: 3_430,
+        discount_percent: 30,
         subscribers: 17,
         active: true,
       },
@@ -277,10 +303,39 @@ export function createDemoOperationsSeed(): DemoOperationsState {
       },
     ],
     coupons: [
-      { id: "coupon-welcome", code: "BEMVINDO20", discount_percent: 20, uses: 43, active: true },
-      { id: "coupon-vip", code: "VIP30", discount_percent: 30, uses: 28, active: true },
-      { id: "coupon-return", code: "VOLTE15", discount_percent: 15, uses: 16, active: true },
-      { id: "coupon-weekend", code: "FIMDESEMANA10", discount_percent: 10, uses: 0, active: true },
+      {
+        id: "coupon-first-ten",
+        code: "PRIMEIRAS10",
+        kind: "fixed",
+        fixed_price_cents: 1_990,
+        duration_months: 1,
+        uses: 7,
+        max_uses: 10,
+        new_subscribers_only: true,
+        active: true,
+      },
+      {
+        id: "coupon-welcome",
+        code: "BEMVINDA20",
+        kind: "discount",
+        discount_percent: 20,
+        duration_months: 3,
+        uses: 48,
+        max_uses: 100,
+        new_subscribers_only: true,
+        active: true,
+      },
+      {
+        id: "coupon-trial",
+        code: "TESTE7DIAS",
+        kind: "trial",
+        trial_days: 7,
+        duration_months: 1,
+        uses: 12,
+        max_uses: 30,
+        new_subscribers_only: true,
+        active: true,
+      },
     ],
     creatorComments: [
       {
@@ -493,6 +548,14 @@ export function recordDemoPurchase(input: Omit<DemoPurchase, "id" | "status" | "
       ...state.audit,
     ].slice(0, 100),
   }));
+  awardDemoPurchaseLoyalty({
+    userId: input.buyer_id,
+    creatorId: input.creator_id,
+    creatorName: input.creator_name,
+    kind: input.kind,
+    amountCents: input.amount_cents,
+    refId: input.reference_id,
+  });
   return purchase;
 }
 

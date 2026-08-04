@@ -29,19 +29,18 @@ function CouponRedirect() {
       }
 
       const c = data as { creator_id: string; uses_count: number; max_uses: number };
-      if (c.uses_count >= c.max_uses) {
-        toast.error("Cupom esgotado");
-        nav({ to: "/" });
-        return;
-      }
-
       const { data: prof } = await supabase
         .from("profiles")
         .select("username")
         .eq("user_id", c.creator_id)
         .maybeSingle();
 
-      toast.success("Cupom aplicado! Confirme a assinatura.");
+      if (c.max_uses !== 0 && c.uses_count >= c.max_uses) {
+        document.cookie = "venyx_coupon=; path=/; max-age=0; SameSite=Lax; Secure";
+        toast.info("A promoção terminou. O perfil foi aberto com o valor normal.");
+      } else {
+        toast.success("Cupom aplicado! Confirme a assinatura.");
+      }
       if (prof) {
         nav({ to: "/profile/$username", params: { username: (prof as { username: string }).username } });
       } else {
