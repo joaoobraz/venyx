@@ -1,14 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, Gift, Link2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Gift, Link2, X } from "lucide-react";
+import { toast } from "sonner";
+import { GiftProductImage } from "@/components/GiftProductImage";
 import { TipModal } from "@/components/TipModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { DEMO_MODE } from "@/lib/demo-creators";
-import { GIFT_CATEGORY_LABELS, getDemoGiftList, type PublicGiftItem } from "@/lib/demo-gifts";
+import { getDemoGiftList, type PublicGiftItem } from "@/lib/demo-gifts";
+import { DEMO_OPERATIONS_CHANGED_EVENT } from "@/lib/demo-operations";
 import { useI18n } from "@/lib/i18n";
+import {
+  CLIENT_PROFILE_PREVIEW,
+  canPreviewOwnProfileAsClient,
+  previewOnlyMessage,
+} from "@/lib/creator-profile-preview";
 
-export const Route = createFileRoute("/gifts/$username")({ component: PublicGiftListPage });
+export const Route = createFileRoute("/gifts/$username")({
+  validateSearch: (search: Record<string, unknown>): { preview?: "client" } => ({
+    preview: search.preview === CLIENT_PROFILE_PREVIEW ? CLIENT_PROFILE_PREVIEW : undefined,
+  }),
+  component: PublicGiftListPage,
+});
 
 type PublicCreator = {
   user_id: string;
@@ -35,18 +49,28 @@ function money(cents: number, locale: "pt-BR" | "en") {
 
 function PublicGiftListPage() {
   const { username } = Route.useParams();
+  const { preview } = Route.useSearch();
   const { tr, locale } = useI18n();
+  const { user, isCreator, demoPreviewRole } = useAuth();
   const [creator, setCreator] = useState<PublicCreator | null>(null);
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [items, setItems] = useState<PublicGiftItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PublicGiftItem | null>(null);
+  const isClientPreview = canPreviewOwnProfileAsClient({
+    requested: preview === CLIENT_PROFILE_PREVIEW,
+    authenticatedUserId: user?.id,
+    profileUserId: creator?.user_id,
+    isCreator,
+    demoPreviewRole,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      const demo = DEMO_MODE ? getDemoGiftList(username) : null;
+    const load = async () => {
+      const demo = DEMO_MODE ? getDemoGiftList(username, user?.id) : null;
       if (demo) {
+        if (cancelled) return;
         setCreator(demo.creator);
         setSettings(demo.settings);
         setItems(demo.items);
@@ -71,7 +95,9 @@ function PublicGiftListPage() {
           .maybeSingle(),
         supabase
           .from("creator_gift_items")
-          .select("id,title,description,category,emoji,value_cents,received_count")
+          .select(
+            "id,title,description,emoji,image_url,value_cents,received_count,availability,track_stock,stock_quantity",
+          )
           .eq("creator_id", profile.user_id)
           .eq("is_active", true)
           .order("position"),
@@ -79,13 +105,28 @@ function PublicGiftListPage() {
       if (cancelled) return;
       setCreator(profile);
       setSettings(giftSettings);
-      setItems(giftItems ?? []);
+      setItems(
+        (giftItems ?? [])
+          .filter((item) => !item.track_stock || (item.stock_quantity ?? 0) > 0)
+          .map((item) => ({
+            ...item,
+            availability: item.availability === "on_request" ? "on_request" : "available",
+          })),
+      );
       setLoading(false);
-    })();
+    };
+    void load();
+    const reloadDemo = () => void load();
+    const refreshTimer = DEMO_MODE ? null : window.setInterval(reloadDemo, 10_000);
+    window.addEventListener(DEMO_OPERATIONS_CHANGED_EVENT, reloadDemo);
+    window.addEventListener("storage", reloadDemo);
     return () => {
       cancelled = true;
+      if (refreshTimer) window.clearInterval(refreshTimer);
+      window.removeEventListener(DEMO_OPERATIONS_CHANGED_EVENT, reloadDemo);
+      window.removeEventListener("storage", reloadDemo);
     };
-  }, [username]);
+  }, [username, user?.id]);
 
   if (loading)
     return (
@@ -108,7 +149,11 @@ function PublicGiftListPage() {
             )}
           </p>
           <Button className="mt-5" variant="outline" asChild>
-            <Link to="/profile/$username" params={{ username }}>
+            <Link
+              to="/profile/$username"
+              params={{ username }}
+              search={isClientPreview ? { preview: CLIENT_PROFILE_PREVIEW } : {}}
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {tr("Voltar ao perfil", "Back to profile")}
             </Link>
@@ -128,7 +173,11 @@ function PublicGiftListPage() {
           </Link>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" asChild>
-              <Link to="/profile/$username" params={{ username }}>
+              <Link
+                to="/profile/$username"
+                params={{ username }}
+                search={isClientPreview ? { preview: CLIENT_PROFILE_PREVIEW } : {}}
+              >
                 <ArrowLeft className="mr-1.5 h-4 w-4" />
                 {tr("Perfil", "Profile")}
               </Link>
@@ -144,6 +193,30 @@ function PublicGiftListPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+        {isClientPreview && (
+          <div className="mx-auto mb-8 flex max-w-4xl flex-col gap-3 rounded-2xl border border-primary/35 bg-primary/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Eye className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="font-semibold text-foreground">
+                  {tr("Lista de Mimos vista como cliente", "Gift List viewed as a client")}
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {tr(
+                    "Os produtos e valores são reais, mas nenhum mimo poderá ser comprado nesta prévia.",
+                    "Products and prices are real, but no gift can be purchased in this preview.",
+                  )}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/profile/$username" params={{ username }} search={{}}>
+                <X className="mr-1.5 h-4 w-4" />
+                {tr("Encerrar prévia", "Exit preview")}
+              </Link>
+            </Button>
+          </div>
+        )}
         <section className="mx-auto max-w-2xl text-center">
           <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-background bg-muted shadow-xl ring-2 ring-primary/30">
             {creator.avatar_url ? (
@@ -167,24 +240,6 @@ function PublicGiftListPage() {
           <p className="mx-auto mt-2 max-w-xl text-muted-foreground">{settings.intro}</p>
         </section>
 
-        <div className="mx-auto mt-7 max-w-3xl rounded-2xl border border-primary/25 bg-primary/5 p-4 text-sm">
-          <div className="flex gap-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <p>
-              <strong>
-                {tr(
-                  "Mimo simbólico, sem entrega física.",
-                  "Symbolic gift, with no physical delivery.",
-                )}
-              </strong>{" "}
-              {tr(
-                "Nenhum produto será comprado ou enviado. A criadora recebe o valor líquido correspondente na carteira, sujeito às taxas da plataforma.",
-                "No product is purchased or shipped. The creator receives the corresponding net amount in her wallet, subject to platform fees.",
-              )}
-            </p>
-          </div>
-        </div>
-
         {items.length === 0 ? (
           <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
             {tr("Nenhum mimo disponível agora.", "No gifts are available right now.")}
@@ -196,12 +251,16 @@ function PublicGiftListPage() {
                 key={item.id}
                 className="group flex flex-col rounded-3xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-4xl transition group-hover:scale-105">
-                  {item.emoji}
-                </div>
+                <GiftProductImage
+                  src={item.image_url}
+                  alt={item.title}
+                  emoji={item.emoji}
+                  className="aspect-[4/5] w-full rounded-2xl"
+                />
                 <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-primary">
-                  {GIFT_CATEGORY_LABELS[item.category]?.[locale === "en" ? "en" : "pt"] ??
-                    item.category}
+                  {item.availability === "on_request"
+                    ? tr("Disponível sob encomenda", "Available on request")
+                    : tr("Disponível agora", "Available now")}
                 </div>
                 <h3 className="mt-1 text-lg font-semibold">{item.title}</h3>
                 <p className="mt-2 flex-1 text-sm text-muted-foreground">{item.description}</p>
@@ -218,7 +277,17 @@ function PublicGiftListPage() {
                     <span className="text-xs text-muted-foreground">{item.received_count}×</span>
                   )}
                 </div>
-                <Button className="mt-4 w-full" onClick={() => setSelected(item)}>
+                {item.track_stock && item.stock_quantity !== null && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {item.stock_quantity} {tr("unidades disponíveis", "units available")}
+                  </p>
+                )}
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    isClientPreview ? toast.info(previewOnlyMessage(locale)) : setSelected(item)
+                  }
+                >
                   <Gift className="mr-2 h-4 w-4" />
                   {tr("Enviar este mimo", "Send this gift")}
                 </Button>
@@ -228,15 +297,12 @@ function PublicGiftListPage() {
         )}
 
         <footer className="py-12 text-center text-xs text-muted-foreground">
-          {tr(
-            "Pagamento protegido pela Venyx · A criadora não recebe o produto físico",
-            "Payment protected by Venyx · The creator does not receive a physical product",
-          )}
+          {tr("Pagamento protegido pela Venyx", "Payment protected by Venyx")}
         </footer>
       </main>
 
       <TipModal
-        open={!!selected}
+        open={!isClientPreview && !!selected}
         onOpenChange={(open) => !open && setSelected(null)}
         creatorId={creator.user_id}
         creatorName={creatorName}

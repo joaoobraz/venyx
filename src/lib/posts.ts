@@ -7,19 +7,21 @@ export async function fetchPosts(opts: {
   creatorId?: string;
   postId?: string;
   viewerId?: string | null;
+  demoStateUserId?: string | null;
   limit?: number;
   locale?: DemoLocale;
 }): Promise<PostWithRelations[]> {
-  const { creatorId, postId, viewerId, limit = 30, locale = "pt-BR" } = opts;
+  const { creatorId, postId, viewerId, demoStateUserId, limit = 30, locale = "pt-BR" } = opts;
   if (DEMO_MODE) {
-    return getDemoPosts({ creatorId, postId, viewerId, limit, locale });
+    return getDemoPosts({ creatorId, postId, viewerId, stateUserId: demoStateUserId, limit, locale });
   }
   let q = supabase
     .from("posts")
     .select(
-      "id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at",
+      "id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at, is_pinned",
     )
     .is("archived_at", null)
+    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
   if (postId) {
@@ -145,6 +147,7 @@ export async function fetchPosts(opts: {
         likes_count: p.likes_count,
         comments_count: p.comments_count,
         created_at: p.created_at,
+        is_pinned: p.is_pinned,
         author: a,
         media: (mediaByPost.get(p.id) ?? []).sort((a, b) => a.position - b.position),
         unlocked: unlocks.has(p.id),

@@ -8,6 +8,8 @@ import {
   Lock,
   Loader2,
   Crown,
+  Pin,
+  PinOff,
   Target,
   Users,
 } from "lucide-react";
@@ -17,6 +19,7 @@ import { useI18n } from "@/lib/i18n";
 import { createPpvPixCharge, createGoalPixCharge } from "@/_server/checkout.functions";
 import { getPostMediaUrls } from "@/_server/media.functions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +41,14 @@ import { DEMO_MODE } from "@/lib/demo-creators";
 import { recordDemoPurchase } from "@/lib/demo-operations";
 import { addDemoNotification } from "@/lib/demo-notifications";
 import { awardDemoLoyaltyPoints } from "@/lib/demo-loyalty";
+import { previewOnlyMessage } from "@/lib/creator-profile-preview";
+import { setPinnedPostForCreator } from "@/lib/post-pinning";
+import {
+  buildGoalContributionPresets,
+  goalRemainingCents,
+  parseGoalContributionToCents,
+  validateGoalContribution,
+} from "@/lib/goal-contributions";
 
 export interface PostMedia {
   id: string;
@@ -62,6 +73,7 @@ export interface PostWithRelations {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  is_pinned: boolean;
   author: {
     username: string;
     display_name: string | null;
@@ -78,10 +90,23 @@ export interface PostWithRelations {
   liked?: boolean;
 }
 
-export function PostCard({ post, onChange }: { post: PostWithRelations; onChange?: () => void }) {
+export function PostCard({
+  post,
+  onChange,
+  commentsEnabled = true,
+  previewOnly = false,
+  ownerView = false,
+}: {
+  post: PostWithRelations;
+  onChange?: () => void;
+  commentsEnabled?: boolean;
+  previewOnly?: boolean;
+  ownerView?: boolean;
+}) {
   const { user, session, accountPaused } = useAuth();
-  const { t, tr } = useI18n();
+  const { t, tr, locale } = useI18n();
   const [busy, setBusy] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -94,7 +119,14 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const [pixTitle, setPixTitle] = useState(() => tr("Pague com Pix", "Pay with Pix"));
   const [demoCheckoutOpen, setDemoCheckoutOpen] = useState(false);
+  const [demoCheckoutPurpose, setDemoCheckoutPurpose] = useState<"ppv" | "goal">("ppv");
   const [demoUnlocked, setDemoUnlocked] = useState(Boolean(post.unlocked));
+  const [demoGoalContributed, setDemoGoalContributed] = useState(
+    Boolean(post.goal_contributed),
+  );
+  const [goalContributionReais, setGoalContributionReais] = useState(() =>
+    post.goal ? (post.goal.unlock_price_cents / 100).toFixed(2) : "",
+  );
 
   const ppvFn = useServerFn(createPpvPixCharge);
   const goalFn = useServerFn(createGoalPixCharge);
@@ -102,22 +134,26 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const likeFn = useServerFn(togglePostLike);
   const isDemoContent = DEMO_MODE && post.creator_id.startsWith("demo-");
 
-  const isOwner = user?.id === post.creator_id;
+  const isOwner = !previewOnly && (ownerView || user?.id === post.creator_id);
   const isPpv = post.visibility === "ppv";
   const isSubsOnly = post.visibility === "subscribers";
   const isGoal = post.visibility === "goal";
-  const goalUnlocked = isGoal && (post.goal?.is_unlocked || post.goal_contributed);
+  const goalUnlocked =
+    isGoal && (post.goal?.is_unlocked || post.goal_contributed || demoGoalContributed);
   const locked =
     !isOwner &&
     ((isPpv && !post.unlocked && !demoUnlocked) ||
       (isSubsOnly && !post.subscribed) ||
       (isGoal && !goalUnlocked));
+  const notifyPreviewOnly = () => toast.info(previewOnlyMessage(locale));
 
   // Pega URLs assinadas para a mídia (só se houver acesso, server decide)
   useEffect(() => {
     let cancel = false;
     if (locked || post.media.length === 0) return;
-    const localMedia = post.media.filter((item) => item.storage_path.startsWith("/"));
+    const localMedia = post.media.filter((item) =>
+      /^(\/|blob:|data:)/.test(item.storage_path),
+    );
     if (localMedia.length === post.media.length) {
       setSignedUrls(Object.fromEntries(localMedia.map((item) => [item.id, item.storage_path])));
       return;
@@ -142,6 +178,33 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const authHeaders = () =>
     session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
 
+  const togglePinned = async () => {
+    if (!user || !isOwner) return;
+    setPinBusy(true);
+    try {
+      const nextPostId = post.is_pinned ? null : post.id;
+      await setPinnedPostForCreator({
+        viewerId: user.id,
+        creatorId: post.creator_id,
+        postId: nextPostId,
+      });
+      toast.success(
+        nextPostId
+          ? tr("Publicação fixada no perfil.", "Post pinned to the profile.")
+          : tr("Publicação desafixada.", "Post unpinned."),
+      );
+      onChange?.();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tr("Não foi possível alterar o destaque.", "Couldn't update the pinned post."),
+      );
+    } finally {
+      setPinBusy(false);
+    }
+  };
+
   useEffect(() => {
     setLikesCount(post.likes_count);
     setCommentsCount(post.comments_count);
@@ -150,7 +213,11 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
 
   useEffect(() => {
     setDemoUnlocked(Boolean(post.unlocked));
-  }, [post.id, post.unlocked]);
+    setDemoGoalContributed(Boolean(post.goal_contributed));
+    setGoalContributionReais(
+      post.goal ? (post.goal.unlock_price_cents / 100).toFixed(2) : "",
+    );
+  }, [post.id, post.unlocked, post.goal, post.goal_contributed]);
 
   useEffect(() => {
     if (!DEMO_MODE || !user || post.liked) return;
@@ -168,6 +235,10 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   }, [post.id, post.liked, user]);
 
   const toggleLike = async () => {
+    if (previewOnly) {
+      notifyPreviewOnly();
+      return;
+    }
     if (!user) {
       toast.error(tr("Faça login para curtir.", "Sign in to like."));
       return;
@@ -242,11 +313,16 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   };
 
   const unlockPpv = async () => {
+    if (previewOnly) {
+      notifyPreviewOnly();
+      return;
+    }
     if (!user) {
       toast.error("Faça login para desbloquear.");
       return;
     }
     if (isDemoContent) {
+      setDemoCheckoutPurpose("ppv");
       setDemoCheckoutOpen(true);
       return;
     }
@@ -285,7 +361,30 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   };
 
   const contributeGoal = async () => {
+    if (previewOnly) {
+      notifyPreviewOnly();
+      return;
+    }
     if (!user || !post.goal) return;
+    const amountCents = parseGoalContributionToCents(goalContributionReais);
+    const remainingCents = goalRemainingCents(
+      post.goal.target_cents,
+      post.goal.raised_cents,
+    );
+    const validationError = validateGoalContribution({
+      amountCents,
+      minimumCents: post.goal.unlock_price_cents,
+      remainingCents,
+    });
+    if (validationError || amountCents === null) {
+      toast.error(validationError || "Informe um valor válido.");
+      return;
+    }
+    if (isDemoContent) {
+      setDemoCheckoutPurpose("goal");
+      setDemoCheckoutOpen(true);
+      return;
+    }
     const headers = authHeaders();
     if (!headers) {
       toast.error("Faça login para contribuir.");
@@ -293,7 +392,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
     }
     setBusy(true);
     try {
-      const res = await goalFn({ data: { postId: post.id }, headers });
+      const res = await goalFn({ data: { postId: post.id, amountCents }, headers });
       if ("ok" in res && res.ok === false) {
         toast.error(res.error || "Não foi possível gerar o Pix.");
         return;
@@ -331,6 +430,17 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
   const goalPct = post.goal
     ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
     : 0;
+  const goalRemaining = post.goal
+    ? goalRemainingCents(post.goal.target_cents, post.goal.raised_cents)
+    : 0;
+  const selectedGoalAmountCents = parseGoalContributionToCents(goalContributionReais);
+  const goalPresets = post.goal
+    ? buildGoalContributionPresets({
+        minimumCents: post.goal.unlock_price_cents,
+        targetCents: post.goal.target_cents,
+        raisedCents: post.goal.raised_cents,
+      })
+    : [];
 
   if (!visible) return null;
 
@@ -358,7 +468,38 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           </div>
           <div className="text-xs text-muted-foreground">@{post.author.username}</div>
         </div>
-        {!isOwner && (
+        {post.is_pinned && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+            <Pin className="h-3 w-3" /> {tr("Fixado", "Pinned")}
+          </span>
+        )}
+        {isOwner && (
+          <button
+            type="button"
+            onClick={togglePinned}
+            disabled={pinBusy}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label={
+              post.is_pinned
+                ? tr("Desafixar publicação", "Unpin post")
+                : tr("Fixar publicação", "Pin post")
+            }
+            title={
+              post.is_pinned
+                ? tr("Desafixar publicação", "Unpin post")
+                : tr("Fixar publicação", "Pin post")
+            }
+          >
+            {pinBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : post.is_pinned ? (
+              <PinOff className="h-4 w-4" />
+            ) : (
+              <Pin className="h-4 w-4" />
+            )}
+          </button>
+        )}
+        {!isOwner && !previewOnly && (
           <WishlistButton
             targetType="post"
             targetId={post.id}
@@ -366,7 +507,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
             label="Favoritar conteúdo"
           />
         )}
-        {!isOwner && (
+        {!isOwner && !previewOnly && (
           <SafetyMenu
             targetType="post"
             targetId={post.id}
@@ -404,7 +545,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         </div>
       )}
 
-      <div className="relative">
+      {(locked || firstMedia) && <div className="relative">
         {locked ? (
           <div className="aspect-square w-full bg-muted" />
         ) : effectiveImageUrl ? (
@@ -450,15 +591,34 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
                 )}
               </Button>
             )}
-            {isSubsOnly && (
-              <Link to="/profile/$username" params={{ username: post.author.username }}>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {isSubsOnly &&
+              (previewOnly ? (
+                <Button
+                  onClick={notifyPreviewOnly}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
                   {t("feed.subscribers")}
                 </Button>
-              </Link>
-            )}
+              ) : (
+                <Link to="/profile/$username" params={{ username: post.author.username }}>
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    {t("feed.subscribers")}
+                  </Button>
+                </Link>
+              ))}
             {isGoal && post.goal && (
-              <div className="w-full max-w-xs space-y-2">
+              <div className="w-full max-w-sm space-y-3 rounded-2xl border border-white/15 bg-black/45 p-3 backdrop-blur-md">
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-white">
+                    {tr("Ajude a liberar este conteúdo", "Help unlock this content")}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-white/70">
+                    {tr(
+                      "Quem contribuir também recebe acesso.",
+                      "Contributors also get access.",
+                    )}
+                  </p>
+                </div>
                 <div className="flex items-center justify-between text-xs text-white">
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3 w-3" /> R$ {(post.goal.raised_cents / 100).toFixed(2)} /
@@ -472,6 +632,46 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
                     style={{ width: `${goalPct}%` }}
                   />
                 </div>
+                <div>
+                  <p className="mb-1.5 text-[11px] font-medium text-white/80">
+                    {tr("Escolha um valor", "Choose an amount")}
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {goalPresets.map((amount) => (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => setGoalContributionReais((amount / 100).toFixed(2))}
+                        aria-pressed={selectedGoalAmountCents === amount}
+                        className={`rounded-lg border px-1.5 py-2 text-[11px] font-semibold transition-colors ${
+                          selectedGoalAmountCents === amount
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-white/20 bg-black/30 text-white hover:border-white/40"
+                        }`}
+                      >
+                        R$ {(amount / 100).toFixed(2).replace(".", ",")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      R$
+                    </span>
+                    <Input
+                      aria-label={tr("Outro valor para contribuição", "Custom contribution amount")}
+                      type="number"
+                      inputMode="decimal"
+                      min={post.goal.unlock_price_cents / 100}
+                      max={goalRemaining / 100}
+                      step="0.50"
+                      value={goalContributionReais}
+                      onChange={(event) => setGoalContributionReais(event.target.value)}
+                      className="border-white/20 bg-black/40 pl-9 text-white"
+                    />
+                  </div>
+                </div>
                 <Button
                   onClick={contributeGoal}
                   disabled={busy}
@@ -480,7 +680,11 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
                   {busy ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    `Contribuir R$ ${(post.goal.unlock_price_cents / 100).toFixed(2)}`
+                    `${tr("Contribuir", "Contribute")} R$ ${(
+                      (selectedGoalAmountCents ?? post.goal.unlock_price_cents) / 100
+                    )
+                      .toFixed(2)
+                      .replace(".", ",")}`
                   )}
                 </Button>
               </div>
@@ -492,7 +696,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
             +{post.media.length - 1}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Barra de meta visível também quando desbloqueado/sem mídia */}
       {isGoal && post.goal && !locked && (
@@ -514,7 +718,7 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
         <button
           type="button"
           onClick={toggleLike}
-          disabled={likeBusy}
+          disabled={likeBusy || previewOnly}
           aria-pressed={liked}
           aria-label={liked ? tr("Remover curtida", "Unlike") : tr("Curtir", "Like")}
           className={`group/btn flex items-center gap-1.5 transition-colors ${liked ? "text-accent" : "hover:text-accent"}`}
@@ -524,44 +728,49 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           />{" "}
           {likesCount}
         </button>
+        {commentsEnabled && (
+          <button
+            type="button"
+            onClick={() => setCommentsOpen(true)}
+            aria-expanded={commentsOpen}
+            aria-label={tr(
+              `Abrir comentários (${commentsCount})`,
+              `Open comments (${commentsCount})`,
+            )}
+            className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary"
+          >
+            <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" />{" "}
+            {commentsCount}
+          </button>
+        )}
         <button
-          type="button"
-          onClick={() => setCommentsOpen(true)}
-          aria-expanded={commentsOpen}
-          aria-label={tr(
-            `Abrir comentários (${commentsCount})`,
-            `Open comments (${commentsCount})`,
-          )}
-          className="group/btn flex items-center gap-1.5 transition-colors hover:text-primary"
-        >
-          <MessageCircle className="h-4 w-4 transition-transform group-hover/btn:scale-110" />{" "}
-          {commentsCount}
-        </button>
-        <button
-          onClick={() => setTipOpen(true)}
+          onClick={() => (previewOnly ? notifyPreviewOnly() : setTipOpen(true))}
           disabled={accountPaused}
           className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-glow"
         >
           <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
         </button>
       </footer>
-      <PostComments
-        postId={post.id}
-        creatorId={post.creator_id}
-        open={commentsOpen}
-        onOpenChange={setCommentsOpen}
-        commentsCount={commentsCount}
-        onCommentsCountChange={setCommentsCount}
-      />
+      {commentsEnabled && (
+        <PostComments
+          postId={post.id}
+          creatorId={post.creator_id}
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+          commentsCount={commentsCount}
+          onCommentsCountChange={setCommentsCount}
+          previewOnly={previewOnly}
+        />
+      )}
       <TipModal
-        open={tipOpen}
+        open={!previewOnly && tipOpen}
         onOpenChange={setTipOpen}
         creatorId={post.creator_id}
         creatorName={post.author.display_name || post.author.username}
         postId={post.id}
       />
       <PixCheckoutModal
-        open={pixOpen}
+        open={!previewOnly && pixOpen}
         onOpenChange={setPixOpen}
         title={pixTitle}
         charge={pixCharge}
@@ -570,10 +779,14 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
           onChange?.();
         }}
       />
-      <Dialog open={demoCheckoutOpen} onOpenChange={setDemoCheckoutOpen}>
+      <Dialog open={!previewOnly && demoCheckoutOpen} onOpenChange={setDemoCheckoutOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md">
           <DialogHeader>
-            <DialogTitle>{tr("Desbloquear conteúdo PPV", "Unlock PPV content")}</DialogTitle>
+            <DialogTitle>
+              {demoCheckoutPurpose === "goal"
+                ? tr("Contribuir para a meta", "Contribute to the goal")
+                : tr("Desbloquear conteúdo PPV", "Unlock PPV content")}
+            </DialogTitle>
             <DialogDescription>
               {tr(
                 "Pagamento demonstrativo: nenhum Pix ou cobrança real será criado.",
@@ -586,10 +799,19 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
               {post.author.display_name || post.author.username}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
-              {tr("Conteúdo exclusivo", "Exclusive content")}
+              {demoCheckoutPurpose === "goal"
+                ? tr("Contribuição para liberar o conteúdo", "Contribution to unlock the content")
+                : tr("Conteúdo exclusivo", "Exclusive content")}
             </div>
             <div className="mt-4 text-2xl font-bold text-primary">
-              R$ {(post.price_cents / 100).toFixed(2)}
+              R${" "}
+              {(
+                (demoCheckoutPurpose === "goal"
+                  ? selectedGoalAmountCents ?? post.goal?.unlock_price_cents ?? 0
+                  : post.price_cents) / 100
+              )
+                .toFixed(2)
+                .replace(".", ",")}
             </div>
           </div>
           <DialogFooter>
@@ -608,30 +830,52 @@ export function PostCard({ post, onChange }: { post: PostWithRelations; onChange
                   );
                   return;
                 }
+                const demoAmountCents =
+                  demoCheckoutPurpose === "goal"
+                    ? selectedGoalAmountCents ?? post.goal?.unlock_price_cents ?? 0
+                    : post.price_cents;
                 recordDemoPurchase({
-                  kind: "ppv",
+                  kind: demoCheckoutPurpose,
                   buyer_id: user.id,
                   creator_id: post.creator_id,
                   creator_name: post.author.display_name || post.author.username,
                   reference_id: post.id,
-                  label: tr("Conteúdo PPV", "PPV content"),
-                  amount_cents: post.price_cents,
+                  label:
+                    demoCheckoutPurpose === "goal"
+                      ? tr("Contribuição para meta", "Goal contribution")
+                      : tr("Conteúdo PPV", "PPV content"),
+                  amount_cents: demoAmountCents,
                 });
                 addDemoNotification(user.id, {
                   type: "sale",
-                  title: "Conteúdo PPV desbloqueado",
-                  title_en: "PPV content unlocked",
-                  body: `${post.author.display_name || post.author.username} · R$ ${(post.price_cents / 100).toFixed(2)}`,
-                  body_en: `${post.author.display_name || post.author.username} · BRL ${(post.price_cents / 100).toFixed(2)}`,
+                  title:
+                    demoCheckoutPurpose === "goal"
+                      ? "Contribuição confirmada"
+                      : "Conteúdo PPV desbloqueado",
+                  title_en:
+                    demoCheckoutPurpose === "goal"
+                      ? "Contribution confirmed"
+                      : "PPV content unlocked",
+                  body: `${post.author.display_name || post.author.username} · R$ ${(demoAmountCents / 100).toFixed(2)}`,
+                  body_en: `${post.author.display_name || post.author.username} · BRL ${(demoAmountCents / 100).toFixed(2)}`,
                   link: "/presentation/wallet",
                 });
-                setDemoUnlocked(true);
+                if (demoCheckoutPurpose === "goal") {
+                  setDemoGoalContributed(true);
+                } else {
+                  setDemoUnlocked(true);
+                }
                 setDemoCheckoutOpen(false);
                 toast.success(
-                  tr(
-                    "Pagamento simulado confirmado. Conteúdo liberado!",
-                    "Simulated payment confirmed. Content unlocked!",
-                  ),
+                  demoCheckoutPurpose === "goal"
+                    ? tr(
+                        "Contribuição simulada confirmada. Conteúdo liberado!",
+                        "Simulated contribution confirmed. Content unlocked!",
+                      )
+                    : tr(
+                        "Pagamento simulado confirmado. Conteúdo liberado!",
+                        "Simulated payment confirmed. Content unlocked!",
+                      ),
                 );
                 onChange?.();
               }}

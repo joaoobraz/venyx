@@ -7,7 +7,11 @@ import {
   getDemoCreatorById,
   type DemoCreator,
 } from "@/lib/demo-creators";
-import { isDemoPpvUnlocked, readDemoOperations } from "@/lib/demo-operations";
+import {
+  isDemoGoalContributed,
+  isDemoPpvUnlocked,
+  readDemoOperations,
+} from "@/lib/demo-operations";
 
 export type DemoLocale = "pt-BR" | "en";
 
@@ -15,8 +19,11 @@ type DemoPostSeed = {
   id: string;
   username: string;
   body: Record<DemoLocale, string>;
-  visibility: "public" | "subscribers" | "ppv";
+  visibility: "public" | "subscribers" | "ppv" | "goal";
   priceCents?: number;
+  goalTargetCents?: number;
+  goalRaisedCents?: number;
+  goalMinimumCents?: number;
   likes: number;
   comments: number;
   hoursAgo: number;
@@ -27,13 +34,54 @@ const POST_SEEDS: DemoPostSeed[] = [
     id: "demo-post-aline-studio",
     username: "aline",
     body: {
-      "pt-BR": "Finalizando uma nova produção no estúdio. Qual tema vocês gostariam de ver na próxima semana?",
+      "pt-BR":
+        "Finalizando uma nova produção no estúdio. Qual tema vocês gostariam de ver na próxima semana?",
       en: "Finishing a new studio production. Which theme would you like to see next week?",
     },
     visibility: "public",
     likes: 842,
     comments: 3,
     hoursAgo: 2,
+  },
+  {
+    id: "demo-post-aline-vip",
+    username: "aline",
+    body: {
+      "pt-BR": "Bastidores completos desta produção disponíveis para assinantes.",
+      en: "Full behind-the-scenes coverage of this production is available to subscribers.",
+    },
+    visibility: "subscribers",
+    likes: 731,
+    comments: 3,
+    hoursAgo: 4,
+  },
+  {
+    id: "demo-post-aline-ppv",
+    username: "aline",
+    body: {
+      "pt-BR": "Ensaio especial em alta resolução disponível como conteúdo exclusivo.",
+      en: "Special high-resolution shoot available as exclusive content.",
+    },
+    visibility: "ppv",
+    priceCents: 1990,
+    likes: 684,
+    comments: 3,
+    hoursAgo: 7,
+  },
+  {
+    id: "demo-post-aline-goal",
+    username: "aline",
+    body: {
+      "pt-BR": "Vamos liberar juntos o próximo ensaio completo?",
+      en: "Shall we unlock the next complete shoot together?",
+    },
+    visibility: "goal",
+    goalTargetCents: 50000,
+    goalRaisedCents: 18500,
+    goalMinimumCents: 1000,
+    likes: 612,
+    comments: 3,
+    hoursAgo: 8,
   },
   {
     id: "demo-post-duda-editorial",
@@ -51,7 +99,8 @@ const POST_SEEDS: DemoPostSeed[] = [
     id: "demo-post-lara-viagem",
     username: "lara",
     body: {
-      "pt-BR": "Luz natural, uma câmera e um lugar novo para descobrir. Essa combinação nunca falha.",
+      "pt-BR":
+        "Luz natural, uma câmera e um lugar novo para descobrir. Essa combinação nunca falha.",
       en: "Natural light, a camera and a new place to discover. That combination never fails.",
     },
     visibility: "public",
@@ -63,7 +112,8 @@ const POST_SEEDS: DemoPostSeed[] = [
     id: "demo-post-bia-rotina",
     username: "bia",
     body: {
-      "pt-BR": "Rotina concluída e energia renovada. Deixei a sequência completa para quem acompanha de perto.",
+      "pt-BR":
+        "Rotina concluída e energia renovada. Deixei a sequência completa para quem acompanha de perto.",
       en: "Routine complete and energy renewed. I saved the full sequence for my closest followers.",
     },
     visibility: "subscribers",
@@ -193,6 +243,7 @@ function postFromSeed(seed: DemoPostSeed, locale: DemoLocale, viewerId?: string 
     likes_count: seed.likes,
     comments_count: seed.comments,
     created_at: new Date(Date.now() - seed.hoursAgo * 60 * 60 * 1000).toISOString(),
+    is_pinned: false,
     author: {
       username: author.username,
       display_name: author.display_name,
@@ -209,10 +260,22 @@ function postFromSeed(seed: DemoPostSeed, locale: DemoLocale, viewerId?: string 
         position: 0,
       },
     ],
-    unlocked: Boolean(viewerId && seed.visibility === "ppv" && isDemoPpvUnlocked(viewerId, seed.id)),
+    unlocked: Boolean(
+      viewerId && seed.visibility === "ppv" && isDemoPpvUnlocked(viewerId, seed.id),
+    ),
     subscribed,
-    goal: null,
-    goal_contributed: false,
+    goal:
+      seed.visibility === "goal"
+        ? {
+            target_cents: seed.goalTargetCents ?? 50000,
+            raised_cents: seed.goalRaisedCents ?? 0,
+            unlock_price_cents: seed.goalMinimumCents ?? 1000,
+            is_unlocked: (seed.goalRaisedCents ?? 0) >= (seed.goalTargetCents ?? 50000),
+          }
+        : null,
+    goal_contributed: Boolean(
+      viewerId && seed.visibility === "goal" && isDemoGoalContributed(viewerId, seed.id),
+    ),
     liked: false,
   } satisfies PostWithRelations;
 }
@@ -221,44 +284,104 @@ export function getDemoPosts(options: {
   creatorId?: string;
   postId?: string;
   viewerId?: string | null;
+  stateUserId?: string | null;
   limit?: number;
   locale?: DemoLocale;
 }): PostWithRelations[] {
-  const { creatorId, postId, viewerId, limit = 30, locale = "pt-BR" } = options;
+  const { creatorId, postId, viewerId, stateUserId, limit = 30, locale = "pt-BR" } = options;
+  const operationsUserId = stateUserId ?? viewerId;
+  const operations = operationsUserId ? readDemoOperations(operationsUserId) : null;
+  const pinnedPostId = operationsUserId
+    ? (operations?.pinnedPostId ?? null)
+    : "demo-post-aline-studio";
   const seeded = POST_SEEDS.filter((seed) => !postId || seed.id === postId)
     .filter((seed) => !creatorId || getDemoCreator(seed.username)?.user_id === creatorId)
-    .map((seed) => postFromSeed(seed, locale, viewerId));
+    .map((seed) => ({
+      ...postFromSeed(seed, locale, viewerId),
+      is_pinned: seed.id === pinnedPostId,
+    }));
   const previewCreator = getDemoCreator("aline")!;
-  const localPosts = viewerId && (!creatorId || creatorId === previewCreator.user_id)
-    ? readDemoOperations(viewerId).creatorPosts
-        .filter((item) => item.id.startsWith("post-") && item.status === "published")
-        .filter((item) => !postId || item.id === postId)
-        .map((item) => ({
-          id: item.id,
-          creator_id: previewCreator.user_id,
-          body: item.title,
-          visibility: "public" as const,
-          price_cents: 0,
-          likes_count: 0,
-          comments_count: 0,
-          created_at: item.created_at,
-          author: {
-            username: previewCreator.username,
-            display_name: previewCreator.display_name,
-            avatar_url: previewCreator.avatar_url,
-            is_verified: true,
-            watermark_position: "bottom-right",
-            watermark_opacity: 0.55,
-          },
-          media: [{ id: `${item.id}-media`, storage_path: previewCreator.cover_url, mime_type: "image/webp", position: 0 }],
-          unlocked: true,
-          subscribed: isDemoSubscribed(viewerId, previewCreator.user_id),
-          goal: null,
-          goal_contributed: false,
-          liked: false,
-        } satisfies PostWithRelations))
-    : [];
-  return [...localPosts, ...seeded].slice(0, limit);
+  const localPosts =
+    operationsUserId && operations && (!creatorId || creatorId === previewCreator.user_id)
+      ? operations.creatorPosts
+          .filter((item) => item.id.startsWith("post-") && item.status === "published")
+          .filter((item) => !postId || item.id === postId)
+          .map(
+            (item) => {
+              const mediaUrl = item.media_url || previewCreator.cover_url;
+              const hasStoredVideo = item.media_kind === "video" && Boolean(item.media_url);
+              const goalContributionCents = operations.purchases
+                .filter(
+                  (purchase) =>
+                    purchase.kind === "goal" &&
+                    purchase.reference_id === item.id &&
+                    purchase.status === "paid",
+                )
+                .reduce((total, purchase) => total + purchase.amount_cents, 0);
+              const goalTargetCents = item.goal_target_cents ?? 0;
+              const goalRaisedCents = Math.min(
+                goalTargetCents,
+                (item.goal_raised_cents ?? 0) + goalContributionCents,
+              );
+              return ({
+                id: item.id,
+                creator_id: previewCreator.user_id,
+                body: item.body ?? item.title,
+                visibility: item.visibility ?? ("public" as const),
+                price_cents: item.price_cents ?? 0,
+                likes_count: 0,
+                comments_count: 0,
+                created_at: item.created_at,
+                is_pinned: item.id === pinnedPostId,
+                author: {
+                  username: previewCreator.username,
+                  display_name: previewCreator.display_name,
+                  avatar_url: previewCreator.avatar_url,
+                  is_verified: true,
+                  watermark_position: "bottom-right",
+                  watermark_opacity: 0.55,
+                },
+                media:
+                  item.media_kind === "text"
+                    ? []
+                    : [
+                        {
+                          id: `${item.id}-media`,
+                          storage_path: mediaUrl,
+                          mime_type: hasStoredVideo ? "video/mp4" : "image/webp",
+                          position: 0,
+                        },
+                      ],
+                unlocked: Boolean(
+                  viewerId && item.visibility === "ppv" && isDemoPpvUnlocked(viewerId, item.id),
+                ),
+                subscribed: viewerId ? isDemoSubscribed(viewerId, previewCreator.user_id) : false,
+                goal:
+                  item.visibility === "goal"
+                    ? {
+                        target_cents: goalTargetCents,
+                        raised_cents: goalRaisedCents,
+                        unlock_price_cents: item.goal_min_contribution_cents ?? 100,
+                        is_unlocked: goalTargetCents > 0 && goalRaisedCents >= goalTargetCents,
+                      }
+                    : null,
+                goal_contributed: Boolean(
+                  viewerId &&
+                    item.visibility === "goal" &&
+                    isDemoGoalContributed(viewerId, item.id),
+                ),
+                liked: false,
+              }) satisfies PostWithRelations;
+            },
+          )
+      : [];
+  return [...localPosts, ...seeded]
+    .sort(
+      (left, right) =>
+        Number(Boolean(right.is_pinned)) - Number(Boolean(left.is_pinned)) ||
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+    )
+    .slice(0, limit);
 }
 
 export function getDemoStoryGroups(locale: DemoLocale): StoryGroup[] {
@@ -299,8 +422,10 @@ export function getDemoCommentSeeds(postId: string, locale: DemoLocale): PostCom
   const second = commentAuthor(postId, 2);
   const firstId = `${postId}-comment-1`;
   const secondId = `${postId}-comment-2`;
-  const firstBody = locale === "en" ? "The new production looks beautiful!" : "A nova produção ficou linda!";
-  const secondBody = locale === "en" ? "I loved the colors and the atmosphere." : "Adorei as cores e a atmosfera.";
+  const firstBody =
+    locale === "en" ? "The new production looks beautiful!" : "A nova produção ficou linda!";
+  const secondBody =
+    locale === "en" ? "I loved the colors and the atmosphere." : "Adorei as cores e a atmosfera.";
   const replyBody =
     locale === "en"
       ? `@${first.username} I agree, the result is wonderful.`

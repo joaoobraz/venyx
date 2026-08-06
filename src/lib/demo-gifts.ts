@@ -1,77 +1,127 @@
-import { getDemoCreator } from "@/lib/demo-creators";
+import { getDemoCreator } from "./demo-creators.ts";
+import {
+  createDemoOperationsSeed,
+  readDemoOperations,
+  type DemoGiftItem,
+} from "./demo-operations.ts";
+
+export type GiftAvailability = "available" | "on_request";
 
 export type PublicGiftItem = {
   id: string;
   title: string;
   description: string;
-  category: string;
   emoji: string;
+  image_url: string | null;
   value_cents: number;
   received_count: number;
+  availability: GiftAvailability;
+  track_stock: boolean;
+  stock_quantity: number | null;
 };
 
-export const GIFT_CATEGORY_LABELS: Record<string, { pt: string; en: string }> = {
-  lingerie: { pt: "Lingerie", en: "Lingerie" },
-  adult_wellness: { pt: "Bem-estar adulto", en: "Adult wellness" },
-  equipment: { pt: "Equipamentos", en: "Equipment" },
-  beauty: { pt: "Beleza", en: "Beauty" },
-  experience: { pt: "Experiências", en: "Experiences" },
-  custom: { pt: "Outros", en: "Other" },
-};
+export type GiftPreset = Omit<
+  DemoGiftItem,
+  "id" | "received_count" | "received_cents" | "active" | "source"
+>;
 
-export const GIFT_PRESETS: Array<Omit<PublicGiftItem, "id" | "received_count">> = [
+export const GIFT_PRESETS: GiftPreset[] = [
   {
     title: "Conjunto de lingerie",
-    description: "Um mimo simbólico para uma produção especial.",
-    category: "lingerie",
+    description: "Conjunto selecionado para novas produções.",
     emoji: "👙",
-    value_cents: 14900,
+    image_url: null,
+    value_cents: 14_900,
+    availability: "available",
+    track_stock: false,
+    stock_quantity: null,
   },
   {
-    title: "Vibrador / bem-estar",
-    description: "Um mimo simbólico escolhido para autocuidado.",
-    category: "adult_wellness",
+    title: "Kit de autocuidado",
+    description: "Kit especial de beleza e autocuidado.",
     emoji: "💜",
-    value_cents: 19900,
+    image_url: null,
+    value_cents: 19_900,
+    availability: "available",
+    track_stock: false,
+    stock_quantity: null,
   },
   {
     title: "Tripé para gravação",
-    description: "Apoie a estrutura dos próximos conteúdos.",
-    category: "equipment",
+    description: "Equipamento para os próximos conteúdos.",
     emoji: "🎥",
-    value_cents: 12000,
+    image_url: null,
+    value_cents: 12_000,
+    availability: "available",
+    track_stock: true,
+    stock_quantity: 12,
   },
   {
     title: "Iluminação para conteúdo",
-    description: "Ajude a deixar a próxima produção ainda mais bonita.",
-    category: "equipment",
+    description: "Iluminação para novas fotos e vídeos.",
     emoji: "💡",
-    value_cents: 18000,
+    image_url: null,
+    value_cents: 18_000,
+    availability: "on_request",
+    track_stock: false,
+    stock_quantity: null,
   },
   {
     title: "Dia de beleza",
-    description: "Um carinho simbólico para beleza e autocuidado.",
-    category: "beauty",
-    emoji: "✨",
-    value_cents: 25000,
+    description: "Experiência de beleza escolhida pela modelo.",
+    emoji: "🎁",
+    image_url: null,
+    value_cents: 25_000,
+    availability: "on_request",
+    track_stock: false,
+    stock_quantity: null,
   },
 ];
 
-export function getDemoGiftList(username: string) {
+export function isGiftItemPurchasable(
+  item: Pick<DemoGiftItem, "active" | "track_stock" | "stock_quantity">,
+) {
+  return item.active && (!item.track_stock || (item.stock_quantity ?? 0) > 0);
+}
+
+export function getDemoGiftList(username: string, viewerUserId?: string | null) {
   const creator = getDemoCreator(username);
   if (!creator) return null;
+  const operations = viewerUserId ? readDemoOperations(viewerUserId) : createDemoOperationsSeed();
   return {
     creator,
     settings: {
       title: "Minha Lista de Mimos",
-      intro: "Escolha um mimo simbólico para apoiar minhas próximas produções.",
+      intro: "Escolha um produto da minha lista para tornar minhas próximas ideias realidade.",
       thank_you_message: "Obrigada por fazer parte disso! 💝",
       is_published: true,
     },
-    items: GIFT_PRESETS.slice(0, 4).map((item, index) => ({
-      ...item,
-      id: `demo-gift-${creator.username}-${index + 1}`,
-      received_count: [8, 5, 12, 7][index],
-    })),
+    items: operations.giftItems
+      .filter(isGiftItemPurchasable)
+      .map(
+        ({
+          id,
+          title,
+          description,
+          emoji,
+          image_url,
+          value_cents,
+          received_count,
+          availability,
+          track_stock,
+          stock_quantity,
+        }): PublicGiftItem => ({
+          id,
+          title,
+          description,
+          emoji,
+          image_url,
+          value_cents,
+          received_count,
+          availability,
+          track_stock,
+          stock_quantity,
+        }),
+      ),
   };
 }

@@ -9,12 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { recordDemoTip } from "@/lib/demo-tips";
 import { recordDemoGiftChatConfirmation } from "@/lib/demo-chat";
 import { addDemoNotification } from "@/lib/demo-notifications";
+import { recordDemoGiftProductPurchase } from "@/lib/demo-operations";
 
 const QUICK = [500, 1000, 2500, 5000];
 
@@ -61,7 +61,6 @@ export function TipModal({
     amountCents: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [understoodGift, setUnderstoodGift] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isLocalTip = DEMO_MODE && creatorId.startsWith("demo-");
 
@@ -72,7 +71,6 @@ export function TipModal({
       setMsg("");
       setCustom("");
       setCopied(false);
-      setUnderstoodGift(false);
       if (pollRef.current) clearInterval(pollRef.current);
     }
   }, [open]);
@@ -103,17 +101,25 @@ export function TipModal({
       toast.error(tr("Valor mínimo: R$ 1,00", "Minimum amount: R$ 1.00"));
       return;
     }
-    if (giftItem && !understoodGift) {
-      toast.error(
-        tr(
-          "Confirme que entendeu como o mimo simbólico funciona.",
-          "Confirm that you understand how the symbolic gift works.",
-        ),
-      );
-      return;
-    }
     if (isLocalTip) {
       setBusy(true);
+      if (giftItem) {
+        try {
+          recordDemoGiftProductPurchase({
+            userId: user.id,
+            itemId: giftItem.id,
+            expectedAmountCents: finalCents,
+          });
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : tr("Este produto não está disponível.", "This product is unavailable."),
+          );
+          setBusy(false);
+          return;
+        }
+      }
       const metadata = user.user_metadata as Record<string, unknown> | undefined;
       const senderName =
         (typeof metadata?.display_name === "string" && metadata.display_name.trim()) ||
@@ -338,31 +344,16 @@ export function TipModal({
                 className="resize-none"
               />
             </div>
-            {giftItem && (
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-foreground">
-                <Checkbox
-                  className="mt-0.5"
-                  checked={understoodGift}
-                  onCheckedChange={(value) => setUnderstoodGift(value === true)}
-                />
-                <span>
-                  {tr(
-                    "Entendi que este é um mimo simbólico: nenhum produto físico será comprado ou enviado, e a criadora receberá o valor líquido na carteira após as taxas.",
-                    "I understand this is a symbolic gift: no physical product is purchased or shipped, and the creator receives the net amount in her wallet after fees.",
-                  )}
-                </span>
-              </label>
-            )}
             <Button
               onClick={send}
-              disabled={busy || (!!giftItem && !understoodGift)}
+              disabled={busy}
               className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-95"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : isLocalTip ? (
                 giftItem ? (
-                  tr("🎁 Enviar mimo simbólico", "🎁 Send symbolic gift")
+                  tr("🎁 Enviar este mimo", "🎁 Send this gift")
                 ) : (
                   tr("💝 Enviar mimo", "💝 Send tip")
                 )

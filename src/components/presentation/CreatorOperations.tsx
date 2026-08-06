@@ -3,10 +3,11 @@ import {
   Banknote,
   CalendarDays,
   Check,
-  Copy,
   ExternalLink,
   Gift,
+  ImagePlus,
   Info,
+  Pencil,
   Pause,
   Play,
   Plus,
@@ -16,6 +17,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { GiftProductImage } from "@/components/GiftProductImage";
+import { CreatorCouponStudio } from "@/components/presentation/CreatorCouponStudio";
+import { CreatorCommentModerationStudio } from "@/components/presentation/CreatorCommentModerationStudio";
+import { CreatorMailingStudio } from "@/components/presentation/CreatorMailingStudio";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -40,7 +46,6 @@ import {
   createDemoId,
   readDemoOperations,
   updateDemoOperations,
-  type DemoCoupon,
   type DemoOperationsState,
 } from "@/lib/demo-operations";
 import {
@@ -52,9 +57,13 @@ import {
   type AnalyticsPeriodPreset,
 } from "@/lib/demo-creator-analytics";
 import { distributeVisitSources } from "@/lib/visit-attribution";
+import { GIFT_PRESETS, type GiftPreset } from "@/lib/demo-gifts";
+import {
+  DEMO_COMMENT_MODERATION_CHANGED_EVENT,
+  readDemoCommentModeration,
+} from "@/lib/demo-comment-moderation";
 
 type PlanMonths = 1 | 3 | 6 | 12;
-type CouponKind = "fixed" | "discount" | "trial";
 
 const PLAN_MONTHS: PlanMonths[] = [1, 3, 6, 12];
 
@@ -115,9 +124,21 @@ export function CreatorOperations({ section, userId }: { section: string; userId
   const [subscriptionCount, setSubscriptionCount] = useState(
     () => readDemoSubscriptions(userId).length,
   );
+  const [commentModeration, setCommentModeration] = useState(() =>
+    readDemoCommentModeration("demo-aline"),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
+  const [giftEditingId, setGiftEditingId] = useState<string | null>(null);
+  const [giftDescription, setGiftDescription] = useState("");
+  const [giftImageUrl, setGiftImageUrl] = useState("");
+  const [giftEmoji, setGiftEmoji] = useState("🎁");
+  const [giftAvailability, setGiftAvailability] = useState<"available" | "on_request">("available");
+  const [giftTrackStock, setGiftTrackStock] = useState(false);
+  const [giftStock, setGiftStock] = useState("0");
+  const [giftActive, setGiftActive] = useState(true);
+  const [giftSource, setGiftSource] = useState<"base" | "custom">("custom");
   const [postStatus, setPostStatus] = useState<"draft" | "scheduled" | "published">("draft");
   const [plansDialogOpen, setPlansDialogOpen] = useState(false);
   const [planBasePrice, setPlanBasePrice] = useState("49.00");
@@ -127,13 +148,6 @@ export function CreatorOperations({ section, userId }: { section: string; userId
     6: 25,
     12: 30,
   });
-  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
-  const [couponCode, setCouponCode] = useState("PRIMEIRAS10");
-  const [couponKind, setCouponKind] = useState<CouponKind>("discount");
-  const [couponBenefit, setCouponBenefit] = useState("20");
-  const [couponDuration, setCouponDuration] = useState<PlanMonths>(1);
-  const [couponSlots, setCouponSlots] = useState("10");
-  const [couponNewSubscribersOnly, setCouponNewSubscribersOnly] = useState(true);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<AnalyticsPeriodPreset>("last_30_days");
   const [customDraft, setCustomDraft] = useState<AnalyticsDateRange>(() =>
     resolveAnalyticsPeriod("last_30_days"),
@@ -148,15 +162,18 @@ export function CreatorOperations({ section, userId }: { section: string; userId
       setOperations(readDemoOperations(userId));
       setTips(readDemoTips(userId));
       setSubscriptionCount(readDemoSubscriptions(userId).length);
+      setCommentModeration(readDemoCommentModeration("demo-aline"));
     };
     load();
     window.addEventListener(DEMO_OPERATIONS_CHANGED_EVENT, load);
     window.addEventListener(DEMO_TIPS_CHANGED_EVENT, load);
     window.addEventListener(DEMO_SUBSCRIPTIONS_CHANGED_EVENT, load);
+    window.addEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, load);
     return () => {
       window.removeEventListener(DEMO_OPERATIONS_CHANGED_EVENT, load);
       window.removeEventListener(DEMO_TIPS_CHANGED_EVENT, load);
       window.removeEventListener(DEMO_SUBSCRIPTIONS_CHANGED_EVENT, load);
+      window.removeEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, load);
     };
   }, [userId]);
 
@@ -171,6 +188,9 @@ export function CreatorOperations({ section, userId }: { section: string; userId
     .reduce((total, item) => total + item.amount_cents, 0);
   const subscriptionCents = operations.purchases
     .filter((item) => item.kind === "subscription" && item.status === "paid")
+    .reduce((total, item) => total + item.amount_cents, 0);
+  const goalCents = operations.purchases
+    .filter((item) => item.kind === "goal" && item.status === "paid")
     .reduce((total, item) => total + item.amount_cents, 0);
 
   const selectedAnalyticsRange = useMemo(
@@ -259,7 +279,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         return [
           [tr("Assinaturas", "Subscriptions"), money(1_246_000 + subscriptionCents, locale)],
           ["PPV", money(418_000 + ppvCents, locale)],
-          [tr("Mimos", "Tips"), money(210_000 + tipCents, locale)],
+          [tr("Mimos e metas", "Tips and goals"), money(210_000 + tipCents + goalCents, locale)],
         ];
       case "subscriptions":
         return [
@@ -284,7 +304,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
       case "gifts":
         return [
           [
-            tr("Mimos ativos", "Active gifts"),
+            tr("Produtos ativos", "Active products"),
             String(operations.giftItems.filter((item) => item.active).length),
           ],
           [
@@ -292,22 +312,26 @@ export function CreatorOperations({ section, userId }: { section: string; userId
             String(operations.giftItems.reduce((total, item) => total + item.received_count, 0)),
           ],
           [
-            tr("Valor simbólico", "Symbolic value"),
+            tr("Valor recebido", "Amount received"),
             money(
-              operations.giftItems.reduce(
-                (total, item) => total + item.value_cents * item.received_count,
-                0,
-              ),
+              operations.giftItems.reduce((total, item) => total + item.received_cents, 0),
               locale,
             ),
           ],
         ];
-      case "mailing":
+      case "mailing": {
+        const delivered = operations.campaigns.reduce(
+          (total, campaign) => total + campaign.delivered,
+          0,
+        );
+        const opened = operations.campaigns.reduce((total, campaign) => total + campaign.opened, 0);
+        const sales = operations.campaigns.reduce((total, campaign) => total + campaign.sales, 0);
         return [
           [tr("Campanhas", "Campaigns"), String(operations.campaigns.length)],
-          [tr("Taxa de abertura", "Open rate"), "62%"],
-          [tr("Taxa de cliques", "Click rate"), "18%"],
+          [tr("Taxa de abertura", "Open rate"), percent(opened, delivered, locale)],
+          [tr("Vendas geradas", "Generated sales"), String(sales)],
         ];
+      }
       case "coupons":
         return [
           [
@@ -324,16 +348,28 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         return [
           [
             tr("Comentários retidos", "Held comments"),
-            String(operations.creatorComments.filter((item) => item.status === "pending").length),
+            String(
+              commentModeration.comments.filter(
+                (item) => item.moderation_status === "pending",
+              ).length,
+            ),
           ],
-          [tr("Palavras bloqueadas", "Blocked words"), "8"],
-          [tr("Usuários bloqueados", "Blocked users"), "3"],
+          [
+            tr("Palavras bloqueadas", "Blocked words"),
+            String(commentModeration.blocked_keywords.length),
+          ],
+          [
+            tr("Usuários bloqueados", "Blocked users"),
+            String(commentModeration.blocked_user_ids.length),
+          ],
         ];
       default:
         return analyticsRows;
     }
   }, [
     analyticsRows,
+    commentModeration,
+    goalCents,
     locale,
     operations,
     ppvCents,
@@ -453,17 +489,12 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         };
       case "gifts":
         return {
-          button: tr("Novo mimo", "New gift"),
-          title: tr("Criar mimo simbólico", "Create symbolic gift"),
-          name: tr("Nome do mimo", "Gift name"),
-          value: tr("Valor (R$)", "Value (BRL)"),
-        };
-      case "mailing":
-        return {
-          button: tr("Nova campanha", "New campaign"),
-          title: tr("Criar campanha", "Create campaign"),
-          name: tr("Título da campanha", "Campaign title"),
-          value: tr("Destinatários", "Recipients"),
+          button: tr("Novo produto", "New product"),
+          title: giftEditingId
+            ? tr("Editar produto", "Edit product")
+            : tr("Adicionar produto", "Add product"),
+          name: tr("Nome do produto", "Product name"),
+          value: tr("Valor (R$)", "Price (BRL)"),
         };
       default:
         return null;
@@ -522,40 +553,94 @@ export function CreatorOperations({ section, userId }: { section: string; userId
       const cents = Math.round(Number(value.replace(",", ".")) * 100);
       if (!cents || cents < 100)
         return toast.error(tr("Informe um valor válido.", "Enter a valid value."));
+      const stock = Math.max(0, Math.floor(Number(giftStock) || 0));
       update((state) => ({
         ...state,
-        giftItems: [
-          {
-            id: createDemoId("gift"),
-            title: name.trim(),
-            emoji: "🎁",
-            value_cents: cents,
-            received_count: 0,
-            active: true,
-          },
-          ...state.giftItems,
-        ],
-      }));
-    } else if (section === "mailing") {
-      update((state) => ({
-        ...state,
-        campaigns: [
-          {
-            id: createDemoId("campaign"),
-            title: name.trim(),
-            recipients: Math.max(1, Number(value) || 326),
-            status: "draft",
-            created_at: now,
-          },
-          ...state.campaigns,
-        ],
+        giftItems: giftEditingId
+          ? state.giftItems.map((item) =>
+              item.id === giftEditingId
+                ? {
+                    ...item,
+                    title: name.trim(),
+                    description: giftDescription.trim(),
+                    emoji: giftEmoji.trim() || "🎁",
+                    image_url: giftImageUrl.trim() || null,
+                    value_cents: cents,
+                    availability: giftAvailability,
+                    track_stock: giftTrackStock,
+                    stock_quantity: giftTrackStock ? stock : null,
+                    active: giftActive,
+                  }
+                : item,
+            )
+          : [
+              {
+                id: createDemoId("gift"),
+                title: name.trim(),
+                description: giftDescription.trim(),
+                emoji: giftEmoji.trim() || "🎁",
+                image_url: giftImageUrl.trim() || null,
+                value_cents: cents,
+                received_count: 0,
+                received_cents: 0,
+                availability: giftAvailability,
+                track_stock: giftTrackStock,
+                stock_quantity: giftTrackStock ? stock : null,
+                active: giftActive,
+                source: giftSource,
+              },
+              ...state.giftItems,
+            ],
       }));
     }
     setName("");
     setValue("");
+    setGiftEditingId(null);
+    setGiftDescription("");
+    setGiftImageUrl("");
+    setGiftEmoji("🎁");
+    setGiftAvailability("available");
+    setGiftTrackStock(false);
+    setGiftStock("0");
+    setGiftActive(true);
+    setGiftSource("custom");
     setPostStatus("draft");
     setDialogOpen(false);
     toast.success(tr("Ação salva nesta demonstração.", "Action saved in this demo."));
+  };
+
+  const openGiftEditor = (
+    preset?: GiftPreset,
+    current?: DemoOperationsState["giftItems"][number],
+  ) => {
+    const source = current ?? preset;
+    setGiftEditingId(current?.id ?? null);
+    setName(source?.title ?? "");
+    setValue(source ? (source.value_cents / 100).toFixed(2) : "");
+    setGiftDescription(source?.description ?? "");
+    setGiftImageUrl(source?.image_url ?? "");
+    setGiftEmoji(source?.emoji ?? "🎁");
+    setGiftAvailability(source?.availability ?? "available");
+    setGiftTrackStock(source?.track_stock ?? false);
+    setGiftStock(String(source?.stock_quantity ?? 0));
+    setGiftActive(current?.active ?? true);
+    setGiftSource(current?.source ?? (preset ? "base" : "custom"));
+    setDialogOpen(true);
+  };
+
+  const selectGiftImage = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(tr("Selecione uma imagem válida.", "Select a valid image."));
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(tr("A imagem deve ter no máximo 2 MB.", "The image must be at most 2 MB."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setGiftImageUrl(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
   };
 
   const planLabel = (months: PlanMonths) => {
@@ -603,6 +688,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
     toast.success(tr("Tabela de assinatura atualizada.", "Subscription pricing updated."));
   };
 
+  /* Legacy coupon editor kept out of the compiled flow while the unified studio replaces it.
   const openCouponCreation = () => {
     setCouponCode(`OFERTA${Math.floor(100 + Math.random() * 900)}`);
     setCouponKind("discount");
@@ -666,10 +752,9 @@ export function CreatorOperations({ section, userId }: { section: string; userId
     toast.success(tr("Cupom criado com limite de vagas.", "Coupon created with a slot limit."));
   };
 
-  const setCollectionStatus = (
-    collection: "plans" | "links" | "giftItems" | "coupons",
-    itemId: string,
-  ) => {
+  */
+
+  const setCollectionStatus = (collection: "plans" | "links" | "giftItems", itemId: string) => {
     update((state) => ({
       ...state,
       [collection]: state[collection].map((item) =>
@@ -799,7 +884,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
       <MetricRows rows={rows} />
       {config && (
         <div className="mt-4 flex justify-end">
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => (section === "gifts" ? openGiftEditor() : setDialogOpen(true))}>
             {section === "wallet" ? (
               <Banknote className="mr-2 h-4 w-4" />
             ) : section === "gifts" ? (
@@ -819,15 +904,6 @@ export function CreatorOperations({ section, userId }: { section: string; userId
           </Button>
         </div>
       )}
-      {section === "coupons" && (
-        <div className="mt-4 flex justify-end">
-          <Button onClick={openCouponCreation}>
-            <Plus className="mr-2 h-4 w-4" />
-            {tr("Novo cupom", "New coupon")}
-          </Button>
-        </div>
-      )}
-
       {section === "posts" && (
         <OperationList
           title={tr("Conteúdos", "Content")}
@@ -954,13 +1030,6 @@ export function CreatorOperations({ section, userId }: { section: string; userId
       )}
       {section === "gifts" && (
         <>
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-            <strong>{tr("Catálogo simbólico:", "Symbolic catalog:")}</strong>{" "}
-            {tr(
-              "nenhum produto físico é comprado ou enviado; a modelo recebe o valor líquido na carteira.",
-              "no physical product is purchased or shipped; the creator receives the net amount in her wallet.",
-            )}
-          </div>
           <div className="mt-4 flex justify-end">
             <Button variant="outline" asChild>
               <a href="/gifts/aline" target="_blank" rel="noreferrer">
@@ -969,49 +1038,113 @@ export function CreatorOperations({ section, userId }: { section: string; userId
               </a>
             </Button>
           </div>
-          <OperationList
-            title={tr("Lista de Mimos", "Gift List")}
-            items={operations.giftItems.map((item) => ({
-              id: item.id,
-              title: `${item.emoji} ${item.title}`,
-              meta: `${money(item.value_cents, locale)} · ${item.received_count} ${tr("recebidos", "received")}`,
-              active: item.active,
-              action: {
-                label: item.active ? tr("Pausar", "Pause") : tr("Ativar", "Activate"),
-                onClick: () => setCollectionStatus("giftItems", item.id),
-              },
-            }))}
-          />
+          <div className="mt-4 rounded-xl border border-border bg-background p-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              {tr("Produtos base da Venyx", "Venyx base products")}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tr(
+                "Use uma sugestão pronta e personalize nome, imagem, valor e estoque.",
+                "Start with a suggestion and customize its name, image, price, and stock.",
+              )}
+            </p>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {GIFT_PRESETS.map((preset) => (
+                <Button
+                  key={preset.title}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => openGiftEditor(preset)}
+                >
+                  <span className="mr-2">{preset.emoji}</span>
+                  {preset.title}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-border bg-background p-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              {tr("Produtos da sua lista", "Products on your list")}
+            </h3>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {operations.giftItems.map((item) => (
+                <article
+                  key={item.id}
+                  className={`overflow-hidden rounded-2xl border ${
+                    item.active ? "border-border" : "border-dashed opacity-65"
+                  }`}
+                >
+                  <div className="flex gap-3 p-3">
+                    <GiftProductImage
+                      src={item.image_url}
+                      alt={item.title}
+                      emoji={item.emoji}
+                      className="h-24 w-[4.8rem] shrink-0 rounded-xl"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <strong className="truncate text-sm text-foreground">{item.title}</strong>
+                        <strong className="shrink-0 text-sm text-primary">
+                          {money(item.value_cents, locale)}
+                        </strong>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        {item.description ||
+                          tr("Sem descrição adicionada.", "No description added.")}
+                      </p>
+                      <div className="mt-2 text-[11px] text-muted-foreground">
+                        {item.availability === "on_request"
+                          ? tr("Sob encomenda", "On request")
+                          : tr("Disponível", "Available")}
+                        {item.track_stock
+                          ? ` · ${item.stock_quantity ?? 0} ${tr("em estoque", "in stock")}`
+                          : ` · ${tr("estoque livre", "stock not tracked")}`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border px-3 py-2">
+                    <span className="text-[11px] text-muted-foreground">
+                      {item.received_count} {tr("enviados", "sent")} ·{" "}
+                      {item.source === "base"
+                        ? tr("Produto base", "Base product")
+                        : tr("Personalizado", "Custom")}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openGiftEditor(undefined, item)}
+                      >
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                        {tr("Editar", "Edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCollectionStatus("giftItems", item.id)}
+                      >
+                        {item.active ? (
+                          <Pause className="mr-1.5 h-3.5 w-3.5" />
+                        ) : (
+                          <Play className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {item.active ? tr("Desativar", "Disable") : tr("Ativar", "Enable")}
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </>
       )}
       {section === "mailing" && (
-        <OperationList
-          title={tr("Campanhas", "Campaigns")}
-          items={operations.campaigns.map((item) => ({
-            id: item.id,
-            title: item.title,
-            meta: `${item.recipients} ${tr("destinatários", "recipients")} · ${item.status}`,
-            active: item.status === "sent",
-            action:
-              item.status !== "sent"
-                ? {
-                    label: tr("Simular envio", "Simulate send"),
-                    onClick: () => {
-                      update((state) => ({
-                        ...state,
-                        campaigns: state.campaigns.map((campaign) =>
-                          campaign.id === item.id ? { ...campaign, status: "sent" } : campaign,
-                        ),
-                      }));
-                      toast.success(
-                        tr("Envio simulado concluído.", "Simulated delivery completed."),
-                      );
-                    },
-                  }
-                : undefined,
-          }))}
-        />
+        <CreatorMailingStudio userId={userId} operations={operations} update={update} />
       )}
+      {/* Legacy coupon list replaced by the unified coupon studio.
       {section === "coupons" && (
         <>
           <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-muted-foreground">
@@ -1057,44 +1190,9 @@ export function CreatorOperations({ section, userId }: { section: string; userId
           />
         </>
       )}
-      {section === "moderation" && (
-        <OperationList
-          title={tr("Fila de comentários", "Comment queue")}
-          items={operations.creatorComments
-            .filter((item) => item.status === "pending")
-            .map((item) => ({
-              id: item.id,
-              title: item.username,
-              meta: `${item.reason}: ${item.body}`,
-              active: false,
-              actions: [
-                {
-                  label: tr("Aprovar", "Approve"),
-                  icon: Check,
-                  onClick: () =>
-                    update((state) => ({
-                      ...state,
-                      creatorComments: state.creatorComments.map((comment) =>
-                        comment.id === item.id ? { ...comment, status: "approved" } : comment,
-                      ),
-                    })),
-                },
-                {
-                  label: tr("Remover", "Remove"),
-                  icon: Trash2,
-                  onClick: () =>
-                    update((state) => ({
-                      ...state,
-                      creatorComments: state.creatorComments.map((comment) =>
-                        comment.id === item.id ? { ...comment, status: "removed" } : comment,
-                      ),
-                    })),
-                },
-              ],
-            }))}
-          empty={tr("Nenhum comentário aguardando revisão.", "No comments awaiting review.")}
-        />
-      )}
+      */}
+      {section === "coupons" && <CreatorCouponStudio operations={operations} update={update} />}
+      {section === "moderation" && <CreatorCommentModerationStudio />}
       {section === "wallet" && (
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 lg:col-span-2">
@@ -1260,6 +1358,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         </DialogContent>
       </Dialog>
 
+      {/* Legacy coupon dialog replaced by CreatorCouponStudio.
       <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-xl">
           <DialogHeader>
@@ -1371,33 +1470,181 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         </DialogContent>
       </Dialog>
 
+      */}
       {config && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="w-[calc(100%-2rem)] max-w-md">
+          <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{config.title}</DialogTitle>
               <DialogDescription>
-                {tr(
-                  "A ação ficará salva somente neste navegador.",
-                  "This action will be saved only in this browser.",
-                )}
+                {section === "gifts"
+                  ? tr(
+                      "As alterações aparecem automaticamente na página pública da modelo.",
+                      "Changes appear automatically on the creator's public page.",
+                    )
+                  : tr(
+                      "A ação ficará salva somente neste navegador.",
+                      "This action will be saved only in this browser.",
+                    )}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3">
-              {config.name && (
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder={config.name}
-                />
-              )}
-              {config.value && (
-                <Input
-                  value={value}
-                  onChange={(event) => setValue(event.target.value)}
-                  placeholder={config.value}
-                  type={section === "links" ? "text" : "number"}
-                />
+            <div className="space-y-4">
+              {section === "gifts" ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-[112px_1fr]">
+                    <GiftProductImage
+                      src={giftImageUrl}
+                      alt={name || tr("Prévia do produto", "Product preview")}
+                      emoji={giftEmoji}
+                      className="aspect-[4/5] w-full rounded-2xl border border-border"
+                    />
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-muted-foreground">
+                        {tr("Imagem do produto", "Product image")}
+                      </label>
+                      <p className="text-[11px] text-muted-foreground">
+                        {tr(
+                          "Fotos verticais são reconhecidas e exibidas inteiras automaticamente.",
+                          "Portrait photos are detected and shown in full automatically.",
+                        )}
+                      </p>
+                      <label className="flex cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground hover:bg-muted">
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                        {tr("Escolher imagem", "Choose image")}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(event) => selectGiftImage(event.target.files?.[0])}
+                        />
+                      </label>
+                      <Input
+                        value={giftImageUrl.startsWith("data:") ? "" : giftImageUrl}
+                        onChange={(event) => setGiftImageUrl(event.target.value)}
+                        placeholder={tr("Ou cole a URL da imagem", "Or paste an image URL")}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[84px_1fr]">
+                    <Input
+                      value={giftEmoji}
+                      maxLength={16}
+                      aria-label={tr("Ícone", "Icon")}
+                      onChange={(event) => setGiftEmoji(event.target.value)}
+                      placeholder="🎁"
+                    />
+                    <Input
+                      value={name}
+                      maxLength={80}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder={config.name}
+                    />
+                  </div>
+                  <Textarea
+                    value={giftDescription}
+                    maxLength={300}
+                    onChange={(event) => setGiftDescription(event.target.value)}
+                    placeholder={tr("Descrição do produto", "Product description")}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs text-muted-foreground">
+                      {tr("Valor (R$)", "Price (BRL)")}
+                      <Input
+                        className="mt-1"
+                        value={value}
+                        onChange={(event) => setValue(event.target.value)}
+                        type="number"
+                        min="1"
+                        max="10000"
+                        step="0.5"
+                      />
+                    </label>
+                    <label className="text-xs text-muted-foreground">
+                      {tr("Disponibilidade", "Availability")}
+                      <select
+                        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                        value={giftAvailability}
+                        onChange={(event) =>
+                          setGiftAvailability(event.target.value as "available" | "on_request")
+                        }
+                      >
+                        <option value="available">{tr("Disponível agora", "Available now")}</option>
+                        <option value="on_request">
+                          {tr("Sob encomenda", "Available on request")}
+                        </option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className="flex items-start gap-3 rounded-xl border border-border bg-background p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={giftTrackStock}
+                      onChange={(event) => setGiftTrackStock(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 accent-primary"
+                    />
+                    <span>
+                      <strong className="block text-foreground">
+                        {tr("Controlar quantidade em estoque", "Track stock quantity")}
+                      </strong>
+                      <span className="text-xs text-muted-foreground">
+                        {tr(
+                          "Ao chegar a zero, o produto deixa de aparecer para o lead.",
+                          "At zero, the product is hidden from fans.",
+                        )}
+                      </span>
+                    </span>
+                  </label>
+                  {giftTrackStock && (
+                    <label className="block text-xs text-muted-foreground">
+                      {tr("Quantidade em estoque", "Stock quantity")}
+                      <Input
+                        className="mt-1"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={giftStock}
+                        onChange={(event) => setGiftStock(event.target.value)}
+                      />
+                    </label>
+                  )}
+                  <label className="flex items-center justify-between rounded-xl border border-border bg-background p-3 text-sm">
+                    <span>
+                      <strong className="block text-foreground">
+                        {tr("Produto ativo", "Active product")}
+                      </strong>
+                      <span className="text-xs text-muted-foreground">
+                        {tr(
+                          "Produtos desativados não aparecem para o lead.",
+                          "Disabled products are hidden from fans.",
+                        )}
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={giftActive}
+                      onChange={(event) => setGiftActive(event.target.checked)}
+                      className="h-5 w-5 accent-primary"
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  {config.name && (
+                    <Input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder={config.name}
+                    />
+                  )}
+                  {config.value && (
+                    <Input
+                      value={value}
+                      onChange={(event) => setValue(event.target.value)}
+                      placeholder={config.value}
+                      type={section === "links" ? "text" : "number"}
+                    />
+                  )}
+                </>
               )}
               {section === "posts" && (
                 <select
@@ -1415,7 +1662,13 @@ export function CreatorOperations({ section, userId }: { section: string; userId
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 {tr("Cancelar", "Cancel")}
               </Button>
-              <Button onClick={submit}>{tr("Salvar", "Save")}</Button>
+              <Button onClick={submit}>
+                {section === "gifts"
+                  ? giftEditingId
+                    ? tr("Salvar alterações", "Save changes")
+                    : tr("Adicionar produto", "Add product")
+                  : tr("Salvar", "Save")}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

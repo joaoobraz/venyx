@@ -29,7 +29,7 @@ export interface CreatorAnalyticsSummary {
 }
 
 type DatedPurchase = {
-  kind: "ppv" | "subscription";
+  kind: "ppv" | "subscription" | "goal";
   amount_cents: number;
   status: string;
   created_at: string;
@@ -182,6 +182,7 @@ export function summarizeCreatorAnalytics({
     total.conversions += 1;
     if (purchase.kind === "ppv") total.ppvSold += 1;
     if (purchase.kind === "subscription") total.newSubscribers += 1;
+    if (purchase.kind === "goal") total.tipsReceived += 1;
   }
 
   for (const tip of tips) {

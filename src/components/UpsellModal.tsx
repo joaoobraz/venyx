@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Loader2, Copy, Check, X } from "lucide-react";
+import { Tag, Loader2, Copy, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
@@ -140,7 +140,7 @@ export function UpsellModal({
             </button>
 
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-accent">
-              <Sparkles className="h-4 w-4" /> Oferta única — só agora
+              <Tag className="h-4 w-4" /> Oferta única — só agora
             </div>
 
             <h2 className="mt-3 text-2xl font-extrabold leading-tight text-foreground">

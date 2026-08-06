@@ -31,6 +31,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
+import { getDemoCreator } from "@/lib/demo-creators";
+import { resolveOwnProfileUsername } from "@/lib/profile-visibility";
 
 export function Header() {
   const {
@@ -45,6 +47,15 @@ export function Header() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const unread = useUnreadCounts();
+  const creatorPreviewProfile = demoPreviewRole === "creator" ? getDemoCreator("aline") : null;
+  const displayedProfile = creatorPreviewProfile ?? profile;
+  const ownProfileUsername = resolveOwnProfileUsername({
+    authenticatedUserId: user?.id,
+    profileUserId: profile?.user_id,
+    profileUsername: profile?.username,
+    isCreator,
+    demoPreviewRole,
+  });
   const roleSelect = (className: string) => (
     <select
       value={demoPreviewRole ?? ""}
@@ -134,21 +145,21 @@ export function Header() {
                   </span>
                 )}
               </Link>
-              {profile && (
+              {displayedProfile && ownProfileUsername && (
                 <Link
                   to="/profile/$username"
-                  params={{ username: profile.username }}
+                  params={{ username: ownProfileUsername }}
                   className="ml-1 hidden h-9 w-9 overflow-hidden rounded-full border border-border bg-card md:block"
                 >
-                  {profile.avatar_url ? (
+                  {displayedProfile.avatar_url ? (
                     <img
-                      src={profile.avatar_url}
+                      src={displayedProfile.avatar_url}
                       alt=""
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs font-bold text-primary">
-                      {profile.username[0]?.toUpperCase()}
+                      {displayedProfile.username[0]?.toUpperCase()}
                     </div>
                   )}
                 </Link>
@@ -166,12 +177,21 @@ export function Header() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("nav.menu")}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    aria-label={t("nav.menu")}
+                  >
                     <Menu className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="max-h-[75vh] w-64 overflow-y-auto">
-                  <DropdownMenuLabel>{profile?.display_name || profile?.username || t("nav.account")}</DropdownMenuLabel>
+                  <DropdownMenuLabel>
+                    {displayedProfile?.display_name ||
+                      displayedProfile?.username ||
+                      t("nav.account")}
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {canUseDemoPreview && (
                     <>
@@ -199,41 +219,79 @@ export function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/wishlist"><Heart className="mr-2 h-4 w-4" />{t("nav.wishlist")}</Link>
+                    <Link to="/wishlist">
+                      <Heart className="mr-2 h-4 w-4" />
+                      {t("nav.wishlist")}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/loyalty"><Trophy className="mr-2 h-4 w-4" />{t("nav.loyalty")}</Link>
+                    <Link to="/loyalty">
+                      <Trophy className="mr-2 h-4 w-4" />
+                      {t("nav.loyalty")}
+                    </Link>
                   </DropdownMenuItem>
                   {isCreator && !demoPreviewRole && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>{t("nav.creatorArea")}</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/posts"><PenSquare className="mr-2 h-4 w-4" />{t("nav.newPost")}</Link>
+                        <Link to="/creator/posts">
+                          <PenSquare className="mr-2 h-4 w-4" />
+                          {t("nav.newPost")}
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/wallet"><Wallet className="mr-2 h-4 w-4" />{t("nav.wallet")}</Link>
+                        <Link to="/creator/wallet">
+                          <Wallet className="mr-2 h-4 w-4" />
+                          {t("nav.wallet")}
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/analytics"><BarChart3 className="mr-2 h-4 w-4" />Analytics</Link>
+                        <Link to="/creator/analytics">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Analytics
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/subscription-plans"><Layers className="mr-2 h-4 w-4" />{t("nav.plans")}</Link>
+                        <Link to="/creator/subscription-plans">
+                          <Layers className="mr-2 h-4 w-4" />
+                          {t("nav.plans")}
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/moderation"><ShieldCheck className="mr-2 h-4 w-4" />{t("nav.commentModeration")}</Link>
+                        <Link to="/creator/moderation">
+                          <ShieldCheck className="mr-2 h-4 w-4" />
+                          {t("nav.commentModeration")}
+                        </Link>
                       </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
+                  {ownProfileUsername && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile/$username" params={{ username: ownProfileUsername }}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        {t("nav.profile")}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/profile"><Settings className="mr-2 h-4 w-4" />{t("nav.settings")}</Link>
+                    <Link to="/settings/profile">
+                      <Settings className="mr-2 h-4 w-4" />
+                      {t("nav.settings")}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/payments"><ReceiptText className="mr-2 h-4 w-4" />{t("nav.payments")}</Link>
+                    <Link to="/settings/payments">
+                      <ReceiptText className="mr-2 h-4 w-4" />
+                      {t("nav.payments")}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/security"><ShieldCheck className="mr-2 h-4 w-4" />{t("nav.security")}</Link>
+                    <Link to="/settings/security">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      {t("nav.security")}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={async () => {
@@ -241,7 +299,8 @@ export function Header() {
                       navigate({ to: "/" });
                     }}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />{t("nav.logout")}
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t("nav.logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -254,7 +313,10 @@ export function Header() {
                 </Button>
               </Link>
               <Link to="/signup">
-                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button
+                  size="sm"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
                   {t("nav.signup")}
                 </Button>
               </Link>

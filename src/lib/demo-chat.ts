@@ -181,11 +181,11 @@ const BODY_TRANSLATIONS: Record<string, string> = {
   "Qualquer dúvida, pode falar comigo por aqui.":
     "If you have any questions, you can message me here.",
   "Oi, Lara! Tudo bem?": "Hi, Lara! How are you?",
-  "Tudo ótimo! Obrigada pela mensagem ✨": "I'm great! Thanks for the message ✨",
+  "Tudo ótimo! Obrigada pela mensagem.": "I'm great! Thanks for the message.",
   "Hoje estou liberando uma sessão especial para quem acompanha de perto.":
     "Today I'm releasing a special session for my closest followers.",
-  "Oi! Sua presença já está anotada no meu calendário ✨":
-    "Hi! Your presence is already on my calendar ✨",
+  "Oi! Sua presença já está anotada no meu calendário.":
+    "Hi! Your presence is already on my calendar.",
   "Fico feliz! Quero acompanhar seu conteúdo com mais calma.":
     "I'm glad! I want to follow your content more closely.",
   "Perfeito. Também gosto de conversar antes de cada lançamento.":
@@ -297,7 +297,7 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
   if (thread.username === "lara") {
     return [
       message(1, userId, "Oi, Lara! Tudo bem?", 54, isoMinutesAgo(52)),
-      message(2, thread.creatorId, "Tudo ótimo! Obrigada pela mensagem ✨", 36, isoMinutesAgo(34)),
+      message(2, thread.creatorId, "Tudo ótimo! Obrigada pela mensagem.", 36, isoMinutesAgo(34)),
       message(
         3,
         thread.creatorId,
@@ -313,7 +313,7 @@ function initialMessages(userId: string, thread: DemoChatThread): DemoChatMessag
       message(
         1,
         thread.creatorId,
-        "Oi! Sua presença já está anotada no meu calendário ✨",
+        "Oi! Sua presença já está anotada no meu calendário.",
         76,
         isoMinutesAgo(74),
       ),

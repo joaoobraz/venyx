@@ -383,7 +383,7 @@ export function awardDemoPurchaseLoyalty(input: {
   userId: string;
   creatorId: string;
   creatorName: string;
-  kind: "ppv" | "subscription";
+  kind: "ppv" | "subscription" | "goal";
   amountCents: number;
   refId: string;
 }) {
@@ -392,11 +392,18 @@ export function awardDemoPurchaseLoyalty(input: {
     userId: input.userId,
     creatorId: input.creatorId,
     points: spendPoints,
-    reason: input.kind === "ppv" ? "ppv_spend" : "subscription",
+    reason:
+      input.kind === "ppv"
+        ? "ppv_spend"
+        : input.kind === "goal"
+          ? "gift"
+          : "subscription",
     label:
       input.kind === "ppv"
         ? `PPV desbloqueado de ${input.creatorName}`
-        : `Assinatura confirmada com ${input.creatorName}`,
+        : input.kind === "goal"
+          ? `Contribuição para meta de ${input.creatorName}`
+          : `Assinatura confirmada com ${input.creatorName}`,
     refId: input.refId,
   });
   if (input.kind === "ppv") {

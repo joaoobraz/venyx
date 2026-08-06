@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CreatorOperations } from "@/components/presentation/CreatorOperations";
+import { CreatorLinksStudio } from "@/components/presentation/CreatorLinksStudio";
 import { CreatorMediaLibrary } from "@/components/CreatorMediaLibrary";
 import { CreatorLoyaltyOperations } from "@/components/presentation/CreatorLoyaltyOperations";
 import { ModeratorOperations } from "@/components/presentation/ModeratorOperations";
@@ -131,8 +132,8 @@ const CREATOR_SECTIONS: Section[] = [
     id: "links",
     label: "Venyx Links",
     labelEn: "Venyx Links",
-    description: "Mini perfil e desempenho dos links compartilhados.",
-    descriptionEn: "Mini profile and shared-link performance.",
+    description: "Página personalizada e links rastreáveis para campanhas.",
+    descriptionEn: "Custom page and trackable campaign links.",
     icon: Link2,
     value: "1.842",
   },
@@ -140,26 +141,26 @@ const CREATOR_SECTIONS: Section[] = [
     id: "gifts",
     label: "Lista de Mimos",
     labelEn: "Gift List",
-    description: "Catálogo simbólico escolhido pela modelo.",
-    descriptionEn: "Symbolic catalog selected by the creator.",
+    description: "Produtos base e personalizados escolhidos pela modelo.",
+    descriptionEn: "Base and custom products selected by the creator.",
     icon: Gift,
     value: "32",
   },
   {
     id: "mailing",
-    label: "Mailing",
-    labelEn: "Mailing",
-    description: "Campanhas preparadas sem envio externo.",
-    descriptionEn: "Prepared campaigns with no external delivery.",
+    label: "Mensagens em massa",
+    labelEn: "Mass messages",
+    description: "Campanhas segmentadas com mídia, proteção e relatórios.",
+    descriptionEn: "Segmented campaigns with media, protection, and reports.",
     icon: Mail,
     value: "3",
   },
   {
     id: "coupons",
-    label: "Cupons",
-    labelEn: "Coupons",
-    description: "Ofertas ativas e conversões atribuídas.",
-    descriptionEn: "Active offers and attributed conversions.",
+    label: "Ofertas por link",
+    labelEn: "Link offers",
+    description: "Cupons, vagas, validade, testes e preço posterior.",
+    descriptionEn: "Coupons, slots, expiration, trials, and post-offer pricing.",
     icon: Tags,
     value: "8,4%",
   },
@@ -206,19 +207,19 @@ const MODERATOR_SECTIONS: Section[] = [
     id: "users",
     label: "Usuários",
     labelEn: "Users",
-    description: "Contas sob acompanhamento preventivo.",
-    descriptionEn: "Accounts under preventive monitoring.",
+    description: "Gerenciamento geral de contas, status e KYC.",
+    descriptionEn: "General account, status, and KYC management.",
     icon: Users,
-    value: "5",
+    value: "13",
   },
   {
     id: "kyc",
     label: "KYC",
     labelEn: "KYC",
-    description: "Verificações aguardando revisão.",
-    descriptionEn: "Identity checks awaiting review.",
+    description: "Fila operacional de verificações conectada aos usuários.",
+    descriptionEn: "Operational verification queue connected to users.",
     icon: IdCard,
-    value: "4",
+    value: "6",
   },
   {
     id: "dmca",
@@ -375,6 +376,8 @@ export function PresentationPage({ section = "overview" }: { section?: string })
                 <div className="mt-5">
                   <CreatorMediaLibrary userId={user.id} />
                 </div>
+              ) : activeRole === "creator" && selected.id === "links" ? (
+                <CreatorLinksStudio userId={user.id} />
               ) : activeRole === "creator" && selected.id === "loyalty" ? (
                 <CreatorLoyaltyOperations userId={user.id} />
               ) : activeRole === "creator" ? (

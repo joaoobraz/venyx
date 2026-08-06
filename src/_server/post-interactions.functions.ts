@@ -35,6 +35,7 @@ export interface PostComment {
   body: string;
   created_at: string;
   updated_at: string;
+  moderation_status?: "published" | "pending" | "hidden" | "rejected" | "deleted";
   author: {
     username: string;
     display_name: string | null;
@@ -128,6 +129,7 @@ export const listPostComments = createServerFn({ method: "GET" })
         "id, post_id, user_id, parent_comment_id, mentioned_user_ids, body, created_at, updated_at",
       )
       .eq("post_id", data.postId)
+      .eq("moderation_status", "published")
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.cursor) query = query.lt("created_at", data.cursor);
@@ -137,7 +139,8 @@ export const listPostComments = createServerFn({ method: "GET" })
       supabase
         .from("post_comments")
         .select("*", { count: "exact", head: true })
-        .eq("post_id", data.postId),
+        .eq("post_id", data.postId)
+        .eq("moderation_status", "published"),
     ]);
     if (error) throw new Error(commentError(error.message));
 
@@ -300,7 +303,7 @@ export const addPostComment = createServerFn({ method: "POST" })
         body,
       })
       .select(
-        "id, post_id, user_id, parent_comment_id, mentioned_user_ids, body, created_at, updated_at",
+        "id, post_id, user_id, parent_comment_id, mentioned_user_ids, body, created_at, updated_at, moderation_status",
       )
       .single();
     if (error) throw new Error(commentError(error.message));
@@ -315,7 +318,8 @@ export const addPostComment = createServerFn({ method: "POST" })
         supabase
           .from("post_comments")
           .select("*", { count: "exact", head: true })
-          .eq("post_id", data.postId),
+          .eq("post_id", data.postId)
+          .eq("moderation_status", "published"),
         data.parentCommentId
           ? supabase
               .from("post_comments")
@@ -355,6 +359,7 @@ export const addPostComment = createServerFn({ method: "POST" })
         })),
       } as PostComment,
       commentsCount: commentsCount ?? 0,
+      pendingApproval: row.moderation_status === "pending",
     };
   });
 
@@ -376,7 +381,8 @@ export const deletePostComment = createServerFn({ method: "POST" })
     const { count } = await supabase
       .from("post_comments")
       .select("*", { count: "exact", head: true })
-      .eq("post_id", row.post_id);
+      .eq("post_id", row.post_id)
+      .eq("moderation_status", "published");
     return { commentsCount: count ?? 0 };
   });
 

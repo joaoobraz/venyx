@@ -217,7 +217,10 @@ async function assertCreatorCanMonetize(creatorId: string, payerId?: string) {
 // =====================================================
 const subPixSchema = z.object({
   creatorId: z.string().uuid(),
-  months: z.number().int().refine((value) => [1, 3, 6, 12].includes(value)),
+  months: z
+    .number()
+    .int()
+    .refine((value) => [1, 3, 6, 12].includes(value)),
   // pricePerMonthCents é IGNORADO no servidor — mantido só para compat com chamadas antigas.
   // O preço canônico vem de subscription_plans.
   pricePerMonthCents: z.number().int().min(0).max(1_000_000).optional(),
@@ -252,42 +255,57 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
     // Cupom (validar trial / desconto no servidor)
     let trialDays = 0;
     let discountPct = 0;
+    let discountAmountCents: number | null = null;
     let fixedPriceCents: number | null = null;
+    let couponOfferType: string | null = null;
+    let postTrialPriceCents: number | null = null;
+    let autoRenewAfterTrial = false;
     let couponId: string | null = null;
     if (data.couponCode) {
       const { data: c } = await supabaseAdmin
         .from("subscription_coupons")
         .select(
-          "id, trial_days, discount_pct, fixed_price_cents, duration_months, max_uses, uses_count, new_subscribers_only, is_active",
+          "id, offer_type, trial_days, discount_pct, discount_amount_cents, fixed_price_cents, duration_months, max_uses, uses_count, eligibility, expires_at, post_trial_price_cents, auto_renew_after_trial, is_active",
         )
         .eq("code", data.couponCode)
         .eq("creator_id", data.creatorId)
         .eq("is_active", true)
         .maybeSingle();
-      if (c && (c.max_uses === 0 || c.uses_count < c.max_uses)) {
+      const hasExpired = Boolean(c?.expires_at && new Date(c.expires_at).getTime() <= Date.now());
+      if (c && !hasExpired && (c.max_uses === 0 || c.uses_count < c.max_uses)) {
         const { data: existingRedemption } = await supabaseAdmin
           .from("coupon_redemptions")
           .select("id")
           .eq("coupon_id", c.id)
           .eq("user_id", userId)
           .maybeSingle();
-        const durationMatches = !!c.trial_days || c.duration_months === data.months;
-        let isNewSubscriber = true;
-        if (c.new_subscribers_only) {
-          const { data: previousSubscription } = await supabaseAdmin
-            .from("subscriptions")
-            .select("id")
-            .eq("creator_id", data.creatorId)
-            .eq("subscriber_id", userId)
-            .limit(1)
-            .maybeSingle();
-          isNewSubscriber = !previousSubscription;
-        }
-        if (!existingRedemption && durationMatches && isNewSubscriber) {
+        const durationMatches =
+          c.offer_type === "trial" ||
+          (c.offer_type === "first_month" && data.months === 1) ||
+          c.duration_months === data.months;
+        const { data: previousSubscription } = await supabaseAdmin
+          .from("subscriptions")
+          .select("id, status")
+          .eq("creator_id", data.creatorId)
+          .eq("subscriber_id", userId)
+          .limit(1)
+          .maybeSingle();
+        const wasSubscriber = Boolean(previousSubscription);
+        const hasActiveSubscription = previousSubscription?.status === "active";
+        const isEligible =
+          !hasActiveSubscription &&
+          (c.eligibility === "new_and_former" ||
+            (c.eligibility === "new_subscribers" && !wasSubscriber) ||
+            (c.eligibility === "former_subscribers" && wasSubscriber));
+        if (!existingRedemption && durationMatches && isEligible) {
           couponId = c.id;
           trialDays = c.trial_days ?? 0;
           discountPct = c.discount_pct ?? 0;
+          discountAmountCents = c.discount_amount_cents ?? null;
           fixedPriceCents = c.fixed_price_cents ?? null;
+          couponOfferType = c.offer_type;
+          postTrialPriceCents = c.post_trial_price_cents ?? null;
+          autoRenewAfterTrial = c.auto_renew_after_trial;
         }
       }
       if (!couponId) {
@@ -299,8 +317,13 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
     if (fixedPriceCents && fixedPriceCents > subSubtotal) {
       throw new Error("O preço promocional não pode superar o valor normal do plano");
     }
+    if (discountAmountCents && discountAmountCents >= subSubtotal) {
+      throw new Error("O desconto fixo precisa ser menor que o valor normal do plano");
+    }
     const subDiscounted = fixedPriceCents
       ? fixedPriceCents
+      : discountAmountCents
+        ? Math.max(100, subSubtotal - discountAmountCents)
       : discountPct
         ? Math.round(subSubtotal * (1 - discountPct / 100))
         : subSubtotal;
@@ -382,8 +405,12 @@ export const createSubscriptionPixCharge = createServerFn({ method: "POST" })
           plan_discount_pct: selectedPlan.discount_pct,
           months: data.months,
           coupon: couponId,
+          coupon_offer_type: couponOfferType,
           coupon_discount_pct: discountPct || null,
+          coupon_discount_amount_cents: discountAmountCents,
           coupon_fixed_price_cents: fixedPriceCents,
+          coupon_post_trial_price_cents: postTrialPriceCents,
+          coupon_auto_renew_after_trial: autoRenewAfterTrial,
           bumps: validatedBumps,
           sub_amount_cents: isTrial ? 0 : subDiscounted,
           is_trial: isTrial,
@@ -504,7 +531,7 @@ const tipPixSchema = z
     message: z.string().max(200).optional().nullable(),
   })
   .refine((value) => !(value.postId && value.giftItemId), {
-    message: "Um mimo simbólico não pode estar associado a uma publicação",
+    message: "Um produto da Lista de Mimos não pode estar associado a uma publicação",
   });
 
 export const createTipPixCharge = createServerFn({ method: "POST" })
@@ -516,11 +543,11 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
     await assertCreatorCanMonetize(data.creatorId, userId);
 
     let amountCents = data.amountCents;
-    let gift: { id: string; title: string; category: string; value_cents: number } | null = null;
+    let gift: { id: string; title: string; value_cents: number } | null = null;
     if (data.giftItemId) {
       const { data: item, error: giftError } = await supabaseAdmin
         .from("creator_gift_items")
-        .select("id,title,category,value_cents,creator_id,is_active")
+        .select("id,title,value_cents,creator_id,is_active,track_stock,stock_quantity")
         .eq("id", data.giftItemId)
         .eq("creator_id", data.creatorId)
         .eq("is_active", true)
@@ -531,14 +558,15 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
         .eq("creator_id", data.creatorId)
         .eq("is_published", true)
         .maybeSingle();
-      if (giftError || !item || !list) throw new Error("Este mimo não está mais disponível.");
+      if (giftError || !item || !list || (item.track_stock && (item.stock_quantity ?? 0) <= 0))
+        throw new Error("Este produto não está mais disponível.");
       gift = item;
       amountCents = item.value_cents;
     }
 
     const externalId = `${gift ? "gift" : "tip"}_${userId.slice(0, 8)}_${Date.now()}`;
     const description = gift
-      ? `Mimo simbólico: ${gift.title}`
+      ? `Produto da Lista de Mimos: ${gift.title}`
       : `Mimo R$ ${(amountCents / 100).toFixed(2)}`;
     const gateway = await callNexusPag(amountCents / 100, description, externalId);
     if (!gateway.ok) return gateway;
@@ -561,10 +589,9 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
         metadata: {
           message: data.message ?? null,
           post_id: data.postId ?? null,
-          kind: gift ? "symbolic_gift" : "tip",
+          kind: gift ? "gift_product" : "tip",
           gift_item_id: gift?.id ?? null,
           gift_title: gift?.title ?? null,
-          gift_category: gift?.category ?? null,
         },
       })
       .select("id, qr_code, qr_code_base64, expires_at, external_id")
@@ -665,6 +692,7 @@ export const createPpvPixCharge = createServerFn({ method: "POST" })
 // =====================================================
 const goalPixSchema = z.object({
   postId: z.string().uuid(),
+  amountCents: z.number().int().min(100).max(5_000_000).optional(),
 });
 
 export const createGoalPixCharge = createServerFn({ method: "POST" })
@@ -685,16 +713,30 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
 
     const { data: goal } = await supabaseAdmin
       .from("post_goals")
-      .select("unlock_price_cents, is_unlocked")
+      .select("target_cents, raised_cents, unlock_price_cents, is_unlocked")
       .eq("post_id", post.id)
       .maybeSingle();
     if (!goal) throw new Error("Meta não encontrada");
+    if (goal.is_unlocked) throw new Error("Esta meta já foi atingida");
     if (!goal.unlock_price_cents || goal.unlock_price_cents < 100)
       throw new Error("Valor de contribuição inválido");
 
+    const remainingCents = Math.max(0, goal.target_cents - goal.raised_cents);
+    const amountCents = data.amountCents ?? goal.unlock_price_cents;
+    if (amountCents < goal.unlock_price_cents) {
+      throw new Error(
+        `A contribuição mínima é de R$ ${(goal.unlock_price_cents / 100).toFixed(2).replace(".", ",")}`,
+      );
+    }
+    if (amountCents > remainingCents) {
+      throw new Error(
+        `O valor máximo agora é R$ ${(remainingCents / 100).toFixed(2).replace(".", ",")}`,
+      );
+    }
+
     const externalId = `goal_${userId.slice(0, 8)}_${Date.now()}`;
     const description = `Contribuição para meta`;
-    const gateway = await callNexusPag(goal.unlock_price_cents / 100, description, externalId);
+    const gateway = await callNexusPag(amountCents / 100, description, externalId);
     if (!gateway.ok) return gateway;
     const px = gateway.pix;
 
@@ -706,13 +748,17 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
         payer_id: userId,
         payee_id: post.creator_id,
         purpose: "goal",
-        amount_cents: goal.unlock_price_cents,
+        amount_cents: amountCents,
         status: "pending",
         qr_code: px.qrCode,
         qr_code_base64: px.qrCodeBase64,
         expires_at: px.expiresAt,
         reference_id: post.id,
-        metadata: { post_id: post.id, kind: "goal_contribution" },
+        metadata: {
+          post_id: post.id,
+          kind: "goal_contribution",
+          minimum_amount_cents: goal.unlock_price_cents,
+        },
       })
       .select("id, qr_code, qr_code_base64, expires_at, external_id")
       .single();
@@ -728,7 +774,7 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
       qrCode: charge.qr_code,
       qrCodeBase64: charge.qr_code_base64,
       expiresAt: charge.expires_at,
-      amountCents: goal.unlock_price_cents,
+      amountCents,
     };
   });
 

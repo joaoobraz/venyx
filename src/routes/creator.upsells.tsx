@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Sparkles, ShoppingCart } from "lucide-react";
+import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
@@ -135,7 +135,7 @@ function UpsellsPage() {
         />
 
         <Section
-          icon={<Sparkles className="h-4 w-4 text-accent" />}
+          icon={<ShoppingCart className="h-4 w-4 text-accent" />}
           title={tr("Upsell em um clique (1 ativo)", "One-click upsell (1 active)")}
           description={tr(
             "Exibido logo após a confirmação da assinatura. Um clique gera um novo Pix.",

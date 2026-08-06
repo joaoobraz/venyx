@@ -12,7 +12,7 @@ import {
   Crown,
   Store,
   Users as UsersIcon,
-  Star,
+  BadgeCheck,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -73,7 +73,7 @@ const ALL_ROLES: { value: Role; pt: string; en: string; icon: typeof Shield; col
     value: "ambassador",
     pt: "Embaixadora",
     en: "Ambassador",
-    icon: Star,
+    icon: BadgeCheck,
     color: "bg-amber-500/15 text-amber-600",
   },
   {

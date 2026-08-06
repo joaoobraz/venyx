@@ -10,7 +10,6 @@ import {
   Loader2,
   LockKeyhole,
   ShieldCheck,
-  Sparkles,
   Target,
   Trophy,
 } from "lucide-react";
@@ -499,7 +498,7 @@ function LoyaltyPage() {
                 history.map((entry) => (
                   <div key={entry.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                     <span className="rounded-full bg-primary/10 p-2 text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <History className="h-3.5 w-3.5" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs font-semibold text-foreground">

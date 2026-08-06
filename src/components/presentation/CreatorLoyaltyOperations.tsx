@@ -11,7 +11,6 @@ import {
   Plus,
   Send,
   ShieldCheck,
-  Sparkles,
   Target,
   Users,
 } from "lucide-react";
@@ -146,7 +145,7 @@ export function CreatorLoyaltyOperations({ userId }: { userId: string }) {
         {[
           [tr("Fãs participantes", "Participating fans"), "327", Users],
           [tr("Fãs Ouro+", "Gold+ fans"), String(82 + goldPlusCount), Crown],
-          [tr("VIPs", "VIP fans"), String(11 + vipCount), Sparkles],
+          [tr("VIPs", "VIP fans"), String(11 + vipCount), Crown],
           [
             tr("Benefícios resgatados", "Benefits claimed"),
             claimedCount.toLocaleString("pt-BR"),

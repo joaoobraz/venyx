@@ -19,6 +19,13 @@ import { Input } from "@/components/ui/input";
 import { SafetyMenu } from "@/components/SafetyMenu";
 import { NotificationMuteButton } from "@/components/NotificationMuteButton";
 import { awardDemoLoyaltyPoints } from "@/lib/demo-loyalty";
+import {
+  DEMO_COMMENT_MODERATION_CHANGED_EVENT,
+  evaluateDemoComment,
+  filterVisibleDemoComments,
+  queueDemoComment,
+  readDemoCommentModeration,
+} from "@/lib/demo-comment-moderation";
 
 const PAGE_SIZE = 20;
 const demoKey = (postId: string, locale: DemoLocale) =>
@@ -35,17 +42,20 @@ function normalizeDemoComment(comment: PostComment): PostComment {
   };
 }
 
-function readDemoComments(postId: string, locale: DemoLocale): PostComment[] {
+function readDemoComments(postId: string, creatorId: string, locale: DemoLocale): PostComment[] {
   if (typeof window === "undefined") return [];
   try {
     const key = demoKey(postId, locale);
     const existing = localStorage.getItem(key);
     if (existing) {
-      return (JSON.parse(existing) as PostComment[]).map(normalizeDemoComment);
+      return filterVisibleDemoComments(
+        creatorId,
+        (JSON.parse(existing) as PostComment[]).map(normalizeDemoComment),
+      );
     }
     const seeded = getDemoCommentSeeds(postId, locale).map(normalizeDemoComment);
     localStorage.setItem(key, JSON.stringify(seeded));
-    return seeded;
+    return filterVisibleDemoComments(creatorId, seeded);
   } catch {
     return [];
   }
@@ -130,6 +140,7 @@ export function PostComments({
   onOpenChange,
   commentsCount,
   onCommentsCountChange,
+  previewOnly = false,
 }: {
   postId: string;
   creatorId: string;
@@ -137,6 +148,7 @@ export function PostComments({
   onOpenChange: (open: boolean) => void;
   commentsCount: number;
   onCommentsCountChange: (count: number) => void;
+  previewOnly?: boolean;
 }) {
   const { user, session, profile } = useAuth();
   const { tr, locale } = useI18n();
@@ -173,10 +185,24 @@ export function PostComments({
   }, [postId]);
 
   useEffect(() => {
+    if (!isLocalDemoPost || typeof window === "undefined") return;
+    const reloadVisibleComments = (event: Event) => {
+      const detail = (event as CustomEvent<{ creatorId?: string }>).detail;
+      if (detail?.creatorId !== creatorId) return;
+      const visible = readDemoComments(postId, creatorId, locale);
+      setComments(visible);
+      onCommentsCountChange(visible.length);
+    };
+    window.addEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, reloadVisibleComments);
+    return () =>
+      window.removeEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, reloadVisibleComments);
+  }, [creatorId, isLocalDemoPost, locale, onCommentsCountChange, postId]);
+
+  useEffect(() => {
     if (!open || loaded || !user || !headers) return;
     setLoading(true);
     if (isLocalDemoPost) {
-      const stored = readDemoComments(postId, locale);
+      const stored = readDemoComments(postId, creatorId, locale);
       setComments(stored);
       setNextCursor(null);
       onCommentsCountChange(stored.length);
@@ -193,7 +219,7 @@ export function PostComments({
       })
       .catch(() => {
         if (DEMO_MODE) {
-          const stored = readDemoComments(postId, locale);
+          const stored = readDemoComments(postId, creatorId, locale);
           setComments(stored);
           setNextCursor(null);
           onCommentsCountChange(stored.length);
@@ -205,6 +231,7 @@ export function PostComments({
       .finally(() => setLoading(false));
   }, [
     headers,
+    creatorId,
     isLocalDemoPost,
     listFn,
     loaded,
@@ -251,6 +278,15 @@ export function PostComments({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (previewOnly) {
+      toast.info(
+        tr(
+          "Pré-visualização somente leitura. Nenhum comentário será publicado.",
+          "Read-only preview. No comment will be posted.",
+        ),
+      );
+      return;
+    }
     const body = draft.trim();
     if (!user || !headers) {
       toast.error(tr("Faça login para comentar.", "Sign in to comment."));
@@ -269,6 +305,18 @@ export function PostComments({
         },
         headers,
       });
+      if (result.pendingApproval) {
+        setDraft("");
+        setReplyTo(null);
+        setLoaded(true);
+        toast.success(
+          tr(
+            "Comentário enviado para aprovação da modelo.",
+            "Comment sent for the creator's approval.",
+          ),
+        );
+        return;
+      }
       setComments((current) => uniqueComments([...current, result.comment]));
       onCommentsCountChange(result.commentsCount);
       setDraft("");
@@ -285,6 +333,24 @@ export function PostComments({
       }
 
       const detection = detectExternalContact(body);
+      const moderationDecision = evaluateDemoComment(readDemoCommentModeration(creatorId), {
+        userId: user.id,
+        body,
+      });
+      if (!moderationDecision.accepted) {
+        toast.error(
+          moderationDecision.status === "blocked_user"
+            ? tr(
+                "A criadora restringiu seus comentários nesta publicação.",
+                "The creator restricted your comments on this post.",
+              )
+            : tr(
+                "Este comentário contém uma palavra bloqueada pela criadora.",
+                "This comment contains a word blocked by the creator.",
+              ),
+        );
+        return;
+      }
       const creatorBlock = demoCreatorModerationBlock(creatorId, user.id, body);
       if (creatorBlock) {
         toast.error(
@@ -367,6 +433,19 @@ export function PostComments({
           : null,
         mentions: mentionedNames.map((username) => ({ user_id: username, username })),
       };
+      queueDemoComment(creatorId, fallback, moderationDecision.status);
+      if (moderationDecision.status === "pending") {
+        setDraft("");
+        setReplyTo(null);
+        setLoaded(true);
+        toast.success(
+          tr(
+            "Comentário enviado para aprovação da modelo.",
+            "Comment sent for the creator's approval.",
+          ),
+        );
+        return;
+      }
       const next = [...comments, fallback];
       setComments(next);
       writeDemoComments(postId, locale, next);
@@ -458,6 +537,24 @@ export function PostComments({
         return;
       }
       const detection = detectExternalContact(body);
+      const moderationDecision = evaluateDemoComment(readDemoCommentModeration(creatorId), {
+        userId: user.id,
+        body,
+      });
+      if (!moderationDecision.accepted) {
+        toast.error(
+          moderationDecision.status === "blocked_user"
+            ? tr(
+                "A criadora restringiu seus comentários nesta publicação.",
+                "The creator restricted your comments on this post.",
+              )
+            : tr(
+                "Este comentário contém uma palavra bloqueada pela criadora.",
+                "This comment contains a word blocked by the creator.",
+              ),
+        );
+        return;
+      }
       const creatorBlock = demoCreatorModerationBlock(creatorId, user.id, body);
       if (creatorBlock) {
         toast.error(
@@ -544,7 +641,7 @@ export function PostComments({
           {tr("Comentários", "Comments")} ({commentsCount})
         </h3>
         <div className="flex items-center gap-1">
-          <NotificationMuteButton targetType="post" targetId={postId} compact />
+          {!previewOnly && <NotificationMuteButton targetType="post" targetId={postId} compact />}
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -576,8 +673,10 @@ export function PostComments({
             <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
               {comments.map((comment) => {
                 const avatar = avatarUrl(comment.author.avatar_url);
-                const canDelete = user?.id === comment.user_id || user?.id === creatorId;
+                const canDelete =
+                  !previewOnly && (user?.id === comment.user_id || user?.id === creatorId);
                 const canEdit =
+                  !previewOnly &&
                   user?.id === comment.user_id &&
                   Date.now() - new Date(comment.created_at).getTime() <= 15 * 60_000;
                 const isReply = Boolean(comment.parent_comment_id);
@@ -674,14 +773,16 @@ export function PostComments({
                             {tr("editado", "edited")}
                           </span>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => startReply(comment)}
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-primary"
-                        >
-                          <Reply className="h-3 w-3" />
-                          {tr("Responder", "Reply")}
-                        </button>
+                        {!previewOnly && (
+                          <button
+                            type="button"
+                            onClick={() => startReply(comment)}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-primary"
+                          >
+                            <Reply className="h-3 w-3" />
+                            {tr("Responder", "Reply")}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-start">
@@ -705,7 +806,7 @@ export function PostComments({
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       )}
-                      {user?.id !== comment.user_id && (
+                      {!previewOnly && user?.id !== comment.user_id && (
                         <SafetyMenu
                           targetType="comment"
                           targetId={comment.id}
@@ -727,7 +828,7 @@ export function PostComments({
         </>
       )}
 
-      {replyTo && (
+      {!previewOnly && replyTo && (
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
           <Reply className="h-3.5 w-3.5" />
           <span className="min-w-0 flex-1 truncate">
@@ -743,31 +844,46 @@ export function PostComments({
         </div>
       )}
 
-      <form onSubmit={submit} className="mt-3 flex items-center gap-2">
-        <Input
-          ref={inputRef}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          maxLength={1000}
-          placeholder={tr(
-            "Escreva um comentário ou @mencione alguém...",
-            "Write a comment or @mention someone...",
+      {previewOnly ? (
+        <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+          {tr(
+            "Comentários visíveis em modo somente leitura.",
+            "Comments are visible in read-only mode.",
           )}
-          className="h-9 min-w-0 flex-1 rounded-full"
-          disabled={submitting}
-        />
-        <button
-          type="submit"
-          disabled={!draft.trim() || submitting}
-          title={tr("Publicar comentário", "Post comment")}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-40"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </button>
-      </form>
-      <p className="mt-1.5 text-[10px] text-muted-foreground">
-        {tr("Limite: 5 comentários por minuto.", "Limit: 5 comments per minute.")}
-      </p>
+        </p>
+      ) : (
+        <>
+          <form onSubmit={submit} className="mt-3 flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              maxLength={1000}
+              placeholder={tr(
+                "Escreva um comentário ou @mencione alguém...",
+                "Write a comment or @mention someone...",
+              )}
+              className="h-9 min-w-0 flex-1 rounded-full"
+              disabled={submitting}
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || submitting}
+              title={tr("Publicar comentário", "Post comment")}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-40"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </button>
+          </form>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
+            {tr("Limite: 5 comentários por minuto.", "Limit: 5 comments per minute.")}
+          </p>
+        </>
+      )}
     </section>
   );
 }

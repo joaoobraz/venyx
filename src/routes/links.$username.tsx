@@ -8,16 +8,32 @@ import {
   Youtube,
   Send,
   Globe,
+  Gift,
   Heart,
   ShoppingBag,
   Crown,
-  Star,
+  Pin,
   ExternalLink,
 } from "lucide-react";
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 import { normalizeCreatorLinkUrl } from "@/lib/creator-link-url";
 import { recordPublicLinkEvent } from "@/lib/link-analytics";
 import { withVenyxLinkAttribution } from "@/lib/visit-attribution";
+import {
+  COOKIE_CONSENT_CHANGED_EVENT,
+  hasMarketingConsent,
+  openCookieSettings,
+} from "@/lib/cookie-consent";
+import { initializeCreatorPixels, trackCreatorPixelEvent } from "@/lib/creator-pixels";
+import {
+  DEMO_LINKS_CHANGED_EVENT,
+  demoLinkButtonRadius,
+  demoLinkFontFamily,
+  readDemoLinksState,
+  recordDemoPageLinkClick,
+  recordDemoLinksPageView,
+  type DemoLinksState,
+} from "@/lib/demo-links";
 
 export const Route = createFileRoute("/links/$username")({
   component: PublicLinksPage,
@@ -25,6 +41,7 @@ export const Route = createFileRoute("/links/$username")({
 
 interface LinkRow {
   id: string;
+  kind?: "link" | "text";
   title: string;
   url: string;
   icon: string | null;
@@ -68,6 +85,8 @@ function getIcon(id: string | null) {
       return Crown;
     case "heart":
       return Heart;
+    case "gift":
+      return Gift;
     case "shopping":
       return ShoppingBag;
     default:
@@ -122,57 +141,68 @@ function buttonRadius(style: string) {
   }
 }
 
+function safePublicLinkUrl(value: string) {
+  if (value.startsWith("/") && !value.startsWith("//")) return value;
+  return normalizeCreatorLinkUrl(value);
+}
+
 function PublicLinksPage() {
   const { username } = Route.useParams();
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [page, setPage] = useState<PageRow | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
+  const [demoLinksState, setDemoLinksState] = useState<DemoLinksState | null>(null);
   const [giftListPublished, setGiftListPublished] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const demo = DEMO_MODE ? getDemoCreator(username) : null;
-      if (demo) {
-        setProfile(demo);
+    const demo = DEMO_MODE ? getDemoCreator(username) : null;
+    if (demo) {
+      const applyDemoLinks = (studio = readDemoLinksState()) => {
+        if (cancelled) return;
+        setDemoLinksState(studio);
+        setProfile({
+          ...demo,
+          display_name: studio.page.title || demo.display_name,
+          avatar_url: studio.page.avatarUrl || demo.avatar_url,
+          bio: studio.page.description || demo.bio,
+        });
         setPage({
           user_id: demo.user_id,
-          bio: demo.bio,
-          theme: "champagne",
-          button_style: "rounded",
-          cover_url: demo.cover_url,
-          avatar_url: demo.avatar_url,
-          show_avatar: true,
-          is_published: true,
+          bio: studio.page.description,
+          theme: "custom",
+          button_style: studio.page.buttonStyle,
+          cover_url: studio.page.bannerUrl,
+          avatar_url: studio.page.avatarUrl,
+          show_avatar: studio.page.showAvatar,
+          is_published: studio.page.isPublished,
         });
-        setLinks([
-          {
-            id: `demo-link-profile-${demo.username}`,
-            title: "Meu perfil na Venyx",
-            url: `${window.location.origin}/profile/${demo.username}`,
-            icon: "venyx",
-            is_featured: true,
-          },
-          {
-            id: `demo-link-instagram-${demo.username}`,
-            title: "Instagram",
-            url: "https://instagram.com/",
-            icon: "instagram",
-            is_featured: false,
-          },
-          {
-            id: `demo-link-tiktok-${demo.username}`,
-            title: "TikTok",
-            url: "https://tiktok.com/",
-            icon: "tiktok",
-            is_featured: false,
-          },
-        ]);
-        setGiftListPublished(true);
+        setLinks(
+          studio.links
+            .filter((link) => link.active)
+            .map((link) => ({
+              id: link.id,
+              kind: link.kind,
+              title: link.title,
+              url: link.url,
+              icon: link.icon,
+              is_featured: link.featured,
+            })),
+        );
+        setGiftListPublished(false);
         setLoading(false);
-        return;
-      }
+      };
+      const syncDemoLinks = () => applyDemoLinks();
+      applyDemoLinks(recordDemoLinksPageView());
+      window.addEventListener(DEMO_LINKS_CHANGED_EVENT, syncDemoLinks);
+      return () => {
+        cancelled = true;
+        window.removeEventListener(DEMO_LINKS_CHANGED_EVENT, syncDemoLinks);
+      };
+    }
+
+    (async () => {
       const { data: prof } = await supabase
         .from("profiles")
         .select("user_id,username,display_name,avatar_url,bio")
@@ -212,8 +242,35 @@ function PublicLinksPage() {
     };
   }, [username]);
 
-  const trackClick = (id: string) => {
-    if (!profile || profile.user_id.startsWith("demo-")) return;
+  useEffect(() => {
+    if (!demoLinksState) return;
+    const activatePixels = () => {
+      if (!hasMarketingConsent()) return;
+      initializeCreatorPixels(demoLinksState.pixels);
+      trackCreatorPixelEvent(demoLinksState.pixels, "page_view", {
+        page_type: "venyx_links",
+        creator_username: username,
+      });
+    };
+    activatePixels();
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, activatePixels);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, activatePixels);
+  }, [demoLinksState, username]);
+
+  const trackClick = (id: string, title: string, destination: string) => {
+    if (!profile) return;
+    if (demoLinksState && hasMarketingConsent()) {
+      initializeCreatorPixels(demoLinksState.pixels);
+      trackCreatorPixelEvent(demoLinksState.pixels, "link_click", {
+        link_title: title,
+        link_type: destination.startsWith("/") ? "venyx" : "external",
+        creator_username: username,
+      });
+    }
+    if (profile.user_id.startsWith("demo-")) {
+      setDemoLinksState(recordDemoPageLinkClick(id));
+      return;
+    }
     recordPublicLinkEvent({ eventType: "click", creatorId: profile.user_id, linkId: id });
   };
   const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
@@ -259,9 +316,22 @@ function PublicLinksPage() {
     );
   }
 
-  const t = THEMES[page.theme] ?? THEMES.champagne;
-  const radius = buttonRadius(page.button_style);
+  const t = demoLinksState
+    ? {
+        bg: demoLinksState.page.backgroundColor,
+        text: demoLinksState.page.textColor,
+        btn: demoLinksState.page.buttonColor,
+        btnText: demoLinksState.page.buttonTextColor,
+        ring: demoLinksState.page.accentColor,
+      }
+    : (THEMES[page.theme] ?? THEMES.champagne);
+  const radius = demoLinksState
+    ? demoLinkButtonRadius(demoLinksState.page.buttonStyle)
+    : buttonRadius(page.button_style);
   const isOutline = page.button_style === "outline";
+  const fontFamily = demoLinksState
+    ? demoLinkFontFamily(demoLinksState.page.font)
+    : "Inter, ui-sans-serif, system-ui, sans-serif";
 
   return (
     <div
@@ -270,6 +340,7 @@ function PublicLinksPage() {
         minHeight: "100vh",
         color: t.text,
         padding: "48px 16px 80px",
+        fontFamily,
       }}
     >
       <main
@@ -282,6 +353,19 @@ function PublicLinksPage() {
           gap: 24,
         }}
       >
+        {page.cover_url && (
+          <img
+            src={page.cover_url}
+            alt="Banner da página"
+            style={{
+              width: "100%",
+              height: 180,
+              borderRadius: 24,
+              objectFit: "cover",
+              border: `1px solid ${t.ring}`,
+            }}
+          />
+        )}
         {page.show_avatar && (page.avatar_url || profile.avatar_url) && (
           <img
             src={page.avatar_url || profile.avatar_url || ""}
@@ -293,11 +377,12 @@ function PublicLinksPage() {
               objectFit: "cover",
               border: `2px solid ${t.ring}`,
               boxShadow: `0 0 30px ${t.ring}`,
+              marginTop: page.cover_url ? -72 : 0,
             }}
           />
         )}
         <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, fontFamily: "Playfair Display, serif" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700 }}>
             {profile.display_name ?? `@${profile.username}`}
           </h1>
           <p style={{ fontSize: 14, opacity: 0.7, marginTop: 4 }}>@{profile.username}</p>
@@ -316,6 +401,13 @@ function PublicLinksPage() {
           {giftListPublished && (
             <a
               href={withVenyxLinkAttribution(`/gifts/${profile.username}`, siteOrigin)}
+              onClick={() =>
+                trackClick(
+                  `gift-list-${profile.username}`,
+                  "Minha Lista de Mimos",
+                  `/gifts/${profile.username}`,
+                )
+              }
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -333,15 +425,31 @@ function PublicLinksPage() {
             >
               <Heart size={20} fill="currentColor" />
               <span style={{ flex: 1 }}>Minha Lista de Mimos</span>
-              <Star size={16} fill="currentColor" />
+              <Pin size={16} fill="currentColor" />
             </a>
           )}
           {links.length === 0 && !giftListPublished && (
             <p style={{ textAlign: "center", opacity: 0.6, padding: 24 }}>Sem links ainda.</p>
           )}
           {links.map((l) => {
+            if (l.kind === "text") {
+              return (
+                <p
+                  key={l.id}
+                  style={{
+                    margin: "4px 18px",
+                    textAlign: "center",
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                    opacity: 0.78,
+                  }}
+                >
+                  {l.title}
+                </p>
+              );
+            }
             const Icon = getIcon(l.icon);
-            const safeUrl = normalizeCreatorLinkUrl(l.url);
+            const safeUrl = safePublicLinkUrl(l.url);
             if (!safeUrl) return null;
             const attributedUrl = withVenyxLinkAttribution(safeUrl, siteOrigin);
             return (
@@ -350,7 +458,7 @@ function PublicLinksPage() {
                 href={attributedUrl}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => trackClick(l.id)}
+                onClick={() => trackClick(l.id, l.title, l.url)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -380,18 +488,36 @@ function PublicLinksPage() {
               >
                 <Icon size={20} style={{ flexShrink: 0 }} />
                 <span style={{ flex: 1 }}>{l.title}</span>
-                {l.is_featured && <Star size={16} fill="currentColor" />}
+                {l.is_featured && <Pin size={16} fill="currentColor" />}
                 <ExternalLink size={14} style={{ opacity: 0.5 }} />
               </a>
             );
           })}
         </nav>
 
-        <footer style={{ marginTop: 40, fontSize: 11, opacity: 0.5, textAlign: "center" }}>
-          feito com{" "}
-          <a href="/" style={{ color: t.text, textDecoration: "underline", fontWeight: 600 }}>
-            Venyx
-          </a>
+        <footer style={{ marginTop: 40, fontSize: 11, opacity: 0.6, textAlign: "center" }}>
+          <div>
+            feito com{" "}
+            <a href="/" style={{ color: t.text, textDecoration: "underline", fontWeight: 600 }}>
+              Venyx
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={openCookieSettings}
+            style={{
+              marginTop: 10,
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              color: t.text,
+              textDecoration: "underline",
+              cursor: "pointer",
+              fontSize: 11,
+            }}
+          >
+            Privacidade e cookies
+          </button>
         </footer>
       </main>
     </div>

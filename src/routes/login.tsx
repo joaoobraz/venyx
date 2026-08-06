@@ -219,12 +219,6 @@ function LoginPage() {
                 }}
                 className="mt-1.5"
               />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {tr(
-                  "Use a senha criada para a Venyx, não a senha do Gmail.",
-                  "Use your Venyx password, not your Gmail password.",
-                )}
-              </p>
             </div>
             <Button
               type="submit"

@@ -239,6 +239,50 @@
   color: transparent;
 }
 
+/* Landing page: profundidade e movimento sutis, sem comprometer a leitura. */
+.landing-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 82%);
+}
+
+@keyframes landing-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+
+.landing-rise {
+  animation: landing-rise 720ms var(--ease-out-soft) both;
+}
+
+.landing-rise-delayed {
+  animation: landing-rise 820ms 120ms var(--ease-out-soft) both;
+}
+
+.landing-float {
+  animation: landing-float 5s ease-in-out infinite;
+}
+
+.landing-float-slow {
+  animation: landing-float 6.8s 700ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise,
+  .landing-rise-delayed,
+  .landing-float,
+  .landing-float-slow {
+    animation: none;
+  }
+}
+
 /* Animações reutilizáveis */
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(8px); }

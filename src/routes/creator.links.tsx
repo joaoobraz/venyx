@@ -15,7 +15,7 @@ import {
   Link2,
   ArrowUp,
   ArrowDown,
-  Star,
+  Pin,
   ExternalLink,
   Eye,
   Loader2,
@@ -583,7 +583,7 @@ function CreatorLinksPage() {
                     onBlur={() => updateLink(l.id, { title: l.title })}
                     className="h-8 text-sm font-medium"
                   />
-                  {l.is_featured && <Star className="h-3.5 w-3.5 fill-primary text-primary" />}
+                  {l.is_featured && <Pin className="h-3.5 w-3.5 fill-primary text-primary" />}
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   <Input
@@ -619,7 +619,7 @@ function CreatorLinksPage() {
                   className={`rounded p-1 transition ${l.is_featured ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
                   title={tr("Destacar", "Feature")}
                 >
-                  <Star className={`h-4 w-4 ${l.is_featured ? "fill-current" : ""}`} />
+                  <Pin className={`h-4 w-4 ${l.is_featured ? "fill-current" : ""}`} />
                 </button>
                 <button
                   onClick={() => removeLink(l.id)}

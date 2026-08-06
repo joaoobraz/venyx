@@ -486,10 +486,10 @@ async function fulfillPpv(charge: PixCharge) {
 
 async function fulfillTip(charge: PixCharge) {
   const metadata = metadataOf(charge);
-  const isSymbolicGift = metadata.kind === "symbolic_gift";
-  if (isSymbolicGift) {
+  const isGiftProduct = metadata.kind === "gift_product" || metadata.kind === "symbolic_gift";
+  if (isGiftProduct) {
     const giftItemId = typeof metadata.gift_item_id === "string" ? metadata.gift_item_id : null;
-    if (!giftItemId) throw new Error("Mimo simbólico sem item associado");
+    if (!giftItemId) throw new Error("Produto da Lista de Mimos sem item associado");
     const { error } = await supabaseAdmin.rpc("fulfill_symbolic_gift", {
       _charge_id: charge.id,
       _item_id: giftItemId,
@@ -513,10 +513,9 @@ async function fulfillTip(charge: PixCharge) {
     metadata: {
       charge_id: charge.id,
       message: metadata.message ?? null,
-      kind: isSymbolicGift ? "symbolic_gift" : "tip",
-      gift_item_id: isSymbolicGift ? (metadata.gift_item_id ?? null) : null,
-      gift_title: isSymbolicGift ? (metadata.gift_title ?? null) : null,
-      gift_category: isSymbolicGift ? (metadata.gift_category ?? null) : null,
+      kind: isGiftProduct ? "gift_product" : "tip",
+      gift_item_id: isGiftProduct ? (metadata.gift_item_id ?? null) : null,
+      gift_title: isGiftProduct ? (metadata.gift_title ?? null) : null,
     },
   });
   if (!transactionId) throw new Error("Transação do mimo não encontrada");
@@ -546,7 +545,7 @@ async function fulfillGoal(charge: PixCharge) {
   await insertTransaction({
     payer_id: charge.payer_id,
     payee_id: charge.payee_id,
-    type: "ppv",
+    type: "tip",
     status: "paid",
     amount_cents: charge.amount_cents,
     reference_id: charge.reference_id,

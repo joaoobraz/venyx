@@ -5,12 +5,12 @@ type AuthErrorLike = {
 
 const messages = {
   pt: {
-    invalid: "E-mail ou senha da Venyx inválidos. A senha do Gmail não funciona neste campo.",
+    invalid: "E-mail ou senha inválidos.",
     unconfirmed: "Confirme seu e-mail antes de entrar na Venyx.",
     unavailable: "Não foi possível entrar agora. Tente novamente.",
   },
   en: {
-    invalid: "Invalid Venyx email or password. Your Gmail password does not work in this field.",
+    invalid: "Invalid email or password.",
     unconfirmed: "Confirm your email before signing in to Venyx.",
     unavailable: "Unable to sign in right now. Please try again.",
   },

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Eye, Gift, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, Gift, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { GiftProductImage } from "@/components/GiftProductImage";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,21 +28,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
-import { GIFT_CATEGORY_LABELS, GIFT_PRESETS } from "@/lib/demo-gifts";
+import { GIFT_PRESETS, type GiftPreset } from "@/lib/demo-gifts";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/gifts")({ component: CreatorGiftsPage });
 
 type GiftSettings = Tables<"creator_gift_settings">;
 type GiftItem = Tables<"creator_gift_items">;
-type Draft = Pick<GiftItem, "title" | "description" | "category" | "emoji" | "value_cents">;
+type Draft = Pick<
+  GiftItem,
+  | "title"
+  | "description"
+  | "emoji"
+  | "image_url"
+  | "value_cents"
+  | "availability"
+  | "track_stock"
+  | "stock_quantity"
+  | "is_active"
+>;
 
 const EMPTY_DRAFT: Draft = {
   title: "",
   description: "",
-  category: "custom",
   emoji: "🎁",
+  image_url: null,
   value_cents: 10000,
+  availability: "available",
+  track_stock: false,
+  stock_quantity: null,
+  is_active: true,
 };
 
 function money(cents: number) {
@@ -71,13 +87,15 @@ function errorMessage(error: { message?: string } | null, tr: (pt: string, en: s
 
 function CreatorGiftsPage() {
   const { user, profile, isCreator, loading } = useAuth();
-  const { tr, locale } = useI18n();
+  const { tr } = useI18n();
   const [settings, setSettings] = useState<GiftSettings | null>(null);
   const [items, setItems] = useState<GiftItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -119,20 +137,40 @@ function CreatorGiftsPage() {
     }
   };
 
-  const openNew = (preset?: (typeof GIFT_PRESETS)[number]) => {
+  const openNew = (preset?: GiftPreset) => {
     setEditingId(null);
-    setDraft(preset ? { ...preset } : { ...EMPTY_DRAFT });
+    setImageFile(null);
+    setDraft(
+      preset
+        ? {
+            title: preset.title,
+            description: preset.description,
+            emoji: preset.emoji,
+            image_url: preset.image_url,
+            value_cents: preset.value_cents,
+            availability: preset.availability,
+            track_stock: preset.track_stock,
+            stock_quantity: preset.stock_quantity,
+            is_active: true,
+          }
+        : { ...EMPTY_DRAFT },
+    );
     setDialogOpen(true);
   };
 
   const openEdit = (item: GiftItem) => {
     setEditingId(item.id);
+    setImageFile(null);
     setDraft({
       title: item.title,
       description: item.description,
-      category: item.category,
       emoji: item.emoji,
+      image_url: item.image_url,
       value_cents: item.value_cents,
+      availability: item.availability,
+      track_stock: item.track_stock,
+      stock_quantity: item.stock_quantity,
+      is_active: item.is_active,
     });
     setDialogOpen(true);
   };
@@ -142,7 +180,38 @@ function CreatorGiftsPage() {
       toast.error(tr("Preencha nome e valor do mimo.", "Enter the gift name and value."));
       return;
     }
-    const payload = { ...draft, title: draft.title.trim(), description: draft.description.trim() };
+    if (draft.track_stock && (draft.stock_quantity === null || draft.stock_quantity < 0)) {
+      toast.error(tr("Informe uma quantidade de estoque válida.", "Enter a valid stock quantity."));
+      return;
+    }
+    setSaving(true);
+    let imageUrl = draft.image_url;
+    if (imageFile) {
+      if (!imageFile.type.startsWith("image/") || imageFile.size > 5 * 1024 * 1024) {
+        toast.error(tr("Envie uma imagem de até 5 MB.", "Upload an image up to 5 MB."));
+        setSaving(false);
+        return;
+      }
+      const extension = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("gift-products")
+        .upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+      if (uploadError) {
+        toast.error(errorMessage(uploadError, tr));
+        setSaving(false);
+        return;
+      }
+      imageUrl = supabase.storage.from("gift-products").getPublicUrl(path).data.publicUrl;
+    }
+    const payload = {
+      ...draft,
+      category: "custom",
+      image_url: imageUrl,
+      stock_quantity: draft.track_stock ? draft.stock_quantity : null,
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+    };
     const result = editingId
       ? await supabase.from("creator_gift_items").update(payload).eq("id", editingId)
       : await supabase
@@ -150,12 +219,14 @@ function CreatorGiftsPage() {
           .insert({ ...payload, creator_id: user.id, position: items.length });
     if (result.error) {
       toast.error(errorMessage(result.error, tr));
+      setSaving(false);
       return;
     }
     toast.success(
       editingId ? tr("Mimo atualizado.", "Gift updated.") : tr("Mimo adicionado.", "Gift added."),
     );
     setDialogOpen(false);
+    setSaving(false);
     await load();
   };
 
@@ -203,7 +274,9 @@ function CreatorGiftsPage() {
     profile && typeof window !== "undefined"
       ? `${window.location.origin}/gifts/${profile.username}`
       : "";
-  const activeCount = items.filter((item) => item.is_active).length;
+  const activeCount = items.filter(
+    (item) => item.is_active && (!item.track_stock || (item.stock_quantity ?? 0) > 0),
+  ).length;
   const totalReceived = items.reduce((sum, item) => sum + item.received_cents, 0);
 
   return (
@@ -218,8 +291,8 @@ function CreatorGiftsPage() {
               <h1 className="text-2xl font-bold">{tr("Lista de Mimos", "Gift List")}</h1>
               <p className="text-sm text-muted-foreground">
                 {tr(
-                  "Escolha os mimos simbólicos que seus fãs poderão enviar.",
-                  "Choose the symbolic gifts your fans can send.",
+                  "Use produtos base da Venyx ou adicione produtos personalizados à sua lista.",
+                  "Use Venyx base products or add custom products to your list.",
                 )}
               </p>
             </div>
@@ -234,18 +307,10 @@ function CreatorGiftsPage() {
           )}
         </header>
 
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground">
-          <strong>{tr("Como funciona:", "How it works:")}</strong>{" "}
-          {tr(
-            "os produtos são apenas representações do mimo. Nenhum item físico é comprado ou enviado; você recebe na carteira o valor líquido, descontadas as taxas da plataforma.",
-            "Products only represent the gift. No physical item is purchased or shipped; your wallet receives the net amount after platform fees.",
-          )}
-        </div>
-
         <section className="grid gap-4 sm:grid-cols-3">
           <Card className="p-4">
             <div className="text-xs text-muted-foreground">
-              {tr("Mimos ativos", "Active gifts")}
+              {tr("Produtos ativos", "Active products")}
             </div>
             <strong className="mt-1 block text-2xl">{activeCount}</strong>
           </Card>
@@ -320,8 +385,8 @@ function CreatorGiftsPage() {
             {activeCount === 0 && (
               <p className="text-xs text-amber-600">
                 {tr(
-                  "Adicione e ative pelo menos um mimo para publicar.",
-                  "Add and activate at least one gift to publish.",
+                  "Adicione e ative pelo menos um produto disponível para publicar.",
+                  "Add and enable at least one available product to publish.",
                 )}
               </p>
             )}
@@ -331,38 +396,43 @@ function CreatorGiftsPage() {
         <Card className="space-y-4 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold">{tr("Catálogo simbólico", "Symbolic catalog")}</h2>
+              <h2 className="font-semibold">{tr("Catálogo de produtos", "Product catalog")}</h2>
               <p className="text-xs text-muted-foreground">
                 {tr(
-                  "Comece com uma sugestão ou crie algo personalizado.",
-                  "Start with a suggestion or create a custom gift.",
+                  "Comece com um produto base ou crie algo personalizado.",
+                  "Start with a base product or create something custom.",
                 )}
               </p>
             </div>
             <Button onClick={() => openNew()}>
               <Plus className="mr-2 h-4 w-4" />
-              {tr("Novo mimo", "New gift")}
+              {tr("Novo produto", "New product")}
             </Button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {GIFT_PRESETS.map((preset) => (
-              <button
-                key={preset.title}
-                type="button"
-                onClick={() => openNew(preset)}
-                className="shrink-0 rounded-full border border-border bg-background px-3 py-2 text-xs hover:border-primary"
-              >
-                <span className="mr-1">{preset.emoji}</span>
-                {preset.title}
-              </button>
-            ))}
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {tr("Produtos base da Venyx", "Venyx base products")}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {GIFT_PRESETS.map((preset) => (
+                <button
+                  key={preset.title}
+                  type="button"
+                  onClick={() => openNew(preset)}
+                  className="shrink-0 rounded-full border border-border bg-background px-3 py-2 text-xs hover:border-primary"
+                >
+                  <span className="mr-1">{preset.emoji}</span>
+                  {preset.title}
+                </button>
+              ))}
+            </div>
           </div>
 
           {items.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
               {tr(
-                "Sua lista ainda está vazia. Escolha uma sugestão acima.",
-                "Your list is empty. Choose a suggestion above.",
+                "Sua lista ainda está vazia. Escolha um produto base ou adicione um novo.",
+                "Your list is empty. Choose a base product or add a new one.",
               )}
             </div>
           ) : (
@@ -373,16 +443,23 @@ function CreatorGiftsPage() {
                   className={`rounded-2xl border p-4 ${item.is_active ? "border-border bg-background" : "border-dashed opacity-65"}`}
                 >
                   <div className="flex gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-2xl">
-                      {item.emoji}
-                    </div>
+                    <GiftProductImage
+                      src={item.image_url}
+                      alt={item.title}
+                      emoji={item.emoji}
+                      className="h-24 w-[4.8rem] shrink-0 rounded-2xl"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h3 className="font-semibold">{item.title}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {GIFT_CATEGORY_LABELS[item.category]?.[locale === "en" ? "en" : "pt"] ??
-                              item.category}
+                            {item.availability === "on_request"
+                              ? tr("Sob encomenda", "On request")
+                              : tr("Disponível agora", "Available now")}
+                            {item.track_stock
+                              ? ` · ${item.stock_quantity ?? 0} ${tr("em estoque", "in stock")}`
+                              : ""}
                           </p>
                         </div>
                         <strong className="text-primary">{money(item.value_cents)}</strong>
@@ -455,16 +532,52 @@ function CreatorGiftsPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? tr("Editar mimo", "Edit gift") : tr("Adicionar mimo", "Add gift")}
+              {editingId
+                ? tr("Editar produto", "Edit product")
+                : tr("Adicionar produto", "Add product")}
             </DialogTitle>
             <DialogDescription>
               {tr(
-                "O nome do item representa o motivo do apoio; não haverá entrega física.",
-                "The item name represents the support; there is no physical delivery.",
+                "Defina como o produto aparecerá para os clientes da modelo.",
+                "Define how the product appears to the creator's fans.",
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
+            <div className="grid gap-3 sm:grid-cols-[112px_1fr]">
+              <GiftProductImage
+                src={draft.image_url}
+                alt={draft.title || tr("Prévia do produto", "Product preview")}
+                emoji={draft.emoji}
+                className="aspect-[4/5] w-full rounded-2xl border border-border"
+              />
+              <div className="space-y-2">
+                <Label>{tr("Imagem do produto", "Product image")}</Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {tr(
+                    "Fotos verticais são reconhecidas e exibidas inteiras automaticamente.",
+                    "Portrait photos are detected and shown in full automatically.",
+                  )}
+                </p>
+                <label className="flex cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-muted">
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  {imageFile ? imageFile.name : tr("Escolher arquivo", "Choose file")}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <Input
+                  value={draft.image_url ?? ""}
+                  onChange={(event) =>
+                    setDraft({ ...draft, image_url: event.target.value.trim() || null })
+                  }
+                  placeholder={tr("Ou cole a URL da imagem", "Or paste an image URL")}
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-[84px_1fr] gap-3">
               <div className="space-y-2">
                 <Label>{tr("Ícone", "Icon")}</Label>
@@ -493,25 +606,26 @@ function CreatorGiftsPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>{tr("Categoria", "Category")}</Label>
+                <Label>{tr("Disponibilidade", "Availability")}</Label>
                 <Select
-                  value={draft.category}
-                  onValueChange={(category) => setDraft({ ...draft, category })}
+                  value={draft.availability}
+                  onValueChange={(availability) => setDraft({ ...draft, availability })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(GIFT_CATEGORY_LABELS).map(([value, labels]) => (
-                      <SelectItem key={value} value={value}>
-                        {locale === "en" ? labels.en : labels.pt}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="available">
+                      {tr("Disponível agora", "Available now")}
+                    </SelectItem>
+                    <SelectItem value="on_request">
+                      {tr("Sob encomenda", "Available on request")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{tr("Valor simbólico (R$)", "Symbolic value (BRL)")}</Label>
+                <Label>{tr("Valor (R$)", "Price (BRL)")}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -524,12 +638,71 @@ function CreatorGiftsPage() {
                 />
               </div>
             </div>
+            <div className="rounded-xl border border-border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label htmlFor="gift-track-stock">{tr("Controlar estoque", "Track stock")}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {tr(
+                      "Ao chegar a zero, o produto deixa de aparecer para o lead.",
+                      "At zero, the product is hidden from fans.",
+                    )}
+                  </p>
+                </div>
+                <Switch
+                  id="gift-track-stock"
+                  checked={draft.track_stock}
+                  onCheckedChange={(track_stock) =>
+                    setDraft({
+                      ...draft,
+                      track_stock,
+                      stock_quantity: track_stock ? (draft.stock_quantity ?? 0) : null,
+                    })
+                  }
+                />
+              </div>
+              {draft.track_stock && (
+                <div className="mt-3 space-y-2">
+                  <Label>{tr("Quantidade em estoque", "Stock quantity")}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={draft.stock_quantity ?? 0}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        stock_quantity: Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                      })
+                    }
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border p-3">
+              <div>
+                <Label htmlFor="gift-active">{tr("Produto ativo", "Active product")}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {tr(
+                    "Produtos desativados não aparecem para o lead.",
+                    "Disabled products are hidden from fans.",
+                  )}
+                </p>
+              </div>
+              <Switch
+                id="gift-active"
+                checked={draft.is_active}
+                onCheckedChange={(is_active) => setDraft({ ...draft, is_active })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               {tr("Cancelar", "Cancel")}
             </Button>
-            <Button onClick={() => void saveItem()}>{tr("Salvar mimo", "Save gift")}</Button>
+            <Button disabled={saving} onClick={() => void saveItem()}>
+              {saving ? tr("Salvando…", "Saving…") : tr("Salvar produto", "Save product")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

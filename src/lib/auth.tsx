@@ -1,11 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_MODE } from "@/lib/demo-creators";
-import {
-  ACCOUNT_PAUSE_CHANGED_EVENT,
-  readDemoAccountPause,
-} from "@/lib/account-pause";
+import { ACCOUNT_PAUSE_CHANGED_EVENT, readDemoAccountPause } from "@/lib/account-pause";
 
 export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 export type DemoPreviewRole = Extract<AppRole, "subscriber" | "creator" | "admin">;
@@ -18,6 +15,8 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  location?: string | null;
+  links?: unknown | null;
   is_verified: boolean;
   subscription_price_cents: number | null;
 }
@@ -72,9 +71,7 @@ function isDemoPreviewAllowed(email?: string) {
     import.meta.env.VITE_ENABLE_DEMO_PREVIEW === "true";
   if (!enabled) return false;
 
-  const allowlist = (
-    import.meta.env.VITE_DEMO_PREVIEW_EMAILS || DEFAULT_DEMO_PREVIEW_EMAIL
-  )
+  const allowlist = (import.meta.env.VITE_DEMO_PREVIEW_EMAILS || DEFAULT_DEMO_PREVIEW_EMAIL)
     .split(",")
     .map((entry: string) => entry.trim().toLowerCase())
     .filter(Boolean);
@@ -113,11 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDemoPreviewRoleState(null);
       return;
     }
-    const saved = window.localStorage.getItem(previewStorageKey(user.email)) as DemoPreviewRole | null;
+    const saved = window.localStorage.getItem(
+      previewStorageKey(user.email),
+    ) as DemoPreviewRole | null;
     setDemoPreviewRoleState(saved && DEMO_PREVIEW_ROLES.includes(saved) ? saved : null);
   }, [canUseDemoPreview, user?.email]);
 
-  const loadUserData = async (uid: string) => {
+  const loadUserData = useCallback(async (uid: string) => {
     const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }, lifecycle] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
@@ -145,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const pause = DEMO_MODE ? readDemoAccountPause(uid) : null;
     setAccountPaused(pause ? pause.paused : lifecycle.data?.status === "paused");
     setAccountPausedAt(pause ? pause.pausedAt : (lifecycle.data?.paused_at ?? null));
-  };
+  }, []);
 
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
@@ -187,7 +186,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [loadUserData]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const syncIdentity = () => {
+      void loadUserData(user.id);
+    };
+    const channel = supabase
+      .channel(`authenticated-identity-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_roles",
+          filter: `user_id=eq.${user.id}`,
+        },
+        syncIdentity,
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "kyc_requests",
+          filter: `user_id=eq.${user.id}`,
+        },
+        syncIdentity,
+      )
+      .subscribe();
+    const syncWhenVisible = () => {
+      if (document.visibilityState === "visible") syncIdentity();
+    };
+
+    window.addEventListener("focus", syncIdentity);
+    document.addEventListener("visibilitychange", syncWhenVisible);
+    return () => {
+      window.removeEventListener("focus", syncIdentity);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [loadUserData, user?.id]);
 
   const refresh = async () => {
     if (user) await loadUserData(user.id);

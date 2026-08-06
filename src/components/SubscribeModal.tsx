@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Crown, Loader2, Gift, Tag, Sparkles, Copy, Check } from "lucide-react";
+import { Crown, Loader2, Gift, Tag, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
@@ -14,6 +14,8 @@ import { UpsellModal } from "@/components/UpsellModal";
 import { startTrial, checkTrialEligibility } from "@/_server/trial.functions";
 import { IdentityVerificationModal } from "@/components/IdentityVerificationModal";
 import { getMyVerificationStatus } from "@/_server/verification.functions";
+import { previewOnlyMessage } from "@/lib/creator-profile-preview";
+import { useI18n } from "@/lib/i18n";
 
 interface Plan {
   id: string;
@@ -25,12 +27,18 @@ interface Plan {
 interface CouponInfo {
   id: string;
   code: string;
+  offer_type: string;
   trial_days: number | null;
   discount_pct: number | null;
+  discount_amount_cents: number | null;
   fixed_price_cents: number | null;
+  normal_price_snapshot_cents: number | null;
+  post_trial_price_cents: number | null;
+  auto_renew_after_trial: boolean;
   duration_months: number;
   max_uses: number;
   uses_count: number;
+  expires_at: string | null;
   new_subscribers_only: boolean;
 }
 
@@ -56,6 +64,7 @@ export function SubscribeModal({
   creatorName,
   basePriceCents,
   onSubscribed,
+  previewOnly = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -63,8 +72,10 @@ export function SubscribeModal({
   creatorName: string;
   basePriceCents: number;
   onSubscribed?: () => void;
+  previewOnly?: boolean;
 }) {
   const { user, session, accountPaused } = useAuth();
+  const { locale } = useI18n();
   const createChargeFn = useServerFn(createSubscriptionPixCharge);
   const getStatusFn = useServerFn(getChargeStatus);
   const listOffersFn = useServerFn(listCreatorOffers);
@@ -121,7 +132,43 @@ export function SubscribeModal({
       .then(({ data }) => {
         const list = (data as Plan[]) ?? [];
         if (list.length === 0 && basePriceCents > 0) {
-          setPlans([{ id: "default", months: 1, price_cents: basePriceCents, discount_pct: 0 }]);
+          setPlans(
+            previewOnly
+              ? [
+                  {
+                    id: "preview-monthly",
+                    months: 1,
+                    price_cents: basePriceCents,
+                    discount_pct: 0,
+                  },
+                  {
+                    id: "preview-quarterly",
+                    months: 3,
+                    price_cents: Math.round(basePriceCents * 0.9),
+                    discount_pct: 10,
+                  },
+                  {
+                    id: "preview-semester",
+                    months: 6,
+                    price_cents: Math.round(basePriceCents * 0.8),
+                    discount_pct: 20,
+                  },
+                  {
+                    id: "preview-annual",
+                    months: 12,
+                    price_cents: Math.round(basePriceCents * 0.7),
+                    discount_pct: 30,
+                  },
+                ]
+              : [
+                  {
+                    id: "default",
+                    months: 1,
+                    price_cents: basePriceCents,
+                    discount_pct: 0,
+                  },
+                ],
+          );
         } else {
           setPlans(list);
         }
@@ -146,6 +193,8 @@ export function SubscribeModal({
         .then(({ data }) => {
           if (
             data &&
+            (!(data as CouponInfo).expires_at ||
+              new Date((data as CouponInfo).expires_at as string).getTime() > Date.now()) &&
             ((data as CouponInfo).max_uses === 0 ||
               (data as CouponInfo).uses_count < (data as CouponInfo).max_uses)
           ) {
@@ -156,17 +205,17 @@ export function SubscribeModal({
           }
         });
     }
-  }, [open, creatorId, basePriceCents, listOffersFn]);
+  }, [open, creatorId, basePriceCents, listOffersFn, previewOnly]);
 
   useEffect(() => {
-    if (!open || !user) return;
+    if (!open || !user || previewOnly) return;
     checkTrialFn({ data: { creatorId } })
       .then((res) => {
         if (res.eligible) setTrialInfo({ eligible: true, days: res.trialDays ?? 0 });
         else setTrialInfo({ eligible: false, days: 0 });
       })
       .catch(() => setTrialInfo({ eligible: false, days: 0 }));
-  }, [open, user, creatorId, checkTrialFn]);
+  }, [open, user, creatorId, checkTrialFn, previewOnly]);
 
   // verifica se o usuário já passou pela verificação de identidade (+18)
   useEffect(() => {
@@ -184,6 +233,10 @@ export function SubscribeModal({
 
   // garante a verificação antes de executar a ação (assinar / trial)
   const ensureVerifiedThen = (action: () => void) => {
+    if (previewOnly) {
+      action();
+      return;
+    }
     if (user && !verified) {
       afterVerifyRef.current = action;
       setShowVerify(true);
@@ -193,6 +246,10 @@ export function SubscribeModal({
   };
 
   const activateTrial = async () => {
+    if (previewOnly) {
+      toast.info(previewOnlyMessage(locale));
+      return;
+    }
     if (accountPaused) {
       toast.info("Reative sua conta antes de iniciar uma assinatura.");
       return;
@@ -221,10 +278,13 @@ export function SubscribeModal({
   const subDiscounted =
     couponApplies && coupon?.fixed_price_cents
       ? coupon.fixed_price_cents
-      : couponApplies && coupon?.discount_pct
-        ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100))
-        : subSubtotal;
+      : couponApplies && coupon?.discount_amount_cents
+        ? Math.max(100, subSubtotal - coupon.discount_amount_cents)
+        : couponApplies && coupon?.discount_pct
+          ? Math.round(subSubtotal * (1 - coupon.discount_pct / 100))
+          : subSubtotal;
   const isTrial = couponApplies && !!coupon?.trial_days;
+  const postOfferCents = isTrial ? (coupon?.post_trial_price_cents ?? subSubtotal) : subSubtotal;
   const bumpsTotal = bumps
     .filter((b) => selectedBumps.has(b.id))
     .reduce((s, b) => s + b.price_cents, 0);
@@ -241,6 +301,10 @@ export function SubscribeModal({
 
   const startCheckout = async () => {
     if (!plan) return;
+    if (previewOnly) {
+      toast.info(previewOnlyMessage(locale));
+      return;
+    }
     if (accountPaused) {
       toast.info("Reative sua conta antes de iniciar uma assinatura.");
       return;
@@ -354,6 +418,14 @@ export function SubscribeModal({
             </DialogTitle>
           </DialogHeader>
 
+          {previewOnly && (
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-5 text-muted-foreground">
+              <strong className="block text-foreground">Prévia do processo de assinatura</strong>
+              Escolha os períodos e veja os valores como um cliente. A etapa de pagamento está
+              bloqueada e nenhum Pix será gerado.
+            </div>
+          )}
+
           {step === "plan" && (
             <div className="space-y-3">
               {trialInfo.eligible && (
@@ -382,19 +454,46 @@ export function SubscribeModal({
                 </div>
               )}
               {coupon && couponApplies && (
-                <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
-                  {isTrial ? (
-                    <Gift className="h-4 w-4 text-accent" />
-                  ) : (
-                    <Tag className="h-4 w-4 text-accent" />
+                <div className="rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    {isTrial ? (
+                      <Gift className="h-4 w-4 text-accent" />
+                    ) : (
+                      <Tag className="h-4 w-4 text-accent" />
+                    )}
+                    <span>
+                      {isTrial
+                        ? `🎁 ${coupon.trial_days} dias grátis aplicados`
+                        : coupon.offer_type === "fixed_discount"
+                          ? `🏷️ R$ ${((coupon.discount_amount_cents ?? 0) / 100).toFixed(2)} de desconto aplicado`
+                          : coupon.fixed_price_cents
+                            ? `🏷️ Oferta por R$ ${(coupon.fixed_price_cents / 100).toFixed(2)}`
+                            : `🏷️ ${coupon.discount_pct}% de desconto aplicado`}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                    {!isTrial && (
+                      <span>
+                        De <s>R$ {(subSubtotal / 100).toFixed(2)}</s> por{" "}
+                        <strong className="text-primary">
+                          R$ {(subDiscounted / 100).toFixed(2)}
+                        </strong>
+                      </span>
+                    )}
+                    <span>
+                      Depois:{" "}
+                      <strong className="text-foreground">
+                        R$ {(postOfferCents / 100).toFixed(2)}
+                      </strong>
+                    </span>
+                  </div>
+                  {isTrial && (
+                    <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+                      {coupon.auto_renew_after_trial
+                        ? "A renovação automática depende de autorização válida de cobrança recorrente; Pix avulso não é cobrado automaticamente."
+                        : "Ao final do teste, uma nova confirmação será necessária para assinar."}
+                    </p>
                   )}
-                  <span className="text-foreground">
-                    {isTrial
-                      ? `🎁 Trial de ${coupon.trial_days} dias grátis aplicado!`
-                      : coupon.fixed_price_cents
-                        ? `🏷️ Preço promocional de R$ ${(coupon.fixed_price_cents / 100).toFixed(2)} aplicado!`
-                        : `🏷️ ${coupon.discount_pct}% de desconto aplicado!`}
-                  </span>
                 </div>
               )}
               {plans.length === 0 ? (
@@ -440,7 +539,7 @@ export function SubscribeModal({
               {bumps.length > 0 && (
                 <div className="space-y-2 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-3">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-accent">
-                    <Sparkles className="h-4 w-4" /> Aproveite e leve junto
+                    <Gift className="h-4 w-4" /> Aproveite e leve junto
                   </div>
                   {bumps.map((b) => (
                     <label
@@ -490,6 +589,8 @@ export function SubscribeModal({
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : totalCents === 0 ? (
                   "Iniciar trial grátis"
+                ) : previewOnly ? (
+                  "Continuar na prévia"
                 ) : (
                   "Pagar com Pix"
                 )}
@@ -552,14 +653,14 @@ export function SubscribeModal({
       </Dialog>
 
       <UpsellModal
-        open={upsellOpen}
+        open={!previewOnly && upsellOpen}
         onOpenChange={setUpsellOpen}
         creatorId={creatorId}
         creatorName={creatorName}
       />
 
       <IdentityVerificationModal
-        open={showVerify}
+        open={!previewOnly && showVerify}
         onOpenChange={setShowVerify}
         onVerified={() => {
           setVerified(true);

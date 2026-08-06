@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getPasswordLoginError } from "../src/lib/auth-errors.ts";
 
-test("explica que a senha do Google não autentica o login por senha da Venyx", () => {
+test("retorna uma mensagem neutra para credenciais inválidas", () => {
   assert.equal(
     getPasswordLoginError({ code: "invalid_credentials", message: "Invalid login credentials" }),
-    "E-mail ou senha da Venyx inválidos. A senha do Gmail não funciona neste campo.",
+    "E-mail ou senha inválidos.",
   );
 });
 

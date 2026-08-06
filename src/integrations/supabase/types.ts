@@ -398,6 +398,72 @@ export type Database = {
           },
         ];
       };
+      creator_profile_visibility: {
+        Row: {
+          blocked_states: string[];
+          created_at: string;
+          creator_id: string;
+          show_activity_status: boolean;
+          show_age: boolean;
+          show_bio: boolean;
+          show_category: boolean;
+          show_comments: boolean;
+          show_like_count: boolean;
+          show_location: boolean;
+          show_plans: boolean;
+          show_post_count: boolean;
+          show_ranking: boolean;
+          show_response_time: boolean;
+          show_social_links: boolean;
+          show_subscriber_count: boolean;
+          show_verified_badge: boolean;
+          show_wishlist: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          blocked_states?: string[];
+          created_at?: string;
+          creator_id: string;
+          show_activity_status?: boolean;
+          show_age?: boolean;
+          show_bio?: boolean;
+          show_category?: boolean;
+          show_comments?: boolean;
+          show_like_count?: boolean;
+          show_location?: boolean;
+          show_plans?: boolean;
+          show_post_count?: boolean;
+          show_ranking?: boolean;
+          show_response_time?: boolean;
+          show_social_links?: boolean;
+          show_subscriber_count?: boolean;
+          show_verified_badge?: boolean;
+          show_wishlist?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          blocked_states?: string[];
+          created_at?: string;
+          creator_id?: string;
+          show_activity_status?: boolean;
+          show_age?: boolean;
+          show_bio?: boolean;
+          show_category?: boolean;
+          show_comments?: boolean;
+          show_like_count?: boolean;
+          show_location?: boolean;
+          show_plans?: boolean;
+          show_post_count?: boolean;
+          show_ranking?: boolean;
+          show_response_time?: boolean;
+          show_social_links?: boolean;
+          show_subscriber_count?: boolean;
+          show_verified_badge?: boolean;
+          show_wishlist?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       creator_media_collection_items: {
         Row: {
           asset_id: string;
@@ -574,18 +640,21 @@ export type Database = {
           coupon_id: string;
           id: string;
           redeemed_at: string;
+          subscription_id: string | null;
           user_id: string;
         };
         Insert: {
           coupon_id: string;
           id?: string;
           redeemed_at?: string;
+          subscription_id?: string | null;
           user_id: string;
         };
         Update: {
           coupon_id?: string;
           id?: string;
           redeemed_at?: string;
+          subscription_id?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -683,6 +752,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      creator_comment_settings: {
+        Row: {
+          created_at: string;
+          creator_id: string;
+          manual_approval: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creator_id: string;
+          manual_approval?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          manual_approval?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       creator_gift_contributions: {
         Row: {
           amount_cents: number;
@@ -736,47 +826,59 @@ export type Database = {
       };
       creator_gift_items: {
         Row: {
+          availability: string;
           category: string;
           created_at: string;
           creator_id: string;
           description: string;
           emoji: string;
           id: string;
+          image_url: string | null;
           is_active: boolean;
           position: number;
           received_cents: number;
           received_count: number;
+          stock_quantity: number | null;
           title: string;
+          track_stock: boolean;
           updated_at: string;
           value_cents: number;
         };
         Insert: {
-          category: string;
+          availability?: string;
+          category?: string;
           created_at?: string;
           creator_id: string;
           description?: string;
           emoji?: string;
           id?: string;
+          image_url?: string | null;
           is_active?: boolean;
           position?: number;
           received_cents?: number;
           received_count?: number;
+          stock_quantity?: number | null;
           title: string;
+          track_stock?: boolean;
           updated_at?: string;
           value_cents: number;
         };
         Update: {
+          availability?: string;
           category?: string;
           created_at?: string;
           creator_id?: string;
           description?: string;
           emoji?: string;
           id?: string;
+          image_url?: string | null;
           is_active?: boolean;
           position?: number;
           received_cents?: number;
           received_count?: number;
+          stock_quantity?: number | null;
           title?: string;
+          track_stock?: boolean;
           updated_at?: string;
           value_cents?: number;
         };
@@ -1983,8 +2085,12 @@ export type Database = {
         Row: {
           body: string;
           created_at: string;
+          hidden_reason: string | null;
           id: string;
           mentioned_user_ids: string[];
+          moderated_at: string | null;
+          moderated_by: string | null;
+          moderation_status: string;
           parent_comment_id: string | null;
           post_id: string;
           updated_at: string;
@@ -1993,8 +2099,12 @@ export type Database = {
         Insert: {
           body: string;
           created_at?: string;
+          hidden_reason?: string | null;
           id?: string;
           mentioned_user_ids?: string[];
+          moderated_at?: string | null;
+          moderated_by?: string | null;
+          moderation_status?: string;
           parent_comment_id?: string | null;
           post_id: string;
           updated_at?: string;
@@ -2003,8 +2113,12 @@ export type Database = {
         Update: {
           body?: string;
           created_at?: string;
+          hidden_reason?: string | null;
           id?: string;
           mentioned_user_ids?: string[];
+          moderated_at?: string | null;
+          moderated_by?: string | null;
+          moderation_status?: string;
           parent_comment_id?: string | null;
           post_id?: string;
           updated_at?: string;
@@ -2102,6 +2216,7 @@ export type Database = {
           created_at: string;
           creator_id: string;
           id: string;
+          is_pinned: boolean;
           likes_count: number;
           price_cents: number;
           unlocks_count: number;
@@ -2115,6 +2230,7 @@ export type Database = {
           created_at?: string;
           creator_id: string;
           id?: string;
+          is_pinned?: boolean;
           likes_count?: number;
           price_cents?: number;
           unlocks_count?: number;
@@ -2128,6 +2244,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string;
           id?: string;
+          is_pinned?: boolean;
           likes_count?: number;
           price_cents?: number;
           unlocks_count?: number;
@@ -2445,44 +2562,71 @@ export type Database = {
       };
       subscription_coupons: {
         Row: {
+          auto_renew_after_trial: boolean;
           code: string;
           created_at: string;
           creator_id: string;
+          discount_amount_cents: number | null;
           discount_pct: number | null;
           duration_months: number;
+          eligibility: string;
+          expires_at: string | null;
           fixed_price_cents: number | null;
           id: string;
           is_active: boolean;
+          link_only: boolean;
           max_uses: number;
+          max_uses_per_user: number;
           new_subscribers_only: boolean;
+          normal_price_snapshot_cents: number | null;
+          offer_type: string;
+          post_trial_price_cents: number | null;
           trial_days: number | null;
           uses_count: number;
         };
         Insert: {
+          auto_renew_after_trial?: boolean;
           code: string;
           created_at?: string;
           creator_id: string;
+          discount_amount_cents?: number | null;
           discount_pct?: number | null;
           duration_months?: number;
+          eligibility?: string;
+          expires_at?: string | null;
           fixed_price_cents?: number | null;
           id?: string;
           is_active?: boolean;
+          link_only?: boolean;
           max_uses?: number;
+          max_uses_per_user?: number;
           new_subscribers_only?: boolean;
+          normal_price_snapshot_cents?: number | null;
+          offer_type?: string;
+          post_trial_price_cents?: number | null;
           trial_days?: number | null;
           uses_count?: number;
         };
         Update: {
+          auto_renew_after_trial?: boolean;
           code?: string;
           created_at?: string;
           creator_id?: string;
+          discount_amount_cents?: number | null;
           discount_pct?: number | null;
           duration_months?: number;
+          eligibility?: string;
+          expires_at?: string | null;
           fixed_price_cents?: number | null;
           id?: string;
           is_active?: boolean;
+          link_only?: boolean;
           max_uses?: number;
+          max_uses_per_user?: number;
           new_subscribers_only?: boolean;
+          normal_price_snapshot_cents?: number | null;
+          offer_type?: string;
+          post_trial_price_cents?: number | null;
           trial_days?: number | null;
           uses_count?: number;
         };

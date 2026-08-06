@@ -136,12 +136,6 @@ function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1.5"
               />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {tr(
-                  "Crie uma senha exclusiva para a Venyx. Não use sua senha do Gmail.",
-                  "Create a password only for Venyx. Do not use your Gmail password.",
-                )}
-              </p>
             </div>
             <div>
               <Label htmlFor="password">{t("auth.password")}</Label>
