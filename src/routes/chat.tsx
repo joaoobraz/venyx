@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import {
   Search as SearchIcon,
@@ -69,15 +69,17 @@ import {
 import { getDemoFanLoyalty } from "@/lib/demo-loyalty";
 import { TIER_META, loyaltyTierFromPoints, loyaltyTierRank, type LoyaltyTier } from "@/lib/loyalty";
 
-export const Route = createFileRoute("/chat")({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { with?: string; thread?: string; segment?: "gold_plus" | "vip" } => ({
+export type ChatSearch = { with?: string; thread?: string; segment?: "gold_plus" | "vip" };
+
+export const chatSearchValidator = (search: Record<string, unknown>): ChatSearch => ({
     with: typeof search.with === "string" ? search.with : undefined,
     thread: typeof search.thread === "string" ? search.thread : undefined,
     segment:
       search.segment === "gold_plus" || search.segment === "vip" ? search.segment : undefined,
-  }),
+});
+
+export const Route = createFileRoute("/chat")({
+  validateSearch: chatSearchValidator,
   component: ChatPage,
 });
 
@@ -121,7 +123,7 @@ export function ChatPage() {
     with: requestedUserId,
     thread: requestedThreadId,
     segment: requestedSegment,
-  } = Route.useSearch();
+  } = useSearch({ strict: false }) as ChatSearch;
   const { user, session, loading, isCreator, demoPreviewRole, accountPaused } = useAuth();
   const { t, tr, locale } = useI18n();
   const nav = useNavigate();
