@@ -40,7 +40,7 @@ interface Row {
 
 type Tab = "pending" | "approved" | "rejected";
 
-function AdminKycPage() {
+export function AdminKycPage() {
   const { tr } = useI18n();
   const { user, isAdmin, loading } = useAuth();
   const nav = useNavigate();

@@ -38,7 +38,7 @@ type Row = {
   created_at: string;
 };
 
-function AdminAuditPage() {
+export function AdminAuditPage() {
   const { locale, tr } = useI18n();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);

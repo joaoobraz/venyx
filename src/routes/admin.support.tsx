@@ -35,7 +35,7 @@ export const Route = createFileRoute("/admin/support")({
 type AnyRow = Record<string, unknown> & { id: string; protocol: string; status: string; created_at: string };
 type Selection = { kind: "support" | "recovery" | "privacy"; row: AnyRow; status: string };
 
-function AdminSupportPage() {
+export function AdminSupportPage() {
   const { tr, locale } = useI18n();
   const listFn = useServerFn(listAdminServiceRequests);
   const updateFn = useServerFn(updateAdminServiceRequest);

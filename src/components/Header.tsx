@@ -82,7 +82,7 @@ export function Header() {
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary-glow/40 to-transparent" />
           </div>
           <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
-            Ven<span className="text-gradient-gold italic">yx</span>
+            Fan<span className="text-gradient-gold italic">lira</span>
           </span>
         </Link>
 

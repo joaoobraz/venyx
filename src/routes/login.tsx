@@ -18,7 +18,7 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-function LoginPage() {
+export function LoginPage() {
   const { t, tr, locale } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -92,8 +92,8 @@ function LoginPage() {
       setRecoverySent(true);
       toast.success(
         tr(
-          "Enviamos o link para ativar ou redefinir a senha da Venyx.",
-          "We sent the link to activate or reset your Venyx password.",
+          "Enviamos o link para ativar ou redefinir a senha da Fanlira.",
+          "We sent the link to activate or reset your Fanlira password.",
         ),
       );
     } catch {
@@ -241,15 +241,15 @@ function LoginPage() {
                 <p className="text-sm font-medium text-foreground">{loginError}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {tr(
-                    "Se ainda não criou uma conta Venyx, faça o cadastro. Se já criou, redefina a senha.",
-                    "Create a Venyx account if you do not have one yet, or reset its password.",
+                    "Se ainda não criou uma conta Fanlira, faça o cadastro. Se já criou, redefina a senha.",
+                    "Create a Fanlira account if you do not have one yet, or reset its password.",
                   )}
                 </p>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button asChild type="button" size="sm">
-                <Link to="/signup">{tr("Criar conta Venyx", "Create Venyx account")}</Link>
+                <Link to="/signup">{tr("Criar conta Fanlira", "Create Fanlira account")}</Link>
               </Button>
               <Button
                 type="button"
@@ -266,8 +266,8 @@ function LoginPage() {
             {recoverySent && (
               <p className="mt-3 text-xs font-medium text-foreground" role="status">
                 {tr(
-                  "Confira a caixa de entrada e o spam. Abra o link no mesmo computador para escolher a senha da Venyx.",
-                  "Check your inbox and spam. Open the link on this computer to choose your Venyx password.",
+                  "Confira a caixa de entrada e o spam. Abra o link no mesmo computador para escolher a senha da Fanlira.",
+                  "Check your inbox and spam. Open the link on this computer to choose your Fanlira password.",
                 )}
               </p>
             )}

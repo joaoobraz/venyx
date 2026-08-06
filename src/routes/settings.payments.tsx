@@ -126,7 +126,7 @@ function StatusPill({ status, locale }: { status: ChargeStatus; locale: Locale }
   );
 }
 
-function PaymentsPage() {
+export function PaymentsPage() {
   const { user, session, loading: authLoading } = useAuth();
   const { locale, tr } = useI18n();
   const navigate = useNavigate();
@@ -391,7 +391,7 @@ function PaymentsPage() {
           <DialogHeader>
             <DialogTitle>{tr("Comprovante da cobrança", "Charge receipt")}</DialogTitle>
             <DialogDescription>
-              {tr("Referência registrada pela Venyx e pela NexusPag.", "Reference recorded by Venyx and NexusPag.")}
+              {tr("Referência registrada pela Fanlira e pela NexusPag.", "Reference recorded by Fanlira and NexusPag.")}
             </DialogDescription>
           </DialogHeader>
           {selected && (
@@ -404,7 +404,7 @@ function PaymentsPage() {
               </div>
               <ReceiptRow label={tr("Criado em", "Created at")} value={dateTime(selected.created_at, locale)} />
               {selected.paid_at && <ReceiptRow label={tr("Pago em", "Paid at")} value={dateTime(selected.paid_at, locale)} />}
-              <ReceiptRow label={tr("Referência Venyx", "Venyx reference")} value={selected.external_id} mono />
+              <ReceiptRow label={tr("Referência Fanlira", "Fanlira reference")} value={selected.external_id} mono />
               <ReceiptRow
                 label={tr("Referência NexusPag", "NexusPag reference")}
                 value={selected.gateway_transaction_id || tr("Ainda não disponível", "Not available yet")}

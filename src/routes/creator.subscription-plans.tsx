@@ -27,7 +27,7 @@ type Discounts = Record<PlanMonths, number>;
 
 const DEFAULT_DISCOUNTS: Discounts = { 1: 0, 3: 10, 6: 20, 12: 30 };
 
-function PlansPage() {
+export function PlansPage() {
   const { tr } = useI18n();
   const { user, isCreator, profile, loading } = useAuth();
   const nav = useNavigate();

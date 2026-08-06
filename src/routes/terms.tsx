@@ -12,7 +12,7 @@ export const Route = createFileRoute("/terms")({
   }),
 });
 
-function TermsPage() {
+export function TermsPage() {
   const { locale } = useI18n();
   if (locale === "en") {
     return (

@@ -60,7 +60,7 @@ function badgeVariant(action: string): "default" | "destructive" | "secondary" {
   return "secondary";
 }
 
-function AdminActionsAuditPage() {
+export function AdminActionsAuditPage() {
   const { locale, tr } = useI18n();
   const list = useServerFn(listAdminActionsAudit);
   const [rows, setRows] = useState<Row[]>([]);

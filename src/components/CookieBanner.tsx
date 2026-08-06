@@ -42,7 +42,7 @@ export function CookieBanner() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-5 text-muted-foreground">
             Usamos cookies essenciais para o site funcionar. Com sua autorização, pixels de
-            marketing podem medir visitas, cliques e campanhas nas páginas Venyx Links. Você pode
+            marketing podem medir visitas, cliques e campanhas nas páginas Fanlira Links. Você pode
             recusar ou alterar essa escolha depois. Saiba mais na{" "}
             <Link to="/privacy" className="underline underline-offset-2">
               Política de Privacidade

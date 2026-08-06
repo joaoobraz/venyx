@@ -50,8 +50,8 @@ export function CreatorPixelManager({
               </h3>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">
                 {tr(
-                  "Configure várias plataformas ao mesmo tempo. Os scripts carregam somente na página pública, depois que o visitante aceitar cookies de marketing. A Venyx não envia e-mail, telefone, mensagens, pagamentos ou conteúdo privado aos pixels.",
-                  "Configure several platforms at once. Scripts load only on the public page after the visitor accepts marketing cookies. Venyx does not send email, phone, messages, payments or private content to pixels.",
+                  "Configure várias plataformas ao mesmo tempo. Os scripts carregam somente na página pública, depois que o visitante aceitar cookies de marketing. A Fanlira não envia e-mail, telefone, mensagens, pagamentos ou conteúdo privado aos pixels.",
+                  "Configure several platforms at once. Scripts load only on the public page after the visitor accepts marketing cookies. Fanlira does not send email, phone, messages, payments or private content to pixels.",
                 )}
               </p>
             </div>

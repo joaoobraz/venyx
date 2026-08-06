@@ -121,7 +121,7 @@ export function classifyVisitAttribution(input: {
   referrer?: string | null;
   siteOrigin?: string;
 }): VisitAttribution {
-  const base = input.siteOrigin || "https://venyx.com";
+  const base = input.siteOrigin || "https://fanlira.com.br";
   const landing = safeUrl(input.landingUrl, base) ?? new URL(base);
   const referrer = safeUrl(input.referrer, landing.origin);
   const params = landing.searchParams;
@@ -200,8 +200,8 @@ export function visitAttributionMetadata(input: {
   };
 }
 
-export function withVenyxLinkAttribution(destination: string, siteOrigin: string) {
-  const origin = safeUrl(siteOrigin, "https://venyx.com");
+export function withFanliraLinkAttribution(destination: string, siteOrigin: string) {
+  const origin = safeUrl(siteOrigin, "https://fanlira.com.br");
   const target = origin ? safeUrl(destination, origin.origin) : null;
   if (!origin || !target || target.origin !== origin.origin) return destination;
   if (!target.searchParams.has("via")) target.searchParams.set("via", "venyx_links");

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/become-creator")({
   component: BecomeCreatorPage,
 });
 
-function BecomeCreatorPage() {
+export function BecomeCreatorPage() {
   const { t, tr } = useI18n();
   const { user, isCreator, kyc, loading, refresh } = useAuth();
   const nav = useNavigate();

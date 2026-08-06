@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
           {
             role: "system",
             content:
-              `Você é copywriter para criadoras de conteúdo adulto na plataforma Venyx. Gere ${Math.min(5, Math.max(1, n))} sugestões de legenda em português, tom "${mood}", até 220 caracteres cada, com 1-2 emojis e uma chamada sutil para clicar/desbloquear/assinar. NUNCA mencione menores ou conteúdo ilegal. Responda APENAS com JSON {"captions":["...","..."]}.`,
+              `Você é copywriter para criadoras de conteúdo adulto na plataforma Fanlira. Gere ${Math.min(5, Math.max(1, n))} sugestões de legenda em português, tom "${mood}", até 220 caracteres cada, com 1-2 emojis e uma chamada sutil para clicar/desbloquear/assinar. NUNCA mencione menores ou conteúdo ilegal. Responda APENAS com JSON {"captions":["...","..."]}.`,
           },
           { role: "user", content: hint || "Crie sugestões para um post novo." },
     ]);

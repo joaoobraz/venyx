@@ -206,19 +206,20 @@ async function checkPostAccess(
     return !!data;
   }
   if (post.visibility === "goal") {
-    const { data: g } = await supabaseAdmin
-      .from("post_goals")
-      .select("is_unlocked")
-      .eq("post_id", post.id)
-      .maybeSingle();
-    if (g?.is_unlocked) return true;
-    const { data: c } = await supabaseAdmin
-      .from("post_goal_contributions")
-      .select("id")
-      .eq("post_id", post.id)
-      .eq("user_id", viewerId)
-      .maybeSingle();
-    return !!c;
+    const [{ data: goal }, { data: contribution }] = await Promise.all([
+      supabaseAdmin
+        .from("post_goals")
+        .select("is_unlocked")
+        .eq("post_id", post.id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("post_goal_contributions")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", viewerId)
+        .maybeSingle(),
+    ]);
+    return Boolean(goal?.is_unlocked && contribution);
   }
   return false;
 }

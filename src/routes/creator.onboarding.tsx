@@ -28,7 +28,7 @@ export const Route = createFileRoute("/creator/onboarding")({
   component: CreatorOnboardingPage,
   head: () => ({
     meta: [
-      { title: "Configuração da criadora | Venyx" },
+      { title: "Configuração da criadora | Fanlira" },
       { name: "description", content: "Etapas para configurar e liberar a monetização." },
     ],
   }),
@@ -45,7 +45,7 @@ type Status = {
   monetizationReady: boolean;
 };
 
-function CreatorOnboardingPage() {
+export function CreatorOnboardingPage() {
   const { tr } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();

@@ -94,7 +94,7 @@ type UserRow = {
   roles: Role[];
 };
 
-function AdminUsersPage() {
+export function AdminUsersPage() {
   const { tr } = useI18n();
   const list = useServerFn(listUsersAdmin);
   const update = useServerFn(updateUserRoleAdmin);

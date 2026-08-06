@@ -21,7 +21,7 @@ Data do ajuste: 04/08/2026
 - **Conteúdo:** Publicações, Acervo, PPV e Mensagens em massa.
 - **Assinaturas e vendas:** Planos, Cupons, Assinantes, Lista de Mimos e Fidelidade.
 - **Comunicação:** Mensagens, Comentários e Moderação de comentários.
-- **Crescimento:** Venyx Links, Origem das visitas, Campanhas e Relatórios.
+- **Crescimento:** Fanlira Links, Origem das visitas, Campanhas e Relatórios.
 - **Financeiro:** Saldo, Saques, Histórico financeiro e Pagamentos.
 - **Perfil:** Editar perfil, Personalização e Visualizar como cliente.
 - **Configurações:** Segurança, Notificações, Privacidade, Conta e Ajuda.

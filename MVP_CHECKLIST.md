@@ -1,4 +1,4 @@
-# Checklist de abertura do MVP Venyx
+# Checklist de abertura do MVP Fanlira
 
 Atualizado em: 02/08/2026
 
@@ -32,7 +32,7 @@ Um bloco só pode ser marcado como concluído quando seu critério de aceite tiv
 - [x] Idempotência local: cobrança usa `external_id` e o fulfillment evita duplicidade.
 - [ ] Executar uma compra real de baixo valor para cada finalidade e guardar a evidência.
 
-Critério de aceite: um pagamento confirmado na NexusPag deve aparecer uma única vez na Venyx e liberar somente o produto comprado.
+Critério de aceite: um pagamento confirmado na NexusPag deve aparecer uma única vez na Fanlira e liberar somente o produto comprado.
 
 ### Cancelamento e renovação
 
@@ -52,7 +52,7 @@ Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não
 - [~] Carteira, saldo disponível/pendente, chave PIX e solicitação de saque existem.
 - [x] KYC e 2FA são exigidos no backend para solicitar saque.
 - [~] Aprovação, rejeição, marcação como pago e comprovante existem no painel administrativo.
-- [ ] Integrar o saque da Venyx ao endpoint real da NexusPag.
+- [ ] Integrar o saque da Fanlira ao endpoint real da NexusPag.
 - [ ] Conciliar `cashout.success`, `cashout.failed` e estado `processing`.
 - [ ] Executar e comprovar um saque real de baixo valor.
 
@@ -64,7 +64,7 @@ Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não
 - [ ] Configurar `NEXUSPAG_API_KEY`, `NEXUSPAG_WEBHOOK_SECRET` e `PUBLIC_WEBHOOK_URL`.
 - [ ] Publicar o endpoint em HTTPS e cadastrar a URL na NexusPag.
 - [~] Varredura protegida implementada como contingência do webhook; falta configurar a chave real da NexusPag e agendar o endpoint no endereço público.
-- [x] Criar painel administrativo de divergências entre NexusPag e Venyx, com histórico e resolução auditada.
+- [x] Criar painel administrativo de divergências entre NexusPag e Fanlira, com histórico e resolução auditada.
 
 `BLOQUEIO EXTERNO`: credenciais reais NexusPag, URL pública HTTPS e saldo para transações de validação.
 

@@ -70,7 +70,7 @@ function iconFor(type: string) {
   }
 }
 
-function NotifPage() {
+export function NotifPage() {
   const { user } = useAuth();
   const { t, tr, locale } = useI18n();
   const [items, setItems] = useState<Notification[]>([]);

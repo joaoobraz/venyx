@@ -72,7 +72,7 @@ function slaText(report: ReportRow, locale: Locale) {
   return `${Math.ceil(minutes / 60)} h restantes`;
 }
 
-function ReportsAdminPage() {
+export function ReportsAdminPage() {
   const { tr, locale } = useI18n();
   const listFn = useServerFn(listSafetyReports);
   const reviewFn = useServerFn(reviewSafetyReport);

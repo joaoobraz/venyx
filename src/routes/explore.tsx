@@ -16,7 +16,7 @@ type DiscoverCreator = Pick<
   "user_id" | "username" | "display_name" | "avatar_url" | "cover_url" | "is_verified"
 >;
 
-function ExplorePage() {
+export function ExplorePage() {
   const { t } = useI18n();
   const [discoverCreators, setDiscoverCreators] = useState<DiscoverCreator[]>(
     DEMO_MODE ? DEMO_CREATORS : [],

@@ -399,7 +399,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         },
         {
           id: "venyx_search",
-          title: tr("Busca da Venyx", "Venyx search"),
+          title: tr("Busca da Fanlira", "Fanlira search"),
           description: tr(
             "Visita iniciada na busca interna da plataforma.",
             "Visit started from the platform's internal search.",
@@ -407,7 +407,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
         },
         {
           id: "venyx_links",
-          title: "Venyx Links",
+          title: "Fanlira Links",
           description: tr(
             "Clique originado na página de links personalizada da modelo.",
             "Click from the creator's customized links page.",
@@ -961,8 +961,8 @@ export function CreatorOperations({ section, userId }: { section: string; userId
             <div className="mt-4 rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
               <strong className="text-foreground">{tr("Prioridade:", "Priority:")}</strong>{" "}
               {tr(
-                "cupom → campanha/UTM → Venyx Links → busca interna → link da modelo → rede social/referência → outro site → direto.",
-                "coupon → campaign/UTM → Venyx Links → internal search → creator link → social/referrer → other website → direct.",
+                "cupom → campanha/UTM → Fanlira Links → busca interna → link da modelo → rede social/referência → outro site → direto.",
+                "coupon → campaign/UTM → Fanlira Links → internal search → creator link → social/referrer → other website → direct.",
               )}
             </div>
             <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
@@ -1019,7 +1019,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
           items={operations.links.map((item) => ({
             id: item.id,
             title: item.title,
-            meta: `venyx.com/${item.slug} · ${item.clicks} ${tr("cliques", "clicks")}`,
+            meta: `fanlira.com.br/${item.slug} · ${item.clicks} ${tr("cliques", "clicks")}`,
             active: item.active,
             action: {
               label: item.active ? tr("Pausar", "Pause") : tr("Ativar", "Activate"),
@@ -1040,7 +1040,7 @@ export function CreatorOperations({ section, userId }: { section: string; userId
           </div>
           <div className="mt-4 rounded-xl border border-border bg-background p-4">
             <h3 className="text-sm font-semibold text-foreground">
-              {tr("Produtos base da Venyx", "Venyx base products")}
+              {tr("Produtos base da Fanlira", "Fanlira base products")}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {tr(

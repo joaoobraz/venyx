@@ -116,7 +116,7 @@ function giftAmountFromBody(body: string | null) {
   return Number.isFinite(parsed) && parsed >= 1 ? Math.round(parsed * 100) : null;
 }
 
-function ChatPage() {
+export function ChatPage() {
   const {
     with: requestedUserId,
     thread: requestedThreadId,
@@ -1185,7 +1185,7 @@ function ChatPage() {
                       {canSetPpv && th.global_loyalty_tier && (
                         <span
                           className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-bold ${TIER_META[th.global_loyalty_tier].bg} ${TIER_META[th.global_loyalty_tier].color}`}
-                          title={`${tr("Nível Venyx", "Venyx tier")}: ${TIER_META[th.global_loyalty_tier].label}`}
+                          title={`${tr("Nível Fanlira", "Fanlira tier")}: ${TIER_META[th.global_loyalty_tier].label}`}
                         >
                           {TIER_META[th.global_loyalty_tier].emoji}{" "}
                           {TIER_META[th.global_loyalty_tier].label}
@@ -1251,7 +1251,7 @@ function ChatPage() {
                           "Global tier calculated without revealing spending or other subscriptions",
                         )}
                       >
-                        Venyx {TIER_META[active.global_loyalty_tier].emoji}{" "}
+                        Fanlira {TIER_META[active.global_loyalty_tier].emoji}{" "}
                         {TIER_META[active.global_loyalty_tier].label}
                       </span>
                     )}
@@ -1345,7 +1345,7 @@ function ChatPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-500">
-                                Venyx Gifts
+                                Fanlira Gifts
                               </div>
                               <div className="mt-0.5 text-base font-bold text-foreground">
                                 {tr("Mimo confirmado", "Gift confirmed")}

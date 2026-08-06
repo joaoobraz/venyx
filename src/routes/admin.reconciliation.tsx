@@ -42,7 +42,7 @@ export const Route = createFileRoute("/admin/reconciliation")({
   },
   head: () => ({
     meta: [
-      { title: "Conciliação financeira | Venyx" },
+      { title: "Conciliação financeira | Fanlira" },
       {
         name: "description",
         content: "Acompanhamento seguro das cobranças PIX pendentes e divergentes.",
@@ -122,7 +122,7 @@ const runLabels: Record<string, string> = {
 const fmtMoney = (cents: number, locale: Locale) =>
   `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
 
-function AdminReconciliationPage() {
+export function AdminReconciliationPage() {
   const { locale, tr } = useI18n();
   const listFn = useServerFn(listFinancialReconciliation);
   const runFn = useServerFn(runFinancialReconciliationNow);
@@ -328,7 +328,7 @@ function AdminReconciliationPage() {
                       {tr("Tentativas", "Attempts")}: <span className="text-foreground">{issue.attempt_count}</span>
                     </p>
                     <p>
-                      {tr("Status Venyx", "Venyx status")}: <span className="text-foreground">{issue.local_status}</span>
+                      {tr("Status Fanlira", "Fanlira status")}: <span className="text-foreground">{issue.local_status}</span>
                     </p>
                     <p>
                       {tr("Status NexusPag", "NexusPag status")}: <span className="text-foreground">{issue.gateway_status ?? tr("não disponível", "unavailable")}</span>

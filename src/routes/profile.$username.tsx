@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -80,9 +80,12 @@ export const Route = createFileRoute("/profile/$username")({
   component: ProfilePage,
 });
 
-function ProfilePage() {
-  const { username } = Route.useParams();
-  const { coupon: linkedCouponCode, preview } = Route.useSearch();
+export function ProfilePage() {
+  const { username } = useParams({ strict: false }) as { username: string };
+  const { coupon: linkedCouponCode, preview } = useSearch({ strict: false }) as {
+    coupon?: string;
+    preview?: "client";
+  };
   const { t, tr, locale } = useI18n();
   const {
     user,

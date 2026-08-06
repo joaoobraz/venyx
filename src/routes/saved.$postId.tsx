@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -11,8 +11,8 @@ export const Route = createFileRoute("/saved/$postId")({
   component: SavedPostPage,
 });
 
-function SavedPostPage() {
-  const { postId } = Route.useParams();
+export function SavedPostPage() {
+  const { postId } = useParams({ strict: false }) as { postId: string };
   const { user } = useAuth();
   const { tr, locale } = useI18n();
   const [post, setPost] = useState<PostWithRelations | null>(null);

@@ -84,7 +84,7 @@ function ProgressBar({ points, compact = false }: { points: number; compact?: bo
   );
 }
 
-function LoyaltyPage() {
+export function LoyaltyPage() {
   const { user, loading } = useAuth();
   const { tr, locale } = useI18n();
   const fn = useServerFn(listMyLoyalty);
@@ -178,7 +178,7 @@ function LoyaltyPage() {
           reason: entry.reason,
           label: entry.reason,
           creator:
-            relationship?.profile?.display_name ?? relationship?.profile?.username ?? "Venyx",
+            relationship?.profile?.display_name ?? relationship?.profile?.username ?? "Fanlira",
           createdAt: entry.created_at,
           points: entry.points_delta,
         };
@@ -241,7 +241,7 @@ function LoyaltyPage() {
                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${globalMeta.bg} ${globalMeta.color}`}
                 >
                   <span>{globalMeta.emoji}</span>
-                  {tr("Nível Venyx", "Venyx tier")} {tierName(globalTier, locale)}
+                  {tr("Nível Fanlira", "Fanlira tier")} {tierName(globalTier, locale)}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {tr(
@@ -561,7 +561,7 @@ function LoyaltyPage() {
                 {tr("Caminho de níveis", "Tier path")}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {tr("Os níveis são iguais em toda a Venyx.", "Tiers are consistent across Venyx.")}
+                {tr("Os níveis são iguais em toda a Fanlira.", "Tiers are consistent across Fanlira.")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

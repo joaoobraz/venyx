@@ -33,7 +33,7 @@ interface TopFan {
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-function CreatorAnalyticsPage() {
+export function CreatorAnalyticsPage() {
   const { tr } = useI18n();
   const { user, isCreator, loading: authLoading } = useAuth();
   const nav = useNavigate();

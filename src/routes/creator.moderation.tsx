@@ -99,7 +99,7 @@ function readDemoRecurring(): RecurringUser[] {
   );
 }
 
-function CreatorModerationPage() {
+export function CreatorModerationPage() {
   const { user, session, isCreator, loading: authLoading } = useAuth();
   const { tr, locale } = useI18n();
   const listFn = useServerFn(listCreatorModeration);

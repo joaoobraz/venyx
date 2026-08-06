@@ -103,8 +103,8 @@ export function CreatorCommentModerationStudio() {
     setState(reportDemoComment(DEMO_CREATOR_ID, comment.id));
     toast.success(
       tr(
-        "Denúncia registrada para análise da Venyx.",
-        "Report submitted for Venyx review.",
+        "Denúncia registrada para análise da Fanlira.",
+        "Report submitted for Fanlira review.",
       ),
     );
   };

@@ -1,7 +1,9 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
-import { I18nProvider } from "@/lib/i18n";
+import { I18nProvider, useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { CookieBanner } from "@/components/CookieBanner";
@@ -36,16 +38,16 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Venyx — Plataforma de criadoras +18" },
-      { name: "description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Venyx." },
-      { property: "og:title", content: "Venyx — Plataforma de criadoras +18" },
-      { property: "og:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Venyx." },
+      { title: "Fanlira — Plataforma de criadoras +18" },
+      { name: "description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
+      { property: "og:title", content: "Fanlira — Plataforma de criadoras +18" },
+      { property: "og:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Venyx — Plataforma de criadoras +18" },
-      { name: "twitter:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Venyx." },
-      { property: "og:image", content: "/venyx-social-card.svg" },
-      { name: "twitter:image", content: "/venyx-social-card.svg" },
+      { name: "twitter:title", content: "Fanlira — Plataforma de criadoras +18" },
+      { name: "twitter:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
+      { property: "og:image", content: "/fanlira-social-card.svg" },
+      { name: "twitter:image", content: "/fanlira-social-card.svg" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -77,6 +79,7 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <I18nProvider>
+        <LocalizedUrlSync />
         <AuthProvider>
           <ProductTelemetry />
           <ContentProtection />
@@ -87,4 +90,24 @@ function RootComponent() {
       </I18nProvider>
     </ThemeProvider>
   );
+}
+
+function LocalizedUrlSync() {
+  const { locale } = useI18n();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const nextPath = localizedPathname(location.pathname, locale);
+    if (nextPath === location.pathname) return;
+
+    void navigate({
+      to: nextPath as never,
+      search: location.search as never,
+      hash: location.hash,
+      replace: true,
+    });
+  }, [locale, location.hash, location.pathname, location.search, navigate]);
+
+  return null;
 }

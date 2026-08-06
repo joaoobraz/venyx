@@ -12,7 +12,7 @@ export const Route = createFileRoute("/creator/loyalty")({
   component: CreatorLoyaltyPage,
 });
 
-function CreatorLoyaltyPage() {
+export function CreatorLoyaltyPage() {
   const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();

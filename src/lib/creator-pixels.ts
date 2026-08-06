@@ -378,7 +378,7 @@ export function trackCreatorPixelEvent(
     if (config.provider === "meta")
       w.fbq?.(
         event === "page_view" ? "track" : "trackCustom",
-        event === "page_view" ? "PageView" : "VenyxLinkClick",
+        event === "page_view" ? "PageView" : "FanliraLinkClick",
         payload,
       );
     else if (config.provider === "google_analytics" || config.provider === "google_ads")
@@ -389,7 +389,7 @@ export function trackCreatorPixelEvent(
     else if (config.provider === "tiktok")
       w.ttq?.track?.(event === "page_view" ? "ViewContent" : "ClickButton", payload);
     else if (config.provider === "pinterest")
-      w.pintrk?.("track", event === "page_view" ? "PageVisit" : "VenyxLinkClick", payload);
+      w.pintrk?.("track", event === "page_view" ? "PageVisit" : "FanliraLinkClick", payload);
     else w.snaptr?.("track", event === "page_view" ? "PAGE_VIEW" : "CUSTOM_EVENT_1", payload);
     sent.push(config.provider);
   }

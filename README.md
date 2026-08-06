@@ -1,4 +1,4 @@
-# Venyx
+# Fanlira
 
 MVP de uma plataforma de assinaturas e conteúdo exclusivo para maiores de 18 anos.
 

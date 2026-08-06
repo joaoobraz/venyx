@@ -9,7 +9,7 @@ import {
   classifyVisitAttribution,
   distributeVisitSources,
   visitAttributionMetadata,
-  withVenyxLinkAttribution,
+  withFanliraLinkAttribution,
 } from "../src/lib/visit-attribution.ts";
 
 const now = new Date(2026, 7, 4, 12);
@@ -86,32 +86,32 @@ test("atribui uma unica origem usando a evidencia mais especifica", () => {
     classifyVisitAttribution({
       landingUrl,
       referrer,
-      siteOrigin: "https://venyx.com",
+      siteOrigin: "https://fanlira.com.br",
     }).source;
 
-  assert.equal(classify("https://venyx.com/c/BEMVINDA?utm_campaign=launch"), "coupons");
-  assert.equal(classify("https://venyx.com/profile/aline?utm_campaign=launch"), "campaigns");
-  assert.equal(classify("https://venyx.com/profile/aline?via=venyx_links"), "venyx_links");
+  assert.equal(classify("https://fanlira.com.br/c/BEMVINDA?utm_campaign=launch"), "coupons");
+  assert.equal(classify("https://fanlira.com.br/profile/aline?utm_campaign=launch"), "campaigns");
+  assert.equal(classify("https://fanlira.com.br/profile/aline?via=venyx_links"), "venyx_links");
   assert.equal(
-    classify("https://venyx.com/profile/aline", "https://venyx.com/search?q=aline"),
+    classify("https://fanlira.com.br/profile/aline", "https://fanlira.com.br/search?q=aline"),
     "venyx_search",
   );
   assert.equal(
-    classify("https://venyx.com/profile/aline?utm_medium=creator_link"),
+    classify("https://fanlira.com.br/profile/aline?utm_medium=creator_link"),
     "creator_links",
   );
-  assert.equal(classify("https://venyx.com/profile/aline?utm_source=instagram"), "social");
+  assert.equal(classify("https://fanlira.com.br/profile/aline?utm_source=instagram"), "social");
   assert.equal(
-    classify("https://venyx.com/profile/aline", "https://l.instagram.com/redirect"),
+    classify("https://fanlira.com.br/profile/aline", "https://l.instagram.com/redirect"),
     "social",
   );
-  assert.equal(classify("https://venyx.com/profile/aline", "https://example.com/article"), "other");
-  assert.equal(classify("https://venyx.com/profile/aline"), "direct");
+  assert.equal(classify("https://fanlira.com.br/profile/aline", "https://example.com/article"), "other");
+  assert.equal(classify("https://fanlira.com.br/profile/aline"), "direct");
 });
 
 test("nao expoe URL completa nem codigo do cupom e preserva o total de visitas", () => {
   const metadata = visitAttributionMetadata({
-    landingUrl: "https://venyx.com/c/SEGREDO?coupon_code=SEGREDO",
+    landingUrl: "https://fanlira.com.br/c/SEGREDO?coupon_code=SEGREDO",
     referrer: "https://example.com/private/path?token=secret",
   });
   assert.equal(metadata.visitSource, "coupons");
@@ -126,11 +126,11 @@ test("nao expoe URL completa nem codigo do cupom e preserva o total de visitas",
   assert.ok(Object.values(sources).every((value) => value > 0));
 
   assert.equal(
-    withVenyxLinkAttribution("/profile/aline?from=bio", "https://venyx.com"),
+    withFanliraLinkAttribution("/profile/aline?from=bio", "https://fanlira.com.br"),
     "/profile/aline?from=bio&via=venyx_links",
   );
   assert.equal(
-    withVenyxLinkAttribution("https://instagram.com/aline", "https://venyx.com"),
+    withFanliraLinkAttribution("https://instagram.com/aline", "https://fanlira.com.br"),
     "https://instagram.com/aline",
   );
 });

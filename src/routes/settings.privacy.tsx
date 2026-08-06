@@ -38,7 +38,7 @@ import { setDemoAccountPaused } from "@/lib/account-pause";
 
 export const Route = createFileRoute("/settings/privacy")({
   component: PrivacySettingsPage,
-  head: () => ({ meta: [{ title: "Privacidade e dados | Venyx" }] }),
+  head: () => ({ meta: [{ title: "Privacidade e dados | Fanlira" }] }),
 });
 
 type PrivacyRow = {
@@ -51,7 +51,7 @@ type PrivacyRow = {
   completed_at: string | null;
 };
 
-function PrivacySettingsPage() {
+export function PrivacySettingsPage() {
   const { tr, locale } = useI18n();
   const {
     user,

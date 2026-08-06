@@ -19,7 +19,7 @@ interface FactorEnroll {
   totp: { qr_code: string; secret: string };
 }
 
-function SecurityPage() {
+export function SecurityPage() {
   const { user, mfaEnabled, refresh, loading } = useAuth();
   const { tr } = useI18n();
   const nav = useNavigate();

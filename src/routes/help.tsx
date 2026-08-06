@@ -20,7 +20,7 @@ import {
 
 export const Route = createFileRoute("/help")({
   component: HelpPage,
-  head: () => ({ meta: [{ title: "Preciso de ajuda | Venyx" }] }),
+  head: () => ({ meta: [{ title: "Preciso de ajuda | Fanlira" }] }),
 });
 
 type Ticket = {
@@ -33,7 +33,7 @@ type Ticket = {
   created_at: string;
 };
 
-function HelpPage() {
+export function HelpPage() {
   const { tr, locale } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const createTicket = useServerFn(createSupportRequest);

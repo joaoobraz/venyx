@@ -67,20 +67,20 @@ const ICON_PRESETS = [
   { id: "youtube", pt: "YouTube", en: "YouTube" },
   { id: "telegram", pt: "Telegram (canal público)", en: "Telegram (public channel)" },
   { id: "spotify", pt: "Spotify", en: "Spotify" },
-  { id: "venyx", pt: "Venyx (perfil)", en: "Venyx (profile)" },
+  { id: "venyx", pt: "Fanlira (perfil)", en: "Fanlira (profile)" },
   { id: "globe", pt: "Site", en: "Website" },
   { id: "heart", pt: "Mimo / Pix", en: "Tip / Pix" },
   { id: "shopping", pt: "Loja", en: "Store" },
 ];
 
 const TEMPLATES = [
-  { pt: "Meu Venyx 💕", en: "My Venyx 💕", url: "", icon: "venyx", featured: true },
+  { pt: "Meu Fanlira 💕", en: "My Fanlira 💕", url: "", icon: "venyx", featured: true },
   { pt: "Instagram", en: "Instagram", url: "https://instagram.com/", icon: "instagram" },
   { pt: "TikTok", en: "TikTok", url: "https://tiktok.com/@", icon: "tiktok" },
   { pt: "Mimo via Pix", en: "Tip via Pix", url: "", icon: "heart" },
 ];
 
-function CreatorLinksPage() {
+export function CreatorLinksPage() {
   const { tr } = useI18n();
   const { user, profile, isCreator, loading } = useAuth();
   const [links, setLinks] = useState<LinkRow[]>([]);
@@ -250,7 +250,7 @@ function CreatorLinksPage() {
     )
       return;
     const start = links.length;
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://fanlira.com.br";
     const rows = TEMPLATES.map((t, i) => ({
       user_id: user.id,
       title: tr(t.pt, t.en),
@@ -273,7 +273,7 @@ function CreatorLinksPage() {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">
-          {tr("Apenas criadoras podem usar o Venyx Links.", "Only creators can use the link page.")}
+          {tr("Apenas criadoras podem usar o Fanlira Links.", "Only creators can use the link page.")}
         </p>
         <Link to="/become-creator" className="mt-4 inline-block text-primary underline">
           {tr("Tornar-se criadora", "Become a creator")}
@@ -294,7 +294,7 @@ function CreatorLinksPage() {
               <Link2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Venyx Links</h1>
+              <h1 className="text-2xl font-bold">Fanlira Links</h1>
               <p className="text-sm text-muted-foreground">
                 {tr(
                   "Seu mini perfil para compartilhar na bio de todas as redes.",
@@ -357,7 +357,7 @@ function CreatorLinksPage() {
                 )}
               </div>
               <div className="flex-1 space-y-2">
-                <Label className="block">{tr("Foto do Venyx Links", "Venyx Links photo")}</Label>
+                <Label className="block">{tr("Foto do Fanlira Links", "Fanlira Links photo")}</Label>
                 <p className="text-xs text-muted-foreground">
                   {page.avatar_url
                     ? tr(
@@ -530,8 +530,8 @@ function CreatorLinksPage() {
             >
               <Plus className="h-4 w-4" />{" "}
               {tr(
-                "Adicionar modelos iniciais (Venyx, Instagram, TikTok e Pix)",
-                "Add starter templates (Venyx, Instagram, TikTok and Pix)",
+                "Adicionar modelos iniciais (Fanlira, Instagram, TikTok e Pix)",
+                "Add starter templates (Fanlira, Instagram, TikTok and Pix)",
               )}
             </button>
           )}

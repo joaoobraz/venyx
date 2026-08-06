@@ -1,4 +1,4 @@
-# Venyx — checklist de lançamento
+# Fanlira — checklist de lançamento
 
 Atualizado em 02/08/2026.
 
@@ -11,7 +11,7 @@ Atualizado em 02/08/2026.
 - [x] Navegação mobile fixa, menu de conta e acesso à área da criadora.
 - [x] Chat mobile em fluxo lista → conversa, com botão de voltar.
 - [x] Revisar feed, explorar, perfil e chat em 390 × 844 e desktop.
-- [x] Marca-d'água no formato `Venyx.com.br/profile/nome-da-criadora`.
+- [x] Marca-d'água no formato `Fanlira.com.br/profile/nome-da-criadora`.
 - [x] Denunciar, bloquear e silenciar em posts, perfis e conversas.
 - [x] Fila administrativa para analisar denúncias.
 - [x] PT/EN no site público e nas jornadas principais do assinante.
@@ -57,7 +57,7 @@ Atualizado em 02/08/2026.
 - [ ] Configurar `NEXUSPAG_API_KEY`, `NEXUSPAG_WEBHOOK_SECRET` e `PUBLIC_WEBHOOK_URL` no ambiente do staging.
 - [ ] Testar assinatura, PPV, mimo, estorno e webhook com idempotência.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
-- [ ] Substituir e-mails e domínios provisórios (`@plataforma.com`) pelos dados oficiais da Venyx.
+- [ ] Substituir e-mails e domínios provisórios (`@plataforma.com`) pelos dados oficiais da Fanlira.
 - [ ] Confirmar termos, privacidade, DMCA e política de conteúdo com assessoria jurídica.
 
 ## Bloco 3 — operação do lançamento

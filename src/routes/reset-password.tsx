@@ -12,7 +12,7 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
-function ResetPage() {
+export function ResetPage() {
   const { t } = useI18n();
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");

@@ -18,7 +18,7 @@ import {
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 import { normalizeCreatorLinkUrl } from "@/lib/creator-link-url";
 import { recordPublicLinkEvent } from "@/lib/link-analytics";
-import { withVenyxLinkAttribution } from "@/lib/visit-attribution";
+import { withFanliraLinkAttribution } from "@/lib/visit-attribution";
 import {
   COOKIE_CONSENT_CHANGED_EVENT,
   hasMarketingConsent,
@@ -273,7 +273,7 @@ function PublicLinksPage() {
     }
     recordPublicLinkEvent({ eventType: "click", creatorId: profile.user_id, linkId: id });
   };
-  const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
+  const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://fanlira.com.br";
 
   if (loading) {
     return (
@@ -400,7 +400,7 @@ function PublicLinksPage() {
         >
           {giftListPublished && (
             <a
-              href={withVenyxLinkAttribution(`/gifts/${profile.username}`, siteOrigin)}
+              href={withFanliraLinkAttribution(`/gifts/${profile.username}`, siteOrigin)}
               onClick={() =>
                 trackClick(
                   `gift-list-${profile.username}`,
@@ -451,7 +451,7 @@ function PublicLinksPage() {
             const Icon = getIcon(l.icon);
             const safeUrl = safePublicLinkUrl(l.url);
             if (!safeUrl) return null;
-            const attributedUrl = withVenyxLinkAttribution(safeUrl, siteOrigin);
+            const attributedUrl = withFanliraLinkAttribution(safeUrl, siteOrigin);
             return (
               <a
                 key={l.id}
@@ -499,7 +499,7 @@ function PublicLinksPage() {
           <div>
             feito com{" "}
             <a href="/" style={{ color: t.text, textDecoration: "underline", fontWeight: 600 }}>
-              Venyx
+              Fanlira
             </a>
           </div>
           <button

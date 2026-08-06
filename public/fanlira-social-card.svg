@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
-  <title id="title">Venyx</title>
+  <title id="title">Fanlira</title>
   <desc id="description">Conteudos exclusivos e conexoes autenticas.</desc>
   <defs>
     <radialGradient id="glow" cx="50%" cy="42%" r="68%">
@@ -21,9 +21,9 @@
   <circle cx="130" cy="610" r="300" fill="#d9ad59" opacity="0.06"/>
   <g filter="url(#shadow)">
     <rect x="132" y="132" width="112" height="112" rx="30" fill="url(#gold)"/>
-    <path d="M166 172l22 54 22-54h20l-34 76h-18l-32-76z" fill="#171116"/>
+    <text x="188" y="220" text-anchor="middle" fill="#171116" font-family="Georgia, serif" font-size="72" font-weight="700">F</text>
   </g>
-  <text x="284" y="224" fill="#f8f3f5" font-family="Georgia, serif" font-size="104" font-weight="700">Ven<tspan fill="url(#gold)" font-style="italic">yx</tspan></text>
+  <text x="284" y="224" fill="#f8f3f5" font-family="Georgia, serif" font-size="104" font-weight="700">Fan<tspan fill="url(#gold)" font-style="italic">lira</tspan></text>
   <text x="140" y="350" fill="#f8f3f5" font-family="Arial, sans-serif" font-size="48" font-weight="600">Conteudos exclusivos.</text>
   <text x="140" y="414" fill="#d2c4cb" font-family="Arial, sans-serif" font-size="40">Conexoes autenticas.</text>
   <rect x="140" y="474" width="184" height="5" rx="2.5" fill="url(#gold)"/>

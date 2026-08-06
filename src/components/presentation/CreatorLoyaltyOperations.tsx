@@ -409,7 +409,7 @@ export function CreatorLoyaltyOperations({ userId }: { userId: string }) {
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${globalMeta.bg} ${globalMeta.color}`}
                     >
-                      Venyx {globalMeta.emoji} {tierLabel(globalTier, locale)}
+                      Fanlira {globalMeta.emoji} {tierLabel(globalTier, locale)}
                     </span>
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${creatorMeta.bg} ${creatorMeta.color}`}
@@ -516,7 +516,7 @@ export function CreatorLoyaltyOperations({ userId }: { userId: string }) {
             <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-muted-foreground">
               <LockKeyhole className="mr-1 inline h-3.5 w-3.5 text-amber-500" />
               {tr(
-                "Dinheiro, rendimento garantido e benefícios fora da Venyx não são permitidos.",
+                "Dinheiro, rendimento garantido e benefícios fora da Fanlira não são permitidos.",
                 "Cash, guaranteed returns and off-platform benefits are not allowed.",
               )}
             </div>

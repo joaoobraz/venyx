@@ -10,11 +10,11 @@ import { classifyVisitAttribution } from "../src/lib/visit-attribution.ts";
 
 const origin = "https://venyx.example";
 
-test("Venyx Links starts with four editable suggestions", () => {
+test("Fanlira Links starts with four editable suggestions", () => {
   const state = createDemoLinksSeed();
   assert.deepEqual(
     state.links.map((link) => link.title),
-    ["Minha Lista de Mimos", "Meu perfil na Venyx", "Instagram", "TikTok"],
+    ["Minha Lista de Mimos", "Meu perfil na Fanlira", "Instagram", "TikTok"],
   );
   assert.equal(state.page.isPublished, true);
 });

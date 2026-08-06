@@ -130,8 +130,8 @@ const CREATOR_SECTIONS: Section[] = [
   },
   {
     id: "links",
-    label: "Venyx Links",
-    labelEn: "Venyx Links",
+    label: "Fanlira Links",
+    labelEn: "Fanlira Links",
     description: "Página personalizada e links rastreáveis para campanhas.",
     descriptionEn: "Custom page and trackable campaign links.",
     icon: Link2,

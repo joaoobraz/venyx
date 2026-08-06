@@ -45,10 +45,10 @@ import { previewOnlyMessage } from "@/lib/creator-profile-preview";
 import { setPinnedPostForCreator } from "@/lib/post-pinning";
 import {
   buildGoalContributionPresets,
-  goalRemainingCents,
   parseGoalContributionToCents,
   validateGoalContribution,
 } from "@/lib/goal-contributions";
+import { hasGoalContentAccess } from "@/lib/goal-access";
 
 export interface PostMedia {
   id: string;
@@ -119,6 +119,7 @@ export function PostCard({
   const [pixCharge, setPixCharge] = useState<PixCharge | null>(null);
   const [pixTitle, setPixTitle] = useState(() => tr("Pague com Pix", "Pay with Pix"));
   const [demoCheckoutOpen, setDemoCheckoutOpen] = useState(false);
+  const [goalSupportOpen, setGoalSupportOpen] = useState(false);
   const [demoCheckoutPurpose, setDemoCheckoutPurpose] = useState<"ppv" | "goal">("ppv");
   const [demoUnlocked, setDemoUnlocked] = useState(Boolean(post.unlocked));
   const [demoGoalContributed, setDemoGoalContributed] = useState(
@@ -138,8 +139,18 @@ export function PostCard({
   const isPpv = post.visibility === "ppv";
   const isSubsOnly = post.visibility === "subscribers";
   const isGoal = post.visibility === "goal";
+  const goalReached = Boolean(
+    post.goal &&
+      (post.goal.is_unlocked || post.goal.raised_cents >= post.goal.target_cents),
+  );
+  const participatedInGoal = Boolean(post.goal_contributed || demoGoalContributed);
   const goalUnlocked =
-    isGoal && (post.goal?.is_unlocked || post.goal_contributed || demoGoalContributed);
+    isGoal &&
+    hasGoalContentAccess({
+      isOwner,
+      goalReached,
+      participated: participatedInGoal,
+    });
   const locked =
     !isOwner &&
     ((isPpv && !post.unlocked && !demoUnlocked) ||
@@ -367,19 +378,15 @@ export function PostCard({
     }
     if (!user || !post.goal) return;
     const amountCents = parseGoalContributionToCents(goalContributionReais);
-    const remainingCents = goalRemainingCents(
-      post.goal.target_cents,
-      post.goal.raised_cents,
-    );
     const validationError = validateGoalContribution({
       amountCents,
       minimumCents: post.goal.unlock_price_cents,
-      remainingCents,
     });
     if (validationError || amountCents === null) {
       toast.error(validationError || "Informe um valor válido.");
       return;
     }
+    setGoalSupportOpen(false);
     if (isDemoContent) {
       setDemoCheckoutPurpose("goal");
       setDemoCheckoutOpen(true);
@@ -404,7 +411,11 @@ export function PostCard({
           qrCodeBase64: res.qrCodeBase64,
           amountCents: res.amountCents,
         });
-        setPixTitle(tr("Contribuir para a meta", "Contribute to the goal"));
+        setPixTitle(
+          goalReached
+            ? tr("Apoiar além da meta", "Support beyond the goal")
+            : tr("Contribuir para a meta", "Contribute to the goal"),
+        );
         setPixOpen(true);
       }
     } catch (e) {
@@ -430,15 +441,10 @@ export function PostCard({
   const goalPct = post.goal
     ? Math.min(100, Math.round((post.goal.raised_cents / post.goal.target_cents) * 100))
     : 0;
-  const goalRemaining = post.goal
-    ? goalRemainingCents(post.goal.target_cents, post.goal.raised_cents)
-    : 0;
   const selectedGoalAmountCents = parseGoalContributionToCents(goalContributionReais);
   const goalPresets = post.goal
     ? buildGoalContributionPresets({
         minimumCents: post.goal.unlock_price_cents,
-        targetCents: post.goal.target_cents,
-        raisedCents: post.goal.raised_cents,
       })
     : [];
 
@@ -610,13 +616,27 @@ export function PostCard({
               <div className="w-full max-w-sm space-y-3 rounded-2xl border border-white/15 bg-black/45 p-3 backdrop-blur-md">
                 <div className="text-center">
                   <p className="text-sm font-semibold text-white">
-                    {tr("Ajude a liberar este conteúdo", "Help unlock this content")}
+                    {goalReached
+                      ? tr("Meta atingida — apoio aberto", "Goal reached — support remains open")
+                      : participatedInGoal
+                        ? tr("Sua contribuição está confirmada", "Your contribution is confirmed")
+                        : tr("Participe para liberar este conteúdo", "Contribute to unlock this content")}
                   </p>
                   <p className="mt-0.5 text-[11px] text-white/70">
-                    {tr(
-                      "Quem contribuir também recebe acesso.",
-                      "Contributors also get access.",
-                    )}
+                    {goalReached
+                      ? tr(
+                          "Você ainda pode contribuir e liberar este conteúdo agora.",
+                          "You can still contribute and unlock this content now.",
+                        )
+                      : participatedInGoal
+                        ? tr(
+                            "O conteúdo será liberado quando a meta atingir 100%.",
+                            "The content will unlock when the goal reaches 100%.",
+                          )
+                        : tr(
+                            "Só participantes recebem acesso depois que a meta atingir 100%.",
+                            "Only contributors get access after the goal reaches 100%.",
+                          )}
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-xs text-white">
@@ -632,61 +652,66 @@ export function PostCard({
                     style={{ width: `${goalPct}%` }}
                   />
                 </div>
-                <div>
-                  <p className="mb-1.5 text-[11px] font-medium text-white/80">
-                    {tr("Escolha um valor", "Choose an amount")}
-                  </p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {goalPresets.map((amount) => (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => setGoalContributionReais((amount / 100).toFixed(2))}
-                        aria-pressed={selectedGoalAmountCents === amount}
-                        className={`rounded-lg border px-1.5 py-2 text-[11px] font-semibold transition-colors ${
-                          selectedGoalAmountCents === amount
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-white/20 bg-black/30 text-white hover:border-white/40"
-                        }`}
-                      >
-                        R$ {(amount / 100).toFixed(2).replace(".", ",")}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative min-w-0 flex-1">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                      R$
-                    </span>
-                    <Input
-                      aria-label={tr("Outro valor para contribuição", "Custom contribution amount")}
-                      type="number"
-                      inputMode="decimal"
-                      min={post.goal.unlock_price_cents / 100}
-                      max={goalRemaining / 100}
-                      step="0.50"
-                      value={goalContributionReais}
-                      onChange={(event) => setGoalContributionReais(event.target.value)}
-                      className="border-white/20 bg-black/40 pl-9 text-white"
-                    />
-                  </div>
-                </div>
-                <Button
-                  onClick={contributeGoal}
-                  disabled={busy}
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                >
-                  {busy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    `${tr("Contribuir", "Contribute")} R$ ${(
-                      (selectedGoalAmountCents ?? post.goal.unlock_price_cents) / 100
-                    )
-                      .toFixed(2)
-                      .replace(".", ",")}`
-                  )}
-                </Button>
+                <>
+                    <div>
+                      <p className="mb-1.5 text-[11px] font-medium text-white/80">
+                        {tr("Escolha um valor", "Choose an amount")}
+                      </p>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {goalPresets.map((amount) => (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => setGoalContributionReais((amount / 100).toFixed(2))}
+                            aria-pressed={selectedGoalAmountCents === amount}
+                            className={`rounded-lg border px-1.5 py-2 text-[11px] font-semibold transition-colors ${
+                              selectedGoalAmountCents === amount
+                                ? "border-accent bg-accent text-accent-foreground"
+                                : "border-white/20 bg-black/30 text-white hover:border-white/40"
+                            }`}
+                          >
+                            R$ {(amount / 100).toFixed(2).replace(".", ",")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative min-w-0 flex-1">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          R$
+                        </span>
+                        <Input
+                          aria-label={tr("Outro valor para contribuição", "Custom contribution amount")}
+                          type="number"
+                          inputMode="decimal"
+                          min={post.goal.unlock_price_cents / 100}
+                          step="0.50"
+                          value={goalContributionReais}
+                          onChange={(event) => setGoalContributionReais(event.target.value)}
+                          className="border-white/20 bg-black/40 pl-9 text-white"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={contributeGoal}
+                      disabled={busy}
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                    >
+                      {busy ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        `${
+                          participatedInGoal
+                            ? tr("Contribuir novamente", "Contribute again")
+                            : tr("Contribuir", "Contribute")
+                        } R$ ${(
+                          (selectedGoalAmountCents ?? post.goal.unlock_price_cents) / 100
+                        )
+                          .toFixed(2)
+                          .replace(".", ",")}`
+                      )}
+                    </Button>
+                </>
               </div>
             )}
           </div>
@@ -700,17 +725,42 @@ export function PostCard({
 
       {/* Barra de meta visível também quando desbloqueado/sem mídia */}
       {isGoal && post.goal && !locked && (
-        <div className="px-4 pb-2">
+        <div className="space-y-2 px-4 pb-2">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Target className="h-3 w-3 text-accent" /> Meta{" "}
-              {post.goal.is_unlocked ? "atingida" : "em andamento"}
+              {goalReached ? "atingida · apoio aberto" : "em andamento"}
             </span>
-            <span>{goalPct}%</span>
+            <span>
+              R$ {(post.goal.raised_cents / 100).toFixed(2).replace(".", ",")} / R${" "}
+              {(post.goal.target_cents / 100).toFixed(2).replace(".", ",")}
+            </span>
           </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full bg-accent" style={{ width: `${goalPct}%` }} />
           </div>
+          {goalReached && !isOwner && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2">
+              <span className="text-[11px] text-muted-foreground">
+                {tr(
+                  "A meta foi batida, mas o apoio continua aberto.",
+                  "The goal was reached, but support remains open.",
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  previewOnly ? notifyPreviewOnly() : setGoalSupportOpen(true)
+                }
+                className="h-7 shrink-0 border-accent/30 px-2.5 text-[11px] text-accent hover:bg-accent hover:text-accent-foreground"
+              >
+                <Heart className="mr-1 h-3 w-3" />
+                {tr("Apoiar além da meta", "Support beyond the goal")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -779,12 +829,98 @@ export function PostCard({
           onChange?.();
         }}
       />
+      <Dialog open={!previewOnly && goalSupportOpen} onOpenChange={setGoalSupportOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{tr("Apoiar além da meta", "Support beyond the goal")}</DialogTitle>
+            <DialogDescription>
+              {tr(
+                "A meta já foi atingida. Seu apoio adicional também registra sua participação e libera o conteúdo.",
+                "The goal has already been reached. Your additional support also records your participation and unlocks the content.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {post.goal && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium text-foreground">
+                    {tr("Total arrecadado", "Total raised")}
+                  </span>
+                  <span className="font-semibold text-accent">
+                    R$ {(post.goal.raised_cents / 100).toFixed(2).replace(".", ",")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {tr("Meta original", "Original goal")}: R${" "}
+                  {(post.goal.target_cents / 100).toFixed(2).replace(".", ",")}
+                </p>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium text-foreground">
+                  {tr("Escolha um valor", "Choose an amount")}
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {goalPresets.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setGoalContributionReais((amount / 100).toFixed(2))}
+                      aria-pressed={selectedGoalAmountCents === amount}
+                      className={`rounded-lg border px-1.5 py-2 text-[11px] font-semibold transition-colors ${
+                        selectedGoalAmountCents === amount
+                          ? "border-accent bg-accent text-accent-foreground"
+                          : "border-border bg-background text-foreground hover:border-accent/50"
+                      }`}
+                    >
+                      R$ {(amount / 100).toFixed(2).replace(".", ",")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  aria-label={tr("Outro valor para apoio", "Custom support amount")}
+                  type="number"
+                  inputMode="decimal"
+                  min={post.goal.unlock_price_cents / 100}
+                  step="0.50"
+                  value={goalContributionReais}
+                  onChange={(event) => setGoalContributionReais(event.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGoalSupportOpen(false)}>
+              {tr("Cancelar", "Cancel")}
+            </Button>
+            <Button onClick={contributeGoal} disabled={busy}>
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                `${tr("Continuar apoiando", "Keep supporting")} · R$ ${(
+                  (selectedGoalAmountCents ?? post.goal?.unlock_price_cents ?? 0) / 100
+                )
+                  .toFixed(2)
+                  .replace(".", ",")}`
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={!previewOnly && demoCheckoutOpen} onOpenChange={setDemoCheckoutOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md">
           <DialogHeader>
             <DialogTitle>
               {demoCheckoutPurpose === "goal"
-                ? tr("Contribuir para a meta", "Contribute to the goal")
+                ? goalReached
+                  ? tr("Apoiar além da meta", "Support beyond the goal")
+                  : tr("Contribuir para a meta", "Contribute to the goal")
                 : tr("Desbloquear conteúdo PPV", "Unlock PPV content")}
             </DialogTitle>
             <DialogDescription>
@@ -800,7 +936,9 @@ export function PostCard({
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {demoCheckoutPurpose === "goal"
-                ? tr("Contribuição para liberar o conteúdo", "Contribution to unlock the content")
+                ? goalReached
+                  ? tr("Apoio adicional à meta", "Additional goal support")
+                  : tr("Contribuição para liberar o conteúdo", "Contribution to unlock the content")
                 : tr("Conteúdo exclusivo", "Exclusive content")}
             </div>
             <div className="mt-4 text-2xl font-bold text-primary">
@@ -834,6 +972,11 @@ export function PostCard({
                   demoCheckoutPurpose === "goal"
                     ? selectedGoalAmountCents ?? post.goal?.unlock_price_cents ?? 0
                     : post.price_cents;
+                const reachesGoalWithThisContribution = Boolean(
+                  demoCheckoutPurpose === "goal" &&
+                    post.goal &&
+                    post.goal.raised_cents + demoAmountCents >= post.goal.target_cents,
+                );
                 recordDemoPurchase({
                   kind: demoCheckoutPurpose,
                   buyer_id: user.id,
@@ -868,10 +1011,20 @@ export function PostCard({
                 setDemoCheckoutOpen(false);
                 toast.success(
                   demoCheckoutPurpose === "goal"
-                    ? tr(
-                        "Contribuição simulada confirmada. Conteúdo liberado!",
-                        "Simulated contribution confirmed. Content unlocked!",
-                      )
+                    ? goalReached
+                      ? tr(
+                          "Apoio adicional simulado confirmado.",
+                          "Additional simulated support confirmed.",
+                        )
+                      : reachesGoalWithThisContribution
+                        ? tr(
+                            "Meta atingida! Contribuição confirmada e conteúdo liberado.",
+                            "Goal reached! Contribution confirmed and content unlocked.",
+                          )
+                        : tr(
+                            "Contribuição simulada confirmada. O conteúdo será liberado quando a meta atingir 100%.",
+                            "Simulated contribution confirmed. The content will unlock when the goal reaches 100%.",
+                          )
                     : tr(
                         "Pagamento simulado confirmado. Conteúdo liberado!",
                         "Simulated payment confirmed. Content unlocked!",

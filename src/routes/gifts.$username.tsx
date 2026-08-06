@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, Eye, Gift, Link2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -47,9 +47,9 @@ function money(cents: number, locale: "pt-BR" | "en") {
   }).format(cents / 100);
 }
 
-function PublicGiftListPage() {
-  const { username } = Route.useParams();
-  const { preview } = Route.useSearch();
+export function PublicGiftListPage() {
+  const { username } = useParams({ strict: false }) as { username: string };
+  const { preview } = useSearch({ strict: false }) as { preview?: "client" };
   const { tr, locale } = useI18n();
   const { user, isCreator, demoPreviewRole } = useAuth();
   const [creator, setCreator] = useState<PublicCreator | null>(null);
@@ -169,7 +169,7 @@ function PublicGiftListPage() {
       <header className="border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="font-serif text-xl font-bold italic text-foreground">
-            Venyx
+            Fanlira
           </Link>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" asChild>
@@ -185,7 +185,7 @@ function PublicGiftListPage() {
             <Button size="sm" variant="outline" asChild>
               <Link to="/links/$username" params={{ username }}>
                 <Link2 className="mr-1.5 h-4 w-4" />
-                Venyx Links
+                Fanlira Links
               </Link>
             </Button>
           </div>
@@ -297,7 +297,7 @@ function PublicGiftListPage() {
         )}
 
         <footer className="py-12 text-center text-xs text-muted-foreground">
-          {tr("Pagamento protegido pela Venyx", "Payment protected by Venyx")}
+          {tr("Pagamento protegido pela Fanlira", "Payment protected by Fanlira")}
         </footer>
       </main>
 

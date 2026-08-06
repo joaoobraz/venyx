@@ -77,7 +77,7 @@ function localDateTime(date = new Date()) {
   return local.toISOString().slice(0, 16);
 }
 
-function AdminOperationsPage() {
+export function AdminOperationsPage() {
   const getDashboard = useServerFn(listOperationsDashboard);
   const updateAlert = useServerFn(updateOperationalAlert);
   const recordBackup = useServerFn(recordBackupVerification);

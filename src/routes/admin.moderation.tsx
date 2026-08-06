@@ -98,7 +98,7 @@ interface PendingDecision {
   decision: "approved" | "rejected";
 }
 
-function AdminModerationPage() {
+export function AdminModerationPage() {
   const { locale, tr } = useI18n();
   const { user, loading, isAdmin } = useAuth();
   const nav = useNavigate();

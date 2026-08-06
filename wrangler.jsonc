@@ -1,7 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
-  "compatibility_date": "2025-09-24",
+  "name": "fanlira",
+  "compatibility_date": "2026-08-06",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "fanlira.com.br",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.fanlira.com.br",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
 }

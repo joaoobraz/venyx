@@ -11,6 +11,7 @@ export interface Profile {
   id: string;
   user_id: string;
   username: string;
+  username_changed_at?: string | null;
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;

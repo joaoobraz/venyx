@@ -234,6 +234,19 @@ export function toggleDemoSubscription(userId: string, creatorId: string) {
 function postFromSeed(seed: DemoPostSeed, locale: DemoLocale, viewerId?: string | null) {
   const author = getDemoCreator(seed.username)!;
   const subscribed = viewerId ? isDemoSubscribed(viewerId, author.user_id) : false;
+  const goalTargetCents = seed.goalTargetCents ?? 50000;
+  const viewerGoalContributionCents =
+    viewerId && seed.visibility === "goal"
+      ? readDemoOperations(viewerId).purchases
+          .filter(
+            (purchase) =>
+              purchase.kind === "goal" &&
+              purchase.reference_id === seed.id &&
+              purchase.status === "paid",
+          )
+          .reduce((total, purchase) => total + purchase.amount_cents, 0)
+      : 0;
+  const goalRaisedCents = (seed.goalRaisedCents ?? 0) + viewerGoalContributionCents;
   return {
     id: seed.id,
     creator_id: author.user_id,
@@ -267,10 +280,10 @@ function postFromSeed(seed: DemoPostSeed, locale: DemoLocale, viewerId?: string 
     goal:
       seed.visibility === "goal"
         ? {
-            target_cents: seed.goalTargetCents ?? 50000,
-            raised_cents: seed.goalRaisedCents ?? 0,
+            target_cents: goalTargetCents,
+            raised_cents: goalRaisedCents,
             unlock_price_cents: seed.goalMinimumCents ?? 1000,
-            is_unlocked: (seed.goalRaisedCents ?? 0) >= (seed.goalTargetCents ?? 50000),
+            is_unlocked: goalRaisedCents >= goalTargetCents,
           }
         : null,
     goal_contributed: Boolean(
@@ -319,10 +332,7 @@ export function getDemoPosts(options: {
                 )
                 .reduce((total, purchase) => total + purchase.amount_cents, 0);
               const goalTargetCents = item.goal_target_cents ?? 0;
-              const goalRaisedCents = Math.min(
-                goalTargetCents,
-                (item.goal_raised_cents ?? 0) + goalContributionCents,
-              );
+              const goalRaisedCents = (item.goal_raised_cents ?? 0) + goalContributionCents;
               return ({
                 id: item.id,
                 creator_id: previewCreator.user_id,

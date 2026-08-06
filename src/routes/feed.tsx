@@ -16,7 +16,7 @@ export const Route = createFileRoute("/feed")({
   component: FeedPage,
 });
 
-function FeedPage() {
+export function FeedPage() {
   const { user, loading, isCreator } = useAuth();
   const { t, tr, locale } = useI18n();
   const nav = useNavigate();

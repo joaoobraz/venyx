@@ -23,7 +23,7 @@ function genCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-function AffiliatePage() {
+export function AffiliatePage() {
   const { tr } = useI18n();
   const { user, isCreator, isAmbassador, profile, loading } = useAuth();
   const nav = useNavigate();
@@ -77,8 +77,8 @@ function AffiliatePage() {
             )}{" "}
             <strong className="text-accent">{tr("Embaixadora", "Ambassador")}</strong>{" "}
             {tr(
-              "Essa tag é atribuída pelo time Venyx às criadoras de destaque na plataforma.",
-              "tag. The Venyx team awards it to standout creators on the platform.",
+              "Essa tag é atribuída pelo time Fanlira às criadoras de destaque na plataforma.",
+              "tag. The Fanlira team awards it to standout creators on the platform.",
             )}
           </p>
           {!isCreator && (
@@ -120,7 +120,7 @@ function AffiliatePage() {
       <div className="mx-auto max-w-2xl space-y-4">
         <div className="rounded-2xl bg-gradient-primary p-6 text-primary-foreground shadow-glow">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase opacity-90">
-            <Crown className="h-4 w-4" /> {tr("Embaixadora Venyx", "Venyx Ambassador")}
+            <Crown className="h-4 w-4" /> {tr("Embaixadora Fanlira", "Fanlira Ambassador")}
           </div>
           <h1 className="mt-2 text-2xl font-bold">
             {tr("Programa de Afiliados", "Affiliate Program")}

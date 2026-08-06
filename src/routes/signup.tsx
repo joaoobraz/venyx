@@ -16,7 +16,7 @@ export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-function SignupPage() {
+export function SignupPage() {
   const { t, tr } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -59,10 +59,16 @@ function SignupPage() {
       );
     } catch (error) {
       trackClientError("client_error", error, { flow: "signup", method: "password" });
+      const errorMessage = error instanceof Error ? error.message : "";
+      const normalizedError = errorMessage.toLowerCase();
       toast.error(
-        error instanceof Error
-          ? error.message
-          : tr("Não foi possível criar a conta.", "Unable to create the account."),
+        normalizedError.includes("email rate limit exceeded") ||
+          normalizedError.includes("rate limit")
+          ? tr(
+              "Muitas solicitações em pouco tempo. Aguarde alguns minutos e tente novamente.",
+              "Too many requests in a short time. Wait a few minutes and try again.",
+            )
+          : errorMessage || tr("Não foi possível criar a conta.", "Unable to create the account."),
       );
     } finally {
       setLoading(false);

@@ -57,7 +57,7 @@ function futureLocalInput(days: number) {
   return date.toISOString().slice(0, 16);
 }
 
-function CouponsPage() {
+export function CouponsPage() {
   const { tr } = useI18n();
   const { user, isCreator, profile, loading } = useAuth();
   const nav = useNavigate();

@@ -104,7 +104,7 @@ interface PlatformSettings {
 const fmt = (cents: number, locale: Locale) =>
   `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function WalletPage() {
+export function WalletPage() {
   const { locale, tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();

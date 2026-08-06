@@ -124,7 +124,7 @@ export function createDemoLinksSeed(): DemoLinksState {
       {
         id: "demo-links-profile",
         kind: "link",
-        title: "Meu perfil na Venyx",
+        title: "Meu perfil na Fanlira",
         url: "/profile/aline",
         icon: "venyx",
         active: true,

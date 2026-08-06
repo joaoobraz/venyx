@@ -9,6 +9,8 @@
  */
 
 const APP_DOMAINS = [
+  "fanlira.com.br",
+  "fanlira.com",
   "venyx.app",
   "venyx.com",
   "venyx.com.br",
@@ -89,5 +91,5 @@ export function detectExternalContact(text: string): ContactDetection {
 export function contactBlockMessage(d: ContactDetection): string {
   if (!d.blocked) return "";
   const labels = Array.from(new Set(d.matches.map((m) => m.label))).join(", ");
-  return `Mensagem bloqueada: detectamos compartilhamento de contato externo (${labels}). Para sua segurança e da plataforma, mantenha as conversas e pagamentos dentro do Venyx.`;
+  return `Mensagem bloqueada: detectamos compartilhamento de contato externo (${labels}). Para sua segurança e da plataforma, mantenha as conversas e pagamentos dentro do Fanlira.`;
 }

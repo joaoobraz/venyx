@@ -85,7 +85,7 @@ function errorMessage(error: { message?: string } | null, tr: (pt: string, en: s
   return error?.message || tr("Não foi possível salvar.", "Could not save.");
 }
 
-function CreatorGiftsPage() {
+export function CreatorGiftsPage() {
   const { user, profile, isCreator, loading } = useAuth();
   const { tr } = useI18n();
   const [settings, setSettings] = useState<GiftSettings | null>(null);
@@ -291,8 +291,8 @@ function CreatorGiftsPage() {
               <h1 className="text-2xl font-bold">{tr("Lista de Mimos", "Gift List")}</h1>
               <p className="text-sm text-muted-foreground">
                 {tr(
-                  "Use produtos base da Venyx ou adicione produtos personalizados à sua lista.",
-                  "Use Venyx base products or add custom products to your list.",
+                  "Use produtos base da Fanlira ou adicione produtos personalizados à sua lista.",
+                  "Use Fanlira base products or add custom products to your list.",
                 )}
               </p>
             </div>
@@ -411,7 +411,7 @@ function CreatorGiftsPage() {
           </div>
           <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {tr("Produtos base da Venyx", "Venyx base products")}
+              {tr("Produtos base da Fanlira", "Fanlira base products")}
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {GIFT_PRESETS.map((preset) => (

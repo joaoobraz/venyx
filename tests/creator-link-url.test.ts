@@ -11,7 +11,7 @@ test("aceita HTTP local e HTTPS externo", () => {
     normalizeCreatorLinkUrl("http://localhost:8080/profile/aline"),
     "http://localhost:8080/profile/aline",
   );
-  assert.equal(normalizeCreatorLinkUrl("https://venyx.app"), "https://venyx.app/");
+  assert.equal(normalizeCreatorLinkUrl("https://fanlira.com.br"), "https://fanlira.com.br/");
 });
 
 test("bloqueia protocolos executáveis e credenciais embutidas", () => {

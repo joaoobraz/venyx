@@ -33,7 +33,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
           .slice(0, 500),
       });
       throw new Error(
-        "Mensagem bloqueada: mantenha contatos, conversas e pagamentos dentro da Venyx.",
+        "Mensagem bloqueada: mantenha contatos, conversas e pagamentos dentro da Fanlira.",
       );
     }
 
@@ -112,7 +112,7 @@ export const editChatMessage = createServerFn({ method: "POST" })
           .slice(0, 500),
       });
       throw new Error(
-        "Mensagem bloqueada: mantenha contatos, conversas e pagamentos dentro da Venyx.",
+        "Mensagem bloqueada: mantenha contatos, conversas e pagamentos dentro da Fanlira.",
       );
     }
 

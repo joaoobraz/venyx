@@ -10,7 +10,7 @@
 - Exclusão de comentário publicado.
 - Ocultação e republicação de comentário.
 - Fila com aprovação e rejeição de comentários pendentes.
-- Denúncia de comentário para análise da Venyx.
+- Denúncia de comentário para análise da Fanlira.
 - Bloqueio do autor, impedindo novos comentários.
 - Aprovação manual ativável e desativável.
 - Aviso de possível redução de interação, desempenho e faturamento enquanto a aprovação manual estiver ativa.

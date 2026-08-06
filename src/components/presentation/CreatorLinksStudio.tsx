@@ -112,7 +112,7 @@ const LINK_SUGGESTIONS: Array<{
   icon: DemoLinkIcon;
 }> = [
   { title: "Minha Lista de Mimos", url: "/gifts/aline", icon: "gift" },
-  { title: "Meu perfil na Venyx", url: "/profile/aline", icon: "venyx" },
+  { title: "Meu perfil na Fanlira", url: "/profile/aline", icon: "venyx" },
   { title: "Instagram", url: "https://instagram.com/", icon: "instagram" },
   { title: "TikTok", url: "https://tiktok.com/", icon: "tiktok" },
 ];
@@ -156,7 +156,7 @@ export function CreatorLinksStudio({ userId }: { userId: string }) {
   const [trackingContent, setTrackingContent] = useState("");
   const [trackingCoupon, setTrackingCoupon] = useState("");
   const [trackingExpiration, setTrackingExpiration] = useState("");
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://venyx.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://fanlira.com.br";
   const publicUrl = `${origin}/links/aline`;
 
   useEffect(() => {
@@ -349,8 +349,8 @@ export function CreatorLinksStudio({ userId }: { userId: string }) {
               <div className="truncate text-sm font-semibold text-foreground">{publicUrl}</div>
               <div className="mt-1 text-[11px] text-muted-foreground">
                 {tr(
-                  "No lançamento, este endereço usará o domínio oficial da Venyx.",
-                  "At launch, this address will use the official Venyx domain.",
+                  "No lançamento, este endereço usará o domínio oficial da Fanlira.",
+                  "At launch, this address will use the official Fanlira domain.",
                 )}
               </div>
             </div>
@@ -642,7 +642,7 @@ export function CreatorLinksStudio({ userId }: { userId: string }) {
                       <SelectItem value="globe">Site</SelectItem>
                       <SelectItem value="instagram">Instagram</SelectItem>
                       <SelectItem value="tiktok">TikTok</SelectItem>
-                      <SelectItem value="venyx">Venyx</SelectItem>
+                      <SelectItem value="venyx">Fanlira</SelectItem>
                       <SelectItem value="gift">Mimo</SelectItem>
                       <SelectItem value="campaign">Campanha</SelectItem>
                       <SelectItem value="coupon">Cupom</SelectItem>
@@ -990,7 +990,7 @@ export function CreatorLinksStudio({ userId }: { userId: string }) {
 
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => save(createDemoLinksSeed())}>
-              {tr("Restaurar exemplo da Venyx Links", "Restore Venyx Links example")}
+              {tr("Restaurar exemplo da Fanlira Links", "Restore Fanlira Links example")}
             </Button>
           </div>
         </TabsContent>
@@ -1069,7 +1069,7 @@ function DemoLinksPreview({ state }: { state: DemoLinksState }) {
               );
             })}
         </div>
-        <div className="mt-10 text-[10px] opacity-50">feito com Venyx</div>
+        <div className="mt-10 text-[10px] opacity-50">feito com Fanlira</div>
       </div>
     </div>
   );

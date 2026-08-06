@@ -31,12 +31,12 @@ function getPositionClasses(pos: WatermarkPosition): string {
 }
 
 function getSiteDomain(): string {
-  return import.meta.env.VITE_PUBLIC_SITE_DOMAIN || "Venyx.com.br";
+  return import.meta.env.VITE_PUBLIC_SITE_DOMAIN || "Fanlira.com.br";
 }
 
 /**
  * Marca d'água aplicada sobre toda mídia enviada por uma criadora.
- * Formato público: Venyx.com.br/profile/{username}
+ * Formato público: Fanlira.com.br/profile/{username}
  */
 export function CreatorWatermark({
   username,

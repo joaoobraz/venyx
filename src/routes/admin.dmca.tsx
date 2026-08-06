@@ -32,7 +32,7 @@ interface Report {
   created_at: string;
 }
 
-function AdminDmcaPage() {
+export function AdminDmcaPage() {
   const { locale, tr } = useI18n();
   const { user, isAdmin, loading } = useAuth();
   const nav = useNavigate();
@@ -96,7 +96,7 @@ function AdminDmcaPage() {
     const name = prof?.display_name || prof?.username || tr("Criadora", "Creator");
     const text =
       locale === "en"
-        ? `DMCA NOTICE — VENYX
+        ? `DMCA NOTICE — FANLIRA
 ====================
 Date: ${new Date().toLocaleString(locale)}
 
@@ -106,7 +106,7 @@ Under the Digital Millennium Copyright Act (DMCA), 17 U.S.C. § 512(c)(3), and a
 
 Infringing URL: ${r.leaked_url}
 Copyright owner: ${name} (@${prof?.username ?? ""})
-Original platform: Venyx
+Original platform: Fanlira
 Description: ${r.description ?? "—"}
 
 The owner declares under penalty of perjury:
@@ -116,11 +116,11 @@ The owner declares under penalty of perjury:
 
 We request the immediate takedown of the infringing content.
 
-Venyx contact: legal@venyx.app
+Fanlira contact: legal@fanlira.com.br
 Administrative notes: ${r.admin_notes ?? "—"}
 
-Digital signature: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`
-        : `NOTIFICAÇÃO DMCA — VENYX
+Digital signature: FANLIRA-DMCA-${r.id.slice(0, 8).toUpperCase()}`
+        : `NOTIFICAÇÃO DMCA — FANLIRA
 =========================
 Data: ${new Date().toLocaleString(locale)}
 
@@ -130,7 +130,7 @@ Em conformidade com o Digital Millennium Copyright Act (DMCA) — 17 U.S.C. § 5
 
 URL infratora: ${r.leaked_url}
 Titular dos direitos: ${name} (@${prof?.username ?? ""})
-Plataforma original: Venyx
+Plataforma original: Fanlira
 Descrição: ${r.description ?? "—"}
 
 A titular declara, sob pena de perjúrio:
@@ -140,10 +140,10 @@ A titular declara, sob pena de perjúrio:
 
 Solicitamos a remoção imediata (takedown) do conteúdo infrator.
 
-Contato Venyx: legal@venyx.app
+Contato Fanlira: legal@fanlira.com.br
 Notas administrativas: ${r.admin_notes ?? "—"}
 
-Assinatura digital: VENYX-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
+Assinatura digital: FANLIRA-DMCA-${r.id.slice(0, 8).toUpperCase()}`;
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);

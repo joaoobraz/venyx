@@ -63,7 +63,7 @@ interface CreatorMini {
 const fmt = (cents: number, locale: Locale) =>
   `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
 
-function AdminPayoutsPage() {
+export function AdminPayoutsPage() {
   const { locale, tr } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();

@@ -2357,6 +2357,7 @@ export type Database = {
           updated_at: string;
           user_id: string;
           username: string;
+          username_changed_at: string | null;
           watermark_opacity: number;
           watermark_position: string;
         };
@@ -2377,6 +2378,7 @@ export type Database = {
           updated_at?: string;
           user_id: string;
           username: string;
+          username_changed_at?: string | null;
           watermark_opacity?: number;
           watermark_position?: string;
         };
@@ -2397,6 +2399,7 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
           username?: string;
+          username_changed_at?: string | null;
           watermark_opacity?: number;
           watermark_position?: string;
         };
@@ -3237,6 +3240,10 @@ export type Database = {
         Returns: Json;
       };
       can_view_post: {
+        Args: { _post_id: string; _viewer_id: string };
+        Returns: boolean;
+      };
+      can_view_post_metadata: {
         Args: { _post_id: string; _viewer_id: string };
         Returns: boolean;
       };

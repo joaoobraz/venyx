@@ -22,7 +22,7 @@ interface Report {
   admin_notes: string | null;
 }
 
-function DmcaPage() {
+export function DmcaPage() {
   const { locale, tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();

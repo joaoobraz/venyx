@@ -16,7 +16,7 @@ export const Route = createFileRoute("/wishlist")({
   component: WishlistPage,
 });
 
-function WishlistPage() {
+export function WishlistPage() {
   const { user, session, loading } = useAuth();
   const { tr, locale } = useI18n();
   const [data, setData] = useState<Awaited<ReturnType<typeof listMyWishlist>> | null>(null);

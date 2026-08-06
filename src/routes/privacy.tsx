@@ -18,7 +18,7 @@ export const Route = createFileRoute("/privacy")({
   }),
 });
 
-function PrivacyPage() {
+export function PrivacyPage() {
   const { locale } = useI18n();
   if (locale === "en") {
     return (
@@ -115,10 +115,10 @@ function PrivacyPage() {
           </p>
           <h2>8. Cookies</h2>
           <p>
-            We use essential storage for authentication and preferences. On Venyx Links pages,
+            We use essential storage for authentication and preferences. On Fanlira Links pages,
             creator-configured measurement tags from Meta, Google, TikTok, Pinterest or Snapchat may
             load only after the visitor expressly accepts marketing cookies. These tags may receive
-            page-view, campaign and link-click data, but Venyx does not send private messages,
+            page-view, campaign and link-click data, but Fanlira does not send private messages,
             payment details, email or phone data through this integration. Consent can be withdrawn
             at any time.
           </p>
@@ -247,10 +247,10 @@ function PrivacyPage() {
 
         <h2>8. Cookies</h2>
         <p>
-          Usamos armazenamento essencial para autenticação e preferências. Nas páginas Venyx Links,
+          Usamos armazenamento essencial para autenticação e preferências. Nas páginas Fanlira Links,
           tags de medição configuradas pela criadora — Meta, Google, TikTok, Pinterest ou Snapchat —
           podem carregar somente depois que o visitante aceitar expressamente cookies de marketing.
-          Essas tags podem receber dados de visualização, campanha e clique nos links, mas a Venyx
+          Essas tags podem receber dados de visualização, campanha e clique nos links, mas a Fanlira
           não envia mensagens privadas, dados de pagamento, e-mail ou telefone por essa integração.
           O consentimento pode ser revogado a qualquer momento.
         </p>

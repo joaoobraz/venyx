@@ -29,7 +29,7 @@ interface Offer {
   position: number;
 }
 
-function UpsellsPage() {
+export function UpsellsPage() {
   const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();

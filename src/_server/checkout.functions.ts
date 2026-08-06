@@ -717,23 +717,16 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
       .eq("post_id", post.id)
       .maybeSingle();
     if (!goal) throw new Error("Meta não encontrada");
-    if (goal.is_unlocked) throw new Error("Esta meta já foi atingida");
     if (!goal.unlock_price_cents || goal.unlock_price_cents < 100)
       throw new Error("Valor de contribuição inválido");
 
-    const remainingCents = Math.max(0, goal.target_cents - goal.raised_cents);
+    const goalReached = goal.is_unlocked || goal.raised_cents >= goal.target_cents;
     const amountCents = data.amountCents ?? goal.unlock_price_cents;
     if (amountCents < goal.unlock_price_cents) {
       throw new Error(
         `A contribuição mínima é de R$ ${(goal.unlock_price_cents / 100).toFixed(2).replace(".", ",")}`,
       );
     }
-    if (amountCents > remainingCents) {
-      throw new Error(
-        `O valor máximo agora é R$ ${(remainingCents / 100).toFixed(2).replace(".", ",")}`,
-      );
-    }
-
     const externalId = `goal_${userId.slice(0, 8)}_${Date.now()}`;
     const description = `Contribuição para meta`;
     const gateway = await callNexusPag(amountCents / 100, description, externalId);
@@ -758,6 +751,7 @@ export const createGoalPixCharge = createServerFn({ method: "POST" })
           post_id: post.id,
           kind: "goal_contribution",
           minimum_amount_cents: goal.unlock_price_cents,
+          goal_already_reached: goalReached,
         },
       })
       .select("id, qr_code, qr_code_base64, expires_at, external_id")

@@ -195,7 +195,7 @@ function renderTemplate(
     .replaceAll("{{criadora}}", vars.criadora ? `@${vars.criadora}` : "");
 }
 
-function MailingPage() {
+export function MailingPage() {
   const { locale, tr } = useI18n();
   const { user, profile, isCreator, loading } = useAuth();
   const [tags, setTags] = useState<SubTag[]>([]);
@@ -233,7 +233,7 @@ function MailingPage() {
     const d = detectExternalContact(body);
     return d.blocked
       ? locale === "en"
-        ? "External contact information is not allowed. Keep the conversation on Venyx."
+        ? "External contact information is not allowed. Keep the conversation on Fanlira."
         : contactBlockMessage(d)
       : null;
   }, [body, locale]);
@@ -548,8 +548,8 @@ function MailingPage() {
             <h1 className="text-2xl font-bold">{tr("Mensagens em massa", "Mass messaging")}</h1>
             <p className="text-sm text-muted-foreground">
               {tr(
-                "Modelos, segmentação avançada, agendamento e fila — tudo dentro da Venyx.",
-                "Templates, advanced segmentation, scheduling and queueing—all inside Venyx.",
+                "Modelos, segmentação avançada, agendamento e fila — tudo dentro da Fanlira.",
+                "Templates, advanced segmentation, scheduling and queueing—all inside Fanlira.",
               )}
             </p>
           </div>

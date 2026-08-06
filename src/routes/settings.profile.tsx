@@ -20,10 +20,11 @@ export const Route = createFileRoute("/settings/profile")({
   component: SettingsProfile,
 });
 
-function SettingsProfile() {
+export function SettingsProfile() {
   const { user, profile, isCreator, demoPreviewRole, refresh, loading } = useAuth();
   const { t, tr } = useI18n();
   const nav = useNavigate();
+  const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [wmPosition, setWmPosition] = useState<WatermarkPosition>("bottom-right");
@@ -34,7 +35,13 @@ function SettingsProfile() {
   const demoCreatorMode = demoPreviewRole === "creator";
   const creatorMode = isCreator || demoCreatorMode;
   const demoCreator = demoCreatorMode ? getDemoCreator("aline") : null;
-  const displayedUsername = demoCreator?.username ?? profile?.username ?? "";
+  const displayedUsername = demoCreator?.username ?? username;
+  const usernameCooldownEndsAt = profile?.username_changed_at
+    ? new Date(new Date(profile.username_changed_at).getTime() + 14 * 24 * 60 * 60 * 1000)
+    : null;
+  const usernameOnCooldown = Boolean(
+    usernameCooldownEndsAt && usernameCooldownEndsAt.getTime() > Date.now(),
+  );
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/login" });
@@ -42,6 +49,7 @@ function SettingsProfile() {
 
   useEffect(() => {
     if (profile) {
+      setUsername(demoCreator?.username ?? profile.username ?? "");
       setDisplayName(demoCreator?.display_name ?? profile.display_name ?? "");
       setBio(demoCreator?.bio ?? profile.bio ?? "");
       const p = profile as unknown as {
@@ -69,10 +77,21 @@ function SettingsProfile() {
       );
       return;
     }
+    const normalizedUsername = username.trim().toLowerCase().replace(/^@/, "");
+    if (!/^(?=.{3,30}$)[a-z0-9]+(?:[._][a-z0-9]+)*$/.test(normalizedUsername)) {
+      toast.error(
+        tr(
+          "O nome de usuário deve ter de 3 a 30 caracteres e usar apenas letras, números, ponto ou sublinhado.",
+          "The username must be 3 to 30 characters and use only letters, numbers, dots, or underscores.",
+        ),
+      );
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
       .update({
+        username: normalizedUsername,
         display_name: displayName,
         bio,
         watermark_position: wmPosition,
@@ -82,8 +101,25 @@ function SettingsProfile() {
       } as never)
       .eq("user_id", profile.user_id);
     setSaving(false);
-    if (error) toast.error(error.message);
+    if (error) {
+      const message = `${error.code ?? ""} ${error.message ?? ""}`;
+      if (message.includes("USERNAME_CHANGE_COOLDOWN")) {
+        toast.error(
+          tr(
+            "Você já alterou seu nome de usuário. A próxima troca estará disponível 14 dias após a última alteração.",
+            "You already changed your username. The next change will be available 14 days after the last one.",
+          ),
+        );
+      } else if (error.code === "23505" || message.toLowerCase().includes("duplicate")) {
+        toast.error(tr("Esse nome de usuário já está em uso.", "This username is already in use."));
+      } else if (message.includes("USERNAME_INVALID") || error.code === "22023") {
+        toast.error(tr("Esse nome de usuário não é válido.", "This username is not valid."));
+      } else {
+        toast.error(error.message);
+      }
+    }
     else {
+      setUsername(normalizedUsername);
       if (displayName.trim().length >= 2 && bio.trim().length >= 20) {
         trackProductEvent("profile_completed", { creator: isCreator });
       }
@@ -111,8 +147,34 @@ function SettingsProfile() {
           )}
           <form onSubmit={onSave} className="mt-6 space-y-4">
             <div>
-              <Label>Username</Label>
-              <Input value={displayedUsername} disabled className="mt-1.5" />
+              <Label htmlFor="username">{tr("Nome de usuário", "Username")}</Label>
+              <div className="relative mt-1.5">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  @
+                </span>
+                <Input
+                  id="username"
+                  value={displayedUsername}
+                  onChange={(event) => setUsername(event.target.value.toLowerCase())}
+                  disabled={demoCreatorMode || usernameOnCooldown}
+                  maxLength={30}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="pl-7"
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {usernameOnCooldown && usernameCooldownEndsAt
+                  ? tr(
+                      `Você poderá trocar novamente em ${usernameCooldownEndsAt.toLocaleDateString("pt-BR")}.`,
+                      `You can change it again on ${usernameCooldownEndsAt.toLocaleDateString("en-US")}.`,
+                    )
+                  : tr(
+                      "Escolha seu nome de usuário com cuidado. Depois de salvar, a próxima troca só poderá ser feita após 14 dias.",
+                      "Choose your username carefully. After saving, the next change will only be available after 14 days.",
+                    )}
+              </p>
             </div>
             <div>
               <Label htmlFor="dn">{tr("Nome de exibição", "Display name")}</Label>
@@ -144,7 +206,7 @@ function SettingsProfile() {
                     "Aplicada automaticamente em todas as suas fotos e vídeos. Formato:",
                     "Automatically applied to all your photos and videos. Format:",
                   )}{" "}
-                  <span className="font-mono">Venyx.com.br/profile/{displayedUsername}</span>
+                  <span className="font-mono">Fanlira.com.br/profile/{displayedUsername}</span>
                 </p>
               </div>
 

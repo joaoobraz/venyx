@@ -113,7 +113,7 @@ function LandingHeroV2() {
           <h1 className="font-display text-[3.4rem] font-semibold leading-[0.96] tracking-[-0.055em] sm:text-7xl lg:text-[4.75rem] 2xl:text-[5.35rem]">
             {tr("Mais perto.", "Closer.")}
             <span className="block text-primary">{tr("Mais exclusivo.", "More exclusive.")}</span>
-            <span className="block italic">{tr("Mais Venyx.", "More Venyx.")}</span>
+            <span className="block italic">{tr("Mais Fanlira.", "More Fanlira.")}</span>
           </h1>
 
           <p className="mt-7 max-w-xl text-base leading-7 text-white/65 sm:text-lg sm:leading-8">
@@ -241,7 +241,7 @@ function LandingHeroV3() {
     <section className="relative isolate overflow-hidden border-b border-white/10 bg-[#160d12] text-white">
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] border-l border-white/[0.04] bg-[#1b1016] lg:block" />
       <div className="pointer-events-none absolute bottom-8 right-8 hidden font-display text-[9rem] font-semibold italic leading-none text-white/[0.018] lg:block">
-        Venyx
+        Fanlira
       </div>
 
       <div className="relative mx-auto grid min-h-[42rem] max-w-7xl items-center gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:py-12">
@@ -254,7 +254,7 @@ function LandingHeroV3() {
           <h1 className="font-display text-[3.25rem] font-semibold leading-[0.97] tracking-[-0.05em] sm:text-7xl lg:text-[4.45rem]">
             {tr("Mais perto.", "Closer.")}
             <span className="block text-primary">{tr("Mais exclusivo.", "More exclusive.")}</span>
-            <span className="block italic">{tr("Mais Venyx.", "More Venyx.")}</span>
+            <span className="block italic">{tr("Mais Fanlira.", "More Fanlira.")}</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-7 text-white/58 sm:text-lg sm:leading-8">
@@ -412,7 +412,7 @@ function LandingHeroV11() {
           <h1 className="font-display text-[3.25rem] font-semibold leading-[0.96] tracking-[-0.05em] sm:text-7xl lg:text-[4.6rem]">
             {tr("Mais perto.", "Closer.")}
             <span className="block text-primary">{tr("Mais exclusivo.", "More exclusive.")}</span>
-            <span className="block italic">{tr("Mais Venyx.", "More Venyx.")}</span>
+            <span className="block italic">{tr("Mais Fanlira.", "More Fanlira.")}</span>
           </h1>
 
           <p className="mt-7 max-w-[35rem] text-base leading-7 text-white/58 sm:text-lg sm:leading-8">
@@ -625,7 +625,7 @@ function Landing() {
               <h1 className="font-display text-[3.4rem] font-semibold leading-[0.96] tracking-[-0.055em] sm:text-7xl lg:text-[4.55rem] 2xl:text-[5.25rem]">
                 {tr("Mais perto.", "Closer.")}
                 <span className="block text-primary">{tr("Mais exclusivo.", "More exclusive.")}</span>
-                <span className="block italic">{tr("Mais Venyx.", "More Venyx.")}</span>
+                <span className="block italic">{tr("Mais Fanlira.", "More Fanlira.")}</span>
               </h1>
 
               <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
@@ -871,7 +871,7 @@ function Landing() {
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                   <Heart className="h-3.5 w-3.5" />
-                  {tr("Sua experiência Venyx", "Your Venyx experience")}
+                  {tr("Sua experiência Fanlira", "Your Fanlira experience")}
                 </span>
                 <h2 className="mt-6 max-w-xl font-display text-4xl font-semibold leading-tight sm:text-5xl">
                   {tr("Suas favoritas.", "Your favorites.")}
@@ -970,7 +970,7 @@ function Landing() {
                     <Crown className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-[10px] text-white/40">{tr("Fidelidade Venyx", "Venyx loyalty")}</p>
+                    <p className="text-[10px] text-white/40">{tr("Fidelidade Fanlira", "Fanlira loyalty")}</p>
                     <p className="mt-0.5 text-xs font-bold">{tr("Você chegou ao nível Ouro", "You reached Gold level")}</p>
                   </div>
                 </div>
@@ -982,7 +982,7 @@ function Landing() {
         <section className="border-y border-border/50 bg-card/20">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 md:grid-cols-[0.7fr_1.3fr] md:items-center lg:py-20">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">{tr("Confiança Venyx", "Venyx trust")}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">{tr("Confiança Fanlira", "Fanlira trust")}</p>
               <h2 className="mt-3 font-display text-3xl font-semibold sm:text-4xl">{tr("Exclusivo também é seguro.", "Exclusive can also be safe.")}</h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -1015,7 +1015,7 @@ function Landing() {
               {tr("O lado mais exclusivo da sua conexão começa aqui.", "The most exclusive side of your connection starts here.")}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
-              {tr("Crie sua conta, descubra novas criadoras e viva a Venyx do seu jeito.", "Create your account, discover new creators and enjoy Venyx your way.")}
+              {tr("Crie sua conta, descubra novas criadoras e viva a Fanlira do seu jeito.", "Create your account, discover new creators and enjoy Fanlira your way.")}
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link to="/signup">
@@ -1040,7 +1040,7 @@ function Landing() {
           <Link to="/" className="flex items-center gap-2.5">
             <span className="h-9 w-9 rounded-xl bg-gradient-primary shadow-glow" />
             <span className="font-display text-2xl font-semibold tracking-tight">
-              Ven<span className="text-gradient-gold italic">yx</span>
+              Fan<span className="text-gradient-gold italic">lira</span>
             </span>
           </Link>
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-muted-foreground">
@@ -1049,7 +1049,7 @@ function Landing() {
             <Link to="/help" className="transition-colors hover:text-primary">{tr("Ajuda", "Help")}</Link>
           </nav>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            © {new Date().getFullYear()} Venyx · 18+
+            © {new Date().getFullYear()} Fanlira · 18+
           </p>
         </div>
       </footer>

@@ -44,7 +44,7 @@ type MediaDraft = {
   coverFile?: File;
 };
 
-function CreatorPostsPage() {
+export function CreatorPostsPage() {
   const { tr } = useI18n();
   const { user, profile, isCreator, loading, demoPreviewRole } = useAuth();
   const nav = useNavigate();

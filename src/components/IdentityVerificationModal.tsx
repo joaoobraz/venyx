@@ -19,7 +19,7 @@ import {
 
 /**
  * Verificação de identidade exigida ao assinar conteúdo de uma criadora.
- * Visual próprio da Venyx (inspirado em fluxos do mercado, sem cópia).
+ * Visual próprio da Fanlira (inspirado em fluxos do mercado, sem cópia).
  */
 export function IdentityVerificationModal({
   open,

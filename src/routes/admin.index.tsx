@@ -51,7 +51,7 @@ type Stats = {
   pendingWithdrawals: number;
 };
 
-function AdminHomePage() {
+export function AdminHomePage() {
   const { tr } = useI18n();
   const getStats = useServerFn(adminDashboardStats);
   const [stats, setStats] = useState<Stats | null>(null);

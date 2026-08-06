@@ -1,8 +1,8 @@
-# Venyx — rotina operacional de lançamento
+# Fanlira — rotina operacional de lançamento
 
 ## Ambientes e acesso
 
-- O projeto `uzbdzklsufweldmfbvfq` é o staging. Produção só deve ser criada ou alterada após a validação final do responsável pela Venyx.
+- O projeto `uzbdzklsufweldmfbvfq` é o staging. Produção só deve ser criada ou alterada após a validação final do responsável pela Fanlira.
 - Chaves administrativas nunca entram no repositório, no navegador ou em variáveis com prefixo `VITE_`.
 - Cada integração usa uma credencial própria. Credenciais temporárias devem expirar ou ser revogadas ao final da manutenção.
 - Dados com `is_demo=true` e perfis identificados como demonstração nunca entram em rankings, pagamentos ou relatórios reais.

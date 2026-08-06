@@ -10,7 +10,7 @@ export const Route = createFileRoute("/creator/media-library")({
   component: CreatorMediaLibraryPage,
 });
 
-function CreatorMediaLibraryPage() {
+export function CreatorMediaLibraryPage() {
   const { user, isCreator, loading } = useAuth();
   const { tr } = useI18n();
   const navigate = useNavigate();

@@ -12,10 +12,10 @@ test("retorna uma mensagem neutra para credenciais inválidas", () => {
 test("orienta a confirmação de e-mail em português e inglês", () => {
   assert.equal(
     getPasswordLoginError({ code: "email_not_confirmed" }),
-    "Confirme seu e-mail antes de entrar na Venyx.",
+    "Confirme seu e-mail antes de entrar na Fanlira.",
   );
   assert.equal(
     getPasswordLoginError({ code: "email_not_confirmed" }, "en"),
-    "Confirm your email before signing in to Venyx.",
+    "Confirm your email before signing in to Fanlira.",
   );
 });

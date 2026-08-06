@@ -16,7 +16,7 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
 });
 
-function SearchPage() {
+export function SearchPage() {
   const { tr } = useI18n();
   const initial = Route.useSearch().q ?? "";
   const [query, setQuery] = useState(initial);
