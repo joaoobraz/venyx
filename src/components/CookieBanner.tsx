@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import {
   OPEN_COOKIE_SETTINGS_EVENT,
   readCookieConsent,
@@ -10,6 +12,7 @@ import {
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const { locale } = useI18n();
 
   useEffect(() => {
     try {
@@ -44,7 +47,7 @@ export function CookieBanner() {
             Usamos cookies essenciais para o site funcionar. Com sua autorização, pixels de
             marketing podem medir visitas, cliques e campanhas nas páginas Fanlira Links. Você pode
             recusar ou alterar essa escolha depois. Saiba mais na{" "}
-            <Link to="/privacy" className="underline underline-offset-2">
+            <Link to={localizedPathname("/privacy", locale) as never} className="underline underline-offset-2">
               Política de Privacidade
             </Link>
             .

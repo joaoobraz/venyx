@@ -57,7 +57,7 @@ const REWARD_TYPES: Array<{ value: DemoRewardType; label: string }> = [
   { value: "fan_badge", label: "Selo de fã" },
 ];
 
-function tierLabel(tier: LoyaltyTier, locale: "pt-BR" | "en") {
+function tierLabel(tier: LoyaltyTier, locale: "pt-BR" | "en" | "es") {
   return locale === "en" ? TIER_META[tier].labelEn : TIER_META[tier].label;
 }
 

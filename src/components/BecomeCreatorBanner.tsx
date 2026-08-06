@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Crown, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 
 interface Props {
   compact?: boolean;
@@ -9,7 +10,7 @@ interface Props {
 
 export function BecomeCreatorBanner({ compact = false }: Props) {
   const { isCreator, kyc, user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   if (!user || isCreator) return null;
 
@@ -31,7 +32,7 @@ export function BecomeCreatorBanner({ compact = false }: Props) {
 
   return (
     <Link
-      to="/become-creator"
+      to={localizedPathname("/become-creator", locale) as never}
       className={`group block overflow-hidden rounded-2xl bg-gradient-primary p-5 shadow-glow transition-transform hover:-translate-y-0.5 ${
         compact ? "" : "shadow-card"
       }`}

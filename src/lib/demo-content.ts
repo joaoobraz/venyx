@@ -1,6 +1,7 @@
 import type { PostWithRelations } from "@/components/PostCard";
 import type { StoryGroup } from "@/components/StoryViewer";
 import type { PostComment } from "@/_server/post-interactions.functions";
+import type { Locale } from "@/lib/i18n";
 import {
   DEMO_CREATORS,
   getDemoCreator,
@@ -14,6 +15,10 @@ import {
 } from "@/lib/demo-operations";
 
 export type DemoLocale = "pt-BR" | "en";
+
+export function demoLocale(locale: Locale): DemoLocale {
+  return locale === "en" ? "en" : "pt-BR";
+}
 
 type DemoPostSeed = {
   id: string;

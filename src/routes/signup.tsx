@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
 import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
+import { localizedPathname } from "@/lib/localized-paths";
 import { trackClientError, trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 export function SignupPage() {
-  const { t, tr } = useI18n();
+  const { t, tr, locale } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -25,10 +26,12 @@ export function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
+  const feedRoute = routeTo("/feed");
 
   useEffect(() => {
-    if (user) navigate({ to: "/feed" });
-  }, [user, navigate]);
+    if (user) navigate({ to: feedRoute });
+  }, [user, navigate, feedRoute]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,7 +47,7 @@ export function SignupPage() {
       if (data.session) {
         trackProductEvent("signup_completed", { method: "password", confirmationRequired: false });
         toast.success(tr("Conta criada!", "Account created!"));
-        navigate({ to: "/feed" });
+        navigate({ to: routeTo("/feed") });
         return;
       }
 
@@ -118,10 +121,10 @@ export function SignupPage() {
               )}
             </p>
             <Button asChild className="mt-5 w-full">
-              <Link to="/login">{tr("Voltar para o login", "Back to sign in")}</Link>
+              <Link to={routeTo("/login")}>{tr("Voltar para o login", "Back to sign in")}</Link>
             </Button>
             <Link
-              to="/reset-password"
+              to={routeTo("/reset-password")}
               className="mt-3 inline-block text-sm text-muted-foreground hover:text-primary"
             >
               {tr("Já tinha conta? Redefinir senha", "Already had an account? Reset password")}
@@ -184,7 +187,7 @@ export function SignupPage() {
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           {t("auth.signup.haveAccount")}{" "}
-          <Link to="/login" className="font-medium text-primary hover:underline">
+          <Link to={routeTo("/login")} className="font-medium text-primary hover:underline">
             {t("nav.login")}
           </Link>
         </p>

@@ -9,6 +9,7 @@ import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { demoLocale } from "@/lib/demo-content";
 import { fetchPosts } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +32,7 @@ export function FeedPage() {
     if (!user) return;
     setLoadingPosts(true);
     try {
-      const list = await fetchPosts({ viewerId: user.id, locale });
+      const list = await fetchPosts({ viewerId: user.id, locale: demoLocale(locale) });
       setPosts(list);
     } finally {
       setLoadingPosts(false);

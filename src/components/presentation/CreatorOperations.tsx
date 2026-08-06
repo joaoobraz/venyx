@@ -79,22 +79,22 @@ type CreatorSection =
   | "coupons"
   | "moderation";
 
-function money(cents: number, locale: "pt-BR" | "en") {
+function money(cents: number, locale: "pt-BR" | "en" | "es") {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
 }
 
-function count(value: number, locale: "pt-BR" | "en") {
+function count(value: number, locale: "pt-BR" | "en" | "es") {
   return value.toLocaleString(locale === "en" ? "en-US" : "pt-BR");
 }
 
-function shortDate(value: string, locale: "pt-BR" | "en") {
+function shortDate(value: string, locale: "pt-BR" | "en" | "es") {
   return new Date(`${value}T12:00:00`).toLocaleDateString(locale === "en" ? "en-US" : "pt-BR");
 }
 
-function percent(value: number, total: number, locale: "pt-BR" | "en") {
+function percent(value: number, total: number, locale: "pt-BR" | "en" | "es") {
   const percentage = total > 0 ? (value / total) * 100 : 0;
   return `${percentage.toLocaleString(locale === "en" ? "en-US" : "pt-BR", {
     minimumFractionDigits: 1,

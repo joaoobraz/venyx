@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
 import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
 import { getPasswordLoginError } from "@/lib/auth-errors";
+import { localizedPathname } from "@/lib/localized-paths";
 import { trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,12 @@ export function LoginPage() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
+  const feedRoute = routeTo("/feed");
 
   useEffect(() => {
-    if (user) navigate({ to: "/feed" });
-  }, [user, navigate]);
+    if (user) navigate({ to: feedRoute });
+  }, [user, navigate, feedRoute]);
 
   const prepareMfaChallenge = async (): Promise<boolean> => {
     const { data: aal, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -64,7 +67,7 @@ export function LoginPage() {
       });
       if (error) throw error;
       if (await prepareMfaChallenge()) return;
-      navigate({ to: "/feed" });
+      navigate({ to: routeTo("/feed") });
     } catch (error) {
       trackProductEvent("login_failed", {
         method: "password",
@@ -86,7 +89,7 @@ export function LoginPage() {
     setRecoverySent(false);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
       });
       if (error) throw error;
       setRecoverySent(true);
@@ -125,7 +128,7 @@ export function LoginPage() {
       });
       if (verifyError) throw verifyError;
 
-      navigate({ to: "/feed" });
+      navigate({ to: routeTo("/feed") });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Código inválido.");
     } finally {
@@ -249,7 +252,7 @@ export function LoginPage() {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button asChild type="button" size="sm">
-                <Link to="/signup">{tr("Criar conta Fanlira", "Create Fanlira account")}</Link>
+                <Link to={routeTo("/signup")}>{tr("Criar conta Fanlira", "Create Fanlira account")}</Link>
               </Button>
               <Button
                 type="button"
@@ -275,7 +278,7 @@ export function LoginPage() {
         )}
 
         <Link
-          to="/reset-password"
+          to={routeTo("/reset-password")}
           className="mt-3 text-center text-sm text-muted-foreground hover:text-primary"
         >
           {t("auth.login.forgot")}
@@ -299,7 +302,7 @@ export function LoginPage() {
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           {t("auth.login.noAccount")}{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
+          <Link to={routeTo("/signup")} className="font-medium text-primary hover:underline">
             {t("nav.signup")}
           </Link>
         </p>

@@ -40,7 +40,7 @@ type PublicSettings = {
   is_published: boolean;
 };
 
-function money(cents: number, locale: "pt-BR" | "en") {
+function money(cents: number, locale: "pt-BR" | "en" | "es") {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-BR", {
     style: "currency",
     currency: "BRL",

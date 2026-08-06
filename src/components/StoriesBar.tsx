@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { StoryViewer, type StoryGroup } from "@/components/StoryViewer";
 import { getStoryMediaUrls } from "@/_server/media.functions";
 import { DEMO_MODE } from "@/lib/demo-creators";
-import { getDemoStoryGroups } from "@/lib/demo-content";
+import { demoLocale, getDemoStoryGroups } from "@/lib/demo-content";
 import { useI18n } from "@/lib/i18n";
 import { moderateBeforeUpload } from "@/lib/moderation";
 import { trackProductEvent } from "@/lib/telemetry";
@@ -32,7 +32,7 @@ export function StoriesBar() {
 
   const load = useCallback(async () => {
     if (DEMO_MODE) {
-      setGroups(getDemoStoryGroups(locale));
+      setGroups(getDemoStoryGroups(demoLocale(locale)));
       return;
     }
     const { data: stories } = await supabase

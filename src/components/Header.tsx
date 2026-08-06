@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 import { getDemoCreator } from "@/lib/demo-creators";
+import { localizedPathname } from "@/lib/localized-paths";
 import { resolveOwnProfileUsername } from "@/lib/profile-visibility";
 
 export function Header() {
@@ -44,9 +45,10 @@ export function Header() {
     demoPreviewRole,
     setDemoPreviewRole,
   } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
   const unread = useUnreadCounts();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const creatorPreviewProfile = demoPreviewRole === "creator" ? getDemoCreator("aline") : null;
   const displayedProfile = creatorPreviewProfile ?? profile;
   const ownProfileUsername = resolveOwnProfileUsername({
@@ -62,7 +64,7 @@ export function Header() {
       onChange={(event) => {
         const role = (event.target.value || null) as DemoPreviewRole | null;
         setDemoPreviewRole(role);
-        navigate({ to: role ? "/presentation" : "/feed" });
+        navigate({ to: role ? "/presentation" : routeTo("/feed") });
       }}
       className={className}
       aria-label={t("preview.viewAs")}
@@ -77,7 +79,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
-        <Link to={user ? "/feed" : "/"} className="group flex items-center gap-2.5">
+        <Link to={user ? routeTo("/feed") : "/"} className="group flex items-center gap-2.5">
           <div className="relative h-9 w-9 rounded-xl bg-gradient-primary shadow-glow transition-transform duration-300 group-hover:scale-105">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary-glow/40 to-transparent" />
           </div>
@@ -89,7 +91,7 @@ export function Header() {
         {user && (
           <div className="hidden flex-1 max-w-md md:block">
             <Link
-              to="/search"
+              to={routeTo("/search")}
               className="flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground transition-all duration-200 hover:border-primary/50 hover:bg-card hover:text-foreground"
             >
               <Search className="h-4 w-4" />
@@ -115,14 +117,14 @@ export function Header() {
           {user ? (
             <>
               <Link
-                to="/search"
+                to={routeTo("/search")}
                 className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-card hover:text-primary md:hidden"
                 aria-label={t("nav.search")}
               >
                 <Search className="h-5 w-5" />
               </Link>
               <Link
-                to="/chat"
+                to={routeTo("/chat")}
                 className="relative hidden rounded-full p-2 text-muted-foreground transition-colors hover:bg-card hover:text-primary md:inline-flex"
                 aria-label={t("nav.chat")}
               >
@@ -134,7 +136,7 @@ export function Header() {
                 )}
               </Link>
               <Link
-                to="/notifications"
+                to={routeTo("/notifications")}
                 className="relative hidden rounded-full p-2 text-muted-foreground transition-colors hover:bg-card hover:text-primary md:inline-flex"
                 aria-label={t("nav.notifications")}
               >
@@ -147,8 +149,8 @@ export function Header() {
               </Link>
               {displayedProfile && ownProfileUsername && (
                 <Link
-                  to="/profile/$username"
-                  params={{ username: ownProfileUsername }}
+                  to={routeTo("/profile/$username")}
+                  params={{ username: ownProfileUsername } as never}
                   className="ml-1 hidden h-9 w-9 overflow-hidden rounded-full border border-border bg-card md:block"
                 >
                   {displayedProfile.avatar_url ? (
@@ -219,13 +221,13 @@ export function Header() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/wishlist">
+                      <Link to={routeTo("/wishlist")}>
                       <Heart className="mr-2 h-4 w-4" />
                       {t("nav.wishlist")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/loyalty">
+                      <Link to={routeTo("/loyalty")}>
                       <Trophy className="mr-2 h-4 w-4" />
                       {t("nav.loyalty")}
                     </Link>
@@ -235,31 +237,31 @@ export function Header() {
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>{t("nav.creatorArea")}</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/posts">
+                        <Link to={routeTo("/creator/posts")}>
                           <PenSquare className="mr-2 h-4 w-4" />
                           {t("nav.newPost")}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/wallet">
+                        <Link to={routeTo("/creator/wallet")}>
                           <Wallet className="mr-2 h-4 w-4" />
                           {t("nav.wallet")}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/analytics">
+                        <Link to={routeTo("/creator/analytics")}>
                           <BarChart3 className="mr-2 h-4 w-4" />
                           Analytics
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/subscription-plans">
+                        <Link to={routeTo("/creator/subscription-plans")}>
                           <Layers className="mr-2 h-4 w-4" />
                           {t("nav.plans")}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/creator/moderation">
+                        <Link to={routeTo("/creator/moderation")}>
                           <ShieldCheck className="mr-2 h-4 w-4" />
                           {t("nav.commentModeration")}
                         </Link>
@@ -269,26 +271,26 @@ export function Header() {
                   <DropdownMenuSeparator />
                   {ownProfileUsername && (
                     <DropdownMenuItem asChild>
-                      <Link to="/profile/$username" params={{ username: ownProfileUsername }}>
+                      <Link to={routeTo("/profile/$username")} params={{ username: ownProfileUsername } as never}>
                         <Eye className="mr-2 h-4 w-4" />
                         {t("nav.profile")}
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/profile">
+                    <Link to={routeTo("/settings/profile")}>
                       <Settings className="mr-2 h-4 w-4" />
                       {t("nav.settings")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/payments">
+                    <Link to={routeTo("/settings/payments")}>
                       <ReceiptText className="mr-2 h-4 w-4" />
                       {t("nav.payments")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/settings/security">
+                    <Link to={routeTo("/settings/security")}>
                       <ShieldCheck className="mr-2 h-4 w-4" />
                       {t("nav.security")}
                     </Link>
@@ -307,12 +309,12 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link to="/login">
+              <Link to={routeTo("/login")}>
                 <Button variant="ghost" size="sm">
                   {t("nav.login")}
                 </Button>
               </Link>
-              <Link to="/signup">
+              <Link to={routeTo("/signup")}>
                 <Button
                   size="sm"
                   className="bg-primary text-primary-foreground hover:bg-primary/90"

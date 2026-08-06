@@ -40,6 +40,7 @@ import { TipModal } from "@/components/TipModal";
 import { SubscribeModal } from "@/components/SubscribeModal";
 import { SafetyMenu } from "@/components/SafetyMenu";
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
+import { demoLocale } from "@/lib/demo-content";
 import { getDemoChatThreadForCreator } from "@/lib/demo-chat";
 import { isDemoSubscribed, toggleDemoSubscription } from "@/lib/demo-content";
 import {
@@ -252,7 +253,7 @@ export function ProfilePage() {
       creatorId: profile.user_id,
       viewerId: isLeadPreview ? null : (user?.id ?? null),
       demoStateUserId: isDemoProfile ? (user?.id ?? null) : null,
-      locale,
+      locale: demoLocale(locale),
     });
     setPosts(nextPosts);
   }, [isDemoProfile, isLeadPreview, locale, profile, user?.id]);

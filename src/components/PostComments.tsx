@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE } from "@/lib/demo-creators";
-import { getDemoCommentSeeds, type DemoLocale } from "@/lib/demo-content";
+import { demoLocale, getDemoCommentSeeds, type DemoLocale } from "@/lib/demo-content";
 import { detectExternalContact } from "@/lib/contact-guard";
 import { Input } from "@/components/ui/input";
 import { SafetyMenu } from "@/components/SafetyMenu";
@@ -152,6 +152,7 @@ export function PostComments({
 }) {
   const { user, session, profile } = useAuth();
   const { tr, locale } = useI18n();
+  const activeDemoLocale = demoLocale(locale);
   const isLocalDemoPost = DEMO_MODE && postId.startsWith("demo-post-");
   const [comments, setComments] = useState<PostComment[]>([]);
   const [draft, setDraft] = useState("");
@@ -189,20 +190,20 @@ export function PostComments({
     const reloadVisibleComments = (event: Event) => {
       const detail = (event as CustomEvent<{ creatorId?: string }>).detail;
       if (detail?.creatorId !== creatorId) return;
-      const visible = readDemoComments(postId, creatorId, locale);
+      const visible = readDemoComments(postId, creatorId, activeDemoLocale);
       setComments(visible);
       onCommentsCountChange(visible.length);
     };
     window.addEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, reloadVisibleComments);
     return () =>
       window.removeEventListener(DEMO_COMMENT_MODERATION_CHANGED_EVENT, reloadVisibleComments);
-  }, [creatorId, isLocalDemoPost, locale, onCommentsCountChange, postId]);
+  }, [activeDemoLocale, creatorId, isLocalDemoPost, onCommentsCountChange, postId]);
 
   useEffect(() => {
     if (!open || loaded || !user || !headers) return;
     setLoading(true);
     if (isLocalDemoPost) {
-      const stored = readDemoComments(postId, creatorId, locale);
+      const stored = readDemoComments(postId, creatorId, activeDemoLocale);
       setComments(stored);
       setNextCursor(null);
       onCommentsCountChange(stored.length);
@@ -219,7 +220,7 @@ export function PostComments({
       })
       .catch(() => {
         if (DEMO_MODE) {
-          const stored = readDemoComments(postId, creatorId, locale);
+          const stored = readDemoComments(postId, creatorId, activeDemoLocale);
           setComments(stored);
           setNextCursor(null);
           onCommentsCountChange(stored.length);
@@ -235,7 +236,7 @@ export function PostComments({
     isLocalDemoPost,
     listFn,
     loaded,
-    locale,
+    activeDemoLocale,
     onCommentsCountChange,
     open,
     postId,
@@ -448,7 +449,7 @@ export function PostComments({
       }
       const next = [...comments, fallback];
       setComments(next);
-      writeDemoComments(postId, locale, next);
+      writeDemoComments(postId, activeDemoLocale, next);
       awardDemoLoyaltyPoints({
         userId: user.id,
         creatorId,
@@ -490,7 +491,7 @@ export function PostComments({
             : item,
         );
       setComments(next);
-      writeDemoComments(postId, locale, next);
+      writeDemoComments(postId, activeDemoLocale, next);
       onCommentsCountChange(next.length);
     }
   };
@@ -602,7 +603,7 @@ export function PostComments({
           : item,
       );
       setComments(next);
-      writeDemoComments(postId, locale, next);
+      writeDemoComments(postId, activeDemoLocale, next);
       cancelEdit();
     } finally {
       setEditingBusy(false);

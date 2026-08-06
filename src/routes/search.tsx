@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Search as SearchIcon, Loader2 } from "lucide-react";
@@ -9,16 +9,20 @@ import { searchCreators } from "@/_server/discovery.functions";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
 
+export type SearchRouteSearch = { q?: string };
+
+export const searchRouteSearchValidator = (s: Record<string, unknown>): SearchRouteSearch => ({
+  q: typeof s.q === "string" ? s.q : undefined,
+});
+
 export const Route = createFileRoute("/search")({
-  validateSearch: (s: Record<string, unknown>): { q?: string } => ({
-    q: typeof s.q === "string" ? s.q : undefined,
-  }),
+  validateSearch: searchRouteSearchValidator,
   component: SearchPage,
 });
 
 export function SearchPage() {
   const { tr } = useI18n();
-  const initial = Route.useSearch().q ?? "";
+  const initial = (useSearch({ strict: false }) as SearchRouteSearch).q ?? "";
   const [query, setQuery] = useState(initial);
   const [results, setResults] = useState<CreatorSummary[]>([]);
   const [loading, setLoading] = useState(false);

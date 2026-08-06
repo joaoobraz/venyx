@@ -259,7 +259,7 @@ const MODERATOR_SECTIONS: Section[] = [
   },
 ];
 
-function roleLabel(role: DemoPreviewRole, locale: "pt-BR" | "en") {
+function roleLabel(role: DemoPreviewRole, locale: "pt-BR" | "en" | "es") {
   if (role === "creator") return locale === "en" ? "Creator" : "Modelo";
   if (role === "admin") return locale === "en" ? "Administrator" : "Administrador";
   return locale === "en" ? "Client" : "Cliente";

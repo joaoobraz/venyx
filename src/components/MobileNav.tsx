@@ -2,13 +2,15 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Bell, Compass, Home, LayoutDashboard, MessageCircle, Settings, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 
 export function MobileNav() {
   const { profile, demoPreviewRole } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const location = useLocation();
   const unread = useUnreadCounts();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale);
 
   const subscriberItems = [
     { to: "/feed", label: t("nav.feed"), icon: Home },
@@ -31,11 +33,15 @@ export function MobileNav() {
     >
       <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
         {items.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to || (to === "/presentation/overview" && location.pathname.startsWith("/presentation/"));
+          const localizedTo = routeTo(to);
+          const active =
+            location.pathname === localizedTo ||
+            location.pathname === to ||
+            (to === "/presentation/overview" && location.pathname.startsWith("/presentation/"));
           return (
             <Link
               key={to}
-              to={to as never}
+              to={localizedTo as never}
               aria-label={label}
               className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors ${
                 active ? "text-primary" : "text-muted-foreground"
@@ -59,11 +65,13 @@ export function MobileNav() {
         })}
         {profile ? (
           <Link
-            to="/profile/$username"
-            params={{ username: profile.username }}
+            to={routeTo("/profile/$username") as never}
+            params={{ username: profile.username } as never}
             aria-label={t("nav.profile")}
             className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-medium ${
-              location.pathname.startsWith("/profile/") ? "text-primary" : "text-muted-foreground"
+              location.pathname.startsWith(routeTo("/profile/")) || location.pathname.startsWith("/profile/")
+                ? "text-primary"
+                : "text-muted-foreground"
             }`}
           >
             <User className="h-5 w-5" />
@@ -71,7 +79,7 @@ export function MobileNav() {
           </Link>
         ) : (
           <Link
-            to="/login"
+            to={routeTo("/login") as never}
             aria-label={t("nav.login")}
             className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-muted-foreground"
           >

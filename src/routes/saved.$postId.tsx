@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard, type PostWithRelations } from "@/components/PostCard";
 import { useAuth } from "@/lib/auth";
+import { demoLocale } from "@/lib/demo-content";
 import { fetchPosts } from "@/lib/posts";
 import { useI18n } from "@/lib/i18n";
 
@@ -21,7 +22,7 @@ export function SavedPostPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await fetchPosts({ postId, viewerId: user?.id ?? null, locale });
+      const list = await fetchPosts({ postId, viewerId: user?.id ?? null, locale: demoLocale(locale) });
       setPost(list[0] ?? null);
     } finally {
       setLoading(false);

@@ -103,12 +103,12 @@ export const COUPON_ELIGIBILITIES: Array<{
   },
 ];
 
-export function couponBenefitLabel(type: CouponBenefitType, locale: "pt-BR" | "en") {
+export function couponBenefitLabel(type: CouponBenefitType, locale: "pt-BR" | "en" | "es") {
   const item = COUPON_BENEFITS.find((entry) => entry.id === type);
   return locale === "en" ? (item?.labelEn ?? type) : (item?.label ?? type);
 }
 
-export function couponEligibilityLabel(type: CouponEligibility, locale: "pt-BR" | "en") {
+export function couponEligibilityLabel(type: CouponEligibility, locale: "pt-BR" | "en" | "es") {
   const item = COUPON_ELIGIBILITIES.find((entry) => entry.id === type);
   return locale === "en" ? (item?.labelEn ?? type) : (item?.label ?? type);
 }

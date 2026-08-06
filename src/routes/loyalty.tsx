@@ -49,7 +49,7 @@ const REASON_LABELS: Record<string, { pt: string; en: string }> = {
   post_comment: { pt: "Comentário aprovado", en: "Approved comment" },
 };
 
-function tierName(tier: LoyaltyTier, locale: "pt-BR" | "en") {
+function tierName(tier: LoyaltyTier, locale: "pt-BR" | "en" | "es") {
   return locale === "en" ? TIER_META[tier].labelEn : TIER_META[tier].label;
 }
 

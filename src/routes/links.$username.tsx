@@ -146,7 +146,7 @@ function safePublicLinkUrl(value: string) {
   return normalizeCreatorLinkUrl(value);
 }
 
-function PublicLinksPage() {
+export function PublicLinksPage() {
   const { username } = Route.useParams();
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [page, setPage] = useState<PageRow | null>(null);

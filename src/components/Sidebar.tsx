@@ -46,6 +46,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { CLIENT_PROFILE_PREVIEW } from "@/lib/creator-profile-preview";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { resolveOwnProfileUsername } from "@/lib/profile-visibility";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
 
@@ -68,9 +69,10 @@ type NavGroup = {
 
 export function Sidebar() {
   const { user, profile, isCreator, isAdmin, isAmbassador, demoPreviewRole } = useAuth();
-  const { t, tr } = useI18n();
+  const { t, tr, locale } = useI18n();
   const loc = useLocation();
   const unread = useUnreadCounts();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale);
   const ownProfileUsername = resolveOwnProfileUsername({
     authenticatedUserId: user?.id,
     profileUserId: profile?.user_id,
@@ -481,7 +483,11 @@ export function Sidebar() {
     },
   ];
 
-  const isActive = (item: NavItem) => loc.pathname === (item.activePath ?? item.to);
+  const isActive = (item: NavItem) => {
+    const canonicalTarget = item.activePath ?? item.to;
+    const localizedTarget = routeTo(canonicalTarget);
+    return loc.pathname === canonicalTarget || loc.pathname === localizedTarget;
+  };
   const linkCls = (active: boolean, nested = false) =>
     `group relative flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${nested ? "pl-3 pr-2" : "px-4"} ${
       active
@@ -500,7 +506,7 @@ export function Sidebar() {
     return (
       <Link
         key={item.id}
-        to={item.to as never}
+        to={routeTo(item.to) as never}
         params={item.params as never}
         search={item.search as never}
         className={linkCls(activeOverride ?? isActive(item), nested)}

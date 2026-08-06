@@ -37,7 +37,7 @@ import { useI18n } from "@/lib/i18n";
 
 const DEMO_CREATOR_ID = "demo-aline";
 
-function statusLabel(status: DemoCommentStatus, locale: "pt-BR" | "en") {
+function statusLabel(status: DemoCommentStatus, locale: "pt-BR" | "en" | "es") {
   const labels = {
     published: ["Publicado", "Published"],
     pending: ["Pendente", "Pending"],
@@ -48,7 +48,7 @@ function statusLabel(status: DemoCommentStatus, locale: "pt-BR" | "en") {
   return labels[status][locale === "en" ? 1 : 0];
 }
 
-function formatDate(value: string, locale: "pt-BR" | "en") {
+function formatDate(value: string, locale: "pt-BR" | "en" | "es") {
   return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "pt-BR", {
     day: "2-digit",
     month: "short",
@@ -349,7 +349,7 @@ function CommentList({
   onBlock,
 }: {
   comments: DemoModeratedComment[];
-  locale: "pt-BR" | "en";
+  locale: "pt-BR" | "en" | "es";
   tr: (pt: string, en: string) => string;
   onStatus: (comment: DemoModeratedComment, status: DemoCommentStatus) => void;
   onReport: (comment: DemoModeratedComment) => void;

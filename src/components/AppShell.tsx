@@ -6,10 +6,12 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 
 export function AppShell({ children, withSidebar = true }: { children: ReactNode; withSidebar?: boolean }) {
   const { user, demoPreviewRole, accountPaused } = useAuth();
-  const { t, tr } = useI18n();
+  const { t, tr, locale } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const activeLabel =
     demoPreviewRole === "creator"
       ? t("preview.creator")
@@ -47,7 +49,7 @@ export function AppShell({ children, withSidebar = true }: { children: ReactNode
                 )}
               </span>
             </span>
-            <Link to="/settings/privacy" className="shrink-0 font-semibold text-amber-700 hover:underline dark:text-amber-300">
+            <Link to={routeTo("/settings/privacy")} className="shrink-0 font-semibold text-amber-700 hover:underline dark:text-amber-300">
               {tr("Reativar", "Reactivate")}
             </Link>
           </div>

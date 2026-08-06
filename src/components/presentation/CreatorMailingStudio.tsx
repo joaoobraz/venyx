@@ -104,14 +104,14 @@ const STATUS_META: Record<CampaignStatus, { label: string; labelEn: string; clas
   },
 };
 
-function money(cents: number, locale: "pt-BR" | "en") {
+function money(cents: number, locale: "pt-BR" | "en" | "es") {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
 }
 
-function percent(value: number, total: number, locale: "pt-BR" | "en") {
+function percent(value: number, total: number, locale: "pt-BR" | "en" | "es") {
   const result = total > 0 ? (value / total) * 100 : 0;
   return `${result.toLocaleString(locale === "en" ? "en-US" : "pt-BR", {
     maximumFractionDigits: 1,

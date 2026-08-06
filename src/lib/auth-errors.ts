@@ -16,7 +16,7 @@ const messages = {
   },
 } as const;
 
-export function getPasswordLoginError(error: unknown, locale: "pt-BR" | "en" = "pt-BR") {
+export function getPasswordLoginError(error: unknown, locale: "pt-BR" | "en" | "es" = "pt-BR") {
   const copy = locale === "en" ? messages.en : messages.pt;
   const authError = error as AuthErrorLike | null;
   const code = authError?.code?.toLowerCase();

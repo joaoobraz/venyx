@@ -236,12 +236,12 @@ export interface CampaignDraftValidationInput {
   scheduledAt: string | null;
 }
 
-export function campaignObjectiveLabel(objective: CampaignObjective, locale: "pt-BR" | "en") {
+export function campaignObjectiveLabel(objective: CampaignObjective, locale: "pt-BR" | "en" | "es") {
   const item = CAMPAIGN_OBJECTIVES.find((entry) => entry.id === objective);
   return locale === "en" ? (item?.labelEn ?? objective) : (item?.label ?? objective);
 }
 
-export function campaignAudienceLabel(audience: CampaignAudience, locale: "pt-BR" | "en") {
+export function campaignAudienceLabel(audience: CampaignAudience, locale: "pt-BR" | "en" | "es") {
   const item = CAMPAIGN_AUDIENCES.find((entry) => entry.id === audience);
   return locale === "en" ? (item?.labelEn ?? audience) : (item?.label ?? audience);
 }

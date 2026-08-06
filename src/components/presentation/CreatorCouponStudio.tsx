@@ -52,7 +52,7 @@ import { useI18n } from "@/lib/i18n";
 
 type PlanMonths = 1 | 3 | 6 | 12;
 
-function money(cents: number, locale: "pt-BR" | "en") {
+function money(cents: number, locale: "pt-BR" | "en" | "es") {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -65,7 +65,7 @@ function futureLocalInput(days: number) {
   return date.toISOString().slice(0, 16);
 }
 
-function offerStatus(coupon: DemoCoupon, locale: "pt-BR" | "en") {
+function offerStatus(coupon: DemoCoupon, locale: "pt-BR" | "en" | "es") {
   if (!coupon.active) {
     return { label: locale === "en" ? "Paused" : "Pausada", tone: "muted" as const };
   }

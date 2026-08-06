@@ -9,7 +9,7 @@ import { getFirstMediaForPosts } from "@/_server/media.functions";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE, getDemoAsset, getDemoCreatorById } from "@/lib/demo-creators";
-import { getDemoPosts } from "@/lib/demo-content";
+import { demoLocale, getDemoPosts } from "@/lib/demo-content";
 import { readDemoWishlist } from "@/lib/demo-wishlist";
 
 export const Route = createFileRoute("/wishlist")({
@@ -49,7 +49,9 @@ export function WishlistPage() {
           }));
         const posts = items
           .filter((item) => item.target_type === "post")
-          .flatMap((item) => getDemoPosts({ postId: item.target_id, viewerId: user.id, locale }))
+          .flatMap((item) =>
+            getDemoPosts({ postId: item.target_id, viewerId: user.id, locale: demoLocale(locale) }),
+          )
           .map((post) => ({
             id: post.id,
             creator_id: post.creator_id,

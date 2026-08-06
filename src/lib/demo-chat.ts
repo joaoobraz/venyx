@@ -210,7 +210,7 @@ const BODY_TRANSLATIONS: Record<string, string> = {
 
 export function localizedDemoMessageBody(
   message: Pick<DemoChatMessage, "body">,
-  locale: "pt-BR" | "en",
+  locale: "pt-BR" | "en" | "es",
 ) {
   if (!message.body || locale === "pt-BR") return message.body;
   return BODY_TRANSLATIONS[message.body] ?? message.body;

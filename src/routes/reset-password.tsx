@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 export function ResetPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +33,7 @@ export function ResetPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
     });
     setLoading(false);
     if (error) console.error("[reset-password]", error);
@@ -48,7 +49,7 @@ export function ResetPage() {
     if (error) toast.error(error.message);
     else {
       toast.success("Senha atualizada!");
-      window.location.href = "/feed";
+      window.location.href = localizedPathname("/feed", locale);
     }
   };
 

@@ -18,6 +18,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { DEMO_CREATORS, type DemoCreator } from "@/lib/demo-creators";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { version?: "v1" | "v1.1" | "v2" | "v3" } =>
@@ -31,7 +32,7 @@ const HERO_CREATORS = DEMO_CREATORS.slice(0, 3);
 const FEATURED_CREATORS = DEMO_CREATORS.slice(0, 4);
 const V2_CREATORS = DEMO_CREATORS.slice(0, 8);
 
-function formatPrice(cents: number, locale: "pt-BR" | "en") {
+function formatPrice(cents: number, locale: "pt-BR" | "en" | "es") {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "BRL",
@@ -58,6 +59,7 @@ function CreatorPortrait({
 
 function LandingHeroV2() {
   const { locale, tr } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const [activeIndex, setActiveIndex] = useState(0);
   const visibleCreators = [0, 1, 2].map(
     (offset) => V2_CREATORS[(activeIndex + offset) % V2_CREATORS.length],
@@ -124,7 +126,7 @@ function LandingHeroV2() {
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link to="/signup">
+            <Link to={routeTo("/signup")}>
               <Button
                 size="lg"
                 className="group h-13 w-full rounded-full bg-primary px-7 text-sm font-bold text-primary-foreground shadow-[0_18px_55px_-20px_rgba(231,177,181,0.9)] hover:bg-primary/90 sm:w-auto"
@@ -133,7 +135,7 @@ function LandingHeroV2() {
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link to="/explore">
+            <Link to={routeTo("/explore")}>
               <Button
                 size="lg"
                 variant="outline"
@@ -215,6 +217,7 @@ function LandingHeroV2() {
 
 function LandingHeroV3() {
   const { locale, tr } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const [activeIndex, setActiveIndex] = useState(0);
   const activeCreator = V2_CREATORS[activeIndex];
   const previousCreator =
@@ -265,7 +268,7 @@ function LandingHeroV3() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link to="/signup">
+            <Link to={routeTo("/signup")}>
               <Button
                 size="lg"
                 className="group h-13 w-full rounded-full bg-primary px-7 text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto"
@@ -274,7 +277,7 @@ function LandingHeroV3() {
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link to="/explore">
+            <Link to={routeTo("/explore")}>
               <Button
                 size="lg"
                 variant="outline"
@@ -393,6 +396,7 @@ function LandingHeroV3() {
 
 function LandingHeroV11() {
   const { locale, tr } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const creator = HERO_CREATORS[0];
 
   return (
@@ -423,7 +427,7 @@ function LandingHeroV11() {
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link to="/signup">
+            <Link to={routeTo("/signup")}>
               <Button
                 size="lg"
                 className="group h-13 w-full rounded-xl bg-primary px-7 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 hover:bg-primary/90 sm:w-auto"
@@ -432,7 +436,7 @@ function LandingHeroV11() {
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link to="/explore">
+            <Link to={routeTo("/explore")}>
               <Button
                 size="lg"
                 variant="outline"
@@ -494,8 +498,8 @@ function LandingHeroV11() {
                   </p>
                 </div>
                 <Link
-                  to="/profile/$username"
-                  params={{ username: creator.username }}
+                  to={routeTo("/profile/$username")}
+                  params={{ username: creator.username } as never}
                   className="rounded-full bg-primary px-4 py-2 text-[10px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   {tr("Ver perfil", "View profile")}
@@ -565,6 +569,7 @@ function LandingHeroV11() {
 
 function Landing() {
   const { locale, t, tr } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const { version } = Route.useSearch();
   const activeVersion = version === "v2" || version === "v3" ? version : "v1.1";
 
@@ -636,7 +641,7 @@ function Landing() {
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link to="/signup">
+                <Link to={routeTo("/signup")}>
                   <Button
                     size="lg"
                     className="group h-13 w-full rounded-full bg-primary px-7 text-sm font-bold text-primary-foreground shadow-[0_16px_50px_-18px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 sm:w-auto"
@@ -645,7 +650,7 @@ function Landing() {
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link to="/explore">
+                <Link to={routeTo("/explore")}>
                   <Button
                     size="lg"
                     variant="outline"
@@ -821,7 +826,7 @@ function Landing() {
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-primary">{tr("Descubra", "Discover")}</p>
                 <h2 className="font-display text-4xl font-semibold sm:text-5xl">{tr("Criadoras para conhecer", "Creators to discover")}</h2>
               </div>
-              <Link to="/explore" className="group inline-flex items-center gap-2 text-sm font-bold text-primary">
+              <Link to={routeTo("/explore")} className="group inline-flex items-center gap-2 text-sm font-bold text-primary">
                 {tr("Ver todas as criadoras", "See all creators")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
@@ -831,8 +836,8 @@ function Landing() {
               {FEATURED_CREATORS.map((creator, index) => (
                 <Link
                   key={creator.username}
-                  to="/profile/$username"
-                  params={{ username: creator.username }}
+                  to={routeTo("/profile/$username")}
+                  params={{ username: creator.username } as never}
                   className={`group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-card ${index % 2 === 1 ? "sm:translate-y-8" : ""}`}
                 >
                   <div className="aspect-[3/4] overflow-hidden">
@@ -898,7 +903,7 @@ function Landing() {
                     </span>
                   ))}
                 </div>
-                <Link to="/explore" className="mt-9 inline-block">
+                <Link to={routeTo("/explore")} className="mt-9 inline-block">
                   <Button className="group h-12 rounded-full bg-primary px-6 font-bold text-primary-foreground hover:bg-primary/90">
                     {tr("Encontrar minhas favoritas", "Find my favorites")}
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -1018,13 +1023,13 @@ function Landing() {
               {tr("Crie sua conta, descubra novas criadoras e viva a Fanlira do seu jeito.", "Create your account, discover new creators and enjoy Fanlira your way.")}
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link to="/signup">
+              <Link to={routeTo("/signup")}>
                 <Button size="lg" className="group h-13 w-full rounded-full bg-primary px-7 font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto">
                   {t("landing.hero.cta")}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
-              <Link to="/login">
+              <Link to={routeTo("/login")}>
                 <Button size="lg" variant="ghost" className="h-13 w-full rounded-full px-7 sm:w-auto">
                   {t("landing.hero.cta2")}
                   <ChevronRight className="ml-1 h-4 w-4" />
@@ -1044,9 +1049,9 @@ function Landing() {
             </span>
           </Link>
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-muted-foreground">
-            <Link to="/terms" className="transition-colors hover:text-primary">{tr("Termos", "Terms")}</Link>
-            <Link to="/privacy" className="transition-colors hover:text-primary">{tr("Privacidade", "Privacy")}</Link>
-            <Link to="/help" className="transition-colors hover:text-primary">{tr("Ajuda", "Help")}</Link>
+            <Link to={routeTo("/terms")} className="transition-colors hover:text-primary">{tr("Termos", "Terms")}</Link>
+            <Link to={routeTo("/privacy")} className="transition-colors hover:text-primary">{tr("Privacidade", "Privacy")}</Link>
+            <Link to={routeTo("/help")} className="transition-colors hover:text-primary">{tr("Ajuda", "Help")}</Link>
           </nav>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             © {new Date().getFullYear()} Fanlira · 18+
