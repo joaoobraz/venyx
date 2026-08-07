@@ -59,4 +59,5 @@ test("state blocking is normalized and evaluated", () => {
   assert.deepEqual(visibility.blockedStates, ["SP"]);
   assert.equal(isViewerStateBlocked(visibility, "Campinas, SP"), true);
   assert.equal(isViewerStateBlocked(visibility, "Rio de Janeiro, RJ"), false);
+  assert.equal(isViewerStateBlocked(visibility, "Rio de Janeiro, RJ", "SP"), true);
 });

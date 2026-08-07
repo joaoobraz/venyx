@@ -612,6 +612,7 @@ export function ChatPage() {
   const active = threads.find((t) => t.id === activeId) ?? null;
   const chatPaused = accountPaused || !!active?.other_paused;
   const canSetPpv = demoPreviewRole === "creator" || (!demoPreviewRole && isCreator);
+  const dateLocale = locale === "en" ? "en-US" : locale === "es" ? "es-ES" : "pt-BR";
 
   const confirmTipInChat = () => {
     if (!active) return;
@@ -635,7 +636,7 @@ export function ChatPage() {
     // Bloqueio anti-bypass: detectar telefone, WhatsApp, Telegram, redes sociais, etc.
     const detection = detectExternalContact(body);
     if (detection.blocked) {
-      toast.error(contactBlockMessage(detection), { duration: 6000 });
+      toast.error(contactBlockMessage(detection, locale), { duration: 6000 });
       if (!DEMO_MODE) {
         await supabase.from("moderation_logs").insert({
           user_id: user.id,
@@ -754,7 +755,7 @@ export function ChatPage() {
     if (!user || !active || !body || busy) return;
     const detection = detectExternalContact(body);
     if (detection.blocked) {
-      toast.error(contactBlockMessage(detection), { duration: 6000 });
+      toast.error(contactBlockMessage(detection, locale), { duration: 6000 });
       return;
     }
     if (DEMO_MODE && active.is_demo) {
@@ -830,7 +831,7 @@ export function ChatPage() {
     }
     const ppvMessageDetection = detectExternalContact(ppvBody);
     if (ppvMessageDetection.blocked) {
-      toast.error(contactBlockMessage(ppvMessageDetection), { duration: 6000 });
+      toast.error(contactBlockMessage(ppvMessageDetection, locale), { duration: 6000 });
       return;
     }
     if (active.is_demo) {
@@ -937,7 +938,13 @@ export function ChatPage() {
       setPpvMessage("");
       setPpvMessageDraft("");
       toast.success(
-        ppvCents ? `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})` : "Mídia enviada",
+        ppvCents
+          ? tr(
+              `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})`,
+              `PPV media sent (BRL ${(ppvCents / 100).toFixed(2)})`,
+              `Medio PPV enviado (R$ ${(ppvCents / 100).toFixed(2)})`,
+            )
+          : tr("Mídia enviada", "Media sent", "Medio enviado"),
       );
       await supabase.channel(`thread-${active.id}`).send({
         type: "broadcast",
@@ -1320,7 +1327,7 @@ export function ChatPage() {
                     m.ppv_price_cents > 0 &&
                     Boolean(m.ppv_paid_at || (active.is_demo && m.unlocked));
                   const formattedPpvPrice = new Intl.NumberFormat(
-                    locale === "en" ? "en-US" : "pt-BR",
+                    dateLocale,
                     { style: "currency", currency: "BRL" },
                   ).format(m.ppv_price_cents / 100);
                   const canEditMessage =
@@ -1331,7 +1338,7 @@ export function ChatPage() {
                     Date.now() - new Date(m.created_at).getTime() <= 15 * 60_000;
                   if (isGiftCard && giftAmountCents) {
                     const formattedGiftAmount = new Intl.NumberFormat(
-                      locale === "en" ? "en-US" : "pt-BR",
+                      dateLocale,
                       { style: "currency", currency: "BRL" },
                     ).format(giftAmountCents / 100);
                     return (
@@ -1380,7 +1387,7 @@ export function ChatPage() {
                           </div>
                           <div className="-mt-1 text-right text-[10px] text-muted-foreground/70">
                             {new Date(m.created_at).toLocaleTimeString(
-                              locale === "en" ? "en-US" : "pt-BR",
+                              dateLocale,
                               {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -1536,7 +1543,7 @@ export function ChatPage() {
                       >
                         <span>
                           {new Date(m.created_at).toLocaleTimeString(
-                            locale === "en" ? "en-US" : "pt-BR",
+                            dateLocale,
                             {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -1781,7 +1788,7 @@ export function ChatPage() {
                         }
                         const detection = detectExternalContact(ppvMessageDraft.trim());
                         if (detection.blocked) {
-                          toast.error(contactBlockMessage(detection), { duration: 6000 });
+                          toast.error(contactBlockMessage(detection, locale), { duration: 6000 });
                           return;
                         }
                         setPpvPrice(parsed.toFixed(2));

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -62,8 +63,10 @@ import {
   isViewerStateBlocked,
   profileVisibilityFromDatabase,
   readDemoProfileVisibility,
+  type BrazilStateCode,
   type CreatorProfileVisibility,
 } from "@/lib/profile-visibility";
+import { getViewerBrazilState } from "@/_server/viewer-location.functions";
 import {
   CLIENT_PROFILE_PREVIEW,
   canPreviewOwnProfileAsClient,
@@ -95,6 +98,7 @@ export function ProfilePage() {
     demoPreviewRole,
     isCreator,
   } = useAuth();
+  const viewerLocationFn = useServerFn(getViewerBrazilState);
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +116,7 @@ export function ProfilePage() {
     ...DEFAULT_PROFILE_VISIBILITY,
     blockedStates: [],
   });
+  const [viewerIpState, setViewerIpState] = useState<BrazilStateCode | null>(null);
 
   useEffect(() => {
     if (!profile) {
@@ -160,6 +165,20 @@ export function ProfilePage() {
   useEffect(() => {
     if (!visibility.showBio && tab === "about") setTab("posts");
   }, [tab, visibility.showBio]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void viewerLocationFn()
+      .then((result) => {
+        if (!cancelled) setViewerIpState(result.stateCode);
+      })
+      .catch(() => {
+        if (!cancelled) setViewerIpState(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewerLocationFn]);
 
   useEffect(() => {
     setLoading(true);
@@ -238,7 +257,7 @@ export function ProfilePage() {
   const viewerStateBlocked =
     Boolean(profile) &&
     !isProfileOwner &&
-    isViewerStateBlocked(visibility, authenticatedProfile?.location);
+    isViewerStateBlocked(visibility, authenticatedProfile?.location, viewerIpState);
   const isDemoProfile = profile?.user_id.startsWith("demo-") ?? false;
   const demoCreator = isDemoProfile ? getDemoCreator(username) : null;
   const demoThread = demoCreator ? getDemoChatThreadForCreator(demoCreator.user_id) : null;

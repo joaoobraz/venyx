@@ -208,12 +208,53 @@ const BODY_TRANSLATIONS: Record<string, string> = {
   "Quando quiser conversar, estarei por aqui.": "Whenever you want to chat, I'll be here.",
 };
 
+const BODY_TRANSLATIONS_ES_FROM_EN: Record<string, string> = {
+  "Hi, Aline! I found your profile today 😊": "¡Hola, Aline! Encontré tu perfil hoy 😊",
+  "Hi! It's great to have you here 💕": "¡Hola! Qué bueno tenerte por aquí 💕",
+  "I prepared some new content for this week.": "Preparé algunas novedades para esta semana.",
+  "I just published exclusive behind-the-scenes content for subscribers.":
+    "Acabo de publicar un detrás de cámaras exclusivo para suscriptores.",
+  "Welcome to my space!": "¡Bienvenido a mi espacio!",
+  "Thanks, Duda! I'm already exploring your profile.":
+    "¡Gracias, Duda! Ya estoy explorando tu perfil.",
+  "If you have any questions, you can message me here.":
+    "Si tienes alguna duda, puedes escribirme por aquí.",
+  "Hi, Lara! How are you?": "¡Hola, Lara! ¿Todo bien?",
+  "I'm great! Thanks for the message.": "¡Todo muy bien! Gracias por el mensaje.",
+  "Today I'm releasing a special session for my closest followers.":
+    "Hoy estoy liberando una sesión especial para quienes me acompañan de cerca.",
+  "Hi! Your presence is already on my calendar.":
+    "¡Hola! Tu presencia ya está anotada en mi calendario.",
+  "I'm glad! I want to follow your content more closely.":
+    "¡Me alegra! Quiero seguir tu contenido con más calma.",
+  "Perfect. I also enjoy chatting before each release.":
+    "Perfecto. También me gusta conversar antes de cada lanzamiento.",
+  "I have something new for you today.": "Tengo una novedad para ti hoy.",
+  "That's great, Marina! I'm curious to see it.": "¡Qué bien, Marina! Tengo curiosidad por verlo.",
+  "I'll send an invitation to the latest content as soon as it's ready.":
+    "Te enviaré una invitación al contenido más reciente en cuanto esté listo.",
+  "Hi, Valentina! I loved the energy of your profile.":
+    "¡Hola, Valentina! Me encantó la energía de tu perfil.",
+  "That's so kind! I like to keep communication close.":
+    "¡Qué lindo! Me gusta mantener una comunicación cercana.",
+  "I can suggest the best ways to follow my new posts.":
+    "Puedo indicarte las mejores formas de seguir mis nuevos posts.",
+  "Thank you for following my work.": "Gracias por acompañar mi trabajo.",
+  "Thank you. I really enjoyed the updates.": "Gracias a ti. Me gustaron mucho las novedades.",
+  "There will be a new post here tomorrow.": "Mañana tendremos una nueva publicación por aquí.",
+  "I hope your week is going well!": "¡Espero que tu semana vaya bien!",
+  "It is. Thank you for checking in.": "Sí, va bien. Gracias por la atención.",
+  "Whenever you want to chat, I'll be here.": "Cuando quieras conversar, estaré por aquí.",
+};
+
 export function localizedDemoMessageBody(
   message: Pick<DemoChatMessage, "body">,
   locale: "pt-BR" | "en" | "es",
 ) {
   if (!message.body || locale === "pt-BR") return message.body;
-  return BODY_TRANSLATIONS[message.body] ?? message.body;
+  const englishBody = BODY_TRANSLATIONS[message.body] ?? message.body;
+  if (locale === "es") return BODY_TRANSLATIONS_ES_FROM_EN[englishBody] ?? englishBody;
+  return englishBody;
 }
 
 export function demoChatStoragePrefix(userId: string) {

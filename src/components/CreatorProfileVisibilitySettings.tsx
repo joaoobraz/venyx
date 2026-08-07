@@ -328,8 +328,8 @@ export function CreatorProfileVisibilitySettings() {
             </h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               {tr(
-                "Usuários logados cujo estado cadastrado esteja bloqueado não poderão abrir este perfil nem suas publicações. O próprio perfil e administradores continuam com acesso.",
-                "Signed-in users whose registered state is blocked cannot open this profile or its posts. The profile owner and administrators keep access.",
+                "Quando possível, usamos o estado detectado pelo IP. Se ele não estiver disponível, usamos o estado cadastrado na conta. Quem estiver em um estado bloqueado não poderá abrir este perfil nem suas publicações. O próprio perfil e administradores continuam com acesso.",
+                "When available, we use the state detected from the IP. If it is not available, we use the state registered on the account. Viewers in a blocked state cannot open this profile or its posts. The profile owner and administrators keep access.",
               )}
             </p>
           </div>
@@ -386,8 +386,8 @@ export function CreatorProfileVisibilitySettings() {
         </div>
         <p className="mt-4 rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
           {tr(
-            "Esta primeira versão usa o estado cadastrado na conta. Geolocalização por IP poderá ser adicionada depois como camada complementar, sem substituir a verificação da conta.",
-            "This first version uses the state registered on the account. IP geolocation can be added later as an additional layer without replacing account verification.",
+            "A detecção por IP depende da informação entregue pela infraestrutura. Ela ajuda no bloqueio regional, mas não deve ser tratada como verificação absoluta de identidade ou localização.",
+            "IP detection depends on the infrastructure-provided data. It helps with regional blocking, but should not be treated as absolute identity or location verification.",
           )}
         </p>
       </Card>

@@ -84,12 +84,30 @@ export function detectExternalContact(text: string): ContactDetection {
     matches.push({ id: p.id, label: p.label, sample });
   }
 
+  const compactDigits = text.replace(/\D/g, "");
+  if (
+    compactDigits.length >= 10 &&
+    compactDigits.length <= 15 &&
+    !matches.some((match) => match.id === "phone")
+  ) {
+    matches.push({ id: "phone", label: "Telefone", sample: compactDigits });
+  }
+
   return { blocked: matches.length > 0, matches };
 }
 
 /** Mensagem amigável para exibir ao usuário ao bloquear envio. */
-export function contactBlockMessage(d: ContactDetection): string {
+export function contactBlockMessage(
+  d: ContactDetection,
+  locale: "pt-BR" | "en" | "es" = "pt-BR",
+): string {
   if (!d.blocked) return "";
   const labels = Array.from(new Set(d.matches.map((m) => m.label))).join(", ");
+  if (locale === "en") {
+    return `Message blocked: we detected external contact sharing (${labels}). For your safety and the platform's safety, keep conversations and payments inside Fanlira.`;
+  }
+  if (locale === "es") {
+    return `Mensaje bloqueado: detectamos contacto externo (${labels}). Por tu seguridad y la de la plataforma, mantén las conversaciones y pagos dentro de Fanlira.`;
+  }
   return `Mensagem bloqueada: detectamos compartilhamento de contato externo (${labels}). Para sua segurança e da plataforma, mantenha as conversas e pagamentos dentro do Fanlira.`;
 }

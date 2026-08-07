@@ -192,8 +192,9 @@ export function extractBrazilState(location?: string | null): BrazilStateCode | 
 export function isViewerStateBlocked(
   visibility: CreatorProfileVisibility,
   viewerLocation?: string | null,
+  viewerStateCode?: BrazilStateCode | null,
 ) {
-  const state = extractBrazilState(viewerLocation);
+  const state = viewerStateCode ?? extractBrazilState(viewerLocation);
   return state ? visibility.blockedStates.includes(state) : false;
 }
 
