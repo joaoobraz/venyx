@@ -1,9 +1,7 @@
 import { createFileRoute, Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  AlertTriangle,
   CheckCircle2,
   MessageCircle,
   Heart,
@@ -62,13 +60,10 @@ import {
 import {
   CREATOR_PROFILE_VISIBILITY_CHANGED_EVENT,
   DEFAULT_PROFILE_VISIBILITY,
-  isViewerStateBlocked,
   profileVisibilityFromDatabase,
   readDemoProfileVisibility,
-  type BrazilStateCode,
   type CreatorProfileVisibility,
 } from "@/lib/profile-visibility";
-import { getViewerBrazilState } from "@/_server/viewer-location.functions";
 import {
   CLIENT_PROFILE_PREVIEW,
   canPreviewOwnProfileAsClient,
@@ -140,12 +135,10 @@ export function ProfilePage() {
   const { t, tr, locale } = useI18n();
   const {
     user,
-    profile: authenticatedProfile,
     accountPaused,
     demoPreviewRole,
     isCreator,
   } = useAuth();
-  const viewerLocationFn = useServerFn(getViewerBrazilState);
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,7 +156,6 @@ export function ProfilePage() {
     ...DEFAULT_PROFILE_VISIBILITY,
     blockedStates: [],
   });
-  const [viewerIpState, setViewerIpState] = useState<BrazilStateCode | null>(null);
 
   useEffect(() => {
     if (!profile) {
@@ -212,20 +204,6 @@ export function ProfilePage() {
   useEffect(() => {
     if (!visibility.showBio && tab === "about") setTab("posts");
   }, [tab, visibility.showBio]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void viewerLocationFn()
-      .then((result) => {
-        if (!cancelled) setViewerIpState(result.stateCode);
-      })
-      .catch(() => {
-        if (!cancelled) setViewerIpState(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [viewerLocationFn]);
 
   useEffect(() => {
     setLoading(true);
@@ -301,10 +279,6 @@ export function ProfilePage() {
     demoPreviewRole,
   });
   const showingClientExperience = !isProfileOwner || isLeadPreview;
-  const viewerStateBlocked =
-    Boolean(profile) &&
-    !isProfileOwner &&
-    isViewerStateBlocked(visibility, authenticatedProfile?.location, viewerIpState);
   const isDemoProfile = profile?.user_id.startsWith("demo-") ?? false;
   const demoCreator = isDemoProfile ? getDemoCreator(username) : null;
   const demoThread = demoCreator ? getDemoChatThreadForCreator(demoCreator.user_id) : null;
@@ -421,24 +395,6 @@ export function ProfilePage() {
         <div className="text-center text-muted-foreground">{t("common.loading")}</div>
       ) : !profile ? (
         <div className="text-center text-muted-foreground">404 — perfil não encontrado</div>
-      ) : viewerStateBlocked ? (
-        <div className="mx-auto mt-16 max-w-md rounded-3xl border border-border/70 bg-card p-8 text-center shadow-card">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <AlertTriangle className="h-6 w-6" />
-          </span>
-          <h1 className="mt-5 text-2xl font-bold text-foreground">
-            {tr("Não foi possível abrir esta página", "Couldn't open this page")}
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {tr(
-              "O conteúdo não está disponível ou o link pode ter expirado.",
-              "This content is unavailable or the link may have expired.",
-            )}
-          </p>
-          <Button className="mt-5" variant="outline" asChild>
-            <Link to="/">{tr("Voltar para o início", "Back home")}</Link>
-          </Button>
-        </div>
       ) : (
         <div className="space-y-5">
           {isLeadPreview && (
@@ -1055,7 +1011,7 @@ export function ProfilePage() {
     </>
   );
 
-  if (showingClientExperience || viewerStateBlocked || !profile || loading) {
+  if (showingClientExperience || !profile || loading) {
     return <PublicProfileShell>{profileContent}</PublicProfileShell>;
   }
 

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  extractBrazilState,
-  isViewerStateBlocked,
-  normalizeBrazilState,
   normalizeProfileVisibility,
+  profileVisibilityFromDatabase,
+  profileVisibilityToDatabase,
   resolveOwnProfileUsername,
 } from "../src/lib/profile-visibility.ts";
 
@@ -44,23 +43,18 @@ test("real profile destination requires the authenticated user id", () => {
   );
 });
 
-test("Brazilian state is extracted only from a valid location suffix", () => {
-  assert.equal(extractBrazilState("São Paulo, SP"), "SP");
-  assert.equal(extractBrazilState("Curitiba PR"), "PR");
-  assert.equal(extractBrazilState("Belo Horizonte, Minas Gerais"), "MG");
-  assert.equal(normalizeBrazilState("Minas Gerais"), "MG");
-  assert.equal(extractBrazilState("Lisboa, PT"), null);
-});
-
-test("state blocking is normalized and evaluated", () => {
+test("legacy regional blocking values are ignored and cleared", () => {
   const visibility = normalizeProfileVisibility({
     showAge: false,
-    blockedStates: ["sp" as "SP", "SP", "XX" as "SP"],
+    blockedStates: ["SP", "MG"],
   });
   assert.equal(visibility.showAge, false);
   assert.equal(visibility.showBio, true);
-  assert.deepEqual(visibility.blockedStates, ["SP"]);
-  assert.equal(isViewerStateBlocked(visibility, "Campinas, SP"), true);
-  assert.equal(isViewerStateBlocked(visibility, "Rio de Janeiro, RJ"), false);
-  assert.equal(isViewerStateBlocked(visibility, "Rio de Janeiro, RJ", "SP"), true);
+  assert.deepEqual(visibility.blockedStates, []);
+  assert.deepEqual(
+    profileVisibilityFromDatabase({ show_age: false, blocked_states: ["SP", "MG"] })
+      .blockedStates,
+    [],
+  );
+  assert.deepEqual(profileVisibilityToDatabase("creator-1", visibility).blocked_states, []);
 });

@@ -1,35 +1,3 @@
-export const BRAZIL_STATES = [
-  ["AC", "Acre"],
-  ["AL", "Alagoas"],
-  ["AP", "Amapá"],
-  ["AM", "Amazonas"],
-  ["BA", "Bahia"],
-  ["CE", "Ceará"],
-  ["DF", "Distrito Federal"],
-  ["ES", "Espírito Santo"],
-  ["GO", "Goiás"],
-  ["MA", "Maranhão"],
-  ["MT", "Mato Grosso"],
-  ["MS", "Mato Grosso do Sul"],
-  ["MG", "Minas Gerais"],
-  ["PA", "Pará"],
-  ["PB", "Paraíba"],
-  ["PR", "Paraná"],
-  ["PE", "Pernambuco"],
-  ["PI", "Piauí"],
-  ["RJ", "Rio de Janeiro"],
-  ["RN", "Rio Grande do Norte"],
-  ["RS", "Rio Grande do Sul"],
-  ["RO", "Rondônia"],
-  ["RR", "Roraima"],
-  ["SC", "Santa Catarina"],
-  ["SP", "São Paulo"],
-  ["SE", "Sergipe"],
-  ["TO", "Tocantins"],
-] as const;
-
-export type BrazilStateCode = (typeof BRAZIL_STATES)[number][0];
-
 export interface CreatorProfileVisibility {
   showAge: boolean;
   showLocation: boolean;
@@ -46,7 +14,11 @@ export interface CreatorProfileVisibility {
   showLikeCount: boolean;
   showPostCount: boolean;
   showActivityStatus: boolean;
-  blockedStates: BrazilStateCode[];
+  /**
+   * Kept only to clear legacy state-blocking values from older saved settings.
+   * Regional IP blocking was removed because it was not reliable enough for privacy promises.
+   */
+  blockedStates: string[];
 }
 
 export const DEFAULT_PROFILE_VISIBILITY: CreatorProfileVisibility = {
@@ -71,63 +43,9 @@ export const DEFAULT_PROFILE_VISIBILITY: CreatorProfileVisibility = {
 export const CREATOR_PROFILE_VISIBILITY_CHANGED_EVENT = "venyx:creator-profile-visibility-changed";
 
 const DEMO_STORAGE_VERSION = "v1";
-// Demo-only regional block used to test how the public profile behaves for Minas Gerais.
-// Real creator accounts persist this setting in Supabase through creator_profile_visibility.
-const DEMO_PROFILE_VISIBILITY_OVERRIDES: Record<string, Partial<CreatorProfileVisibility>> = {
-  "demo-aline": {
-    blockedStates: ["MG"],
-  },
-};
 
 function demoStorageKey(creatorId: string) {
   return `venyx:demo-profile-visibility:${DEMO_STORAGE_VERSION}:${creatorId}`;
-}
-
-function normalizeStateText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
-}
-
-const NORMALIZED_BRAZIL_STATE_NAMES = new Map<string, BrazilStateCode>(
-  BRAZIL_STATES.flatMap(([code, name]) => [
-    [code, code],
-    [normalizeStateText(name), code],
-  ]),
-);
-
-function applyDemoProfileVisibilityOverrides(
-  creatorId: string,
-  value: CreatorProfileVisibility,
-): CreatorProfileVisibility {
-  const override = DEMO_PROFILE_VISIBILITY_OVERRIDES[creatorId];
-  if (!override) return value;
-  const merged = normalizeProfileVisibility({
-    ...value,
-    ...override,
-    blockedStates: [...value.blockedStates, ...(override.blockedStates ?? [])],
-  });
-  return merged;
-}
-
-export function normalizeBrazilState(value: unknown): BrazilStateCode | null {
-  if (typeof value !== "string") return null;
-  const normalized = normalizeStateText(value);
-  return NORMALIZED_BRAZIL_STATE_NAMES.get(normalized) ?? null;
-}
-
-function normalizeStates(value: unknown): BrazilStateCode[] {
-  if (!Array.isArray(value)) return [];
-  return Array.from(
-    new Set(
-      value
-        .filter((item): item is string => typeof item === "string")
-        .map((item) => normalizeBrazilState(item))
-        .filter((item): item is BrazilStateCode => Boolean(item)),
-    ),
-  );
 }
 
 export function normalizeProfileVisibility(
@@ -136,7 +54,7 @@ export function normalizeProfileVisibility(
   if (!value) return { ...DEFAULT_PROFILE_VISIBILITY, blockedStates: [] };
   const next = {
     ...DEFAULT_PROFILE_VISIBILITY,
-    blockedStates: normalizeStates(value.blockedStates),
+    blockedStates: [],
   };
   const booleanKeys = Object.keys(DEFAULT_PROFILE_VISIBILITY).filter(
     (key) => key !== "blockedStates",
@@ -167,7 +85,7 @@ export function profileVisibilityFromDatabase(
     showLikeCount: row.show_like_count as boolean,
     showPostCount: row.show_post_count as boolean,
     showActivityStatus: row.show_activity_status as boolean,
-    blockedStates: row.blocked_states as BrazilStateCode[],
+    blockedStates: [],
   });
 }
 
@@ -189,7 +107,7 @@ export function profileVisibilityToDatabase(creatorId: string, value: CreatorPro
     show_like_count: value.showLikeCount,
     show_post_count: value.showPostCount,
     show_activity_status: value.showActivityStatus,
-    blocked_states: value.blockedStates,
+    blocked_states: [],
   };
 }
 
@@ -198,15 +116,12 @@ export function readDemoProfileVisibility(creatorId: string): CreatorProfileVisi
   try {
     const stored = window.localStorage.getItem(demoStorageKey(creatorId));
     if (stored) {
-      return applyDemoProfileVisibilityOverrides(
-        creatorId,
-        normalizeProfileVisibility(JSON.parse(stored)),
-      );
+      return normalizeProfileVisibility(JSON.parse(stored));
     }
   } catch {
     // Corrupted demo-only preferences fall back to safe defaults.
   }
-  const initial = applyDemoProfileVisibilityOverrides(creatorId, normalizeProfileVisibility());
+  const initial = normalizeProfileVisibility();
   window.localStorage.setItem(demoStorageKey(creatorId), JSON.stringify(initial));
   return initial;
 }
@@ -222,33 +137,6 @@ export function writeDemoProfileVisibility(creatorId: string, value: CreatorProf
     );
   }
   return next;
-}
-
-export function extractBrazilState(location?: string | null): BrazilStateCode | null {
-  if (!location) return null;
-  const trimmed = location.trim();
-  const codeAtEnd = trimmed.toUpperCase().match(/(?:,|\s)([A-Z]{2})$/);
-  const code = codeAtEnd ? normalizeBrazilState(codeAtEnd[1]) : null;
-  if (code) return code;
-  const parts = trimmed
-    .split(/[,/|·•-]+/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .reverse();
-  for (const part of parts) {
-    const state = normalizeBrazilState(part);
-    if (state) return state;
-  }
-  return normalizeBrazilState(trimmed);
-}
-
-export function isViewerStateBlocked(
-  visibility: CreatorProfileVisibility,
-  viewerLocation?: string | null,
-  viewerStateCode?: BrazilStateCode | null,
-) {
-  const state = viewerStateCode ?? extractBrazilState(viewerLocation);
-  return state ? visibility.blockedStates.includes(state) : false;
 }
 
 export function resolveOwnProfileUsername(input: {

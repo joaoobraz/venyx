@@ -1,24 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeOff, MapPinOff, ShieldCheck, X } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import {
-  BRAZIL_STATES,
   CREATOR_PROFILE_VISIBILITY_CHANGED_EVENT,
   DEFAULT_PROFILE_VISIBILITY,
   profileVisibilityFromDatabase,
@@ -26,7 +17,6 @@ import {
   readDemoProfileVisibility,
   resolveOwnProfileUsername,
   writeDemoProfileVisibility,
-  type BrazilStateCode,
   type CreatorProfileVisibility,
 } from "@/lib/profile-visibility";
 
@@ -165,7 +155,6 @@ export function CreatorProfileVisibilitySettings() {
       ? readDemoProfileVisibility("demo-aline")
       : { ...DEFAULT_PROFILE_VISIBILITY, blockedStates: [] },
   );
-  const [selectedState, setSelectedState] = useState<BrazilStateCode | "">("");
   const [loading, setLoading] = useState(!demoCreatorMode);
   const [saving, setSaving] = useState(false);
 
@@ -227,22 +216,6 @@ export function CreatorProfileVisibilitySettings() {
 
   const setVisibility = (key: VisibilityKey, checked: boolean) => {
     void persist({ ...settings, [key]: checked });
-  };
-
-  const addBlockedState = () => {
-    if (!selectedState || settings.blockedStates.includes(selectedState)) return;
-    void persist({
-      ...settings,
-      blockedStates: [...settings.blockedStates, selectedState].sort(),
-    });
-    setSelectedState("");
-  };
-
-  const removeBlockedState = (stateCode: BrazilStateCode) => {
-    void persist({
-      ...settings,
-      blockedStates: settings.blockedStates.filter((item) => item !== stateCode),
-    });
   };
 
   return (
@@ -316,82 +289,7 @@ export function CreatorProfileVisibilitySettings() {
         <p className="mt-3 text-xs text-muted-foreground">
           {saving
             ? tr("Atualizando perfil público...", "Updating public profile...")
-            : tr("Alterações sincronizadas.", "Changes synced.")}
-        </p>
-      </Card>
-
-      <Card className="border-amber-500/25 p-5">
-        <div className="flex gap-3">
-          <span className="rounded-xl bg-amber-500/10 p-2.5 text-amber-600">
-            <MapPinOff className="h-5 w-5" />
-          </span>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">
-              {tr("Bloqueio por estado", "State blocking")}
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              {tr(
-                "Quando possível, usamos o estado detectado pelo IP. Se ele não estiver disponível, usamos o estado cadastrado na conta. Quem estiver em um estado bloqueado não poderá abrir este perfil nem suas publicações. O próprio perfil e administradores continuam com acesso.",
-                "When available, we use the state detected from the IP. If it is not available, we use the state registered on the account. Viewers in a blocked state cannot open this profile or its posts. The profile owner and administrators keep access.",
-              )}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <Select
-            value={selectedState}
-            onValueChange={(value) => setSelectedState(value as BrazilStateCode)}
-          >
-            <SelectTrigger className="sm:max-w-sm">
-              <SelectValue placeholder={tr("Selecione um estado", "Select a state")} />
-            </SelectTrigger>
-            <SelectContent>
-              {BRAZIL_STATES.filter(([code]) => !settings.blockedStates.includes(code)).map(
-                ([code, name]) => (
-                  <SelectItem key={code} value={code}>
-                    {code} — {name}
-                  </SelectItem>
-                ),
-              )}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addBlockedState}
-            disabled={!selectedState || saving}
-          >
-            {tr("Bloquear estado", "Block state")}
-          </Button>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {settings.blockedStates.length ? (
-            settings.blockedStates.map((stateCode) => {
-              const stateName = BRAZIL_STATES.find(([code]) => code === stateCode)?.[1];
-              return (
-                <Badge key={stateCode} variant="secondary" className="gap-1.5 py-1.5">
-                  {stateCode} — {stateName}
-                  <button
-                    type="button"
-                    onClick={() => removeBlockedState(stateCode)}
-                    aria-label={tr(`Liberar ${stateCode}`, `Allow ${stateCode}`)}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              );
-            })
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {tr("Nenhum estado bloqueado.", "No blocked states.")}
-            </p>
-          )}
-        </div>
-        <p className="mt-4 rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
-          {tr(
-            "A detecção por IP depende da informação entregue pela infraestrutura. Ela ajuda no bloqueio regional, mas não deve ser tratada como verificação absoluta de identidade ou localização.",
-            "IP detection depends on the infrastructure-provided data. It helps with regional blocking, but should not be treated as absolute identity or location verification.",
-          )}
+          : tr("Alterações sincronizadas.", "Changes synced.")}
         </p>
       </Card>
     </div>
