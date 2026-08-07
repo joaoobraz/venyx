@@ -384,8 +384,8 @@ export function ProfilePage() {
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {tr(
-              "A criadora restringiu a visualização deste perfil no estado cadastrado na sua conta.",
-              "The creator restricted this profile in the state registered on your account.",
+              "A criadora restringiu a visualização deste perfil no estado detectado no acesso ou cadastrado na sua conta.",
+              "The creator restricted this profile in the state detected from this access or registered on your account.",
             )}
           </p>
           <Button className="mt-5" variant="outline" asChild>

@@ -71,9 +71,30 @@ export const DEFAULT_PROFILE_VISIBILITY: CreatorProfileVisibility = {
 export const CREATOR_PROFILE_VISIBILITY_CHANGED_EVENT = "venyx:creator-profile-visibility-changed";
 
 const DEMO_STORAGE_VERSION = "v1";
+// Demo-only regional block used to test how the public profile behaves for Minas Gerais.
+// Real creator accounts persist this setting in Supabase through creator_profile_visibility.
+const DEMO_PROFILE_VISIBILITY_OVERRIDES: Record<string, Partial<CreatorProfileVisibility>> = {
+  "demo-aline": {
+    blockedStates: ["MG"],
+  },
+};
 
 function demoStorageKey(creatorId: string) {
   return `venyx:demo-profile-visibility:${DEMO_STORAGE_VERSION}:${creatorId}`;
+}
+
+function applyDemoProfileVisibilityOverrides(
+  creatorId: string,
+  value: CreatorProfileVisibility,
+): CreatorProfileVisibility {
+  const override = DEMO_PROFILE_VISIBILITY_OVERRIDES[creatorId];
+  if (!override) return value;
+  const merged = normalizeProfileVisibility({
+    ...value,
+    ...override,
+    blockedStates: [...value.blockedStates, ...(override.blockedStates ?? [])],
+  });
+  return merged;
 }
 
 function normalizeStates(value: unknown): BrazilStateCode[] {
@@ -156,11 +177,16 @@ export function readDemoProfileVisibility(creatorId: string): CreatorProfileVisi
   if (typeof window === "undefined") return normalizeProfileVisibility();
   try {
     const stored = window.localStorage.getItem(demoStorageKey(creatorId));
-    if (stored) return normalizeProfileVisibility(JSON.parse(stored));
+    if (stored) {
+      return applyDemoProfileVisibilityOverrides(
+        creatorId,
+        normalizeProfileVisibility(JSON.parse(stored)),
+      );
+    }
   } catch {
     // Corrupted demo-only preferences fall back to safe defaults.
   }
-  const initial = normalizeProfileVisibility();
+  const initial = applyDemoProfileVisibilityOverrides(creatorId, normalizeProfileVisibility());
   window.localStorage.setItem(demoStorageKey(creatorId), JSON.stringify(initial));
   return initial;
 }
