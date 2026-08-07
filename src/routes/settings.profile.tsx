@@ -14,7 +14,7 @@ import { Gift } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { trackProductEvent } from "@/lib/telemetry";
 import { CreatorProfileVisibilitySettings } from "@/components/CreatorProfileVisibilitySettings";
-import { getDemoCreator } from "@/lib/demo-creators";
+import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/settings/profile")({
   component: SettingsProfile,
@@ -34,6 +34,7 @@ export function SettingsProfile() {
   const [saving, setSaving] = useState(false);
   const demoCreatorMode = demoPreviewRole === "creator";
   const creatorMode = isCreator || demoCreatorMode;
+  const showCreatorControls = creatorMode || DEMO_MODE;
   const demoCreator = demoCreatorMode ? getDemoCreator("aline") : null;
   const displayedUsername = demoCreator?.username ?? username;
   const usernameCooldownEndsAt = profile?.username_changed_at
@@ -321,7 +322,7 @@ export function SettingsProfile() {
             </Button>
           </form>
         </div>
-        {creatorMode && <CreatorProfileVisibilitySettings />}
+        {showCreatorControls && <CreatorProfileVisibilitySettings />}
       </div>
     </AppShell>
   );

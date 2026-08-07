@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { DEMO_MODE } from "@/lib/demo-creators";
 import {
   BRAZIL_STATES,
   CREATOR_PROFILE_VISIBILITY_CHANGED_EVENT,
@@ -148,15 +149,17 @@ const VISIBILITY_OPTIONS: Array<{
 export function CreatorProfileVisibilitySettings() {
   const { user, profile, isCreator, demoPreviewRole } = useAuth();
   const { tr } = useI18n();
-  const demoCreatorMode = demoPreviewRole === "creator";
+  const demoCreatorMode = demoPreviewRole === "creator" || (DEMO_MODE && !isCreator);
   const creatorId = demoCreatorMode ? "demo-aline" : (user?.id ?? null);
-  const creatorUsername = resolveOwnProfileUsername({
-    authenticatedUserId: user?.id,
-    profileUserId: profile?.user_id,
-    profileUsername: profile?.username,
-    isCreator,
-    demoPreviewRole,
-  });
+  const creatorUsername = demoCreatorMode
+    ? "aline"
+    : resolveOwnProfileUsername({
+        authenticatedUserId: user?.id,
+        profileUserId: profile?.user_id,
+        profileUsername: profile?.username,
+        isCreator,
+        demoPreviewRole,
+      });
   const [settings, setSettings] = useState<CreatorProfileVisibility>(() =>
     demoCreatorMode
       ? readDemoProfileVisibility("demo-aline")
