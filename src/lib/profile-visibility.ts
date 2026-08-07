@@ -83,6 +83,21 @@ function demoStorageKey(creatorId: string) {
   return `venyx:demo-profile-visibility:${DEMO_STORAGE_VERSION}:${creatorId}`;
 }
 
+function normalizeStateText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
+const NORMALIZED_BRAZIL_STATE_NAMES = new Map<string, BrazilStateCode>(
+  BRAZIL_STATES.flatMap(([code, name]) => [
+    [code, code],
+    [normalizeStateText(name), code],
+  ]),
+);
+
 function applyDemoProfileVisibilityOverrides(
   creatorId: string,
   value: CreatorProfileVisibility,
@@ -97,15 +112,20 @@ function applyDemoProfileVisibilityOverrides(
   return merged;
 }
 
+export function normalizeBrazilState(value: unknown): BrazilStateCode | null {
+  if (typeof value !== "string") return null;
+  const normalized = normalizeStateText(value);
+  return NORMALIZED_BRAZIL_STATE_NAMES.get(normalized) ?? null;
+}
+
 function normalizeStates(value: unknown): BrazilStateCode[] {
   if (!Array.isArray(value)) return [];
-  const allowed = new Set<string>(BRAZIL_STATES.map(([code]) => code));
   return Array.from(
     new Set(
       value
         .filter((item): item is string => typeof item === "string")
-        .map((item) => item.trim().toUpperCase())
-        .filter((item): item is BrazilStateCode => allowed.has(item)),
+        .map((item) => normalizeBrazilState(item))
+        .filter((item): item is BrazilStateCode => Boolean(item)),
     ),
   );
 }
@@ -206,13 +226,20 @@ export function writeDemoProfileVisibility(creatorId: string, value: CreatorProf
 
 export function extractBrazilState(location?: string | null): BrazilStateCode | null {
   if (!location) return null;
-  const match = location
-    .trim()
-    .toUpperCase()
-    .match(/(?:,|\s)([A-Z]{2})$/);
-  if (!match) return null;
-  const code = match[1];
-  return BRAZIL_STATES.some(([stateCode]) => stateCode === code) ? (code as BrazilStateCode) : null;
+  const trimmed = location.trim();
+  const codeAtEnd = trimmed.toUpperCase().match(/(?:,|\s)([A-Z]{2})$/);
+  const code = codeAtEnd ? normalizeBrazilState(codeAtEnd[1]) : null;
+  if (code) return code;
+  const parts = trimmed
+    .split(/[,/|·•-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reverse();
+  for (const part of parts) {
+    const state = normalizeBrazilState(part);
+    if (state) return state;
+  }
+  return normalizeBrazilState(trimmed);
 }
 
 export function isViewerStateBlocked(

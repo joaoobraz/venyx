@@ -1,14 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { BRAZIL_STATES, type BrazilStateCode } from "@/lib/profile-visibility";
-
-const VALID_STATES = new Set<string>(BRAZIL_STATES.map(([code]) => code));
-
-function normalizeBrazilStateCode(value: unknown): BrazilStateCode | null {
-  if (typeof value !== "string") return null;
-  const code = value.trim().toUpperCase();
-  return VALID_STATES.has(code) ? (code as BrazilStateCode) : null;
-}
+import { normalizeBrazilState, type BrazilStateCode } from "@/lib/profile-visibility";
 
 export const getViewerBrazilState = createServerFn({ method: "GET" }).handler(async () => {
   const request = getRequest() as
@@ -31,10 +23,13 @@ export const getViewerBrazilState = createServerFn({ method: "GET" }).handler(as
   }
 
   const stateCode =
-    normalizeBrazilStateCode(request?.cf?.regionCode) ??
-    normalizeBrazilStateCode(headers?.get("cf-region-code")) ??
-    normalizeBrazilStateCode(headers?.get("x-vercel-ip-country-region")) ??
-    normalizeBrazilStateCode(headers?.get("x-region-code"));
+    normalizeBrazilState(request?.cf?.regionCode) ??
+    normalizeBrazilState(request?.cf?.region) ??
+    normalizeBrazilState(headers?.get("cf-region-code")) ??
+    normalizeBrazilState(headers?.get("cf-region")) ??
+    normalizeBrazilState(headers?.get("x-vercel-ip-country-region")) ??
+    normalizeBrazilState(headers?.get("x-region-code")) ??
+    normalizeBrazilState(headers?.get("x-region"));
 
   return {
     stateCode,

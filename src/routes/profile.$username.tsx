@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   CheckCircle2,
   MessageCircle,
   Heart,
@@ -16,7 +17,6 @@ import {
   Trophy,
   Instagram,
   Settings,
-  MapPinOff,
   Eye,
   X,
 } from "lucide-react";
@@ -27,6 +27,8 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { LangToggle } from "@/components/LangToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +74,7 @@ import {
   canPreviewOwnProfileAsClient,
   previewOnlyMessage,
 } from "@/lib/creator-profile-preview";
+import { localizedPathname } from "@/lib/localized-paths";
 
 export const Route = createFileRoute("/profile/$username")({
   validateSearch: (
@@ -83,6 +86,50 @@ export const Route = createFileRoute("/profile/$username")({
   }),
   component: ProfilePage,
 });
+
+function PublicProfileShell({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const { t, locale } = useI18n();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4">
+          <Link to={user ? routeTo("/feed") : "/"} className="group flex items-center gap-2.5">
+            <div className="relative h-8 w-8 rounded-full bg-gradient-primary shadow-sm transition-transform duration-300 group-hover:scale-105" />
+            <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+              Fan<span className="text-gradient-gold italic">lira</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+            <LangToggle />
+            {user ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={routeTo("/feed")}>{t("nav.feed")}</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to={routeTo("/login")}>{t("nav.login")}</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to={routeTo("/signup")}>{t("nav.signup")}</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto min-h-[calc(100vh-3.5rem)] max-w-3xl px-3 py-4 pb-10 sm:px-4 sm:py-6">
+        {children}
+      </main>
+    </div>
+  );
+}
 
 export function ProfilePage() {
   const { username } = useParams({ strict: false }) as { username: string };
@@ -368,28 +415,28 @@ export function ProfilePage() {
     setDemoSubscriptionOpen(true);
   }, [demoCreator, isLeadPreview, linkedCouponCode]);
 
-  return (
-    <AppShell>
+  const profileContent = (
+    <>
       {loading ? (
         <div className="text-center text-muted-foreground">{t("common.loading")}</div>
       ) : !profile ? (
         <div className="text-center text-muted-foreground">404 — perfil não encontrado</div>
       ) : viewerStateBlocked ? (
-        <div className="mx-auto max-w-xl rounded-2xl border border-amber-500/30 bg-card p-8 text-center shadow-card">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
-            <MapPinOff className="h-6 w-6" />
+        <div className="mx-auto mt-16 max-w-md rounded-3xl border border-border/70 bg-card p-8 text-center shadow-card">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <AlertTriangle className="h-6 w-6" />
           </span>
-          <h1 className="mt-4 text-xl font-bold text-foreground">
-            {tr("Perfil indisponível na sua região", "Profile unavailable in your region")}
+          <h1 className="mt-5 text-2xl font-bold text-foreground">
+            {tr("Não foi possível abrir esta página", "Couldn't open this page")}
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {tr(
-              "A criadora restringiu a visualização deste perfil no estado detectado no acesso ou cadastrado na sua conta.",
-              "The creator restricted this profile in the state detected from this access or registered on your account.",
+              "O conteúdo não está disponível ou o link pode ter expirado.",
+              "This content is unavailable or the link may have expired.",
             )}
           </p>
           <Button className="mt-5" variant="outline" asChild>
-            <Link to="/explore">{tr("Voltar para Explorar", "Back to Explore")}</Link>
+            <Link to="/">{tr("Voltar para o início", "Back home")}</Link>
           </Button>
         </div>
       ) : (
@@ -595,7 +642,41 @@ export function ProfilePage() {
                   {profile.bio}
                 </p>
               )}
-              {demoCreator && (
+              {demoCreator && showingClientExperience ? (
+                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border/60 py-3 text-xs text-muted-foreground">
+                  {visibility.showPostCount && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Images className="h-3.5 w-3.5" />
+                      <strong className="text-foreground">{demoCreator.posts_count}</strong> posts
+                    </span>
+                  )}
+                  {visibility.showLikeCount && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Heart className="h-3.5 w-3.5" />
+                      <strong className="text-foreground">
+                        {demoCreator.likes_count.toLocaleString(locale === "en" ? "en-US" : "pt-BR")}
+                      </strong>
+                    </span>
+                  )}
+                  {visibility.showSubscriberCount && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" />
+                      <strong className="text-foreground">
+                        {demoCreator.subscribers_count.toLocaleString(
+                          locale === "en" ? "en-US" : "pt-BR",
+                        )}
+                      </strong>{" "}
+                      {tr("assinantes", "subscribers")}
+                    </span>
+                  )}
+                  {visibility.showPlans && (
+                    <span className="ml-auto inline-flex items-center gap-1.5 font-medium text-foreground">
+                      R$ {(demoCreator.subscription_price_cents / 100).toFixed(2)}/
+                      {tr("mês", "month")}
+                    </span>
+                  )}
+                </div>
+              ) : demoCreator ? (
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
                   {visibility.showLocation && (
                     <span className="inline-flex items-center gap-1.5 rounded-lg bg-background/60 px-2.5 py-2">
@@ -663,7 +744,7 @@ export function ProfilePage() {
                     </span>
                   )}
                 </div>
-              )}
+              ) : null}
               {demoCreator && visibility.showSocialLinks && (
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-muted-foreground">
@@ -971,6 +1052,12 @@ export function ProfilePage() {
           )}
         </div>
       )}
-    </AppShell>
+    </>
   );
+
+  if (showingClientExperience || viewerStateBlocked || !profile || loading) {
+    return <PublicProfileShell>{profileContent}</PublicProfileShell>;
+  }
+
+  return <AppShell>{profileContent}</AppShell>;
 }

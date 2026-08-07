@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   extractBrazilState,
   isViewerStateBlocked,
+  normalizeBrazilState,
   normalizeProfileVisibility,
   resolveOwnProfileUsername,
 } from "../src/lib/profile-visibility.ts";
@@ -46,6 +47,8 @@ test("real profile destination requires the authenticated user id", () => {
 test("Brazilian state is extracted only from a valid location suffix", () => {
   assert.equal(extractBrazilState("São Paulo, SP"), "SP");
   assert.equal(extractBrazilState("Curitiba PR"), "PR");
+  assert.equal(extractBrazilState("Belo Horizonte, Minas Gerais"), "MG");
+  assert.equal(normalizeBrazilState("Minas Gerais"), "MG");
   assert.equal(extractBrazilState("Lisboa, PT"), null);
 });
 
