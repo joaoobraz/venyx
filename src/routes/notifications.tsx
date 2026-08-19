@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AtSign,
   Bell,
@@ -76,7 +76,7 @@ export function NotifPage() {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     if (DEMO_MODE) {
       setItems(readDemoNotifications(user.id));
@@ -122,7 +122,7 @@ export function NotifPage() {
     }
     setItems(rows);
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     load();
@@ -130,7 +130,7 @@ export function NotifPage() {
     const onChange = () => load();
     window.addEventListener(DEMO_NOTIFICATIONS_CHANGED_EVENT, onChange);
     return () => window.removeEventListener(DEMO_NOTIFICATIONS_CHANGED_EVENT, onChange);
-  }, [user?.id]);
+  }, [load]);
 
   const markAllRead = async () => {
     if (!user) return;

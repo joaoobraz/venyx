@@ -849,7 +849,7 @@ BEGIN
     'paid'::public.tx_status,
     _amount_cents,
     _subscription_id,
-    'nexuspag',
+    'impulsepay',
     _gateway_ref,
     _idempotency_key,
     pg_catalog.jsonb_build_object(

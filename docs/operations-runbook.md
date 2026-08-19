@@ -17,7 +17,7 @@
 
 ## Incidentes
 
-- Pagamentos divergentes: interromper novas confirmações, preservar o webhook e comparar referência, valor e evento no painel NexusPag e no banco.
+- Pagamentos divergentes: interromper novas confirmações, preservar o webhook e comparar referência, valor e evento no painel Impulse Pay e no banco.
 - Falha de moderação automática: o sistema deve continuar bloqueando novos uploads; não criar exceção manual no código.
 - Vazamento de credencial: revogar imediatamente, substituir a chave, revisar logs e sessões, documentar alcance e horário.
 - Banco indisponível: suspender o tráfego de escrita e acompanhar `/api/public/health`; restaurar somente após confirmar integridade.

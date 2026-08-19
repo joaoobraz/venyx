@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard, type PostWithRelations } from "@/components/PostCard";
@@ -19,7 +19,7 @@ export function SavedPostPage() {
   const [post, setPost] = useState<PostWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const list = await fetchPosts({ postId, viewerId: user?.id ?? null, locale: demoLocale(locale) });
@@ -27,11 +27,11 @@ export function SavedPostPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [locale, postId, user?.id]);
 
   useEffect(() => {
     void load();
-  }, [postId, user?.id, locale]);
+  }, [load]);
 
   return (
     <AppShell>

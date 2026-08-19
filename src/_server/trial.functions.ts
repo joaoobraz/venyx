@@ -7,7 +7,7 @@ const StartTrialSchema = z.object({ creatorId: z.string().uuid() });
 
 export const startTrial = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
-  .inputValidator((input) => StartTrialSchema.parse(input))
+  .validator((input) => StartTrialSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await supabaseAdmin.rpc("start_creator_trial", {
       _creator_id: data.creatorId,
@@ -30,7 +30,7 @@ export const startTrial = createServerFn({ method: "POST" })
 
 export const checkTrialEligibility = createServerFn({ method: "GET" })
   .middleware([requireAdultVerification])
-  .inputValidator((input) => StartTrialSchema.parse(input))
+  .validator((input) => StartTrialSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: prof } = await supabase

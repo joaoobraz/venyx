@@ -2,17 +2,25 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { requiresAgeGate } from "@/lib/age-gate";
 
 const KEY = "age-gate-confirmed-v1";
 
 export function AgeGateModal() {
   const { t } = useI18n();
+  const location = useLocation();
+  const shouldGate = requiresAgeGate(location.pathname);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!shouldGate) {
+      setOpen(false);
+      return;
+    }
     if (!localStorage.getItem(KEY)) setOpen(true);
-  }, []);
+  }, [shouldGate]);
 
   if (!open) return null;
 

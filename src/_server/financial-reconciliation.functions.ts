@@ -6,6 +6,7 @@ import {
   reconcilePendingPixCharges,
   ReconciliationConfigurationError,
 } from "@/_server/payment-reconciliation.server";
+import { impulsePayIsConfigured } from "@/_server/impulsepay.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function assertAdmin(userId: string) {
@@ -81,7 +82,7 @@ export const listFinancialReconciliation = createServerFn({ method: "GET" })
     }
 
     return {
-      providerConfigured: Boolean(process.env.NEXUSPAG_API_KEY),
+      providerConfigured: impulsePayIsConfigured(),
       pendingCharges: pendingResult.count ?? 0,
       issues: (issuesResult.data ?? []).map((issue) => ({
         ...issue,
@@ -119,7 +120,7 @@ export const runFinancialReconciliationNow = createServerFn({ method: "POST" })
     } catch (error) {
       if (error instanceof ReconciliationConfigurationError) {
         throw new Error(
-          "A chave da NexusPag ainda não foi configurada. O painel está pronto, mas a consulta real ao provedor permanece bloqueada.",
+          "As credenciais da Impulse Pay ainda não foram configuradas. A consulta real ao provedor permanece bloqueada.",
           { cause: error },
         );
       }

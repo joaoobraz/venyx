@@ -391,7 +391,7 @@ export function PaymentsPage() {
           <DialogHeader>
             <DialogTitle>{tr("Comprovante da cobrança", "Charge receipt")}</DialogTitle>
             <DialogDescription>
-              {tr("Referência registrada pela Fanlira e pela NexusPag.", "Reference recorded by Fanlira and NexusPag.")}
+              {tr("Referência registrada pela Fanlira e pela Impulse Pay.", "Reference recorded by Fanlira and Impulse Pay.")}
             </DialogDescription>
           </DialogHeader>
           {selected && (
@@ -406,7 +406,7 @@ export function PaymentsPage() {
               {selected.paid_at && <ReceiptRow label={tr("Pago em", "Paid at")} value={dateTime(selected.paid_at, locale)} />}
               <ReceiptRow label={tr("Referência Fanlira", "Fanlira reference")} value={selected.external_id} mono />
               <ReceiptRow
-                label={tr("Referência NexusPag", "NexusPag reference")}
+                label={tr("Referência Impulse Pay", "Impulse Pay reference")}
                 value={selected.gateway_transaction_id || tr("Ainda não disponível", "Not available yet")}
                 mono={!!selected.gateway_transaction_id}
               />

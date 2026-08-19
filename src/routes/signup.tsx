@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -26,6 +28,9 @@ export function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const captchaRequired = isTurnstileEnabled();
   const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const feedRoute = routeTo("/feed");
 
@@ -35,12 +40,19 @@ export function SignupPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (captchaRequired && !captchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: createOAuthCallbackUrl(window.location.origin) },
+        options: {
+          emailRedirectTo: createOAuthCallbackUrl(window.location.origin),
+          captchaToken: captchaToken ?? undefined,
+        },
       });
       if (error) throw error;
 
@@ -75,6 +87,8 @@ export function SignupPage() {
       );
     } finally {
       setLoading(false);
+      setCaptchaToken(null);
+      setCaptchaReset((current) => current + 1);
     }
   };
 
@@ -159,9 +173,14 @@ export function SignupPage() {
                 className="mt-1.5"
               />
             </div>
+            <TurnstileCaptcha
+              action="signup"
+              onTokenChange={setCaptchaToken}
+              resetSignal={captchaReset}
+            />
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (captchaRequired && !captchaToken)}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {loading ? t("common.loading") : t("auth.signup.button")}

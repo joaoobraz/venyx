@@ -65,7 +65,7 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT pg_catalog.upper(
-    pg_catalog.substring(profile.location FROM '([A-Za-z]{2})[[:space:]]*$')
+    pg_catalog.substring(profile.location, '([A-Za-z]{2})[[:space:]]*$')
   )
   FROM public.profiles profile
   WHERE profile.user_id = _user_id

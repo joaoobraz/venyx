@@ -1210,6 +1210,7 @@ export type Database = {
           full_name: string;
           id: string;
           method: string;
+          phone: string | null;
           status: string;
           updated_at: string;
           user_id: string;
@@ -1223,6 +1224,7 @@ export type Database = {
           full_name: string;
           id?: string;
           method?: string;
+          phone?: string | null;
           status?: string;
           updated_at?: string;
           user_id: string;
@@ -1236,6 +1238,7 @@ export type Database = {
           full_name?: string;
           id?: string;
           method?: string;
+          phone?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string;
@@ -3098,6 +3101,11 @@ export type Database = {
           amount_cents: number;
           created_at: string;
           creator_id: string;
+          gateway_end_to_end: string | null;
+          gateway_fee_cents: number | null;
+          gateway_net_amount_cents: number | null;
+          gateway_status: string | null;
+          gateway_transfer_id: string | null;
           holder_document: string;
           holder_name: string;
           id: string;
@@ -3116,6 +3124,11 @@ export type Database = {
           amount_cents: number;
           created_at?: string;
           creator_id: string;
+          gateway_end_to_end?: string | null;
+          gateway_fee_cents?: number | null;
+          gateway_net_amount_cents?: number | null;
+          gateway_status?: string | null;
+          gateway_transfer_id?: string | null;
           holder_document: string;
           holder_name: string;
           id?: string;
@@ -3134,6 +3147,11 @@ export type Database = {
           amount_cents?: number;
           created_at?: string;
           creator_id?: string;
+          gateway_end_to_end?: string | null;
+          gateway_fee_cents?: number | null;
+          gateway_net_amount_cents?: number | null;
+          gateway_status?: string | null;
+          gateway_transfer_id?: string | null;
           holder_document?: string;
           holder_name?: string;
           id?: string;

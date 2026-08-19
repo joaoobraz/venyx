@@ -1,4 +1,4 @@
-const TELEMETRY_SESSION_KEY = "venyx_telemetry_session";
+const TELEMETRY_SESSION_KEY = "fanlira_telemetry_session";
 
 function anonymousId() {
   if (typeof window === "undefined") return crypto.randomUUID();

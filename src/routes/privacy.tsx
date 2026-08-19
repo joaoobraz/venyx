@@ -3,6 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { openCookieSettings } from "@/lib/cookie-consent";
 import { useI18n } from "@/lib/i18n";
+import { LEGAL_CONTACTS, formatLegalVersion, legalEntityDescription } from "@/lib/legal-config";
+import { CURRENT_PRIVACY_VERSION } from "@/lib/legal-versions";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -20,13 +22,14 @@ export const Route = createFileRoute("/privacy")({
 
 export function PrivacyPage() {
   const { locale } = useI18n();
+  const controller = legalEntityDescription();
   if (locale === "en") {
     return (
       <AppShell>
         <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
           <h1>Privacy Policy</h1>
           <p className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleDateString("en-US")}
+            Last updated: {formatLegalVersion(CURRENT_PRIVACY_VERSION, "en")}
           </p>
           <p>
             This policy describes how we process personal data in compliance with Brazil's General
@@ -34,8 +37,8 @@ export function PrivacyPage() {
           </p>
           <h2>1. Data controller</h2>
           <p>
-            The platform is the data controller. Data Protection Officer:{" "}
-            <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a>.
+            {controller} is the data controller. Privacy contact:{" "}
+            <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>.
           </p>
           <h2>2. Data we collect</h2>
           <ul>
@@ -97,7 +100,7 @@ export function PrivacyPage() {
             <li>Data portability, deletion of consent-based data, and withdrawal of consent.</li>
           </ul>
           <p>
-            Contact <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a> to exercise these
+            Contact <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a> to exercise these
             rights. We respond within 15 days.
           </p>
           <h2>6. Retention</h2>
@@ -141,7 +144,7 @@ export function PrivacyPage() {
       <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
         <h1>Política de Privacidade</h1>
         <p className="text-sm text-muted-foreground">
-          Última atualização: {new Date().toLocaleDateString("pt-BR")}
+          Última atualização: {formatLegalVersion(CURRENT_PRIVACY_VERSION, "pt")}
         </p>
 
         <p>
@@ -151,8 +154,8 @@ export function PrivacyPage() {
 
         <h2>1. Controlador</h2>
         <p>
-          A plataforma atua como Controladora dos dados pessoais. Encarregado de Dados (DPO):{" "}
-          <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a>.
+          {controller} atua como Controladora dos dados pessoais. Canal de privacidade:{" "}
+          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>.
         </p>
 
         <h2>2. Dados que coletamos</h2>
@@ -203,11 +206,11 @@ export function PrivacyPage() {
         <h2>4. Compartilhamento</h2>
         <p>Não vendemos dados pessoais. Compartilhamos apenas com:</p>
         <ul>
-          <li>Processadores de pagamento (Stripe/Paddle);</li>
+          <li>Processador de pagamento Impulse Pay;</li>
           <li>Provedores de infraestrutura (cloud, e-mail transacional);</li>
           <li>
-            Serviços de moderação por IA (Lovable AI Gateway), apenas com a mídia necessária para
-            análise;
+            Provedor de moderação contratado pela Fanlira, apenas com a mídia necessária para
+            análise e sob controles contratuais;
           </li>
           <li>
             Provedores de mensuração de publicidade configurados pela criadora, somente após o
@@ -227,7 +230,7 @@ export function PrivacyPage() {
         </ul>
         <p>
           Para exercer qualquer direito, escreva para{" "}
-          <a href="mailto:dpo@plataforma.com">dpo@plataforma.com</a>. Respondemos em até 15 dias.
+          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>. Respondemos em até 15 dias.
         </p>
 
         <h2>6. Retenção</h2>

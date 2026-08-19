@@ -98,8 +98,8 @@ type ReconciliationData = {
 };
 
 const issueLabels: Record<string, string> = {
-  missing_gateway_reference: "Cobrança sem referência da NexusPag",
-  provider_lookup_failed: "Falha ao consultar a NexusPag",
+  missing_gateway_reference: "Cobrança sem referência da Impulse Pay",
+  provider_lookup_failed: "Falha ao consultar a Impulse Pay",
   gateway_data_mismatch: "Dados da cobrança não conferem",
   fulfillment_failed: "Pagamento confirmado, mas entrega falhou",
   status_mismatch: "Status parado ou divergente",
@@ -241,12 +241,12 @@ export function AdminReconciliationPage() {
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <div>
                 <p className="font-semibold">
-                  {tr("Aguardando credencial da NexusPag", "Waiting for NexusPag credentials")}
+                  {tr("Aguardando credenciais da Impulse Pay", "Waiting for Impulse Pay credentials")}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {tr(
-                    "A fila, o histórico e a proteção já estão prontos. A consulta real ficará disponível assim que a chave da NexusPag for configurada no servidor.",
-                    "The queue, history, and safeguards are ready. Live checks will become available when the NexusPag key is configured on the server.",
+                    "A fila, o histórico e a proteção já estão prontos. A consulta real ficará disponível assim que as chaves da Impulse Pay forem configuradas no servidor.",
+                    "The queue, history, and safeguards are ready. Live checks will become available when the Impulse Pay keys are configured on the server.",
                   )}
                 </p>
               </div>
@@ -331,7 +331,7 @@ export function AdminReconciliationPage() {
                       {tr("Status Fanlira", "Fanlira status")}: <span className="text-foreground">{issue.local_status}</span>
                     </p>
                     <p>
-                      {tr("Status NexusPag", "NexusPag status")}: <span className="text-foreground">{issue.gateway_status ?? tr("não disponível", "unavailable")}</span>
+                      {tr("Status Impulse Pay", "Impulse Pay status")}: <span className="text-foreground">{issue.gateway_status ?? tr("não disponível", "unavailable")}</span>
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">

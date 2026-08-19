@@ -1,4 +1,4 @@
--- P0 financeiro: reconciliação transacional e idempotente de estornos NexusPag.
+-- P0 financeiro: reconciliação transacional e idempotente de estornos do gateway.
 
 ALTER TABLE public.pix_charges
   ADD COLUMN IF NOT EXISTS refunded_at timestamptz,

@@ -105,7 +105,7 @@ function cancellationError(error: { message?: string } | null) {
 
 export const scheduleSubscriptionCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => cancellationSchema.parse(input))
+  .validator((input: unknown) => cancellationSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "schedule_my_subscription_cancellation",
@@ -120,7 +120,7 @@ export const scheduleSubscriptionCancellation = createServerFn({ method: "POST" 
 
 export const undoSubscriptionCancellation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ subscriptionId: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {

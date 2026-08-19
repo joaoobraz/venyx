@@ -4,6 +4,14 @@ import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { onlyDigits } from "@/lib/cpf";
+import {
+  createImpulsePayWithdrawal,
+  getImpulsePayBalance,
+  ImpulsePayConfigurationError,
+  ImpulsePayRequestError,
+  impulsePayIsConfigured,
+  toImpulsePayPixKeyType,
+} from "@/_server/impulsepay.server";
 
 function safeError(internal: unknown, msg = "Operação falhou. Tente novamente."): Error {
   console.error("[withdrawals]", internal);
@@ -44,7 +52,7 @@ const upsertKeySchema = z.object({
 
 export const upsertPayoutKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => upsertKeySchema.parse(input))
+  .validator((input: unknown) => upsertKeySchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
@@ -100,7 +108,7 @@ const requestSchema = z.object({
 
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => requestSchema.parse(input))
+  .validator((input: unknown) => requestSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
@@ -148,7 +156,7 @@ const cancelSchema = z.object({ withdrawal_id: z.string().uuid() });
 
 export const cancelWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => cancelSchema.parse(input))
+  .validator((input: unknown) => cancelSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: w } = await supabaseAdmin
@@ -183,6 +191,22 @@ async function assertAdmin(userId: string) {
   }
 }
 
+export const getImpulsePayOperationalBalance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseMfa])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    if (!impulsePayIsConfigured()) {
+      return { configured: false as const, available: 0, reserved: 0 };
+    }
+
+    const balance = await getImpulsePayBalance();
+    return {
+      configured: true as const,
+      available: balance.available,
+      reserved: balance.reserved,
+    };
+  });
+
 const adminIdSchema = z.object({
   withdrawal_id: z.string().uuid(),
   notes: z.string().max(500).optional().nullable(),
@@ -190,13 +214,13 @@ const adminIdSchema = z.object({
 
 export const approveWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => adminIdSchema.parse(input))
+  .validator((input: unknown) => adminIdSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id, amount_cents, status")
+      .select("creator_id,amount_cents,status,pix_key,pix_key_type,holder_document")
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
@@ -204,7 +228,7 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
       throw new Error("Saque não encontrado ou já processado");
     }
 
-    const { data: approved, error } = await supabaseAdmin
+    const { data: claimed, error } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
         status: "approved",
@@ -217,106 +241,82 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
       .select("id")
       .maybeSingle();
     if (error) throw safeError(error);
-    if (!approved) throw new Error("Este saque já foi processado");
+    if (!claimed) throw new Error("Este saque já foi processado");
+
+    try {
+      const transfer = await createImpulsePayWithdrawal({
+        amountCents: w.amount_cents,
+        pixKey: w.pix_key,
+        pixKeyType: toImpulsePayPixKeyType(w.pix_key_type),
+        document: w.holder_document,
+      });
+      if (!transfer?.id || transfer.amount !== w.amount_cents) {
+        throw new Error("A Impulse Pay retornou um saque inválido");
+      }
+
+      const internalStatus = transfer.status === "PROCESSING" ? "processing" : "approved";
+      const { error: gatewayUpdateError } = await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({
+          status: internalStatus,
+          gateway_transfer_id: transfer.id,
+          gateway_status: transfer.status,
+          gateway_fee_cents: transfer.fee,
+          gateway_net_amount_cents: transfer.net_amount,
+        })
+        .eq("id", data.withdrawal_id)
+        .eq("status", "approved");
+      if (gatewayUpdateError) {
+        console.error("[withdrawals] transfer created but persistence failed", transfer.id);
+        throw new Error(
+          "O saque foi enviado à Impulse Pay, mas precisa de conciliação administrativa.",
+        );
+      }
+    } catch (providerError) {
+      const definitelyNotSubmitted =
+        providerError instanceof ImpulsePayConfigurationError ||
+        (providerError instanceof ImpulsePayRequestError &&
+          providerError.status >= 400 &&
+          providerError.status < 500 &&
+          providerError.status !== 429);
+      if (definitelyNotSubmitted) {
+        await supabaseAdmin
+          .from("withdrawal_requests")
+          .update({ status: "pending", gateway_status: null })
+          .eq("id", data.withdrawal_id)
+          .eq("status", "approved")
+          .is("gateway_transfer_id", null);
+      } else {
+        await supabaseAdmin
+          .from("withdrawal_requests")
+          .update({ gateway_status: "SUBMISSION_UNKNOWN" })
+          .eq("id", data.withdrawal_id)
+          .eq("status", "approved")
+          .is("gateway_transfer_id", null);
+      }
+      if (providerError instanceof ImpulsePayConfigurationError) {
+        throw new Error("Configure as credenciais de saque da Impulse Pay antes de aprovar.", {
+          cause: providerError,
+        });
+      }
+      if (!definitelyNotSubmitted) {
+        throw new Error(
+          "Não foi possível confirmar o envio. Confira o painel da Impulse Pay antes de tentar novamente.",
+          { cause: providerError },
+        );
+      }
+      throw new Error(
+        providerError instanceof Error ? providerError.message : "A Impulse Pay recusou o saque.",
+        { cause: providerError },
+      );
+    }
 
     await notify(
       w.creator_id,
-      "Saque aprovado",
-      `Seu saque de ${fmtBRL(w.amount_cents)} foi aprovado e está em processamento.`,
+      "Saque enviado",
+      `Seu saque de ${fmtBRL(w.amount_cents)} foi enviado à Impulse Pay e está em processamento.`,
       { withdrawal_id: data.withdrawal_id },
     );
-    return { ok: true };
-  });
-
-// ===================== Admin: marcar como pago =====================
-const markPaidSchema = z.object({
-  withdrawal_id: z.string().uuid(),
-  receipt_url: z.string().url().optional().nullable(),
-  notes: z.string().max(500).optional().nullable(),
-});
-
-export const markWithdrawalPaid = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => markPaidSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
-
-    const { data: w } = await supabaseAdmin
-      .from("withdrawal_requests")
-      .select("creator_id, amount_cents, status")
-      .eq("id", data.withdrawal_id)
-      .maybeSingle();
-    if (!w) throw new Error("Saque não encontrado");
-    if (!["approved", "processing", "pending"].includes(w.status)) {
-      throw new Error(`Saque está em estado ${w.status} e não pode ser marcado como pago`);
-    }
-
-    const previousStatus = w.status;
-    const { data: claimed, error: claimError } = await supabaseAdmin
-      .from("withdrawal_requests")
-      .update({ status: "processing" })
-      .eq("id", data.withdrawal_id)
-      .in("status", ["approved", "pending"])
-      .select("id")
-      .maybeSingle();
-    if (claimError) throw safeError(claimError);
-    if (!claimed && previousStatus !== "processing") {
-      throw new Error("Este saque já está sendo processado");
-    }
-
-    // Registra a transação de saída uma única vez.
-    const { error: txErr } = await supabaseAdmin.from("transactions").insert({
-      payer_id: null,
-      payee_id: w.creator_id,
-      type: "withdrawal",
-      status: "paid",
-      amount_cents: w.amount_cents,
-      reference_id: data.withdrawal_id,
-      gateway: "manual",
-      gateway_ref: data.receipt_url ?? null,
-      idempotency_key: `withdrawal:${data.withdrawal_id}`,
-      metadata: { withdrawal_id: data.withdrawal_id, notes: data.notes ?? null },
-    });
-    if (txErr && txErr.code !== "23505") {
-      await supabaseAdmin
-        .from("withdrawal_requests")
-        .update({ status: previousStatus })
-        .eq("id", data.withdrawal_id)
-        .eq("status", "processing");
-      throw safeError(txErr);
-    }
-
-    const { data: paid, error } = await supabaseAdmin
-      .from("withdrawal_requests")
-      .update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        receipt_url: data.receipt_url ?? null,
-        admin_notes: data.notes ?? null,
-        reviewed_by: context.userId,
-      })
-      .eq("id", data.withdrawal_id)
-      .eq("status", "processing")
-      .select("id")
-      .maybeSingle();
-    if (error) throw safeError(error);
-    if (!paid) {
-      const { data: current } = await supabaseAdmin
-        .from("withdrawal_requests")
-        .select("status")
-        .eq("id", data.withdrawal_id)
-        .maybeSingle();
-      if (current?.status === "paid") return { ok: true };
-      throw new Error("Este saque não pôde ser finalizado");
-    }
-
-    await notify(
-      w.creator_id,
-      "Saque pago",
-      `Seu saque de ${fmtBRL(w.amount_cents)} foi pago via PIX.${data.receipt_url ? " Comprovante disponível." : ""}`,
-      { withdrawal_id: data.withdrawal_id, receipt_url: data.receipt_url ?? null },
-    );
-
     return { ok: true };
   });
 
@@ -328,18 +328,21 @@ const rejectSchema = z.object({
 
 export const rejectWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => rejectSchema.parse(input))
+  .validator((input: unknown) => rejectSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id, amount_cents, status")
+      .select("creator_id,amount_cents,status,gateway_transfer_id")
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
     if (!w || !["pending", "approved"].includes(w.status)) {
       throw new Error("Saque não encontrado ou já finalizado");
+    }
+    if (w.gateway_transfer_id) {
+      throw new Error("Este saque já foi enviado à Impulse Pay e não pode ser rejeitado aqui");
     }
 
     const { data: rejected, error } = await supabaseAdmin

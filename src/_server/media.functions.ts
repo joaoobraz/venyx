@@ -23,7 +23,7 @@ const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
 export const getPostMediaUrls = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
-  .inputValidator((input: unknown) => postMediaSchema.parse(input))
+  .validator((input: unknown) => postMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const viewerId = context.userId;
     const { data: post } = await supabaseAdmin
@@ -70,7 +70,7 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
  */
 export const getFirstMediaForPosts = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
-  .inputValidator((input: unknown) => multiPostMediaSchema.parse(input))
+  .validator((input: unknown) => multiPostMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const viewerId = context.userId;
     // Check access for all posts
@@ -237,7 +237,7 @@ const storyMediaSchema = z.object({
 
 export const getStoryMediaUrls = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
-  .inputValidator((input: unknown) => storyMediaSchema.parse(input))
+  .validator((input: unknown) => storyMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const now = new Date().toISOString();
     const { data: stories, error } = await supabaseAdmin
@@ -295,7 +295,7 @@ export const getStoryMediaUrls = createServerFn({ method: "POST" })
 
 export const getChatMediaUrl = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
-  .inputValidator((input: unknown) => chatMediaSchema.parse(input))
+  .validator((input: unknown) => chatMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
       const { userId } = context;

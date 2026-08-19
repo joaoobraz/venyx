@@ -30,17 +30,24 @@ export function unwrapGatewayCharge(raw: unknown): Record<string, unknown> {
 
 export function normalizeGatewayCharge(raw: unknown): NormalizedGatewayCharge {
   const value = unwrapGatewayCharge(raw);
+  const items = Array.isArray(value.items) ? value.items.map(objectOf) : [];
+  const firstItem = items[0] ?? {};
+  const product = objectOf(firstItem.product);
+  const payer = objectOf(value.payer);
+  const customer = objectOf(value.customer);
   const transactionIds = [value.id, value.transaction_id, value.txid]
     .filter((item): item is string => typeof item === "string" && item.length > 0);
   const amount = typeof value.amount === "number" ? value.amount : Number(value.amount);
+  const externalRef = value.external_ref ?? firstItem.external_ref ?? product.external_ref;
+  const payerName = payer.name ?? value.payer_name ?? customer.name;
 
   return {
     status: typeof value.status === "string" ? value.status.toLowerCase() : null,
-    amountCents: Number.isFinite(amount) ? Math.round(amount * 100) : null,
-    externalId: typeof value.external_id === "string" ? value.external_id : null,
+    amountCents: Number.isInteger(amount) ? amount : null,
+    externalId: typeof externalRef === "string" ? externalRef : null,
     transactionIds: Array.from(new Set(transactionIds)),
     paidAt: typeof value.paid_at === "string" ? value.paid_at : null,
-    payerName: typeof value.payer_name === "string" ? value.payer_name : null,
+    payerName: typeof payerName === "string" ? payerName : null,
   };
 }
 
@@ -50,11 +57,10 @@ export function compareGatewayCharge(
 ) {
   return {
     amountMatches: gateway.amountCents === local.amount_cents,
-    externalIdMatches: !gateway.externalId || gateway.externalId === local.external_id,
+    externalIdMatches: gateway.externalId === local.external_id,
     transactionMatches:
-      !local.gateway_transaction_id ||
-      gateway.transactionIds.length === 0 ||
-      gateway.transactionIds.includes(local.gateway_transaction_id),
+      Boolean(local.gateway_transaction_id) &&
+      gateway.transactionIds.includes(local.gateway_transaction_id ?? ""),
   };
 }
 

@@ -20,7 +20,7 @@ const schema = z.object({
   anonymousId: z.string().uuid(),
   route: z.string().max(255).nullable().optional(),
   deviceFamily: z.enum(["desktop", "mobile", "tablet", "unknown"]),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 function ipOf(request: Request) {
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/telemetry")({
         } catch {
           return Response.json({ ok: false }, { status: 400 });
         }
-        const salt = process.env.CRON_SECRET || "venyx-local-telemetry";
+        const salt = process.env.CRON_SECRET || "fanlira-local-telemetry";
         const anonymousIdHash = createHash("sha256")
           .update(`${salt}:${ipOf(request)}:${payload.anonymousId}`)
           .digest("hex");

@@ -16,6 +16,9 @@ const verifySchema = z.object({
   country: z.string().min(2).max(4).default("BR"),
   cpf: z.string().min(11).max(20),
   full_name: z.string().trim().min(3).max(140),
+  phone: z.string().transform(onlyDigits).refine((value) => /^\d{10,11}$/.test(value), {
+    message: "Informe um telefone válido com DDD",
+  }),
   birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
 });
 
@@ -47,7 +50,7 @@ async function matchCpfWithDocument(_input: {
 
 export const verifyIdentity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => verifySchema.parse(input))
+  .validator((input: unknown) => verifySchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const cpf = onlyDigits(data.cpf);
@@ -58,8 +61,8 @@ export const verifyIdentity = createServerFn({ method: "POST" })
     if (!isAdult(data.birth_date)) {
       return { ok: false as const, error: "Você precisa ter 18 anos ou mais." };
     }
-    const firstName = data.full_name.trim().split(/\s+/)[0] ?? "";
-    if (firstName.length < 2) {
+    const nameParts = data.full_name.trim().split(/\s+/).filter(Boolean);
+    if (nameParts.length < 2 || nameParts.some((part) => part.length < 2)) {
       return { ok: false as const, error: "Informe seu nome completo, como no documento." };
     }
 
@@ -88,6 +91,7 @@ export const verifyIdentity = createServerFn({ method: "POST" })
         country: data.country,
         cpf,
         full_name: data.full_name.trim(),
+        phone: data.phone,
         birth_date: data.birth_date,
         status: "verified",
         method: match.method,
@@ -116,8 +120,12 @@ export const getMyVerificationStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("identity_verifications")
-      .select("status")
+      .select("status, phone")
       .eq("user_id", context.userId)
       .maybeSingle();
-    return { verified: (data as { status?: string } | null)?.status === "verified" };
+    const result = data as { status?: string; phone?: string | null } | null;
+    return {
+      verified:
+        result?.status === "verified" && /^\d{10,11}$/.test(onlyDigits(result.phone ?? "")),
+    };
   });

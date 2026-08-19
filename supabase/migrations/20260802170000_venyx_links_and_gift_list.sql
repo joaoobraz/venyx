@@ -6,7 +6,7 @@ SET url = 'https://' || btrim(url)
 WHERE url !~* '^https?://' AND btrim(url) ~* '^[a-z0-9.-]+\.[a-z]{2,}([/:?#].*)?$';
 
 UPDATE public.creator_links
-SET url = 'https://venyx.app', is_active = false
+SET url = 'https://fanlira.com.br', is_active = false
 WHERE url !~* '^https?://' OR char_length(url) NOT BETWEEN 8 AND 2048;
 
 UPDATE public.creator_links

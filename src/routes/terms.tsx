@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useI18n } from "@/lib/i18n";
+import { LEGAL_CONTACTS, formatLegalVersion, legalEntityDescription } from "@/lib/legal-config";
+import { CURRENT_TERMS_VERSION } from "@/lib/legal-versions";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
@@ -14,13 +16,14 @@ export const Route = createFileRoute("/terms")({
 
 export function TermsPage() {
   const { locale } = useI18n();
+  const operator = legalEntityDescription();
   if (locale === "en") {
     return (
       <AppShell>
         <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
           <h1>Terms of Use</h1>
           <p className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleDateString("en-US")}
+            Last updated: {formatLegalVersion(CURRENT_TERMS_VERSION, "en")}
           </p>
           <h2>1. Acceptance</h2>
           <p>
@@ -29,6 +32,7 @@ export function TermsPage() {
             <Link to="/privacy" className="underline">Privacy Policy</Link>. If you disagree, do not
             use the service.
           </p>
+          <p><strong>Service operator:</strong> {operator}.</p>
           <h2>2. Minimum age — 18+</h2>
           <p>
             This platform is <strong>exclusively for adults aged 18 or older</strong>. By signing up,
@@ -70,9 +74,10 @@ export function TermsPage() {
           </ul>
           <h2>6. Right of withdrawal</h2>
           <p>
-            Because digital content is delivered immediately, the Brazilian statutory withdrawal
-            right does not apply after content is unlocked or viewed. Canceling a subscription stops
-            future renewals while access remains through the paid period.
+            Withdrawal, refund, and dispute rights are handled under applicable Brazilian consumer
+            law and the characteristics of each purchase. Where digital content is delivered
+            immediately, the platform will collect any legally required acknowledgment. Canceling a
+            subscription stops future renewals while access remains through the paid period.
           </p>
           <h2>7. Suspension and termination</h2>
           <p>
@@ -93,7 +98,7 @@ export function TermsPage() {
           <h2>10. Governing law</h2>
           <p>These Terms are governed by the laws of the Federative Republic of Brazil.</p>
           <h2>11. Contact</h2>
-          <p>Questions: <a href="mailto:suporte@plataforma.com">suporte@plataforma.com</a></p>
+          <p>Questions: <a href={`mailto:${LEGAL_CONTACTS.support}`}>{LEGAL_CONTACTS.support}</a></p>
         </article>
       </AppShell>
     );
@@ -102,7 +107,7 @@ export function TermsPage() {
     <AppShell>
       <article className="prose prose-invert mx-auto max-w-3xl px-4 py-10">
         <h1>Termos de Uso</h1>
-        <p className="text-sm text-muted-foreground">Última atualização: {new Date().toLocaleDateString("pt-BR")}</p>
+        <p className="text-sm text-muted-foreground">Última atualização: {formatLegalVersion(CURRENT_TERMS_VERSION, "pt")}</p>
 
         <h2>1. Aceitação dos Termos</h2>
         <p>
@@ -110,6 +115,7 @@ export function TermsPage() {
           estes Termos de Uso e com a nossa <Link to="/privacy" className="underline">Política de Privacidade</Link>.
           Caso não concorde, não utilize o serviço.
         </p>
+        <p><strong>Operadora do serviço:</strong> {operator}.</p>
 
         <h2>2. Idade Mínima — 18+</h2>
         <p>
@@ -158,9 +164,10 @@ export function TermsPage() {
 
         <h2>6. Direito de Arrependimento</h2>
         <p>
-          Por se tratar de conteúdo digital de fruição imediata, nos termos do art. 49, parágrafo único do CDC, o
-          direito de arrependimento não se aplica após o desbloqueio/visualização do conteúdo. Cancelamentos de
-          assinatura interrompem renovações futuras, mantendo o acesso até o fim do período já pago.
+          Direitos de arrependimento, reembolso e contestação serão tratados conforme a legislação brasileira de
+          consumo e as características de cada compra. Quando houver entrega imediata de conteúdo digital, a
+          plataforma coletará as manifestações exigidas pela legislação. O cancelamento da assinatura interrompe
+          renovações futuras, mantendo o acesso até o fim do período já pago.
         </p>
 
         <h2>7. Suspensão e Encerramento</h2>
@@ -183,12 +190,12 @@ export function TermsPage() {
 
         <h2>10. Foro e Lei Aplicável</h2>
         <p>
-          Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o foro da comarca da
-          sede da plataforma para dirimir quaisquer controvérsias.
+          Estes Termos são regidos pelas leis da República Federativa do Brasil, preservado o foro assegurado ao
+          consumidor pela legislação aplicável.
         </p>
 
         <h2>11. Contato</h2>
-        <p>Dúvidas sobre estes Termos: <a href="mailto:suporte@plataforma.com">suporte@plataforma.com</a></p>
+        <p>Dúvidas sobre estes Termos: <a href={`mailto:${LEGAL_CONTACTS.support}`}>{LEGAL_CONTACTS.support}</a></p>
       </article>
     </AppShell>
   );

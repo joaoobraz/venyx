@@ -19,7 +19,7 @@ async function assertAdmin(userId: string) {
 
 export const listUsersAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         search: z.string().trim().max(100).optional(),
@@ -78,7 +78,7 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
 
 export const updateUserRoleAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         targetUserId: z.string().uuid(),

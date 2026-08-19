@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,7 @@ export function CreatorLinksPage() {
     toast.success(tr("Removida — usando a foto do perfil", "Removed—using your profile photo"));
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoadingData(true);
     const [{ data: lks }, { data: pg }] = await Promise.all([
@@ -150,11 +150,11 @@ export function CreatorLinksPage() {
       setPage(data as LinkPage);
     }
     setLoadingData(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user && isCreator) load();
-  }, [user, isCreator]);
+  }, [user, isCreator, load]);
 
   const addLink = async () => {
     if (!user || !newTitle.trim() || !newUrl.trim()) {

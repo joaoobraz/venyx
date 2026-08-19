@@ -158,8 +158,8 @@ import { Route as SettingsPrivacyRouteImport } from './routes/settings.privacy'
 import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
+import { Route as ApiPublicImpulsepayWebhookRouteImport } from './routes/api.public.impulsepay-webhook'
 import { Route as ApiPublicLinkEventRouteImport } from './routes/api.public.link-event'
-import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
 import { Route as ApiPublicTelemetryRouteImport } from './routes/api.public.telemetry'
 import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
 import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
@@ -923,17 +923,17 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImpulsepayWebhookRoute =
+  ApiPublicImpulsepayWebhookRouteImport.update({
+    id: '/api/public/impulsepay-webhook',
+    path: '/api/public/impulsepay-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLinkEventRoute = ApiPublicLinkEventRouteImport.update({
   id: '/api/public/link-event',
   path: '/api/public/link-event',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicNexuspagWebhookRoute =
-  ApiPublicNexuspagWebhookRouteImport.update({
-    id: '/api/public/nexuspag-webhook',
-    path: '/api/public/nexuspag-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicTelemetryRoute = ApiPublicTelemetryRouteImport.update({
   id: '/api/public/telemetry',
   path: '/api/public/telemetry',
@@ -1120,8 +1120,8 @@ export interface FileRoutesByFullPath {
   '/administracao/': typeof AdministracaoIndexRoute
   '/administracion/': typeof AdministracionIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
   '/api/public/link-event': typeof ApiPublicLinkEventRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -1279,8 +1279,8 @@ export interface FileRoutesByTo {
   '/administracao': typeof AdministracaoIndexRoute
   '/administracion': typeof AdministracionIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
   '/api/public/link-event': typeof ApiPublicLinkEventRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -1439,8 +1439,8 @@ export interface FileRoutesById {
   '/administracao/': typeof AdministracaoIndexRoute
   '/administracion/': typeof AdministracionIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
   '/api/public/link-event': typeof ApiPublicLinkEventRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
   '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
@@ -1600,8 +1600,8 @@ export interface FileRouteTypes {
     | '/administracao/'
     | '/administracion/'
     | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
     | '/api/public/link-event'
-    | '/api/public/nexuspag-webhook'
     | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -1759,8 +1759,8 @@ export interface FileRouteTypes {
     | '/administracao'
     | '/administracion'
     | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
     | '/api/public/link-event'
-    | '/api/public/nexuspag-webhook'
     | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -1918,8 +1918,8 @@ export interface FileRouteTypes {
     | '/administracao/'
     | '/administracion/'
     | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
     | '/api/public/link-event'
-    | '/api/public/nexuspag-webhook'
     | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
@@ -2077,8 +2077,8 @@ export interface RootRouteChildren {
   AdministracaoIndexRoute: typeof AdministracaoIndexRoute
   AdministracionIndexRoute: typeof AdministracionIndexRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicImpulsepayWebhookRoute: typeof ApiPublicImpulsepayWebhookRoute
   ApiPublicLinkEventRoute: typeof ApiPublicLinkEventRoute
-  ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
   ApiPublicTelemetryRoute: typeof ApiPublicTelemetryRoute
   ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
   ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
@@ -3132,18 +3132,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/impulsepay-webhook': {
+      id: '/api/public/impulsepay-webhook'
+      path: '/api/public/impulsepay-webhook'
+      fullPath: '/api/public/impulsepay-webhook'
+      preLoaderRoute: typeof ApiPublicImpulsepayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/link-event': {
       id: '/api/public/link-event'
       path: '/api/public/link-event'
       fullPath: '/api/public/link-event'
       preLoaderRoute: typeof ApiPublicLinkEventRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/nexuspag-webhook': {
-      id: '/api/public/nexuspag-webhook'
-      path: '/api/public/nexuspag-webhook'
-      fullPath: '/api/public/nexuspag-webhook'
-      preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/telemetry': {
@@ -3352,8 +3352,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdministracaoIndexRoute: AdministracaoIndexRoute,
   AdministracionIndexRoute: AdministracionIndexRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicImpulsepayWebhookRoute: ApiPublicImpulsepayWebhookRoute,
   ApiPublicLinkEventRoute: ApiPublicLinkEventRoute,
-  ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
   ApiPublicTelemetryRoute: ApiPublicTelemetryRoute,
   ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
   ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,

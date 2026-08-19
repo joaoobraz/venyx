@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -32,6 +34,11 @@ export function LoginPage() {
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
+  const [loginCaptchaReset, setLoginCaptchaReset] = useState(0);
+  const [recoveryCaptchaToken, setRecoveryCaptchaToken] = useState<string | null>(null);
+  const [recoveryCaptchaReset, setRecoveryCaptchaReset] = useState(0);
+  const captchaRequired = isTurnstileEnabled();
   const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const feedRoute = routeTo("/feed");
 
@@ -56,6 +63,10 @@ export function LoginPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (captchaRequired && !loginCaptchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
     setLoginError(null);
     setRecoverySent(false);
     setLoading(true);
@@ -64,6 +75,7 @@ export function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
+        options: { captchaToken: loginCaptchaToken ?? undefined },
       });
       if (error) throw error;
       if (await prepareMfaChallenge()) return;
@@ -78,18 +90,25 @@ export function LoginPage() {
       toast.error(message);
     } finally {
       setLoading(false);
+      setLoginCaptchaToken(null);
+      setLoginCaptchaReset((current) => current + 1);
     }
   };
 
   const sendPasswordRecovery = async () => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return;
+    if (captchaRequired && !recoveryCaptchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
 
     setRecoveryLoading(true);
     setRecoverySent(false);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
+        captchaToken: recoveryCaptchaToken ?? undefined,
       });
       if (error) throw error;
       setRecoverySent(true);
@@ -108,6 +127,8 @@ export function LoginPage() {
       );
     } finally {
       setRecoveryLoading(false);
+      setRecoveryCaptchaToken(null);
+      setRecoveryCaptchaReset((current) => current + 1);
     }
   };
 
@@ -223,9 +244,14 @@ export function LoginPage() {
                 className="mt-1.5"
               />
             </div>
+            <TurnstileCaptcha
+              action="login"
+              onTokenChange={setLoginCaptchaToken}
+              resetSignal={loginCaptchaReset}
+            />
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (captchaRequired && !loginCaptchaToken)}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {loading ? t("common.loading") : t("auth.login.button")}
@@ -258,13 +284,20 @@ export function LoginPage() {
                 type="button"
                 size="sm"
                 variant="outline"
-                disabled={recoveryLoading}
+                disabled={recoveryLoading || (captchaRequired && !recoveryCaptchaToken)}
                 onClick={sendPasswordRecovery}
               >
                 {recoveryLoading
                   ? t("common.loading")
                   : tr("Ativar/redefinir senha", "Activate/reset password")}
               </Button>
+            </div>
+            <div className="mt-3">
+              <TurnstileCaptcha
+                action="password_recovery"
+                onTokenChange={setRecoveryCaptchaToken}
+                resetSignal={recoveryCaptchaReset}
+              />
             </div>
             {recoverySent && (
               <p className="mt-3 text-xs font-medium text-foreground" role="status">

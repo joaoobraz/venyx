@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -246,9 +246,9 @@ export function MailingPage() {
       ppv: parseInt(ppvPrice || "0", 10) > 0 ? `R$ ${ppvPrice}` : tr("grátis", "free"),
       criadora: profile?.username ?? "vc",
     });
-  }, [body, ppvPrice, preview, profile]);
+  }, [body, ppvPrice, preview, profile, tr]);
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     if (!user) return;
     setLoadingData(true);
     const [{ data: tagRows }, { data: tplRows }, { data: campRows }, { data: assignments }] =
@@ -273,11 +273,11 @@ export function MailingPage() {
     setTemplates((tplRows as Template[]) ?? []);
     setCampaigns((campRows as Campaign[]) ?? []);
     setLoadingData(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user && isCreator) loadAll();
-  }, [user, isCreator]);
+  }, [user, isCreator, loadAll]);
 
   const loadPreview = async () => {
     if (segment === "tag" && !tagId) {

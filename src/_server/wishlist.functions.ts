@@ -9,7 +9,7 @@ const ToggleSchema = z.object({
 
 export const toggleWishlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => ToggleSchema.parse(input))
+  .validator((input) => ToggleSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 

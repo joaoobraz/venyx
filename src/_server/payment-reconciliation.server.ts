@@ -7,9 +7,12 @@ import {
   normalizeGatewayCharge,
   sanitizedGatewayDetails,
 } from "@/lib/payment-reconciliation";
+import {
+  getImpulsePayTransaction,
+  impulsePayIsConfigured,
+  ImpulsePayRequestError,
+} from "@/_server/impulsepay.server";
 
-const NEXUSPAG_BASE = "https://nexuspag.com";
-const LOOKUP_TIMEOUT_MS = 15_000;
 const MINIMUM_CHARGE_AGE_MS = 90_000;
 const STALE_PROCESSING_MS = 5 * 60_000;
 const STALE_PENDING_MS = 60 * 60_000;
@@ -48,27 +51,24 @@ export class ReconciliationConfigurationError extends Error {
   code = "PAYMENT_CONFIG_ERROR" as const;
 }
 async function lookupGatewayCharge(gatewayId: string) {
-  const apiKey = process.env.NEXUSPAG_API_KEY;
-  if (!apiKey) throw new ReconciliationConfigurationError("NEXUSPAG_API_KEY não configurada");
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
+  if (!impulsePayIsConfigured()) {
+    throw new ReconciliationConfigurationError("Credenciais da Impulse Pay não configuradas");
+  }
   try {
-    const response = await fetch(
-      `${NEXUSPAG_BASE}/api/pix/${encodeURIComponent(gatewayId)}`,
-      { headers: { "x-api-key": apiKey }, signal: controller.signal },
-    );
-    if (!response.ok) {
-      return { ok: false as const, code: `HTTP_${response.status}` };
-    }
-    return { ok: true as const, value: normalizeGatewayCharge(await response.json()) };
+    return {
+      ok: true as const,
+      value: normalizeGatewayCharge(await getImpulsePayTransaction(gatewayId)),
+    };
   } catch (error) {
     return {
       ok: false as const,
-      code: error instanceof Error && error.name === "AbortError" ? "TIMEOUT" : "NETWORK_ERROR",
+      code:
+        error instanceof ImpulsePayRequestError
+          ? error.status > 0
+            ? `HTTP_${error.status}`
+            : "NETWORK_ERROR"
+          : "LOOKUP_ERROR",
     };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -140,8 +140,8 @@ export async function reconcilePendingPixCharges(options: {
   };
 
   try {
-    if (!process.env.NEXUSPAG_API_KEY) {
-      throw new ReconciliationConfigurationError("NEXUSPAG_API_KEY não configurada");
+    if (!impulsePayIsConfigured()) {
+      throw new ReconciliationConfigurationError("Credenciais da Impulse Pay não configuradas");
     }
 
     const { data: rows, error } = await supabaseAdmin
@@ -209,15 +209,15 @@ export async function reconcilePendingPixCharges(options: {
           continue;
         }
 
-        if (gateway.status === "expired" || gateway.status === "cancelled") {
+        if (gateway.status === "refused" || gateway.status === "cancelled") {
           const { error: updateError } = await supabaseAdmin
             .from("pix_charges")
-            .update({ status: gateway.status })
+            .update({ status: "cancelled" })
             .eq("id", charge.id)
             .in("status", ["pending", "processing"]);
           if (updateError) throw new Error("CHARGE_STATUS_UPDATE_FAILED");
           result.expired += 1;
-          await resolveIssues(charge.id, `Cobrança encerrada pelo provedor: ${gateway.status}`);
+          await resolveIssues(charge.id, `Cobrança encerrada pela Impulse Pay: ${gateway.status}`);
           continue;
         }
 

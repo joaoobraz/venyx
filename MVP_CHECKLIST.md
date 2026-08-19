@@ -1,6 +1,48 @@
 # Checklist de abertura do MVP Fanlira
 
-Atualizado em: 02/08/2026
+Atualizado em: 19/08/2026
+
+## Auditoria de prontidão — 19/08/2026
+
+### Validado nesta auditoria
+
+- [x] Projeto Supabase de produção criado e schema-base aplicado.
+- [x] Login por e-mail e Google OAuth configurados para `fanlira.com.br` e ambiente local.
+- [x] Domínio raiz e `www` respondendo com HTTPS e cabeçalhos de segurança.
+- [x] Endpoint público de saúde respondendo com banco conectado.
+- [x] Typecheck aprovado.
+- [x] 90 testes automatizados aprovados.
+- [x] Lint aprovado sem erros (restam avisos de manutenção).
+- [x] Build Cloudflare aprovado.
+- [x] Teste de carga público aprovado sem falhas nas 120 requisições da amostra.
+- [x] Build ajustado para não manter `.dev.vars` no artefato final.
+- [x] Deploy configurado para exigir os segredos críticos e bloquear o subdomínio público `workers.dev`.
+
+### Bloqueadores para abrir ao público
+
+- [ ] Rotacionar todas as chaves da ImpulsePay que foram compartilhadas em conversa e revogar as anteriores.
+- [ ] Cadastrar no Cloudflare os segredos de produção: `SUPABASE_SERVICE_ROLE_KEY`, chaves ImpulsePay, token do webhook e `CRON_SECRET`.
+- [ ] Preencher os dados públicos de produção: razão social/nome legal, CPF/CNPJ, endereço e e-mails operacionais `@fanlira.com.br`.
+- [ ] Publicar a versão atual: o `/api/public/health` do domínio ainda identifica o serviço antigo como `venyx`, indicando deploy desatualizado.
+- [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
+- [~] Turnstile implementado no cadastro, login e recuperação; falta criar as chaves e habilitar a validação no Supabase.
+- [ ] Contratar e integrar um provedor real de verificação de identidade/idade; o adaptador de KYC de produção ainda não está disponível.
+- [ ] Contratar/configurar moderação de imagem e vídeo que aceite contratualmente conteúdo adulto legal e testar o fluxo de revisão humana.
+- [ ] Obter revisão jurídica brasileira dos Termos, Privacidade, conteúdo não consentido, maioridade, DMCA, pagamentos e política de não estorno.
+- [ ] Executar e guardar evidências de pagamentos PIX reais: assinatura, PPV, mimo, chat/upsell, webhook idempotente e saque.
+- [~] Webhook externo sanitizado, monitor de produção e backup integral foram implementados; faltam credencial/destino e restauração real documentada.
+- [ ] Testar fisicamente em iPhone/Safari, Android/Chrome e desktop/Safari, incluindo troca para o aplicativo bancário e retorno do PIX.
+- [ ] Cadastrar e aprovar 5–10 criadoras reais, revisar consentimentos e aprovar a primeira publicação de cada uma.
+- [ ] Rodar piloto controlado por pelo menos 72 horas antes da abertura pública.
+- [x] Histórico Git restaurado sem sobrescrever arquivos; branch local reconectada a `origin/demo-investidores`.
+- [x] Conta Cloudflare e Worker existentes auditados: Worker `fanlira`, domínio oficial e logs ativos.
+- [ ] Reautenticar o Wrangler deste computador: ele está conectado a outra conta; a conta correta tem ID `77bd53fa8469f1ee770e51db59633e9d`.
+- [ ] Completar os bindings do Worker: a implantação atual não possui nenhuma credencial `IMPULSEPAY_*`, token de webhook, Turnstile nem webhook de alerta.
+- [~] Security Advisor do Supabase está sem erros, mas reporta 88 avisos; migração final de menor privilégio criada e ainda precisa ser aplicada e seguida de nova varredura.
+
+### Resultado atual
+
+**Ainda não liberar para clientes reais.** A aplicação passa na validação técnica local, porém produção ainda depende de credenciais seguras, novo deploy, fornecedores de KYC/moderação, configuração de e-mail, validação jurídica, testes financeiros e piloto operacional.
 
 ## Como usar
 
@@ -32,7 +74,7 @@ Um bloco só pode ser marcado como concluído quando seu critério de aceite tiv
 - [x] Idempotência local: cobrança usa `external_id` e o fulfillment evita duplicidade.
 - [ ] Executar uma compra real de baixo valor para cada finalidade e guardar a evidência.
 
-Critério de aceite: um pagamento confirmado na NexusPag deve aparecer uma única vez na Fanlira e liberar somente o produto comprado.
+Critério de aceite: um pagamento confirmado na Impulse Pay deve aparecer uma única vez na Fanlira e liberar somente o produto comprado.
 
 ### Cancelamento e renovação
 
@@ -45,28 +87,28 @@ Critério de aceite: um pagamento confirmado na NexusPag deve aparecer uma únic
 - [~] Renovação manual por novo PIX e avisos de 7, 3 e 1 dia implementados; agendador configurado e falta validar com uma cobrança real.
 - [ ] Definir outro meio/provedor se a decisão comercial exigir renovação automática.
 
-Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não cobrança recorrente automática. A renovação inicial será manual. Não haverá fluxo de estorno solicitado pelo usuário no MVP.
+Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A cobrança recorrente por cartão só será habilitada após concluir checkout, tokenização, 3DS e webhooks de assinatura da Impulse Pay. Não haverá fluxo de estorno solicitado pelo usuário no MVP.
 
 ### Saldo e saque
 
 - [~] Carteira, saldo disponível/pendente, chave PIX e solicitação de saque existem.
 - [x] KYC e 2FA são exigidos no backend para solicitar saque.
 - [~] Aprovação, rejeição, marcação como pago e comprovante existem no painel administrativo.
-- [ ] Integrar o saque da Fanlira ao endpoint real da NexusPag.
-- [ ] Conciliar `cashout.success`, `cashout.failed` e estado `processing`.
+- [x] Integrar o saque da Fanlira ao endpoint `/v1/transfers` da Impulse Pay.
+- [x] Conciliar `withdrawal.processing`, `withdrawal.completed` e `withdrawal.failed` da Impulse Pay.
 - [ ] Executar e comprovar um saque real de baixo valor.
 
 ### Webhook e conciliação
 
-- [x] Endpoint de webhook com limite de corpo e assinatura HMAC.
-- [x] Janela antirreplay de cinco minutos e comparação em tempo constante.
+- [x] Endpoint de webhook com limite de corpo, token secreto em comparação de tempo constante e confirmação autenticada na API da Impulse Pay.
+- [x] Não confiar no payload recebido: conferir ID, valor, referência externa e estado diretamente na Impulse Pay antes do fulfillment.
 - [x] Processamento idempotente de pagamento e reversões excepcionais no código.
-- [ ] Configurar `NEXUSPAG_API_KEY`, `NEXUSPAG_WEBHOOK_SECRET` e `PUBLIC_WEBHOOK_URL`.
-- [ ] Publicar o endpoint em HTTPS e cadastrar a URL na NexusPag.
-- [~] Varredura protegida implementada como contingência do webhook; falta configurar a chave real da NexusPag e agendar o endpoint no endereço público.
-- [x] Criar painel administrativo de divergências entre NexusPag e Fanlira, com histórico e resolução auditada.
+- [ ] Configurar as credenciais `IMPULSEPAY_*` descritas em `.env.example`.
+- [ ] Publicar o endpoint em HTTPS e cadastrar a URL com token na Impulse Pay.
+- [~] Varredura protegida implementada como contingência do webhook; falta configurar as chaves reais e agendar o endpoint no endereço público.
+- [x] Criar painel administrativo de divergências entre Impulse Pay e Fanlira, com histórico e resolução auditada.
 
-`BLOQUEIO EXTERNO`: credenciais reais NexusPag, URL pública HTTPS e saldo para transações de validação.
+`BLOQUEIO EXTERNO`: credenciais reais Impulse Pay, URL pública HTTPS e saldo para transações de validação.
 
 ---
 
@@ -78,15 +120,15 @@ Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não
 - [~] Envio privado de documento, verso e selfie para KYC.
 - [~] Painel administrativo para aprovar ou rejeitar KYC.
 - [x] Aprovação promove a conta para o papel de criadora no backend.
-- [ ] Integrar o KYC NexusPag ou outro provedor de identidade aprovado.
-- [ ] Registrar consentimento, versão dos termos, data, IP e evidência de maioridade.
+- [ ] Integrar um provedor de identidade/KYC aprovado.
+- [x] Registrar consentimento, versão dos termos, data, IP e evidência de maioridade.
 
 ### Conteúdo e monetização
 
 - [~] Upload protegido e moderação antes da publicação existem.
 - [~] Preço de assinatura, planos, cupons, PPV e primeira publicação existem.
-- [ ] Criar jornada única pós-aprovação: perfil → preço → dados de saque → primeira publicação.
-- [ ] Bloquear publicação monetizada até KYC, perfil e chave de saque estarem válidos.
+- [x] Criar jornada única pós-aprovação: perfil → preço → dados de saque → primeira publicação.
+- [x] Bloquear publicação monetizada até KYC, perfil e chave de saque estarem válidos.
 - [ ] Fazer teste completo com uma criadora piloto.
 
 ### Abertura controlada
@@ -104,13 +146,14 @@ Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não
 
 - [~] Moderação preventiva de imagem e amostras de vídeo com bloqueio em caso de falha.
 - [ ] Contratar/configurar provedor de moderação que aceite legalmente conteúdo adulto.
+- [x] Aviso 18+ bloqueia áreas de conteúdo e mantém ajuda/documentos legais acessíveis.
 - [x] Fila de denúncias, estados de análise e ações administrativas existem.
 - [~] Bloqueio, silenciamento, DMCA e auditoria administrativa existem.
-- [ ] Criar escala de prioridade e SLA: risco de menor/não consentimento deve ser imediato.
-- [ ] Criar procedimento de preservação de evidência e comunicação às autoridades aplicáveis.
+- [x] Criar escala de prioridade e SLA: risco de menor/não consentimento deve ser imediato.
+- [x] Criar procedimento de preservação de evidência e comunicação às autoridades aplicáveis.
 - [ ] Treinar ao menos duas pessoas para a fila crítica; nunca depender de uma única pessoa.
 - [~] Termos, privacidade e DMCA possuem rascunhos no produto.
-- [ ] Substituir e-mails e dados genéricos pelos dados jurídicos reais da empresa.
+- [~] Contatos foram migrados para `@fanlira.com.br`; faltam dados da pessoa jurídica e ativação das caixas de e-mail.
 - [ ] Revisão jurídica brasileira especializada em LGPD, conteúdo adulto, consumidor e pagamentos.
 
 `BLOQUEIO EXTERNO`: contrato com provedor, equipe de moderação e parecer jurídico.
@@ -119,12 +162,12 @@ Decisão do MVP: a documentação pública da NexusPag descreve PIX avulso, não
 
 ## 4. Suporte mínimo e direitos do usuário — P1
 
-- [ ] Página “Preciso de ajuda” com protocolo e categorias.
-- [ ] Caixa administrativa de solicitações de suporte.
+- [x] Página “Preciso de ajuda” com protocolo e categorias.
+- [x] Caixa administrativa de solicitações de suporte.
 - [x] Recuperação de senha por e-mail.
-- [ ] Fluxo de recuperação quando o usuário perdeu o e-mail ou 2FA.
-- [ ] Solicitação autenticada de exportação de dados.
-- [ ] Solicitação de exclusão com prazo, confirmação e exceções legais de retenção.
+- [x] Fluxo rastreável de recuperação quando o usuário perdeu o e-mail ou 2FA.
+- [x] Solicitação autenticada de exportação de dados.
+- [x] Solicitação de exclusão com prazo, confirmação e exceções legais de retenção.
 - [~] Histórico real de pagamentos do cliente implementado; falta validar com uma cobrança real.
 - [~] Comprovante individual com valor, data, finalidade, estado e referências implementado; falta validar impressão com uma cobrança real.
 - [~] Histórico e comprovante de saques da criadora existem parcialmente.
@@ -137,11 +180,12 @@ Critério de aceite: um usuário deve conseguir resolver acesso, consultar compr
 ## 5. Medição e estabilidade — P1
 
 - [x] Endpoint básico de saúde da aplicação e banco.
-- [ ] Integrar registro de erros com alertas de login, checkout, webhook, moderação e saque.
-- [ ] Remover dados pessoais e segredos dos eventos de erro.
-- [ ] Instrumentar o funil: visita → cadastro → perfil → assinatura → renovação.
-- [ ] Criar indicadores de falha por etapa e taxa de conversão por dispositivo.
-- [ ] Configurar backup automático do banco e inventário dos buckets privados.
+- [x] Registrar erros de login, checkout, webhook, moderação e saque no painel operacional.
+- [x] Remover dados pessoais e segredos dos eventos de erro.
+- [x] Instrumentar o funil: visita → cadastro → perfil → assinatura → renovação.
+- [x] Criar indicadores internos de falha por etapa e taxa de conversão por dispositivo.
+- [~] Webhook externo para falhas críticas e monitor agendado no GitHub implementados; falta cadastrar o destino e publicar o workflow.
+- [~] Comando de backup do banco e de todos os buckets privados implementado com hashes; falta executar em destino criptografado e automatizar no provedor escolhido.
 - [ ] Executar restauração em ambiente separado e registrar tempo/resultado.
 - [ ] Testar as jornadas críticas no Chrome e Safari para computador.
 - [ ] Testar as jornadas críticas em iPhone/Safari e Android/Chrome reais.

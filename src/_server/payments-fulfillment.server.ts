@@ -89,7 +89,7 @@ async function insertGiftChatConfirmation(opts: {
  * duplicar.
  *
  * Chamado por:
- *  - Webhook público da NexusPag (caminho normal)
+ *  - Webhook público da Impulse Pay (caminho normal)
  *  - Polling manual de /test-pix (fallback de debug)
  */
 export async function fulfillPaidCharge(opts: {
@@ -239,6 +239,7 @@ export async function fulfillPaidCharge(opts: {
       eventKind: "error",
       eventName: "payment_fulfillment_failed",
       severity: "critical",
+      notifyExternal: true,
       userId: charge.payer_id,
       metadata: { purpose: charge.purpose, error: e instanceof Error ? e.message : "unknown" },
       fingerprint: `payment_fulfillment:${charge.purpose}`,
@@ -443,7 +444,7 @@ async function deliverOfferPurchase(opts: {
     status: "paid",
     amount_cents: opts.amountCents,
     reference_id: opts.offerId,
-    gateway: "nexuspag",
+    gateway: "impulsepay",
     gateway_ref: opts.pixChargeId,
     idempotency_key: `${opts.pixChargeId}:offer:${opts.offerId}`,
     metadata: { kind: opts.origin, charge_id: opts.pixChargeId },
@@ -477,7 +478,7 @@ async function fulfillPpv(charge: PixCharge) {
     status: "paid",
     amount_cents: charge.amount_cents,
     reference_id: charge.reference_id,
-    gateway: "nexuspag",
+    gateway: "impulsepay",
     gateway_ref: charge.gateway_transaction_id,
     idempotency_key: `${charge.id}:ppv`,
     metadata: { charge_id: charge.id },
@@ -507,7 +508,7 @@ async function fulfillTip(charge: PixCharge) {
     status: "paid",
     amount_cents: charge.amount_cents,
     reference_id: charge.reference_id ?? null,
-    gateway: "nexuspag",
+    gateway: "impulsepay",
     gateway_ref: charge.gateway_transaction_id,
     idempotency_key: `${charge.id}:tip`,
     metadata: {
@@ -549,7 +550,7 @@ async function fulfillGoal(charge: PixCharge) {
     status: "paid",
     amount_cents: charge.amount_cents,
     reference_id: charge.reference_id,
-    gateway: "nexuspag",
+    gateway: "impulsepay",
     gateway_ref: charge.gateway_transaction_id,
     idempotency_key: `${charge.id}:goal`,
     metadata: { charge_id: charge.id, kind: "goal_contribution" },
@@ -583,7 +584,7 @@ async function fulfillChatPpv(charge: PixCharge) {
     status: "paid",
     amount_cents: charge.amount_cents,
     reference_id: charge.reference_id,
-    gateway: "nexuspag",
+    gateway: "impulsepay",
     gateway_ref: charge.gateway_transaction_id,
     idempotency_key: `${charge.id}:chat-ppv`,
     metadata: { charge_id: charge.id },

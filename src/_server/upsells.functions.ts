@@ -12,7 +12,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  *   telefones ou e-mails — toda entrega precisa ficar dentro da plataforma.
  *   (Política da plataforma; bloqueia evasão de leads.)
  * - A entrega real (criar ppv_unlocks etc.) acontece em payments-fulfillment
- *   após o webhook NexusPag confirmar o pagamento.
+ *   após o webhook da Impulse Pay confirmar o pagamento.
  */
 
 // =====================================================
@@ -48,7 +48,7 @@ const listSchema = z.object({
 });
 
 export const listCreatorOffers = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => listSchema.parse(input))
+  .validator((input: unknown) => listSchema.parse(input))
   .handler(async ({ data }) => {
     const { data: offers, error } = await supabaseAdmin
       .from("upsell_offers")
@@ -82,7 +82,7 @@ const upsertSchema = z.object({
 
 export const upsertOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => upsertSchema.parse(input))
+  .validator((input: unknown) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
@@ -169,7 +169,7 @@ const deleteSchema = z.object({ id: z.string().uuid() });
 
 export const deleteOffer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => deleteSchema.parse(input))
+  .validator((input: unknown) => deleteSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await supabaseAdmin
       .from("upsell_offers")
@@ -188,7 +188,7 @@ const eligibleSchema = z.object({ creatorId: z.string().uuid() });
 
 export const getEligiblePostPurchaseUpsell = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => eligibleSchema.parse(input))
+  .validator((input: unknown) => eligibleSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
 

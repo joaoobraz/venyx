@@ -1,10 +1,32 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fanlira",
+  "account_id": "77bd53fa8469f1ee770e51db59633e9d",
   "compatibility_date": "2026-08-06",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
-  "workers_dev": true,
+  "workers_dev": false,
+  "vars": {
+    "NODE_ENV": "production",
+    "SUPABASE_PROJECT_ID": "hwegqezdbxgqqjabqknq",
+    "SUPABASE_URL": "https://hwegqezdbxgqqjabqknq.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_HFpvc_vV6jfWb-Fj2Am6RA_Ezz9wnpb",
+    "IMPULSEPAY_WEBHOOK_URL": "https://fanlira.com.br/api/public/impulsepay-webhook",
+    "ALLOWED_ORIGINS": "https://fanlira.com.br,https://www.fanlira.com.br",
+    "ENABLE_PAYMENT_TEST_ENDPOINTS": "false",
+    "ALLOW_INSECURE_AGE_CHECK": "false"
+  },
+  "secrets": {
+    "required": [
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "IMPULSEPAY_PUBLIC_KEY",
+      "IMPULSEPAY_SECRET_KEY",
+      "IMPULSEPAY_WITHDRAWAL_KEY",
+      "IMPULSEPAY_WEBHOOK_TOKEN",
+      "CRON_SECRET",
+      "OPERATIONS_ALERT_WEBHOOK_URL"
+    ]
+  },
   "routes": [
     {
       "pattern": "fanlira.com.br",

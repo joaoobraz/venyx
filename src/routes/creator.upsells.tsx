@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,7 +45,7 @@ export function UpsellsPage() {
     else if (!isCreator) nav({ to: "/become-creator" });
   }, [user, isCreator, loading, nav]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("upsell_offers")
@@ -54,11 +54,11 @@ export function UpsellsPage() {
       .order("kind")
       .order("position");
     setOffers((data as Offer[]) ?? []);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, load]);
 
   if (!user || !isCreator) return null;
 

@@ -53,11 +53,11 @@ Atualizado em 02/08/2026.
 - [x] Publicar `moderate-media-v2`, `translate-message` e `suggest-caption` no staging, com autenticação e CORS validados.
 - [ ] Configurar `AI_CHAT_COMPLETIONS_URL`, `AI_API_KEY`, `AI_TEXT_MODEL`, `AI_VISION_MODEL` e `ALLOWED_ORIGINS` no staging; até lá, novos uploads permanecem bloqueados de forma segura.
 - [x] Testar denúncia, bloqueio e silenciamento ponta a ponta no staging, incluindo tentativas negadas pelas políticas de segurança.
-- [x] Proteger webhook NexusPag contra assinatura inválida, replay, referência/valor divergente e eventos duplicados.
-- [ ] Configurar `NEXUSPAG_API_KEY`, `NEXUSPAG_WEBHOOK_SECRET` e `PUBLIC_WEBHOOK_URL` no ambiente do staging.
-- [ ] Testar assinatura, PPV, mimo, estorno e webhook com idempotência.
+- [x] Proteger webhook Impulse Pay com token de URL, consulta autenticada, referência/valor divergente e idempotência.
+- [ ] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` no staging.
+- [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
-- [ ] Substituir e-mails e domínios provisórios (`@plataforma.com`) pelos dados oficiais da Fanlira.
+- [~] Código atualizado para contatos `@fanlira.com.br`; falta ativar as caixas e informar razão social, CNPJ e endereço no ambiente de produção.
 - [ ] Confirmar termos, privacidade, DMCA e política de conteúdo com assessoria jurídica.
 
 ## Bloco 3 — operação do lançamento
@@ -81,10 +81,11 @@ Atualizado em 02/08/2026.
 - [x] Criar solicitações rastreáveis de exportação e exclusão de dados com MFA.
 - [x] Registrar erros e funil sem e-mail, documento, token, cookie ou chave Pix.
 - [x] Criar painel administrativo de operação, alertas, SLA, dispositivos e restauração de backup.
-- [x] Validar build, 22 testes automatizados e carga local de 120 requisições sem falhas.
+- [x] Validar typecheck, lint, build e 90 testes automatizados; carga local anterior de 120 requisições sem falhas.
 - [x] Validar as telas locais de ajuda e apresentação em desktop e viewport 390 × 844 sem rolagem lateral.
 - [x] Aplicar e conferir as quatro migrações de fechamento no Supabase staging.
 - [ ] Contratar e configurar o provedor real de moderação e sua equipe de plantão.
+- [ ] Contratar um provedor de identidade/idade compatível e implementar o adaptador real; a validação local de CPF permanece proibida em produção.
 - [ ] Obter parecer jurídico escrito sobre termos, privacidade, conteúdo, maioridade, DMCA e política sem estorno voluntário.
 - [ ] Selecionar, verificar e acompanhar 5–10 criadoras reais no piloto.
 - [ ] Ativar backup no plano/provedor e registrar uma restauração real aprovada no painel.

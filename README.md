@@ -54,14 +54,16 @@ npm audit --omit=dev
 ```
 
 Nunca publique `.env`, `.env.local`, a chave `SUPABASE_SERVICE_ROLE_KEY`, a chave da
-NexusPag ou o segredo das rotinas agendadas.
+Impulse Pay ou o segredo das rotinas agendadas.
 
 ## Pontos obrigatórios para produção
 
 - Aplicar todas as migrações da pasta `supabase/migrations`.
 - Configurar uma verificação real de identidade e idade. A validação matemática de
   CPF é permitida somente no ambiente local e não comprova identidade.
-- Configurar `PUBLIC_WEBHOOK_URL` com o domínio final em HTTPS.
+- Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY` e o domínio final HTTPS em `IMPULSEPAY_WEBHOOK_URL`.
+- Configurar `IMPULSEPAY_WEBHOOK_TOKEN` na aplicação e cadastrar no painel da Impulse Pay `https://fanlira.com.br/api/public/impulsepay-webhook?token=O_MESMO_SEGREDO`.
+- Para saques, configurar também `IMPULSEPAY_WITHDRAWAL_KEY`.
 - Usar segredos longos e aleatórios para `CRON_SECRET`.
 - Manter `SUPABASE_SERVICE_ROLE_KEY` somente no servidor. Nunca usar prefixo `VITE_` nessa chave.
 - A expiração de assinaturas roda a cada hora no Supabase; lembretes de renovação rodam diariamente às 12:05 UTC (09:05 em São Paulo).

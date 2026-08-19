@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/health")({
           return response(
             {
               status: "ok",
-              service: "venyx",
+              service: "fanlira",
               database: "ok",
               responseMs: Date.now() - startedAt,
             },
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/health")({
           return response(
             {
               status: "degraded",
-              service: "venyx",
+              service: "fanlira",
               database: "unavailable",
               responseMs: Date.now() - startedAt,
             },

@@ -141,4 +141,3 @@ REVOKE ALL ON TABLE public.content_reports FROM anon;
 GRANT SELECT, INSERT, DELETE ON TABLE public.user_blocks TO authenticated;
 GRANT SELECT, INSERT, DELETE ON TABLE public.user_mutes TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.content_reports TO authenticated;
-

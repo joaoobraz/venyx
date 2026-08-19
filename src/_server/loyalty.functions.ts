@@ -16,7 +16,7 @@ const RewardTypeSchema = z.enum([
 
 export const getMyPointsForCreator = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => PairSchema.parse(input))
+  .validator((input) => PairSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row } = await supabase
@@ -142,7 +142,7 @@ export const listTopFans = createServerFn({ method: "GET" })
 
 export const getLoyaltyLedger = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => PairSchema.parse(input))
+  .validator((input) => PairSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: rows } = await supabase
@@ -157,7 +157,7 @@ export const getLoyaltyLedger = createServerFn({ method: "GET" })
 
 export const updateLoyaltyProgram = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         enabled: z.boolean().optional(),
@@ -189,7 +189,7 @@ export const updateLoyaltyProgram = createServerFn({ method: "POST" })
 
 export const createLoyaltyReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         title: z.string().trim().min(2).max(80),
@@ -223,7 +223,7 @@ export const createLoyaltyReward = createServerFn({ method: "POST" })
 
 export const toggleLoyaltyReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z.object({ rewardId: z.string().uuid(), active: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -240,7 +240,7 @@ export const toggleLoyaltyReward = createServerFn({ method: "POST" })
 
 export const claimLoyaltyReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ rewardId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ rewardId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: claim, error } = await context.supabase.rpc("claim_loyalty_reward", {
       _reward_id: data.rewardId,

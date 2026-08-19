@@ -9,6 +9,22 @@ Uma cópia só conta como backup validado depois de ser restaurada em um projeto
 - Retenção mínima proposta: 30 dias para banco, respeitando retenções legais e solicitações LGPD.
 - Acesso ao backup restrito a duas pessoas autorizadas, com MFA.
 
+## Gerar uma cópia completa
+
+O projeto inclui a Supabase CLI fixada e um exportador que salva banco, objetos do Storage e hashes SHA-256. O destino precisa estar em volume criptografado e fora do diretório do Git.
+
+```powershell
+pnpm backup:production -- --env-file=C:\caminho\fanlira-backup.env --output=E:\FanliraBackups
+```
+
+O arquivo privado informado em `--env-file` precisa conter:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_DB_URL` (conexão direta do Postgres)
+
+Nunca envie esse arquivo ou a pasta gerada ao GitHub. A execução gera `roles.sql`, `schema.sql`, `data.sql`, todos os objetos dos buckets e `manifest.json` com os hashes. A geração da cópia não substitui o teste de restauração abaixo.
+
 ## Teste de restauração
 
 1. Escolher um backup fechado, anotar provedor, horário e referência imutável.

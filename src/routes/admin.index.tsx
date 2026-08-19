@@ -147,8 +147,8 @@ export function AdminHomePage() {
     {
       title: tr("Conciliação financeira", "Financial reconciliation"),
       description: tr(
-        "Conferir cobranças PIX pendentes, recuperar entregas e tratar divergências da NexusPag.",
-        "Check pending PIX charges, recover deliveries, and review NexusPag mismatches.",
+        "Conferir cobranças PIX pendentes, recuperar entregas e tratar divergências da Impulse Pay.",
+        "Check pending PIX charges, recover deliveries, and review Impulse Pay mismatches.",
       ),
       icon: CircleDollarSign,
       link: "/admin/reconciliation",

@@ -22,7 +22,7 @@ const adminGuardSchema = z.object({
  */
 export const requireAdminServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => adminGuardSchema.parse(input ?? {}))
+  .validator((input: unknown) => adminGuardSchema.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const req = getRequest();
@@ -65,7 +65,7 @@ const decisionSchema = z.object({
 
 export const recordModerationDecision = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => decisionSchema.parse(input))
+  .validator((input: unknown) => decisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -116,7 +116,7 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
  */
 export const getKycSignedUrlServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(input))
+  .validator((input: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -162,7 +162,7 @@ const kycDecisionSchema = z.object({
  */
 export const reviewKycServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => kycDecisionSchema.parse(input))
+  .validator((input: unknown) => kycDecisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     await assertAdmin(userId);
@@ -245,7 +245,7 @@ const dmcaSchema = z.object({
 
 export const updateDmcaReportServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) => dmcaSchema.parse(input))
+  .validator((input: unknown) => dmcaSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: report } = await supabaseAdmin
@@ -280,7 +280,7 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
  */
 export const listAdminActionsAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         actionType: z.string().max(64).optional(),

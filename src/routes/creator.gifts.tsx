@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, Gift, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -97,7 +97,7 @@ export function CreatorGiftsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoadingData(true);
     const [{ data: currentSettings }, { data: currentItems }] = await Promise.all([
@@ -117,11 +117,11 @@ export function CreatorGiftsPage() {
     }
     setItems(currentItems ?? []);
     setLoadingData(false);
-  };
+  }, [user, tr]);
 
   useEffect(() => {
     if (user && isCreator) void load();
-  }, [user, isCreator]);
+  }, [user, isCreator, load]);
 
   const updateSettings = async (patch: Partial<GiftSettings>) => {
     if (!user || !settings) return;

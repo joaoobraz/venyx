@@ -36,6 +36,7 @@ export function IdentityVerificationModal({
   const [country, setCountry] = useState("BR");
   const [cpf, setCpf] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +50,10 @@ export function IdentityVerificationModal({
     }
     if (fullName.trim().split(/\s+/).length < 2) {
       setError("Digite seu nome completo, como no documento.");
+      return;
+    }
+    if (!/^\d{10,11}$/.test(onlyDigits(phone))) {
+      setError("Informe um telefone válido com DDD.");
       return;
     }
     if (!birthDate) {
@@ -71,7 +76,13 @@ export function IdentityVerificationModal({
     setBusy(true);
     try {
       const res = await verifyFn({
-        data: { country, cpf: onlyDigits(cpf), full_name: fullName.trim(), birth_date: birthDate },
+        data: {
+          country,
+          cpf: onlyDigits(cpf),
+          full_name: fullName.trim(),
+          phone: onlyDigits(phone),
+          birth_date: birthDate,
+        },
         headers: authHeaders,
       });
       if (!res.ok) {
@@ -148,6 +159,22 @@ export function IdentityVerificationModal({
                 setFullName(e.target.value);
                 setError(null);
               }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Telefone com DDD</Label>
+            <Input
+              id="phone"
+              inputMode="tel"
+              autoComplete="tel-national"
+              placeholder="11999999999"
+              value={phone}
+              onChange={(e) => {
+                setPhone(onlyDigits(e.target.value).slice(0, 11));
+                setError(null);
+              }}
+              maxLength={11}
             />
           </div>
 

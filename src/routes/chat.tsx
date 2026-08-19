@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Search as SearchIcon,
   Send,
@@ -134,6 +134,7 @@ export function ChatPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const threadsRef = useRef<Thread[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
@@ -156,6 +157,10 @@ export function ChatPage() {
   const endRef = useRef<HTMLDivElement>(null);
   const activeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    threadsRef.current = threads;
+  }, [threads]);
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/login" });
@@ -415,10 +420,10 @@ export function ChatPage() {
     setThreads(nextThreads);
   };
 
-  const loadMessages = async (threadId: string) => {
+  const loadMessages = useCallback(async (threadId: string) => {
     if (!user) return;
     if (DEMO_MODE && isDemoChatThreadId(threadId)) {
-      const actorId = threads.find((thread) => thread.id === threadId)?.actor_id ?? user.id;
+      const actorId = threadsRef.current.find((thread) => thread.id === threadId)?.actor_id ?? user.id;
       const readAt = new Date().toISOString();
       const demoRows = readDemoChatMessages(user.id, threadId).map((message) =>
         message.sender_id !== actorId && !message.read_at
@@ -505,7 +510,7 @@ export function ChatPage() {
       current.map((thread) => (thread.id === threadId ? { ...thread, unread_count: 0 } : thread)),
     );
     notifyUnreadCountsChanged();
-  };
+  }, [tr, user]);
 
   useEffect(() => {
     if (user) loadThreads();
@@ -531,7 +536,7 @@ export function ChatPage() {
       setMessages([]);
       loadMessages(activeId);
     }
-  }, [activeId]);
+  }, [activeId, loadMessages]);
 
   useEffect(() => {
     if (!activeId || !user) return;

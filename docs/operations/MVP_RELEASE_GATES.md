@@ -1,5 +1,31 @@
 # Portões de abertura do MVP
 
+Antes da revisão humana, execute os gates automatizados:
+
+```powershell
+pnpm check:release --env-file=.env.production.local --predeploy
+```
+
+Depois do deploy, valide a versão efetivamente pública:
+
+```powershell
+pnpm smoke:production --url=https://fanlira.com.br
+```
+
+Para validar somente o código enquanto as credenciais externas não foram cadastradas:
+
+```powershell
+pnpm check:release --code-only
+```
+
+Antes de publicar, `pnpm exec wrangler whoami` deve mostrar o Account ID
+`77bd53fa8469f1ee770e51db59633e9d`. O arquivo `wrangler.jsonc` fixa essa conta para
+impedir que um deploy seja enviado acidentalmente para outra conta Cloudflare.
+
+O Worker deve possuir, no mínimo, os segredos `SUPABASE_SERVICE_ROLE_KEY`,
+`IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`,
+`IMPULSEPAY_WEBHOOK_TOKEN`, `CRON_SECRET` e `OPERATIONS_ALERT_WEBHOOK_URL`.
+
 ## Pode ser validado localmente
 
 - Build, testes, limites de carga leve e ausência de erros de tipo/lint.

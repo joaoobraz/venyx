@@ -225,6 +225,7 @@ export const runOperationalReadinessCheck = createServerFn({ method: "GET" })
       eventKind: "system",
       eventName: "operational_readiness_check",
       severity: result.every((item) => item.ok) ? "info" : "high",
+      notifyExternal: !result.every((item) => item.ok),
       userId: context.userId,
       metadata: { checks: result },
     });

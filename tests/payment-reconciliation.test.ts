@@ -13,16 +13,14 @@ const local = {
   gateway_transaction_id: "gateway-1",
 };
 
-test("normaliza respostas aninhadas da NexusPag", () => {
+test("normaliza a resposta autenticada da Impulse Pay", () => {
   const normalized = normalizeGatewayCharge({
     data: {
-      transaction: {
-        id: "gateway-1",
-        status: "PAID",
-        amount: "29.90",
-        external_id: "venyx-charge-1",
-        paid_at: "2026-08-02T12:00:00.000Z",
-      },
+      id: "gateway-1",
+      status: "PAID",
+      amount: 2990,
+      items: [{ product: { external_ref: "venyx-charge-1" } }],
+      paid_at: "2026-08-02T12:00:00.000Z",
     },
   });
   assert.equal(normalized.status, "paid");
@@ -31,10 +29,10 @@ test("normaliza respostas aninhadas da NexusPag", () => {
 });
 test("só confirma pagamento quando valor e referências conferem", () => {
   const correct = normalizeGatewayCharge({
-    status: "paid",
-    amount: 29.9,
-    external_id: "venyx-charge-1",
-    transaction_id: "gateway-1",
+    status: "PAID",
+    amount: 2990,
+    id: "gateway-1",
+    items: [{ external_ref: "venyx-charge-1" }],
   });
   assert.equal(gatewayConfirmationIsSafe(local, correct), true);
 
@@ -45,9 +43,9 @@ test("só confirma pagamento quando valor e referências conferem", () => {
 
 test("detalhes persistidos não incluem o nome do pagador", () => {
   const normalized = normalizeGatewayCharge({
-    status: "pending",
-    amount: 29.9,
-    payer_name: "Dado pessoal",
+    status: "PENDING",
+    amount: 2990,
+    payer: { name: "Dado pessoal" },
   });
   assert.equal("payerName" in sanitizedGatewayDetails(normalized), false);
 });
