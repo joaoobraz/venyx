@@ -78,12 +78,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
-        <Link to={user ? routeTo("/feed") : "/"} className="group flex items-center gap-2.5">
-          <div className="relative h-9 w-9 rounded-xl bg-gradient-primary shadow-glow transition-transform duration-300 group-hover:scale-105">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-2 sm:gap-4 sm:px-4">
+        <Link
+          to={user ? routeTo("/feed") : "/"}
+          className="group flex shrink-0 items-center gap-1.5 sm:gap-2.5"
+        >
+          <div className="relative h-8 w-8 rounded-xl bg-gradient-primary shadow-glow transition-transform duration-300 group-hover:scale-105 sm:h-9 sm:w-9">
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary-glow/40 to-transparent" />
           </div>
-          <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+          <span className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             Fan<span className="text-gradient-gold italic">lira</span>
           </span>
         </Link>
@@ -100,7 +103,7 @@ export function Header() {
           </div>
         )}
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <div className="hidden md:block">
             <ThemeToggle />
           </div>

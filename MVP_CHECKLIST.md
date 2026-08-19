@@ -11,18 +11,21 @@ Atualizado em: 19/08/2026
 - [x] Domínio raiz e `www` respondendo com HTTPS e cabeçalhos de segurança.
 - [x] Endpoint público de saúde respondendo com banco conectado.
 - [x] Typecheck aprovado.
-- [x] 90 testes automatizados aprovados.
+- [x] 93 testes automatizados aprovados.
 - [x] Lint aprovado sem erros (restam avisos de manutenção).
 - [x] Build Cloudflare aprovado.
 - [x] Teste de carga público aprovado sem falhas nas 120 requisições da amostra.
 - [x] Build ajustado para não manter `.dev.vars` no artefato final.
+- [x] Rotas dinâmicas locais corrigidas para precompilar dependências CommonJS corretamente no Vite.
+- [x] Home, login, cadastro, exploração, perfil, mimos, Fanlira Links e ajuda validados no navegador local.
+- [x] Responsividade das jornadas públicas validada em 390 × 844 sem rolagem lateral.
 - [x] Deploy configurado para exigir os segredos críticos e bloquear o subdomínio público `workers.dev`.
 
 ### Bloqueadores para abrir ao público
 
 - [ ] Rotacionar todas as chaves da ImpulsePay que foram compartilhadas em conversa e revogar as anteriores.
 - [ ] Cadastrar no Cloudflare os segredos de produção: `SUPABASE_SERVICE_ROLE_KEY`, chaves ImpulsePay, token do webhook e `CRON_SECRET`.
-- [ ] Preencher os dados públicos de produção: razão social/nome legal, CPF/CNPJ, endereço e e-mails operacionais `@fanlira.com.br`.
+- [ ] Ativar e validar os e-mails operacionais `@fanlira.com.br` usados no suporte e na recuperação de conta.
 - [ ] Publicar a versão atual: o `/api/public/health` do domínio ainda identifica o serviço antigo como `venyx`, indicando deploy desatualizado.
 - [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
 - [~] Turnstile implementado no cadastro, login e recuperação; falta criar as chaves e habilitar a validação no Supabase.
@@ -38,7 +41,7 @@ Atualizado em: 19/08/2026
 - [x] Conta Cloudflare e Worker existentes auditados: Worker `fanlira`, domínio oficial e logs ativos.
 - [ ] Reautenticar o Wrangler deste computador: ele está conectado a outra conta; a conta correta tem ID `77bd53fa8469f1ee770e51db59633e9d`.
 - [ ] Completar os bindings do Worker: a implantação atual não possui nenhuma credencial `IMPULSEPAY_*`, token de webhook, Turnstile nem webhook de alerta.
-- [~] Security Advisor do Supabase está sem erros, mas reporta 88 avisos; migração final de menor privilégio criada e ainda precisa ser aplicada e seguida de nova varredura.
+- [x] Migração final de menor privilégio aplicada em produção; Security Advisor permanece com 0 erros e caiu de 88 para 29 avisos conhecidos.
 
 ### Resultado atual
 
@@ -153,10 +156,14 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 - [x] Criar procedimento de preservação de evidência e comunicação às autoridades aplicáveis.
 - [ ] Treinar ao menos duas pessoas para a fila crítica; nunca depender de uma única pessoa.
 - [~] Termos, privacidade e DMCA possuem rascunhos no produto.
-- [~] Contatos foram migrados para `@fanlira.com.br`; faltam dados da pessoa jurídica e ativação das caixas de e-mail.
+- [~] Contatos foram migrados para `@fanlira.com.br`; falta ativar e testar as caixas de e-mail.
 - [ ] Revisão jurídica brasileira especializada em LGPD, conteúdo adulto, consumidor e pagamentos.
 
 `BLOQUEIO EXTERNO`: contrato com provedor, equipe de moderação e parecer jurídico.
+
+### Planejado para V1.1
+
+- [ ] Completar razão social/nome legal, CPF/CNPJ e endereço público da operação.
 
 ---
 

@@ -90,14 +90,17 @@ function PublicProfileShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4">
-          <Link to={user ? routeTo("/feed") : "/"} className="group flex items-center gap-2.5">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-1 px-2 sm:gap-3 sm:px-4">
+          <Link
+            to={user ? routeTo("/feed") : "/"}
+            className="group flex shrink-0 items-center gap-1.5 sm:gap-2.5"
+          >
             <div className="relative h-8 w-8 rounded-full bg-gradient-primary shadow-sm transition-transform duration-300 group-hover:scale-105" />
-            <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            <span className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               Fan<span className="text-gradient-gold italic">lira</span>
             </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <div className="hidden sm:block">
               <ThemeToggle />
             </div>
@@ -108,10 +111,10 @@ function PublicProfileShell({ children }: { children: ReactNode }) {
               </Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
                   <Link to={routeTo("/login")}>{t("nav.login")}</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button size="sm" className="px-2 sm:px-3" asChild>
                   <Link to={routeTo("/signup")}>{t("nav.signup")}</Link>
                 </Button>
               </>

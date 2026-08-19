@@ -1,11 +1,35 @@
-const baseUrl = process.env.VENYX_LOAD_BASE_URL ?? "http://localhost:8080";
-const total = Number(process.env.VENYX_LOAD_REQUESTS ?? 120);
-const concurrency = Number(process.env.VENYX_LOAD_CONCURRENCY ?? 12);
-const timeoutMs = Number(process.env.VENYX_LOAD_TIMEOUT_MS ?? 5_000);
+const argumentValue = (name) => {
+  const prefix = `--${name}=`;
+  return process.argv.find((argument) => argument.startsWith(prefix))?.slice(prefix.length);
+};
+
+const baseUrl =
+  argumentValue("url") ??
+  process.env.FANLIRA_LOAD_BASE_URL ??
+  process.env.VENYX_LOAD_BASE_URL ??
+  "http://localhost:8080";
+const total = Number(
+  argumentValue("requests") ??
+    process.env.FANLIRA_LOAD_REQUESTS ??
+    process.env.VENYX_LOAD_REQUESTS ??
+    120,
+);
+const concurrency = Number(
+  argumentValue("concurrency") ??
+    process.env.FANLIRA_LOAD_CONCURRENCY ??
+    process.env.VENYX_LOAD_CONCURRENCY ??
+    12,
+);
+const timeoutMs = Number(
+  argumentValue("timeout") ??
+    process.env.FANLIRA_LOAD_TIMEOUT_MS ??
+    process.env.VENYX_LOAD_TIMEOUT_MS ??
+    5_000,
+);
 const targets = ["/", "/api/public/health"];
 
-if (!Number.isInteger(total) || total < 10 || total > 2_000) throw new Error("VENYX_LOAD_REQUESTS must be between 10 and 2000");
-if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50) throw new Error("VENYX_LOAD_CONCURRENCY must be between 1 and 50");
+if (!Number.isInteger(total) || total < 10 || total > 2_000) throw new Error("FANLIRA_LOAD_REQUESTS must be between 10 and 2000");
+if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50) throw new Error("FANLIRA_LOAD_CONCURRENCY must be between 1 and 50");
 
 const durations = [];
 const failures = [];
@@ -18,7 +42,7 @@ async function requestOne(index) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${baseUrl}${path}`, {
-      headers: { "user-agent": "venyx-local-readiness-check/1.0" },
+      headers: { "user-agent": "fanlira-readiness-check/1.0" },
       signal: controller.signal,
     });
     durations.push(performance.now() - started);

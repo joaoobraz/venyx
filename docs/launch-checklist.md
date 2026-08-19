@@ -57,7 +57,7 @@ Atualizado em 02/08/2026.
 - [ ] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` no staging.
 - [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
-- [~] Código atualizado para contatos `@fanlira.com.br`; falta ativar as caixas e informar razão social, CNPJ e endereço no ambiente de produção.
+- [~] Código atualizado para contatos `@fanlira.com.br`; falta ativar e testar as caixas. Razão social, CNPJ e endereço ficam planejados para a V1.1.
 - [ ] Confirmar termos, privacidade, DMCA e política de conteúdo com assessoria jurídica.
 
 ## Bloco 3 — operação do lançamento

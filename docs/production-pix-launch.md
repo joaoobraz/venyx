@@ -20,7 +20,7 @@ Este roteiro só considera o PIX pronto quando uma cobrança real é paga, confi
 ## 3. Segredos e build
 
 - Configurar no servidor/hospedagem todas as variáveis de `.env.example`.
-- Informar razão social, CNPJ, endereço e contatos jurídicos nas variáveis `VITE_LEGAL_*` e ativar as caixas `@fanlira.com.br` antes do deploy.
+- Ativar e testar as caixas operacionais `@fanlira.com.br` antes do deploy. Os campos `VITE_LEGAL_*` ficam opcionais na V1.0 e serão completados na V1.1.
 - Nunca expor `SUPABASE_SERVICE_ROLE_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` ou `CRON_SECRET` com prefixo `VITE_`.
 - Manter todos os modos demo e endpoints de teste desativados em produção.
 - Rodar `npm run check:prod-env -- --env-file=ARQUIVO_PRIVADO` antes da publicação. A checagem só mostra nomes ausentes, nunca valores.

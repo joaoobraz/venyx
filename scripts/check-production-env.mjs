@@ -46,9 +46,6 @@ const required = [
   "CRON_SECRET",
   "OPERATIONS_ALERT_WEBHOOK_URL",
   "ALLOWED_ORIGINS",
-  "VITE_LEGAL_ENTITY_NAME",
-  "VITE_LEGAL_ENTITY_DOCUMENT",
-  "VITE_LEGAL_ENTITY_ADDRESS",
   "VITE_SUPPORT_EMAIL",
   "VITE_PRIVACY_EMAIL",
   "VITE_ABUSE_EMAIL",
@@ -130,6 +127,16 @@ for (const name of [
 ]) {
   if (!/^[^\s@]+@fanlira\.com\.br$/iu.test(valueOf(name))) {
     errors.push(`${name} deve usar um endereço operacional em @fanlira.com.br.`);
+  }
+}
+
+for (const name of [
+  "VITE_LEGAL_ENTITY_NAME",
+  "VITE_LEGAL_ENTITY_DOCUMENT",
+  "VITE_LEGAL_ENTITY_ADDRESS",
+]) {
+  if (looksPlaceholder(valueOf(name))) {
+    warnings.push(`${name} não configurada; completar os dados empresariais na V1.1.`);
   }
 }
 
