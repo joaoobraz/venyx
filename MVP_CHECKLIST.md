@@ -11,7 +11,7 @@ Atualizado em: 19/08/2026
 - [x] Domínio raiz e `www` respondendo com HTTPS e cabeçalhos de segurança.
 - [x] Endpoint público de saúde respondendo com banco conectado.
 - [x] Typecheck aprovado.
-- [x] 93 testes automatizados aprovados.
+- [x] 91 testes automatizados aprovados; os dois testes removidos pertenciam ao aviso global de idade descontinuado.
 - [x] Lint aprovado sem erros (restam avisos de manutenção).
 - [x] Build Cloudflare aprovado.
 - [x] Teste de carga público aprovado sem falhas nas 120 requisições da amostra.
@@ -21,6 +21,7 @@ Atualizado em: 19/08/2026
 - [x] Responsividade das jornadas públicas validada em 390 × 844 sem rolagem lateral.
 - [x] Deploy configurado para exigir os segredos críticos e bloquear o subdomínio público `workers.dev`.
 - [x] Turnstile criado para raiz e `www`, habilitado no Supabase e validado no cadastro público.
+- [x] Aviso global de maioridade removido da entrada; a verificação continua aplicada antes de mídia protegida, assinatura, chat e pagamentos.
 - [x] Worker `fanlira` publicado nos dois domínios; smoke de produção aprovado e nova amostra pública de 80 requisições sem falhas.
 - [x] Chaves da ImpulsePay rotacionadas, autenticadas na API e armazenadas como segredos do Worker.
 - [x] Webhook ImpulsePay cadastrado para pagamentos e saques; proteção publicada validada com rejeição sem token.

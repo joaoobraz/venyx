@@ -10,7 +10,6 @@ import { CookieBanner } from "@/components/CookieBanner";
 import { ContentProtection } from "@/components/ContentProtection";
 import { Toaster } from "@/components/ui/sonner";
 import { ProductTelemetry } from "@/components/ProductTelemetry";
-import { AgeGateModal } from "@/components/AgeGateModal";
 
 function NotFoundComponent() {
   return (
@@ -84,7 +83,6 @@ function RootComponent() {
         <AuthProvider>
           <ProductTelemetry />
           <ContentProtection />
-          <AgeGateModal />
           <Outlet />
           <CookieBanner />
           <Toaster />

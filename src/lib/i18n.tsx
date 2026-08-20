@@ -68,12 +68,6 @@ const dictionaries: Record<Exclude<Locale, "es">, Dict> = {
     "landing.features.creator.desc":
       "Monetize seu conteúdo com segurança. Saques rápidos, suporte direto.",
 
-    "age.title": "Conteúdo para maiores de 18 anos",
-    "age.body":
-      "Este site contém material adulto explícito. Ao continuar, você confirma que tem 18 anos ou mais e que aceita os termos de uso.",
-    "age.confirm": "Sim, tenho 18+",
-    "age.leave": "Sair",
-
     "auth.email": "E-mail",
     "auth.password": "Senha",
     "auth.signup.title": "Criar sua conta",
@@ -245,12 +239,6 @@ const dictionaries: Record<Exclude<Locale, "es">, Dict> = {
     "landing.features.chat.desc": "1-on-1 messages, tips and exclusive media unlocks.",
     "landing.features.creator.title": "Become a creator",
     "landing.features.creator.desc": "Monetize your content safely. Fast payouts, real support.",
-
-    "age.title": "Adults only (18+)",
-    "age.body":
-      "This site contains explicit adult material. By continuing you confirm you are 18 or older and accept the terms.",
-    "age.confirm": "Yes, I'm 18+",
-    "age.leave": "Leave",
 
     "auth.email": "Email",
     "auth.password": "Password",
@@ -424,12 +412,6 @@ const spanishDictionary: Dict = {
   "landing.features.chat.desc": "Mensajes 1 a 1, regalos y medios exclusivos.",
   "landing.features.creator.title": "Sé creadora",
   "landing.features.creator.desc": "Monetiza tu contenido con seguridad, pagos rápidos y soporte.",
-
-  "age.title": "Contenido para mayores de 18 años",
-  "age.body":
-    "Este sitio contiene material adulto explícito. Al continuar, confirmas que tienes 18 años o más y aceptas los términos de uso.",
-  "age.confirm": "Sí, tengo 18+",
-  "age.leave": "Salir",
 
   "auth.email": "E-mail",
   "auth.password": "Contraseña",
