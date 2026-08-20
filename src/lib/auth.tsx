@@ -118,9 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [canUseDemoPreview, user?.email]);
 
   const loadUserData = useCallback(async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: kycRow }, { data: factors }, lifecycle] =
+    const [profileResult, profilePrivateResult, { data: roleRows }, { data: kycRow }, { data: factors }, lifecycle] =
       await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
+        supabase
+          .from("profiles_public")
+          .select("user_id,username,display_name,bio,avatar_url,cover_url,location,links,is_verified,subscription_price_cents,watermark_position,watermark_opacity")
+          .eq("user_id", uid)
+          .maybeSingle(),
+        (supabase as any).rpc("get_my_profile_private").maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
         supabase
           .from("kyc_requests")
@@ -138,7 +143,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .eq("user_id", uid)
               .maybeSingle(),
       ]);
-    setProfile((prof as Profile) ?? null);
+    const prof = profileResult.data;
+    const privateProfile = profilePrivateResult.data as
+      | {
+          id?: string;
+          username_changed_at?: string | null;
+          trial_days_enabled?: boolean;
+          trial_days?: number;
+        }
+      | null;
+    if (profileResult.error) console.error("[auth.profile]", profileResult.error.code);
+    if (profilePrivateResult.error) console.warn("[auth.profile-private]", profilePrivateResult.error.code);
+    setProfile(
+      prof?.user_id && prof.username
+        ? ({
+            ...prof,
+            id: privateProfile?.id ?? prof.user_id,
+            user_id: prof.user_id,
+            username: prof.username,
+            is_verified: Boolean(prof.is_verified),
+            ...privateProfile,
+          } as Profile)
+        : null,
+    );
     setRoles(((roleRows ?? []) as { role: AppRole }[]).map((r) => r.role));
     setKyc((kycRow as KycRequest) ?? null);
     setMfaEnabled((factors?.all ?? []).some((factor) => factor.status === "verified"));

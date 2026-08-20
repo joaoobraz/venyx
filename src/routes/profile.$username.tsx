@@ -229,12 +229,16 @@ export function ProfilePage() {
       return;
     }
     supabase
-      .from("profiles")
-      .select("*")
+      .from("profiles_public")
+      .select(
+        "user_id,username,display_name,bio,avatar_url,cover_url,location,links,is_verified,subscription_price_cents",
+      )
       .eq("username", username)
       .maybeSingle()
       .then(({ data }) => {
-        const next = (data as Profile) ?? null;
+        const next = data
+          ? ({ ...data, id: data.user_id } as Profile)
+          : null;
         setProfile(next);
         setLoading(false);
       });

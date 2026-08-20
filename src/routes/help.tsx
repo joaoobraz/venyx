@@ -123,7 +123,10 @@ export function HelpPage() {
             <ShieldAlert className="h-5 w-5 text-destructive" />
             <p className="mt-2 font-semibold">{tr("Risco ou conteúdo não consentido", "Safety or non-consensual content")}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {tr("Fila crítica 24 horas, com análise inicial prevista em até 15 minutos.", "Critical 24-hour queue, with initial review targeted within 15 minutes.")}
+              {tr(
+                "O envio fica disponível 24 horas e entra com prioridade máxima. Em uma emergência imediata, procure também as autoridades competentes.",
+                "Submissions are available 24 hours a day and receive the highest priority. In an immediate emergency, also contact the appropriate authorities.",
+              )}
             </p>
           </Card>
         </div>

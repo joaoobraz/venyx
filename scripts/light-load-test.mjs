@@ -26,7 +26,14 @@ const timeoutMs = Number(
     process.env.VENYX_LOAD_TIMEOUT_MS ??
     5_000,
 );
-const targets = ["/", "/api/public/health"];
+const targets = [
+  "/",
+  "/entrar",
+  "/cadastro",
+  "/explorar",
+  "/ajuda",
+  "/api/public/health",
+];
 
 if (!Number.isInteger(total) || total < 10 || total > 2_000) throw new Error("FANLIRA_LOAD_REQUESTS must be between 10 and 2000");
 if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 50) throw new Error("FANLIRA_LOAD_CONCURRENCY must be between 1 and 50");

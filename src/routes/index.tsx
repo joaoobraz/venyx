@@ -15,8 +15,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import { Header } from "@/components/Header";
+import { TopCreators } from "@/components/TopCreators";
 import { Button } from "@/components/ui/button";
-import { DEMO_CREATORS, type DemoCreator } from "@/lib/demo-creators";
+import { DEMO_CREATORS, DEMO_MODE, type DemoCreator } from "@/lib/demo-creators";
 import { useI18n } from "@/lib/i18n";
 import { localizedPathname } from "@/lib/localized-paths";
 
@@ -473,8 +474,8 @@ function LandingHeroV11() {
 
             <div className="absolute left-5 right-5 top-5 flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.14em] backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                {tr("Online agora", "Online now")}
+                <span className={`h-1.5 w-1.5 rounded-full ${DEMO_MODE ? "bg-emerald-400" : "bg-primary"}`} />
+                {DEMO_MODE ? tr("Online agora", "Online now") : tr("Prévia ilustrativa", "Illustrative preview")}
               </span>
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/20 backdrop-blur-md">
                 <Heart className="h-4 w-4" />
@@ -498,11 +499,11 @@ function LandingHeroV11() {
                   </p>
                 </div>
                 <Link
-                  to={routeTo("/profile/$username")}
-                  params={{ username: creator.username } as never}
+                  to={DEMO_MODE ? routeTo("/profile/$username") : routeTo("/explore")}
+                  params={DEMO_MODE ? ({ username: creator.username } as never) : undefined}
                   className="rounded-full bg-primary px-4 py-2 text-[10px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  {tr("Ver perfil", "View profile")}
+                  {DEMO_MODE ? tr("Ver perfil", "View profile") : tr("Ver criadoras", "See creators")}
                 </Link>
               </div>
             </div>
@@ -832,34 +833,38 @@ function Landing() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-              {FEATURED_CREATORS.map((creator, index) => (
-                <Link
-                  key={creator.username}
-                  to={routeTo("/profile/$username")}
-                  params={{ username: creator.username } as never}
-                  className={`group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-card ${index % 2 === 1 ? "sm:translate-y-8" : ""}`}
-                >
-                  <div className="aspect-[3/4] overflow-hidden">
-                    <CreatorPortrait
-                      creator={creator}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#140a0f] via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white sm:p-5">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="font-display text-xl font-semibold sm:text-2xl">{creator.display_name}</h3>
-                      <BadgeCheck className="h-4 w-4 fill-primary text-[#241218]" />
+            {DEMO_MODE ? (
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+                {FEATURED_CREATORS.map((creator, index) => (
+                  <Link
+                    key={creator.username}
+                    to={routeTo("/profile/$username")}
+                    params={{ username: creator.username } as never}
+                    className={`group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-card ${index % 2 === 1 ? "sm:translate-y-8" : ""}`}
+                  >
+                    <div className="aspect-[3/4] overflow-hidden">
+                      <CreatorPortrait
+                        creator={creator}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-white/60 sm:text-xs">
-                      <span>{locale === "en" ? creator.category_en : creator.category}</span>
-                      <span>{formatPrice(creator.subscription_price_cents, locale)}/{tr("mês", "mo")}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#140a0f] via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white sm:p-5">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-display text-xl font-semibold sm:text-2xl">{creator.display_name}</h3>
+                        <BadgeCheck className="h-4 w-4 fill-primary text-[#241218]" />
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-white/60 sm:text-xs">
+                        <span>{locale === "en" ? creator.category_en : creator.category}</span>
+                        <span>{formatPrice(creator.subscription_price_cents, locale)}/{tr("mês", "mo")}</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <TopCreators limit={4} hideHeading />
+            )}
           </div>
         </section>
 
@@ -876,7 +881,9 @@ function Landing() {
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                   <Heart className="h-3.5 w-3.5" />
-                  {tr("Sua experiência Fanlira", "Your Fanlira experience")}
+                  {DEMO_MODE
+                    ? tr("Sua experiência Fanlira", "Your Fanlira experience")
+                    : tr("Prévia da experiência", "Experience preview")}
                 </span>
                 <h2 className="mt-6 max-w-xl font-display text-4xl font-semibold leading-tight sm:text-5xl">
                   {tr("Suas favoritas.", "Your favorites.")}
@@ -924,7 +931,9 @@ function Landing() {
                           {HERO_CREATORS[0].display_name}
                           <BadgeCheck className="h-3.5 w-3.5 fill-primary text-[#352029]" />
                         </p>
-                        <p className="mt-0.5 text-[10px] text-emerald-400">{tr("Online agora", "Online now")}</p>
+                        <p className="mt-0.5 text-[10px] text-emerald-400">
+                          {DEMO_MODE ? tr("Online agora", "Online now") : tr("Exemplo de conversa", "Conversation example")}
+                        </p>
                       </div>
                     </div>
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary">

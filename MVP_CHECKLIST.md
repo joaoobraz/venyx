@@ -8,13 +8,18 @@ Atualizado em: 19/08/2026
 
 - [x] Projeto Supabase de produção criado e schema-base aplicado.
 - [x] Login por e-mail e Google OAuth configurados para `fanlira.com.br` e ambiente local.
+- [x] Login Google validado de ponta a ponta em produção, com retorno autenticado para `/inicio`.
+- [x] Perfil interno criado automaticamente para contas OAuth antigas e novas; leitura autenticada corrigida com privilégio mínimo e RLS preservada.
+- [x] Edição de perfil e rota pública do usuário autenticado validadas no domínio oficial.
+- [x] Privilégios do Data API restaurados a partir das políticas RLS: 150 operações protegidas auditadas, 0 permissões necessárias ausentes e mutações financeiras críticas mantidas somente no servidor.
+- [x] Feed, explorar, mensagens, notificações, perfil, pagamentos, privacidade, segurança, ajuda e entrada de criadora validados autenticados em produção sem erro de console.
 - [x] Domínio raiz e `www` respondendo com HTTPS e cabeçalhos de segurança.
 - [x] Endpoint público de saúde respondendo com banco conectado.
 - [x] Typecheck aprovado.
 - [x] 91 testes automatizados aprovados; os dois testes removidos pertenciam ao aviso global de idade descontinuado.
 - [x] Lint aprovado sem erros (restam avisos de manutenção).
 - [x] Build Cloudflare aprovado.
-- [x] Teste de carga público aprovado sem falhas nas 120 requisições da amostra.
+- [x] Teste de carga público aprovado sem falhas em 180 requisições, com concorrência 12 (p95 de 744 ms na amostra).
 - [x] Build ajustado para não manter `.dev.vars` no artefato final.
 - [x] Rotas dinâmicas locais corrigidas para precompilar dependências CommonJS corretamente no Vite.
 - [x] Home, login, cadastro, exploração, perfil, mimos, Fanlira Links e ajuda validados no navegador local.
@@ -33,6 +38,7 @@ Atualizado em: 19/08/2026
 - [ ] Ativar e validar os e-mails operacionais `@fanlira.com.br` usados no suporte e na recuperação de conta.
 - [x] Publicar a versão atual: o `/api/public/health` identifica o serviço como `fanlira` e o smoke de produção foi aprovado.
 - [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
+- [~] O domínio já publica MX da Hostinger, SPF e DMARC; ainda faltam confirmar DKIM, configurar o SMTP no Supabase e testar entrega/recuperação em caixas reais.
 - [x] Turnstile implementado no cadastro, login e recuperação, com chaves ativas e validação habilitada no Supabase.
 - [ ] Contratar e integrar um provedor real de verificação de identidade/idade; o adaptador de KYC de produção ainda não está disponível.
 - [ ] Contratar/configurar moderação de imagem e vídeo que aceite contratualmente conteúdo adulto legal e testar o fluxo de revisão humana.
@@ -42,6 +48,7 @@ Atualizado em: 19/08/2026
 - [ ] Testar fisicamente em iPhone/Safari, Android/Chrome e desktop/Safari, incluindo troca para o aplicativo bancário e retorno do PIX.
 - [ ] Cadastrar e aprovar 5–10 criadoras reais, revisar consentimentos e aprovar a primeira publicação de cada uma.
 - [ ] Rodar piloto controlado por pelo menos 72 horas antes da abertura pública.
+- [ ] Regularizar o faturamento da conta GitHub: os jobs não iniciam porque a conta está bloqueada por cobrança; depois, reexecutar os gates da PR e só então mesclar em `main`.
 - [x] Histórico Git restaurado sem sobrescrever arquivos; branch local reconectada a `origin/demo-investidores`.
 - [x] Conta Cloudflare e Worker existentes auditados: Worker `fanlira`, domínio oficial e logs ativos.
 - [x] Reautenticar o Wrangler deste computador na conta correta `77bd53fa8469f1ee770e51db59633e9d`.
@@ -51,6 +58,18 @@ Atualizado em: 19/08/2026
 ### Resultado atual
 
 **Ainda não liberar para clientes reais.** A infraestrutura técnica está publicada e validada, porém a abertura comercial ainda depende de fornecedores de KYC/moderação, configuração de e-mail, validação jurídica, testes financeiros reais e piloto operacional.
+
+### Próximas ações do responsável — na ordem
+
+1. [ ] Regularizar a cobrança do GitHub, reexecutar os checks da PR de lançamento e mesclar em `main` somente quando todos ficarem verdes.
+2. [ ] Confirmar no painel da Hostinger que `suporte`, `privacidade`, `abuse`, `dmca`, `legal` e `seguranca` recebem mensagens; separar as credenciais SMTP para o Supabase.
+3. [ ] Contratar KYC/idade com prova de vida e confirmação escrita de suporte ao modelo de negócio da Fanlira; fornecer ambiente de teste e chaves pelo gerenciador seguro de segredos.
+4. [ ] Contratar moderação de imagem e vídeo com confirmação escrita de suporte a conteúdo adulto legal; fornecer ambiente de teste e chaves pelo gerenciador seguro de segredos.
+5. [ ] Enviar Termos, Privacidade, DMCA, maioridade, conteúdo não consentido e pagamentos para revisão jurídica brasileira e devolver as versões aprovadas.
+6. [ ] Disponibilizar os aparelhos/contas para a matriz física e autorizar, uma cobrança por vez, os testes PIX de baixo valor e o saque real.
+7. [ ] Definir Supabase Pro ou destino de backup criptografado; executar uma restauração completa em ambiente separado.
+8. [ ] Selecionar 5–10 criadoras adultas reais, concluir KYC/consentimento e operar um piloto fechado por no mínimo 72 horas.
+9. [ ] Definir duas pessoas responsáveis por moderação crítica, suporte e incidentes, com telefone de escalonamento interno.
 
 ## Como usar
 
@@ -154,7 +173,7 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 
 - [~] Moderação preventiva de imagem e amostras de vídeo com bloqueio em caso de falha.
 - [ ] Contratar/configurar provedor de moderação que aceite legalmente conteúdo adulto.
-- [x] Aviso 18+ bloqueia áreas de conteúdo e mantém ajuda/documentos legais acessíveis.
+- [x] Não há aviso global de entrada. A maioridade é validada no cadastro/identidade e novamente antes de assinatura, PPV, mimo, chat pago ou acesso a mídia protegida.
 - [x] Fila de denúncias, estados de análise e ações administrativas existem.
 - [~] Bloqueio, silenciamento, DMCA e auditoria administrativa existem.
 - [x] Criar escala de prioridade e SLA: risco de menor/não consentimento deve ser imediato.
@@ -183,7 +202,7 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 - [~] Histórico real de pagamentos do cliente implementado; falta validar com uma cobrança real.
 - [~] Comprovante individual com valor, data, finalidade, estado e referências implementado; falta validar impressão com uma cobrança real.
 - [~] Histórico e comprovante de saques da criadora existem parcialmente.
-- [ ] Informar claramente canal, horário e prazo de resposta.
+- [x] Informar claramente na página de ajuda o canal por protocolo, o horário do atendimento geral e o prazo de primeira resposta, sem prometer plantão humano ainda inexistente.
 
 Critério de aceite: um usuário deve conseguir resolver acesso, consultar compras e exercer direitos da LGPD sem contato informal com o fundador.
 
@@ -197,12 +216,13 @@ Critério de aceite: um usuário deve conseguir resolver acesso, consultar compr
 - [x] Instrumentar o funil: visita → cadastro → perfil → assinatura → renovação.
 - [x] Criar indicadores internos de falha por etapa e taxa de conversão por dispositivo.
 - [~] Webhook externo para falhas críticas e monitor agendado no GitHub implementados; falta cadastrar o destino e publicar o workflow.
+- [~] O workflow do monitor existe na branch de lançamento, mas a execução está bloqueada pelo faturamento do GitHub e ele só ficará ativo após a PR ser validada e mesclada em `main`.
 - [~] Comando de backup do banco e de todos os buckets privados implementado com hashes; falta executar em destino criptografado e automatizar no provedor escolhido.
 - [ ] Executar restauração em ambiente separado e registrar tempo/resultado.
 - [ ] Testar as jornadas críticas no Chrome e Safari para computador.
 - [ ] Testar as jornadas críticas em iPhone/Safari e Android/Chrome reais.
 - [ ] Testar conexões lentas, QR PIX alternando de aplicativo e retomada após interrupção.
-- [ ] Fazer teste de carga leve no feed, chat, checkout e webhook.
+- [~] Teste de carga leve cobre home, login, cadastro, exploração, ajuda e saúde; feed, chat, checkout autenticado e webhook ainda exigem cenário controlado com contas e transações de teste.
 
 `BLOQUEIO EXTERNO`: contas de observabilidade, política de backup e aparelhos reais ou serviço de device farm.
 

@@ -20,7 +20,15 @@ const MAX_RANKING_SIZE = 15;
 const RANKING_CACHE_MS = 6 * 60 * 60 * 1000;
 const RANKING_CACHE_KEY = "venyx:top-creators:v3";
 
-export function TopCreators({ limit = 15, compact = false }: { limit?: number; compact?: boolean }) {
+export function TopCreators({
+  limit = 15,
+  compact = false,
+  hideHeading = false,
+}: {
+  limit?: number;
+  compact?: boolean;
+  hideHeading?: boolean;
+}) {
   const { t } = useI18n();
   const [creators, setCreators] = useState<TopCreator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +78,8 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
         supabase
           .from("profiles")
           .select("user_id, username, display_name, avatar_url, is_verified")
-          .in("user_id", ids),
+          .in("user_id", ids)
+          .eq("is_verified", true),
         supabase.from("follows").select("followee_id").in("followee_id", ids),
         supabase.from("posts").select("creator_id, likes_count").in("creator_id", ids),
       ]);
@@ -119,10 +128,12 @@ export function TopCreators({ limit = 15, compact = false }: { limit?: number; c
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <Trophy className="h-5 w-5 text-primary" />
-        <span className="text-gradient-gold font-display">{t("top.title")}</span>
-      </h2>
+      {!hideHeading && (
+        <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+          <Trophy className="h-5 w-5 text-primary" />
+          <span className="text-gradient-gold font-display">{t("top.title")}</span>
+        </h2>
+      )}
       <div className={compact ? "flex gap-3 overflow-x-auto pb-2" : "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"}>
         {creators.map((c, idx) => (
           <Link
