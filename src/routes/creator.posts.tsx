@@ -23,14 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { CaptionSuggest } from "@/components/CaptionSuggest";
-import { moderateBeforeUpload } from "@/lib/moderation";
 import { useI18n } from "@/lib/i18n";
-import { trackProductEvent } from "@/lib/telemetry";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { createDemoId, updateDemoOperations } from "@/lib/demo-operations";
 import { fetchPosts } from "@/lib/posts";
 import type { PostWithRelations } from "@/components/PostCard";
 import { setPinnedPostForCreator } from "@/lib/post-pinning";
+import { useServerFn } from "@tanstack/react-start";
+import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
@@ -48,6 +48,7 @@ export function CreatorPostsPage() {
   const { tr } = useI18n();
   const { user, profile, isCreator, loading, demoPreviewRole } = useAuth();
   const nav = useNavigate();
+  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [body, setBody] = useState("");
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
   const [postFormat, setPostFormat] = useState<PostFormat>("text");
@@ -101,10 +102,7 @@ export function CreatorPostsPage() {
       return;
     }
     setMediaDrafts((current) =>
-      [
-        ...current,
-        ...list.map((file) => ({ id: crypto.randomUUID(), file })),
-      ].slice(0, 6),
+      [...current, ...list.map((file) => ({ id: crypto.randomUUID(), file }))].slice(0, 6),
     );
     e.target.value = "";
   };
@@ -156,33 +154,9 @@ export function CreatorPostsPage() {
 
     setSubmitting(true);
     try {
-      // A demonstração não envia arquivos; a moderação remota continua obrigatória em produção.
-      if (!(DEMO_MODE && demoCreatorMode)) {
-        for (const draft of mediaDrafts) {
-          const mod = await moderateBeforeUpload(draft.file, "post", user.id);
-          if (!mod.allowed) {
-            trackProductEvent("moderation_failed", { flow: "post", target: "media" });
-            toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
-            setSubmitting(false);
-            return;
-          }
-          if (draft.coverFile) {
-            const coverMod = await moderateBeforeUpload(draft.coverFile, "post", user.id);
-            if (!coverMod.allowed) {
-              trackProductEvent("moderation_failed", { flow: "post", target: "cover" });
-              toast.error(`${tr("Capa bloqueada", "Cover blocked")}: ${coverMod.reason || tr("violação de política", "policy violation")}`);
-              setSubmitting(false);
-              return;
-            }
-          }
-        }
-      }
-
       if (DEMO_MODE && demoCreatorMode) {
         const postId = createDemoId("post");
-        const mediaUrl = mediaDrafts[0]?.file
-          ? URL.createObjectURL(mediaDrafts[0].file)
-          : null;
+        const mediaUrl = mediaDrafts[0]?.file ? URL.createObjectURL(mediaDrafts[0].file) : null;
         const fallbackTitle =
           postFormat === "video"
             ? tr("Novo vídeo", "New video")
@@ -200,8 +174,7 @@ export function CreatorPostsPage() {
               visibility,
               price_cents: priceCents,
               goal_target_cents: visibility === "goal" ? goalTargetCents : undefined,
-              goal_min_contribution_cents:
-                visibility === "goal" ? goalUnlockCents : undefined,
+              goal_min_contribution_cents: visibility === "goal" ? goalUnlockCents : undefined,
               goal_raised_cents: visibility === "goal" ? 0 : undefined,
               media_kind: postFormat,
               media_url: mediaUrl,
@@ -303,10 +276,13 @@ export function CreatorPostsPage() {
         });
       }
 
+      await submitManualReviewFn({ data: { surface: "post", targetId: post.id } });
+
       toast.success(
-        pinOnProfile
-          ? tr("Post publicado e fixado no perfil!", "Post published and pinned!")
-          : tr("Post publicado!", "Post published!"),
+        tr(
+          "Publicação enviada para análise manual. Ela ficará visível após a aprovação.",
+          "Post sent for manual review. It will become visible after approval.",
+        ),
       );
       setBody("");
       setMediaDrafts([]);
@@ -332,25 +308,30 @@ export function CreatorPostsPage() {
     if (!f || !user) return;
     setSubmitting(true);
     try {
-      const mod = await moderateBeforeUpload(f, "story", user.id);
-      if (!mod.allowed) {
-        trackProductEvent("moderation_failed", { flow: "story", target: "media" });
-        toast.error(`${tr("Upload bloqueado", "Upload blocked")}: ${mod.reason || tr("violação de política", "policy violation")}`);
-        setSubmitting(false);
-        return;
-      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
+      const { error: ue } = await supabase.storage
+        .from("stories")
+        .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { error: ie } = await supabase.from("stories").insert({
-        creator_id: user.id,
-        media_path: path,
-        mime_type: f.type,
-        visibility: "public",
-      });
-      if (ie) throw ie;
-      toast.success(tr("Story publicado! Expira em 24h.", "Story published! It expires in 24 hours."));
+      const { data: story, error: ie } = await supabase
+        .from("stories")
+        .insert({
+          creator_id: user.id,
+          media_path: path,
+          mime_type: f.type,
+          visibility: "public",
+        })
+        .select("id")
+        .single();
+      if (ie || !story) throw ie ?? new Error("Falha ao criar story");
+      await submitManualReviewFn({ data: { surface: "story", targetId: story.id } });
+      toast.success(
+        tr(
+          "Story enviado para análise. As 24 horas começam após a aprovação.",
+          "Story sent for review. Its 24 hours start after approval.",
+        ),
+      );
       nav({ to: "/feed" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
@@ -392,7 +373,13 @@ export function CreatorPostsPage() {
           <h1 className="text-xl font-bold text-foreground">{tr("Novo post", "New post")}</h1>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-glow hover:opacity-95">
             <Zap className="h-3.5 w-3.5" /> {tr("Postar Story 24h", "Post 24h Story")}
-            <input type="file" accept="image/*,video/*" className="hidden" onChange={uploadStory} disabled={submitting} />
+            <input
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={uploadStory}
+              disabled={submitting}
+            />
           </label>
         </div>
 
@@ -479,10 +466,30 @@ export function CreatorPostsPage() {
                 {tr("Quem poderá acessar?", "Who can access it?")}
               </p>
               <div className="flex flex-wrap gap-1 rounded-xl bg-background p-1">
-              <VisBtn active={visibility === "public"} onClick={() => setVisibility("public")} icon={<Globe className="h-3.5 w-3.5" />} label={tr("Público", "Public")} />
-              <VisBtn active={visibility === "subscribers"} onClick={() => setVisibility("subscribers")} icon={<Lock className="h-3.5 w-3.5" />} label={tr("Assinantes", "Subscribers")} />
-              <VisBtn active={visibility === "ppv"} onClick={() => setVisibility("ppv")} icon={<DollarSign className="h-3.5 w-3.5" />} label="PPV" />
-              <VisBtn active={visibility === "goal"} onClick={() => setVisibility("goal")} icon={<Target className="h-3.5 w-3.5" />} label={tr("Meta", "Goal")} />
+                <VisBtn
+                  active={visibility === "public"}
+                  onClick={() => setVisibility("public")}
+                  icon={<Globe className="h-3.5 w-3.5" />}
+                  label={tr("Público", "Public")}
+                />
+                <VisBtn
+                  active={visibility === "subscribers"}
+                  onClick={() => setVisibility("subscribers")}
+                  icon={<Lock className="h-3.5 w-3.5" />}
+                  label={tr("Assinantes", "Subscribers")}
+                />
+                <VisBtn
+                  active={visibility === "ppv"}
+                  onClick={() => setVisibility("ppv")}
+                  icon={<DollarSign className="h-3.5 w-3.5" />}
+                  label="PPV"
+                />
+                <VisBtn
+                  active={visibility === "goal"}
+                  onClick={() => setVisibility("goal")}
+                  icon={<Target className="h-3.5 w-3.5" />}
+                  label={tr("Meta", "Goal")}
+                />
               </div>
             </div>
           </div>
@@ -520,11 +527,15 @@ export function CreatorPostsPage() {
             <div className="space-y-2 rounded-xl bg-background p-3">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Target className="h-4 w-4 text-accent" />
-                {tr("Meta coletiva — várias pessoas contribuem para liberar", "Collective goal — several people contribute to unlock")}
+                {tr(
+                  "Meta coletiva — várias pessoas contribuem para liberar",
+                  "Collective goal — several people contribute to unlock",
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="goal-target" className="text-xs text-muted-foreground">
-                  {tr("Meta total (R$)", "Total goal (R$)")} <span className="text-destructive">*</span>
+                  {tr("Meta total (R$)", "Total goal (R$)")}{" "}
+                  <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="goal-target"
@@ -541,11 +552,15 @@ export function CreatorPostsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="goal-minimum" className="text-xs text-muted-foreground">
-                  {tr("Contribuição mínima (R$)", "Minimum contribution (R$)")} <span className="text-destructive">*</span>
+                  {tr("Contribuição mínima (R$)", "Minimum contribution (R$)")}{" "}
+                  <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="goal-minimum"
-                  aria-label={tr("Contribuição mínima obrigatória em reais", "Required minimum contribution in BRL")}
+                  aria-label={tr(
+                    "Contribuição mínima obrigatória em reais",
+                    "Required minimum contribution in BRL",
+                  )}
                   type="number"
                   step="0.50"
                   min="1"
@@ -575,7 +590,9 @@ export function CreatorPostsPage() {
                 : "border-border/60 bg-background/40 hover:border-primary/25"
             }`}
           >
-            <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${pinOnProfile ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            <span
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${pinOnProfile ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            >
               <Pin className="h-4 w-4" />
             </span>
             <span className="min-w-0 flex-1">
@@ -589,8 +606,12 @@ export function CreatorPostsPage() {
                 )}
               </span>
             </span>
-            <span className={`h-5 w-9 rounded-full p-0.5 transition-colors ${pinOnProfile ? "bg-primary" : "bg-muted"}`}>
-              <span className={`block h-4 w-4 rounded-full bg-white transition-transform ${pinOnProfile ? "translate-x-4" : "translate-x-0"}`} />
+            <span
+              className={`h-5 w-9 rounded-full p-0.5 transition-colors ${pinOnProfile ? "bg-primary" : "bg-muted"}`}
+            >
+              <span
+                className={`block h-4 w-4 rounded-full bg-white transition-transform ${pinOnProfile ? "translate-x-4" : "translate-x-0"}`}
+              />
             </span>
           </button>
 
@@ -666,7 +687,8 @@ export function CreatorPostsPage() {
                         )}
                       </div>
                       <p className="mt-1 text-[11px] text-muted-foreground">
-                        {accessLabel} · {new Intl.DateTimeFormat("pt-BR", {
+                        {accessLabel} ·{" "}
+                        {new Intl.DateTimeFormat("pt-BR", {
                           day: "2-digit",
                           month: "short",
                           hour: "2-digit",
@@ -736,7 +758,10 @@ function MediaDraftCard({
         </div>
       ) : previewFailed ? (
         <div className="flex h-full items-center justify-center p-3 text-center text-[11px] text-muted-foreground">
-          {tr("Este formato não pôde ser exibido. Use JPG, PNG, WebP ou MP4.", "This format couldn't be previewed. Use JPG, PNG, WebP or MP4.")}
+          {tr(
+            "Este formato não pôde ser exibido. Use JPG, PNG, WebP ou MP4.",
+            "This format couldn't be previewed. Use JPG, PNG, WebP or MP4.",
+          )}
         </div>
       ) : isVideo && !draft.coverFile ? (
         <video
@@ -766,7 +791,9 @@ function MediaDraftCard({
       </button>
       {isVideo && (
         <label className="absolute inset-x-1 bottom-1 cursor-pointer rounded-md bg-black/75 px-2 py-1.5 text-center text-[10px] font-semibold text-white backdrop-blur-sm hover:bg-black/90">
-          {draft.coverFile ? tr("Trocar capa", "Change cover") : tr("Capa opcional", "Optional cover")}
+          {draft.coverFile
+            ? tr("Trocar capa", "Change cover")
+            : tr("Capa opcional", "Optional cover")}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -810,13 +837,25 @@ function FormatButton({
   );
 }
 
-function VisBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function VisBtn({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
     <button
       onClick={onClick}
       type="button"
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon} {label}

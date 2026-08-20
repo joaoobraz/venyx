@@ -9,8 +9,7 @@ import { getStoryMediaUrls } from "@/_server/media.functions";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { demoLocale, getDemoStoryGroups } from "@/lib/demo-content";
 import { useI18n } from "@/lib/i18n";
-import { moderateBeforeUpload } from "@/lib/moderation";
-import { trackProductEvent } from "@/lib/telemetry";
+import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 
 interface RawStory {
   id: string;
@@ -26,6 +25,7 @@ export function StoriesBar() {
   const { user, isCreator } = useAuth();
   const { tr, locale } = useI18n();
   const storyMediaFn = useServerFn(getStoryMediaUrls);
+  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -104,29 +104,25 @@ export function StoriesBar() {
     if (!f) return;
     setUploading(true);
     try {
-      const moderation = await moderateBeforeUpload(f, "story", user.id);
-      if (!moderation.allowed) {
-        trackProductEvent("moderation_failed", { flow: "story_bar", target: "media" });
-        toast.error(
-          moderation.reason ||
-            tr("Não foi possível aprovar esta mídia.", "This media could not be approved."),
-        );
-        return;
-      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: ue } = await supabase.storage
         .from("stories")
         .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { error: ie } = await supabase.from("stories").insert({
-        creator_id: user.id,
-        media_path: path,
-        mime_type: f.type,
-        visibility: "public",
-      });
-      if (ie) throw ie;
-      toast.success(tr("Story publicado!", "Story published!"));
+      const { data: story, error: ie } = await supabase
+        .from("stories")
+        .insert({
+          creator_id: user.id,
+          media_path: path,
+          mime_type: f.type,
+          visibility: "public",
+        })
+        .select("id")
+        .single();
+      if (ie || !story) throw ie ?? new Error("Falha ao criar story");
+      await submitManualReviewFn({ data: { surface: "story", targetId: story.id } });
+      toast.success(tr("Story enviado para análise manual.", "Story sent for manual review."));
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));

@@ -51,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n";
+import { ManualMediaReviewQueue } from "@/components/admin/ManualMediaReviewQueue";
 
 export const Route = createFileRoute("/admin/moderation")({
   beforeLoad: async () => {
@@ -484,8 +485,8 @@ export function AdminModerationPage() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {tr(
-                    "Mídias bloqueadas pela IA. Decida sobre possíveis reenvios e exporte o histórico.",
-                    "Media blocked by AI. Review possible re-uploads and export the audit history.",
+                    "Revise publicações novas e consulte o histórico de bloqueios e decisões.",
+                    "Review new submissions and inspect the history of blocks and decisions.",
                   )}
                 </p>
               </div>
@@ -515,6 +516,8 @@ export function AdminModerationPage() {
               </Button>
             </div>
           </header>
+
+          <ManualMediaReviewQueue />
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard label="Total" value={total} />

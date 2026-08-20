@@ -237,6 +237,70 @@ export const reviewKycServer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const identityDecisionSchema = z.object({
+  verificationId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+  rejectionReason: z.string().min(3).max(500).optional(),
+});
+
+/**
+ * Revisao humana de identidade/maioridade do cliente no MVP sem fornecedor.
+ * Aprovacao libera o gate +18, mas nunca concede o papel de criadora.
+ */
+export const reviewIdentityVerificationServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => identityDecisionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    await assertAdmin(userId);
+
+    const { data: verification, error: lookupError } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("id, user_id, status, method, document_front_url, selfie_url")
+      .eq("id", data.verificationId)
+      .maybeSingle();
+    if (lookupError || !verification) throw new Error("Verificação não encontrada");
+    if (verification.method !== "manual_document_review") {
+      throw new Error("Esta verificação não pertence à fila manual.");
+    }
+    if (!verification.document_front_url || !verification.selfie_url) {
+      throw new Error("Documento e selfie são obrigatórios para a decisão.");
+    }
+
+    const approved = data.decision === "approved";
+    if (!approved && !data.rejectionReason) throw new Error("Motivo obrigatório");
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("identity_verifications")
+      .update({
+        status: approved ? "verified" : "rejected",
+        rejection_reason: approved ? null : data.rejectionReason,
+        reviewed_by: userId,
+        reviewed_at: now,
+        verified_at: approved ? now : null,
+        updated_at: now,
+      })
+      .eq("id", data.verificationId);
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Este CPF já está aprovado em outra conta.");
+      }
+      console.error("[admin.reviewIdentityVerification]", error);
+      throw new Error("Não foi possível salvar a decisão.");
+    }
+
+    await auditLog({
+      adminId: userId,
+      actionType: approved ? "age_verification_approved" : "age_verification_rejected",
+      targetType: "identity_verification",
+      targetId: data.verificationId,
+      targetUserId: verification.user_id,
+      metadata: approved ? { method: "manual_document_review" } : { reason: data.rejectionReason },
+    });
+
+    return { ok: true };
+  });
+
 const dmcaSchema = z.object({
   reportId: z.string().uuid(),
   status: z.enum(["notified", "resolved", "rejected"]),

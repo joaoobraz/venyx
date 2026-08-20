@@ -135,6 +135,8 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
       { count: totalCreators },
       { count: totalSellers },
       { count: pendingKyc },
+      { count: pendingAgeChecks },
+      { count: pendingManualMedia },
       { count: pendingDmca },
       { count: pendingWithdrawals },
     ] = await Promise.all([
@@ -152,6 +154,15 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
       supabaseAdmin
+        .from("identity_verifications")
+        .select("*", { count: "exact", head: true })
+        .eq("method", "manual_document_review")
+        .eq("status", "pending"),
+      supabaseAdmin
+        .from("manual_media_reviews")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabaseAdmin
         .from("dmca_reports")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
@@ -166,7 +177,8 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
       totalUsers: totalUsers ?? 0,
       totalCreators: totalCreators ?? 0,
       totalSellers: totalSellers ?? 0,
-      pendingKyc: pendingKyc ?? 0,
+      pendingKyc: (pendingKyc ?? 0) + (pendingAgeChecks ?? 0),
+      pendingManualMedia: pendingManualMedia ?? 0,
       pendingDmca: pendingDmca ?? 0,
       pendingWithdrawals: pendingWithdrawals ?? 0,
     };

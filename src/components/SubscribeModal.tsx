@@ -105,6 +105,10 @@ export function SubscribeModal({
   const checkTrialFn = useServerFn(checkTrialEligibility);
   const checkVerifyFn = useServerFn(getMyVerificationStatus);
   const [verified, setVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<
+    "unsubmitted" | "pending" | "rejected" | "verified"
+  >("unsubmitted");
+  const [verificationReason, setVerificationReason] = useState<string | null>(null);
   const [showVerify, setShowVerify] = useState(false);
   const afterVerifyRef = useRef<null | (() => void)>(null);
 
@@ -227,8 +231,21 @@ export function SubscribeModal({
       ? { Authorization: `Bearer ${session.access_token}` }
       : undefined;
     checkVerifyFn({ headers: authHeaders })
-      .then((r) => setVerified(!!r.verified))
-      .catch(() => setVerified(false));
+      .then((r) => {
+        setVerified(!!r.verified);
+        setVerificationStatus(
+          r.verified
+            ? "verified"
+            : r.status === "pending" || r.status === "rejected"
+              ? r.status
+              : "unsubmitted",
+        );
+        setVerificationReason(r.rejectionReason ?? null);
+      })
+      .catch(() => {
+        setVerified(false);
+        setVerificationStatus("unsubmitted");
+      });
   }, [open, user, session, checkVerifyFn]);
 
   // garante a verificação antes de executar a ação (assinar / trial)
@@ -238,6 +255,10 @@ export function SubscribeModal({
       return;
     }
     if (user && !verified) {
+      if (verificationStatus === "pending") {
+        toast.info("Sua verificação está em análise. Você poderá pagar assim que for aprovada.");
+        return;
+      }
       afterVerifyRef.current = action;
       setShowVerify(true);
     } else {
@@ -428,6 +449,18 @@ export function SubscribeModal({
 
           {step === "plan" && (
             <div className="space-y-3">
+              {verificationStatus === "pending" && (
+                <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs text-foreground">
+                  Sua identidade está em análise manual. Nenhuma cobrança será criada antes da
+                  aprovação.
+                </div>
+              )}
+              {verificationStatus === "rejected" && (
+                <div className="rounded-xl border border-destructive/35 bg-destructive/10 p-3 text-xs text-foreground">
+                  A verificação precisa ser reenviada
+                  {verificationReason ? `: ${verificationReason}` : "."}
+                </div>
+              )}
               {trialInfo.eligible && (
                 <div className="space-y-2 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/15 to-primary/10 p-4">
                   <div className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -664,9 +697,15 @@ export function SubscribeModal({
         onOpenChange={setShowVerify}
         onVerified={() => {
           setVerified(true);
+          setVerificationStatus("verified");
           const action = afterVerifyRef.current;
           afterVerifyRef.current = null;
           action?.();
+        }}
+        onPending={() => {
+          setVerified(false);
+          setVerificationStatus("pending");
+          afterVerifyRef.current = null;
         }}
       />
     </>

@@ -39,7 +39,7 @@ são encaminhados a um canal externo.
 
 ## Exige terceiros ou operação real
 
-- Credenciais e contrato do provedor de moderação.
+- Duas pessoas treinadas e escala ativa para KYC e moderação manual.
 - Teste financeiro real com o provedor de pagamentos.
 - Parecer jurídico.
 - Restauração de backup no plano/provedor contratado.

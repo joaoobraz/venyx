@@ -45,7 +45,7 @@ import { SafetyMenu } from "@/components/SafetyMenu";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { NotificationMuteButton } from "@/components/NotificationMuteButton";
 import { notifyUnreadCountsChanged } from "@/lib/use-unread-counts";
-import { moderateBeforeUpload } from "@/lib/moderation";
+import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 import {
   demoChatMediaPath,
   demoThreadDetails,
@@ -72,10 +72,9 @@ import { TIER_META, loyaltyTierFromPoints, loyaltyTierRank, type LoyaltyTier } f
 export type ChatSearch = { with?: string; thread?: string; segment?: "gold_plus" | "vip" };
 
 export const chatSearchValidator = (search: Record<string, unknown>): ChatSearch => ({
-    with: typeof search.with === "string" ? search.with : undefined,
-    thread: typeof search.thread === "string" ? search.thread : undefined,
-    segment:
-      search.segment === "gold_plus" || search.segment === "vip" ? search.segment : undefined,
+  with: typeof search.with === "string" ? search.with : undefined,
+  thread: typeof search.thread === "string" ? search.thread : undefined,
+  segment: search.segment === "gold_plus" || search.segment === "vip" ? search.segment : undefined,
 });
 
 export const Route = createFileRoute("/chat")({
@@ -131,6 +130,7 @@ export function ChatPage() {
   const chatMediaFn = useServerFn(getChatMediaUrl);
   const sendMessageFn = useServerFn(sendChatMessage);
   const editMessageFn = useServerFn(editChatMessage);
+  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -420,97 +420,103 @@ export function ChatPage() {
     setThreads(nextThreads);
   };
 
-  const loadMessages = useCallback(async (threadId: string) => {
-    if (!user) return;
-    if (DEMO_MODE && isDemoChatThreadId(threadId)) {
-      const actorId = threadsRef.current.find((thread) => thread.id === threadId)?.actor_id ?? user.id;
-      const readAt = new Date().toISOString();
-      const demoRows = readDemoChatMessages(user.id, threadId).map((message) =>
-        message.sender_id !== actorId && !message.read_at
-          ? { ...message, read_at: readAt }
-          : message,
-      );
-      writeDemoChatMessages(user.id, threadId, demoRows);
-      setMessages(demoRows);
+  const loadMessages = useCallback(
+    async (threadId: string) => {
+      if (!user) return;
+      if (DEMO_MODE && isDemoChatThreadId(threadId)) {
+        const actorId =
+          threadsRef.current.find((thread) => thread.id === threadId)?.actor_id ?? user.id;
+        const readAt = new Date().toISOString();
+        const demoRows = readDemoChatMessages(user.id, threadId).map((message) =>
+          message.sender_id !== actorId && !message.read_at
+            ? { ...message, read_at: readAt }
+            : message,
+        );
+        writeDemoChatMessages(user.id, threadId, demoRows);
+        setMessages(demoRows);
+        setThreads((current) =>
+          current.map((thread) =>
+            thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
+          ),
+        );
+        notifyUnreadCountsChanged();
+        return;
+      }
+      // Usa RPC segura: mascara media_path/mime_type para PPV não desbloqueado
+      // ou subscribers_only sem assinatura ativa.
+      const { data: msgs, error } = await supabase.rpc("list_thread_messages_verified", {
+        _thread_id: threadId,
+      });
+      if (error) {
+        console.error("[chat.loadMessages]", error);
+        const missingVerifiedRpc =
+          error.code === "PGRST202" || error.message.includes("list_thread_messages_verified");
+        if (DEMO_MODE && missingVerifiedRpc) {
+          const { data: fallbackRows, error: fallbackError } = await supabase
+            .from("chat_messages")
+            .select(
+              "id, thread_id, sender_id, body, ppv_price_cents, subscribers_only, read_at, created_at",
+            )
+            .eq("thread_id", threadId)
+            .order("created_at", { ascending: true });
+          if (!fallbackError) {
+            const safeMessages: Message[] = (fallbackRows ?? []).map((message) => ({
+              ...message,
+              media_path: null,
+              mime_type: null,
+              ppv_paid_at: null,
+              unlocked: false,
+              edited_at: null,
+            }));
+            setMessages(safeMessages);
+            await supabase
+              .from("chat_messages")
+              .update({ read_at: new Date().toISOString() })
+              .eq("thread_id", threadId)
+              .neq("sender_id", user.id)
+              .is("read_at", null);
+            setThreads((current) =>
+              current.map((thread) =>
+                thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
+              ),
+            );
+            notifyUnreadCountsChanged();
+            return;
+          }
+        }
+        toast.error(
+          import.meta.env.DEV
+            ? `${tr("Não foi possível carregar esta conversa", "Could not load this conversation")}: ${error.message}`
+            : tr("Não foi possível carregar esta conversa.", "Could not load this conversation."),
+        );
+        return;
+      }
+      const messageIds = (msgs ?? []).map((message) => message.id);
+      const { data: editRows } = messageIds.length
+        ? await supabase.from("chat_messages").select("id, edited_at").in("id", messageIds)
+        : { data: [] };
+      const editedById = new Map((editRows ?? []).map((row) => [row.id, row.edited_at]));
+      const persisted = (
+        (msgs ?? []) as Array<Omit<Message, "unlocked" | "edited_at"> & { unlocked: boolean }>
+      ).map((m) => ({
+        ...m,
+        unlocked: m.unlocked,
+        edited_at: editedById.get(m.id) ?? null,
+      }));
+      setMessages(persisted);
+      await supabase
+        .from("chat_messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("thread_id", threadId)
+        .neq("sender_id", user.id)
+        .is("read_at", null);
       setThreads((current) =>
         current.map((thread) => (thread.id === threadId ? { ...thread, unread_count: 0 } : thread)),
       );
       notifyUnreadCountsChanged();
-      return;
-    }
-    // Usa RPC segura: mascara media_path/mime_type para PPV não desbloqueado
-    // ou subscribers_only sem assinatura ativa.
-    const { data: msgs, error } = await supabase.rpc("list_thread_messages_verified", {
-      _thread_id: threadId,
-    });
-    if (error) {
-      console.error("[chat.loadMessages]", error);
-      const missingVerifiedRpc =
-        error.code === "PGRST202" || error.message.includes("list_thread_messages_verified");
-      if (DEMO_MODE && missingVerifiedRpc) {
-        const { data: fallbackRows, error: fallbackError } = await supabase
-          .from("chat_messages")
-          .select(
-            "id, thread_id, sender_id, body, ppv_price_cents, subscribers_only, read_at, created_at",
-          )
-          .eq("thread_id", threadId)
-          .order("created_at", { ascending: true });
-        if (!fallbackError) {
-          const safeMessages: Message[] = (fallbackRows ?? []).map((message) => ({
-            ...message,
-            media_path: null,
-            mime_type: null,
-            ppv_paid_at: null,
-            unlocked: false,
-            edited_at: null,
-          }));
-          setMessages(safeMessages);
-          await supabase
-            .from("chat_messages")
-            .update({ read_at: new Date().toISOString() })
-            .eq("thread_id", threadId)
-            .neq("sender_id", user.id)
-            .is("read_at", null);
-          setThreads((current) =>
-            current.map((thread) =>
-              thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
-            ),
-          );
-          notifyUnreadCountsChanged();
-          return;
-        }
-      }
-      toast.error(
-        import.meta.env.DEV
-          ? `${tr("Não foi possível carregar esta conversa", "Could not load this conversation")}: ${error.message}`
-          : tr("Não foi possível carregar esta conversa.", "Could not load this conversation."),
-      );
-      return;
-    }
-    const messageIds = (msgs ?? []).map((message) => message.id);
-    const { data: editRows } = messageIds.length
-      ? await supabase.from("chat_messages").select("id, edited_at").in("id", messageIds)
-      : { data: [] };
-    const editedById = new Map((editRows ?? []).map((row) => [row.id, row.edited_at]));
-    const persisted = (
-      (msgs ?? []) as Array<Omit<Message, "unlocked" | "edited_at"> & { unlocked: boolean }>
-    ).map((m) => ({
-      ...m,
-      unlocked: m.unlocked,
-      edited_at: editedById.get(m.id) ?? null,
-    }));
-    setMessages(persisted);
-    await supabase
-      .from("chat_messages")
-      .update({ read_at: new Date().toISOString() })
-      .eq("thread_id", threadId)
-      .neq("sender_id", user.id)
-      .is("read_at", null);
-    setThreads((current) =>
-      current.map((thread) => (thread.id === threadId ? { ...thread, unread_count: 0 } : thread)),
-    );
-    notifyUnreadCountsChanged();
-  }, [tr, user]);
+    },
+    [tr, user],
+  );
 
   useEffect(() => {
     if (user) loadThreads();
@@ -916,46 +922,36 @@ export function ChatPage() {
     }
     setBusy(true);
     try {
-      const moderation = await moderateBeforeUpload(f, "chat", user.id);
-      if (!moderation.allowed) {
-        toast.error(
-          moderation.reason ||
-            tr("Não foi possível aprovar esta mídia.", "This media could not be approved."),
-        );
-        return;
-      }
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${active.id}/${Date.now()}.${ext}`;
       const { error: ue } = await supabase.storage
         .from("chat-media")
         .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { error: ie } = await supabase.from("chat_messages").insert({
-        thread_id: active.id,
-        sender_id: user.id,
-        media_path: path,
-        mime_type: f.type,
-        ppv_price_cents: ppvCents,
-        body: ppvBody || null,
-      });
-      if (ie) throw ie;
+      const { data: message, error: ie } = await supabase
+        .from("chat_messages")
+        .insert({
+          thread_id: active.id,
+          sender_id: user.id,
+          media_path: path,
+          mime_type: f.type,
+          ppv_price_cents: ppvCents,
+          body: ppvBody || null,
+        })
+        .select("id")
+        .single();
+      if (ie || !message) throw ie ?? new Error("Falha ao criar mensagem");
+      await submitManualReviewFn({ data: { surface: "chat", targetId: message.id } });
       setPpvPrice("");
       setPpvMessage("");
       setPpvMessageDraft("");
       toast.success(
-        ppvCents
-          ? tr(
-              `Mídia PPV enviada (R$ ${(ppvCents / 100).toFixed(2)})`,
-              `PPV media sent (BRL ${(ppvCents / 100).toFixed(2)})`,
-              `Medio PPV enviado (R$ ${(ppvCents / 100).toFixed(2)})`,
-            )
-          : tr("Mídia enviada", "Media sent", "Medio enviado"),
+        tr(
+          "Mídia enviada para análise manual. O destinatário só verá após a aprovação.",
+          "Media sent for manual review. The recipient will only see it after approval.",
+          "Medio enviado a revisión manual. El destinatario solo lo verá tras la aprobación.",
+        ),
       );
-      await supabase.channel(`thread-${active.id}`).send({
-        type: "broadcast",
-        event: "new_message",
-        payload: {},
-      });
       await loadMessages(active.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
@@ -1331,10 +1327,10 @@ export function ChatPage() {
                   const isPaidPpv =
                     m.ppv_price_cents > 0 &&
                     Boolean(m.ppv_paid_at || (active.is_demo && m.unlocked));
-                  const formattedPpvPrice = new Intl.NumberFormat(
-                    dateLocale,
-                    { style: "currency", currency: "BRL" },
-                  ).format(m.ppv_price_cents / 100);
+                  const formattedPpvPrice = new Intl.NumberFormat(dateLocale, {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(m.ppv_price_cents / 100);
                   const canEditMessage =
                     fromMe &&
                     Boolean(m.body) &&
@@ -1342,10 +1338,10 @@ export function ChatPage() {
                     !isGiftCard &&
                     Date.now() - new Date(m.created_at).getTime() <= 15 * 60_000;
                   if (isGiftCard && giftAmountCents) {
-                    const formattedGiftAmount = new Intl.NumberFormat(
-                      dateLocale,
-                      { style: "currency", currency: "BRL" },
-                    ).format(giftAmountCents / 100);
+                    const formattedGiftAmount = new Intl.NumberFormat(dateLocale, {
+                      style: "currency",
+                      currency: "BRL",
+                    }).format(giftAmountCents / 100);
                     return (
                       <div
                         key={m.id}
@@ -1391,13 +1387,10 @@ export function ChatPage() {
                             )}
                           </div>
                           <div className="-mt-1 text-right text-[10px] text-muted-foreground/70">
-                            {new Date(m.created_at).toLocaleTimeString(
-                              dateLocale,
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                            {new Date(m.created_at).toLocaleTimeString(dateLocale, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </div>
                         </div>
                       </div>
@@ -1547,13 +1540,10 @@ export function ChatPage() {
                         className={`flex items-center justify-end gap-1 px-3 pb-1.5 text-[10px] ${fromMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}
                       >
                         <span>
-                          {new Date(m.created_at).toLocaleTimeString(
-                            dateLocale,
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
+                          {new Date(m.created_at).toLocaleTimeString(dateLocale, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                         {m.edited_at && <span>{tr("editada", "edited")}</span>}
                         {canEditMessage && editingMessageId !== m.id && (
@@ -1688,7 +1678,10 @@ export function ChatPage() {
                     }}
                     placeholder={
                       chatPaused
-                        ? tr("Conta pausada — histórico somente para leitura", "Paused account — read-only history")
+                        ? tr(
+                            "Conta pausada — histórico somente para leitura",
+                            "Paused account — read-only history",
+                          )
                         : t("chat.placeholder")
                     }
                     disabled={chatPaused}
@@ -1696,7 +1689,9 @@ export function ChatPage() {
                   />
                   <Button
                     onClick={send}
-                    disabled={chatPaused || busy || !draft.trim() || detectExternalContact(draft).blocked}
+                    disabled={
+                      chatPaused || busy || !draft.trim() || detectExternalContact(draft).blocked
+                    }
                     aria-label={tr("Enviar mensagem", "Send message")}
                     className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >

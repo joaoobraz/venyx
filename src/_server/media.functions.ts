@@ -28,7 +28,7 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
     const viewerId = context.userId;
     const { data: post } = await supabaseAdmin
       .from("posts")
-      .select("id, creator_id, visibility")
+      .select("id, creator_id, visibility, moderation_status")
       .eq("id", data.postId)
       .maybeSingle();
     if (!post) throw new Error("Post não encontrado");
@@ -76,7 +76,7 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
     // Check access for all posts
     const { data: posts } = await supabaseAdmin
       .from("posts")
-      .select("id, creator_id, visibility")
+      .select("id, creator_id, visibility, moderation_status")
       .in("id", data.postIds);
 
     const accessMap: Record<string, boolean> = {};
@@ -179,9 +179,21 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
   });
 
 async function checkPostAccess(
-  post: { id: string; creator_id: string; visibility: string },
+  post: { id: string; creator_id: string; visibility: string; moderation_status: string },
   viewerId: string | null,
 ): Promise<boolean> {
+  if (post.moderation_status !== "approved") {
+    if (!viewerId) return false;
+    if (post.creator_id !== viewerId) {
+      const { data: adminRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", viewerId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!adminRole) return false;
+    }
+  }
   if (post.visibility === "public") return true;
   if (!viewerId) return false;
   if (post.creator_id === viewerId) return true;
@@ -207,11 +219,7 @@ async function checkPostAccess(
   }
   if (post.visibility === "goal") {
     const [{ data: goal }, { data: contribution }] = await Promise.all([
-      supabaseAdmin
-        .from("post_goals")
-        .select("is_unlocked")
-        .eq("post_id", post.id)
-        .maybeSingle(),
+      supabaseAdmin.from("post_goals").select("is_unlocked").eq("post_id", post.id).maybeSingle(),
       supabaseAdmin
         .from("post_goal_contributions")
         .select("id")
@@ -242,14 +250,27 @@ export const getStoryMediaUrls = createServerFn({ method: "POST" })
     const now = new Date().toISOString();
     const { data: stories, error } = await supabaseAdmin
       .from("stories")
-      .select("id, creator_id, media_path, mime_type, visibility")
+      .select("id, creator_id, media_path, mime_type, visibility, moderation_status")
       .in("id", data.storyIds)
       .gt("expires_at", now);
     if (error) throw new Error("Não foi possível carregar os stories");
 
+    const { data: adminRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const moderatedStories = (stories ?? []).filter(
+      (story) =>
+        story.moderation_status === "approved" ||
+        story.creator_id === context.userId ||
+        Boolean(adminRole),
+    );
+
     const subscriberCreatorIds = Array.from(
       new Set(
-        (stories ?? [])
+        moderatedStories
           .filter((story) => story.visibility === "subscribers")
           .map((story) => story.creator_id),
       ),
@@ -268,7 +289,7 @@ export const getStoryMediaUrls = createServerFn({ method: "POST" })
       }
     }
 
-    const accessible = (stories ?? []).filter(
+    const accessible = moderatedStories.filter(
       (story) =>
         story.visibility === "public" ||
         story.creator_id === context.userId ||
@@ -301,11 +322,16 @@ export const getChatMediaUrl = createServerFn({ method: "POST" })
       const { userId } = context;
       const { data: msg } = await supabaseAdmin
         .from("chat_messages")
-        .select("id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id")
+        .select(
+          "id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id, moderation_status",
+        )
         .eq("id", data.messageId)
         .maybeSingle();
       if (!msg || !msg.media_path) {
         return { url: "", error: "NOT_FOUND" as const };
+      }
+      if (msg.moderation_status !== "approved" && msg.sender_id !== userId) {
+        return { url: "", error: "PENDING_REVIEW" as const };
       }
 
       const { data: thread } = await supabaseAdmin

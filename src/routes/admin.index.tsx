@@ -20,9 +20,7 @@ import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
-import {
-  requireAdminServer,
-} from "@/_server/admin.functions";
+import { requireAdminServer } from "@/_server/admin.functions";
 import { adminDashboardStats } from "@/_server/admin-users.functions";
 
 export const Route = createFileRoute("/admin/")({
@@ -34,10 +32,7 @@ export const Route = createFileRoute("/admin/")({
     }
   },
   head: () => ({
-    meta: [
-      { title: "Painel Admin" },
-      { name: "description", content: "Painel administrativo" },
-    ],
+    meta: [{ title: "Painel Admin" }, { name: "description", content: "Painel administrativo" }],
   }),
   component: AdminHomePage,
 });
@@ -47,6 +42,7 @@ type Stats = {
   totalCreators: number;
   totalSellers: number;
   pendingKyc: number;
+  pendingManualMedia: number;
   pendingDmca: number;
   pendingWithdrawals: number;
 };
@@ -87,7 +83,7 @@ export function AdminHomePage() {
     },
     {
       title: tr("Moderação", "Moderation"),
-      value: "—",
+      value: stats?.pendingManualMedia ?? 0,
       icon: Eye,
       link: "/admin/moderation",
       tone: "muted",
@@ -97,20 +93,28 @@ export function AdminHomePage() {
   const sections = [
     {
       title: tr("Usuários & Cargos", "Users & Roles"),
-      description:
-        tr("Gerenciar usuários, atribuir cargos (Seller, Creator, Admin, Embaixadora).", "Manage users and assign Seller, Creator, Admin and Ambassador roles."),
+      description: tr(
+        "Gerenciar usuários, atribuir cargos (Seller, Creator, Admin, Embaixadora).",
+        "Manage users and assign Seller, Creator, Admin and Ambassador roles.",
+      ),
       icon: UserCog,
       link: "/admin/users",
     },
     {
       title: "KYC",
-      description: tr("Aprovar ou rejeitar verificações de identidade.", "Approve or reject identity checks."),
+      description: tr(
+        "Aprovar ou rejeitar verificações de identidade.",
+        "Approve or reject identity checks.",
+      ),
       icon: ShieldCheck,
       link: "/admin/kyc",
     },
     {
       title: tr("Saques", "Payouts"),
-      description: tr("Aprovar, marcar como pago ou rejeitar saques de criadoras.", "Approve, pay or reject creator payouts."),
+      description: tr(
+        "Aprovar, marcar como pago ou rejeitar saques de criadoras.",
+        "Approve, pay or reject creator payouts.",
+      ),
       icon: Banknote,
       link: "/admin/payouts",
     },
@@ -122,25 +126,37 @@ export function AdminHomePage() {
     },
     {
       title: tr("Denúncias de usuários", "User reports"),
-      description: tr("Revisar denúncias de posts, perfis, mensagens e conversas.", "Review reports about posts, profiles, messages and conversations."),
+      description: tr(
+        "Revisar denúncias de posts, perfis, mensagens e conversas.",
+        "Review reports about posts, profiles, messages and conversations.",
+      ),
       icon: Flag,
       link: "/admin/reports",
     },
     {
       title: tr("Moderação", "Moderation"),
-      description: tr("Revisar mídias sinalizadas pela moderação automática.", "Review media flagged by automated moderation."),
+      description: tr(
+        "Aprovar ou rejeitar posts, stories e mídias do chat antes da publicação.",
+        "Approve or reject posts, stories, and chat media before publication.",
+      ),
       icon: Eye,
       link: "/admin/moderation",
     },
     {
       title: tr("Auditoria de acessos", "Access audit"),
-      description: tr("Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.", "Allowed and denied access attempts to /admin routes, including IP."),
+      description: tr(
+        "Tentativas de acesso (negadas e liberadas) às rotas /admin com IP.",
+        "Allowed and denied access attempts to /admin routes, including IP.",
+      ),
       icon: ShieldCheck,
       link: "/admin/audit",
     },
     {
       title: tr("Auditoria de ações", "Action audit"),
-      description: tr("Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.", "History of KYC decisions, DMCA updates and role assignments."),
+      description: tr(
+        "Histórico de aprovações de KYC, atualizações de DMCA e atribuições de cargos.",
+        "History of KYC decisions, DMCA updates and role assignments.",
+      ),
       icon: ShieldCheck,
       link: "/admin/actions-audit",
     },
@@ -183,7 +199,10 @@ export function AdminHomePage() {
               {tr("Painel Admin", "Admin Dashboard")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {tr("Visão geral e atalhos para todas as áreas administrativas.", "Overview and shortcuts to every administrative area.")}
+              {tr(
+                "Visão geral e atalhos para todas as áreas administrativas.",
+                "Overview and shortcuts to every administrative area.",
+              )}
             </p>
           </div>
         </div>
@@ -224,9 +243,7 @@ export function AdminHomePage() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">{c.title}</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {loading ? "…" : c.value}
-                  </p>
+                  <p className="text-2xl font-bold mt-1">{loading ? "…" : c.value}</p>
                 </Card>
               </Link>
             ))}
@@ -235,7 +252,9 @@ export function AdminHomePage() {
 
         {/* Sections grid */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">{tr("Áreas administrativas", "Administrative areas")}</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            {tr("Áreas administrativas", "Administrative areas")}
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {sections.map((s) => (
               <Link key={s.link} to={s.link}>
@@ -246,9 +265,7 @@ export function AdminHomePage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{s.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {s.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">{s.description}</p>
                     </div>
                   </div>
                 </Card>

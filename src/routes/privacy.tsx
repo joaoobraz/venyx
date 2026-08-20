@@ -49,8 +49,8 @@ export function PrivacyPage() {
               <strong>Profile:</strong> avatar, cover, bio, social links, language, and preferences.
             </li>
             <li>
-              <strong>Creator verification:</strong> official ID and selfie stored privately with
-              restricted compliance access.
+              <strong>Age and creator verification:</strong> official ID and current selfie stored
+              privately with access restricted to authorized compliance reviewers.
             </li>
             <li>
               <strong>Payments:</strong> transaction amount, date, and method. Full card data is
@@ -86,7 +86,10 @@ export function PrivacyPage() {
           <ul>
             <li>Payment processors;</li>
             <li>Cloud and transactional-email providers;</li>
-            <li>AI moderation services, limited to the media required for review;</li>
+            <li>
+              Authorized internal reviewers, limited to the identity documents and media required
+              for age, identity, and content-safety reviews;
+            </li>
             <li>
               Creator-configured advertising measurement providers, only after marketing consent;
             </li>
@@ -100,8 +103,8 @@ export function PrivacyPage() {
             <li>Data portability, deletion of consent-based data, and withdrawal of consent.</li>
           </ul>
           <p>
-            Contact <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a> to exercise these
-            rights. We respond within 15 days.
+            Contact <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a> to
+            exercise these rights. We respond within 15 days.
           </p>
           <h2>6. Retention</h2>
           <ul>
@@ -167,8 +170,9 @@ export function PrivacyPage() {
             <strong>Perfil:</strong> avatar, capa, bio, links sociais, idioma e preferências.
           </li>
           <li>
-            <strong>KYC (criadoras):</strong> documento oficial e selfie, armazenados em bucket
-            privado e criptografado, com acesso restrito à equipe de compliance.
+            <strong>Verificação de idade e KYC:</strong> documento oficial e selfie atual,
+            armazenados em bucket privado e criptografado, com acesso restrito a revisores de
+            compliance autorizados.
           </li>
           <li>
             <strong>Pagamentos:</strong> registros de transação (valor, data, método). Dados
@@ -209,8 +213,8 @@ export function PrivacyPage() {
           <li>Processador de pagamento Impulse Pay;</li>
           <li>Provedores de infraestrutura (cloud, e-mail transacional);</li>
           <li>
-            Provedor de moderação contratado pela Fanlira, apenas com a mídia necessária para
-            análise e sob controles contratuais;
+            Revisores internos autorizados, somente com os documentos e mídias necessários para
+            verificação de idade, identidade e segurança do conteúdo;
           </li>
           <li>
             Provedores de mensuração de publicidade configurados pela criadora, somente após o
@@ -230,7 +234,8 @@ export function PrivacyPage() {
         </ul>
         <p>
           Para exercer qualquer direito, escreva para{" "}
-          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>. Respondemos em até 15 dias.
+          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>. Respondemos em
+          até 15 dias.
         </p>
 
         <h2>6. Retenção</h2>
@@ -250,12 +255,12 @@ export function PrivacyPage() {
 
         <h2>8. Cookies</h2>
         <p>
-          Usamos armazenamento essencial para autenticação e preferências. Nas páginas Fanlira Links,
-          tags de medição configuradas pela criadora — Meta, Google, TikTok, Pinterest ou Snapchat —
-          podem carregar somente depois que o visitante aceitar expressamente cookies de marketing.
-          Essas tags podem receber dados de visualização, campanha e clique nos links, mas a Fanlira
-          não envia mensagens privadas, dados de pagamento, e-mail ou telefone por essa integração.
-          O consentimento pode ser revogado a qualquer momento.
+          Usamos armazenamento essencial para autenticação e preferências. Nas páginas Fanlira
+          Links, tags de medição configuradas pela criadora — Meta, Google, TikTok, Pinterest ou
+          Snapchat — podem carregar somente depois que o visitante aceitar expressamente cookies de
+          marketing. Essas tags podem receber dados de visualização, campanha e clique nos links,
+          mas a Fanlira não envia mensagens privadas, dados de pagamento, e-mail ou telefone por
+          essa integração. O consentimento pode ser revogado a qualquer momento.
         </p>
         <Button type="button" variant="outline" onClick={openCookieSettings}>
           Gerenciar preferências de cookies

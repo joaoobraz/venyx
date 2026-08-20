@@ -10,6 +10,7 @@ import {
   requireAdminServer,
   getKycSignedUrlServer,
   reviewKycServer,
+  reviewIdentityVerificationServer,
 } from "@/_server/admin.functions";
 import { useI18n } from "@/lib/i18n";
 
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/admin/kyc")({
 interface Row {
   id: string;
   user_id: string;
+  source: "creator" | "customer";
   document_type: string;
   document_front_url: string;
   document_back_url: string | null;
@@ -35,6 +37,9 @@ interface Row {
   rejection_reason: string | null;
   reviewed_at: string | null;
   created_at: string;
+  full_name?: string | null;
+  cpf?: string | null;
+  birth_date?: string | null;
   profile?: { username: string; display_name: string | null } | null;
 }
 
@@ -56,12 +61,54 @@ export function AdminKycPage() {
 
   const load = async () => {
     setLoadingRows(true);
-    const { data } = await supabase
-      .from("kyc_requests")
-      .select("*")
-      .eq("status", tab)
-      .order("created_at", { ascending: tab === "pending" });
-    const list = (data ?? []) as Row[];
+    const [{ data: creatorData }, { data: customerData }] = await Promise.all([
+      supabase
+        .from("kyc_requests")
+        .select("*")
+        .eq("status", tab)
+        .order("created_at", { ascending: tab === "pending" }),
+      supabase
+        .from("identity_verifications")
+        .select("*")
+        .eq("method", "manual_document_review")
+        .eq("status", tab === "approved" ? "verified" : tab)
+        .order("created_at", { ascending: tab === "pending" }),
+    ]);
+    const creatorRows = ((creatorData ?? []) as Omit<Row, "source">[]).map((row) => ({
+      ...row,
+      source: "creator" as const,
+    }));
+    const customerRows = (
+      (customerData ?? []) as Array<{
+        id: string;
+        user_id: string;
+        document_type: string | null;
+        document_front_url: string | null;
+        document_back_url: string | null;
+        selfie_url: string | null;
+        status: "pending" | "verified" | "rejected";
+        rejection_reason: string | null;
+        reviewed_at: string | null;
+        created_at: string;
+        full_name: string;
+        cpf: string;
+        birth_date: string;
+      }>
+    )
+      .filter((row) => row.document_front_url && row.selfie_url)
+      .map((row) => ({
+        ...row,
+        source: "customer" as const,
+        status: (row.status === "verified" ? "approved" : row.status) as Row["status"],
+        document_type: row.document_type ?? "Documento",
+        document_front_url: row.document_front_url as string,
+        selfie_url: row.selfie_url as string,
+      }));
+    const list: Row[] = [...creatorRows, ...customerRows].sort((a, b) =>
+      tab === "pending"
+        ? a.created_at.localeCompare(b.created_at)
+        : b.created_at.localeCompare(a.created_at),
+    );
     // Buscar profiles em batch
     const ids = [...new Set(list.map((r) => r.user_id))];
     if (ids.length) {
@@ -86,9 +133,20 @@ export function AdminKycPage() {
 
   const approve = async (r: Row) => {
     try {
-      await reviewKycServer({ data: { kycId: r.id, decision: "approved" } });
+      if (r.source === "creator") {
+        await reviewKycServer({ data: { kycId: r.id, decision: "approved" } });
+      } else {
+        await reviewIdentityVerificationServer({
+          data: { verificationId: r.id, decision: "approved" },
+        });
+      }
       toast.success(
-        tr("KYC aprovado — usuária promovida a criadora", "KYC approved—user promoted to creator"),
+        r.source === "creator"
+          ? tr(
+              "KYC aprovado — usuária promovida a criadora",
+              "KYC approved—user promoted to creator",
+            )
+          : tr("Maioridade aprovada — acesso liberado", "Age check approved—access granted"),
       );
       load();
     } catch (e) {
@@ -105,9 +163,19 @@ export function AdminKycPage() {
     );
     if (!reason) return;
     try {
-      await reviewKycServer({
-        data: { kycId: r.id, decision: "rejected", rejectionReason: reason },
-      });
+      if (r.source === "creator") {
+        await reviewKycServer({
+          data: { kycId: r.id, decision: "rejected", rejectionReason: reason },
+        });
+      } else {
+        await reviewIdentityVerificationServer({
+          data: {
+            verificationId: r.id,
+            decision: "rejected",
+            rejectionReason: reason,
+          },
+        });
+      }
       toast.success(tr("Rejeitado", "Rejected"));
       load();
     } catch (e) {
@@ -200,6 +268,19 @@ function KycCard({
               </span>
             )}
           </div>
+          <div className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            {row.source === "creator"
+              ? tr("Entrada de criadora", "Creator onboarding")
+              : tr("Cliente · verificação +18", "Customer · 18+ check")}
+          </div>
+          {row.source === "customer" && (
+            <div className="mt-2 rounded-lg border border-border/60 bg-background/40 p-2 text-xs text-foreground">
+              <div>{row.full_name}</div>
+              <div className="text-muted-foreground">
+                CPF {row.cpf} · {tr("nascimento", "date of birth")} {row.birth_date}
+              </div>
+            </div>
+          )}
           <div className="mt-0.5 text-xs text-muted-foreground">
             <FileText className="mr-1 inline h-3 w-3" />
             {row.document_type} · {tr("enviado em", "submitted")}{" "}

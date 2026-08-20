@@ -16,10 +16,17 @@ const verifySchema = z.object({
   country: z.string().min(2).max(4).default("BR"),
   cpf: z.string().min(11).max(20),
   full_name: z.string().trim().min(3).max(140),
-  phone: z.string().transform(onlyDigits).refine((value) => /^\d{10,11}$/.test(value), {
-    message: "Informe um telefone válido com DDD",
-  }),
+  phone: z
+    .string()
+    .transform(onlyDigits)
+    .refine((value) => /^\d{10,11}$/.test(value), {
+      message: "Informe um telefone válido com DDD",
+    }),
   birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
+  document_type: z.enum(["RG", "CNH", "Passport"]),
+  document_front_path: z.string().min(1).max(500),
+  document_back_path: z.string().min(1).max(500).nullable().optional(),
+  selfie_path: z.string().min(1).max(500),
 });
 
 /**
@@ -66,18 +73,37 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Informe seu nome completo, como no documento." };
     }
 
+    const userPrefix = `${userId}/`;
+    const submittedPaths = [
+      data.document_front_path,
+      data.document_back_path,
+      data.selfie_path,
+    ].filter((path): path is string => Boolean(path));
+    if (
+      submittedPaths.some(
+        (path) =>
+          !path.startsWith(userPrefix) ||
+          path.includes("..") ||
+          !/\.(jpe?g|png|webp|heic)$/i.test(path),
+      )
+    ) {
+      return { ok: false as const, error: "Arquivos de verificação inválidos." };
+    }
+
+    const { data: current } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("status")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (current?.status === "verified") {
+      return { ok: true as const, status: "verified" as const };
+    }
+
     const match = await matchCpfWithDocument({
       cpf,
       fullName: data.full_name,
       birthDate: data.birth_date,
     });
-    if (!match.checked) {
-      return {
-        ok: false as const,
-        error:
-          "A verificação oficial de identidade ainda não está configurada. Tente novamente mais tarde.",
-      };
-    }
     if (match.checked && !match.ok) {
       return {
         ok: false as const,
@@ -85,6 +111,7 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       };
     }
 
+    const verified = match.checked && match.ok;
     const { error } = await supabaseAdmin.from("identity_verifications").upsert(
       {
         user_id: userId,
@@ -93,9 +120,16 @@ export const verifyIdentity = createServerFn({ method: "POST" })
         full_name: data.full_name.trim(),
         phone: data.phone,
         birth_date: data.birth_date,
-        status: "verified",
-        method: match.method,
-        verified_at: new Date().toISOString(),
+        status: verified ? "verified" : "pending",
+        method: verified ? match.method : "manual_document_review",
+        document_type: data.document_type,
+        document_front_url: data.document_front_path,
+        document_back_url: data.document_back_path ?? null,
+        selfie_url: data.selfie_path,
+        rejection_reason: null,
+        reviewed_by: null,
+        reviewed_at: null,
+        verified_at: verified ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
@@ -112,7 +146,10 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       };
     }
 
-    return { ok: true as const };
+    return {
+      ok: true as const,
+      status: verified ? ("verified" as const) : ("pending" as const),
+    };
   });
 
 export const getMyVerificationStatus = createServerFn({ method: "POST" })
@@ -120,12 +157,17 @@ export const getMyVerificationStatus = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data } = await supabaseAdmin
       .from("identity_verifications")
-      .select("status, phone")
+      .select("status, phone, rejection_reason")
       .eq("user_id", context.userId)
       .maybeSingle();
-    const result = data as { status?: string; phone?: string | null } | null;
+    const result = data as {
+      status?: string;
+      phone?: string | null;
+      rejection_reason?: string | null;
+    } | null;
     return {
-      verified:
-        result?.status === "verified" && /^\d{10,11}$/.test(onlyDigits(result.phone ?? "")),
+      verified: result?.status === "verified" && /^\d{10,11}$/.test(onlyDigits(result.phone ?? "")),
+      status: result?.status ?? "unsubmitted",
+      rejectionReason: result?.rejection_reason ?? null,
     };
   });

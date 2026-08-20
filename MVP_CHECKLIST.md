@@ -30,6 +30,8 @@ Atualizado em: 19/08/2026
 - [x] Worker `fanlira` publicado nos dois domínios; smoke de produção aprovado e nova amostra pública de 80 requisições sem falhas.
 - [x] Chaves da ImpulsePay rotacionadas, autenticadas na API e armazenadas como segredos do Worker.
 - [x] Webhook ImpulsePay cadastrado para pagamentos e saques; proteção publicada validada com rejeição sem token.
+- [x] Verificação manual e privada de identidade/idade implementada para clientes e criadoras, sem fornecedor pago no MVP.
+- [x] Posts, stories e mídias de chat entram ocultos em fila manual e só são liberados após aprovação administrativa com MFA.
 
 ### Bloqueadores para abrir ao público
 
@@ -40,8 +42,9 @@ Atualizado em: 19/08/2026
 - [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
 - [~] O domínio já publica MX da Hostinger, SPF e DMARC; ainda faltam confirmar DKIM, configurar o SMTP no Supabase e testar entrega/recuperação em caixas reais.
 - [x] Turnstile implementado no cadastro, login e recuperação, com chaves ativas e validação habilitada no Supabase.
-- [ ] Contratar e integrar um provedor real de verificação de identidade/idade; o adaptador de KYC de produção ainda não está disponível.
-- [ ] Contratar/configurar moderação de imagem e vídeo que aceite contratualmente conteúdo adulto legal e testar o fluxo de revisão humana.
+- [x] Ativar verificação manual de identidade/idade com documento, selfie, trilha de auditoria e decisão administrativa.
+- [x] Ativar moderação manual preventiva de posts, stories e mídias do chat, bloqueando a entrega até a decisão humana.
+- [ ] Treinar duas pessoas para seguir o procedimento manual de KYC e moderação; nunca aprovar em caso de dúvida.
 - [ ] Obter revisão jurídica brasileira dos Termos, Privacidade, conteúdo não consentido, maioridade, DMCA, pagamentos e política de não estorno.
 - [ ] Executar e guardar evidências de pagamentos PIX reais: assinatura, PPV, mimo, chat/upsell, webhook idempotente e saque.
 - [~] Monitor de produção e backup integral foram implementados; o webhook externo de alertas é opcional no MVP, mas ainda faltam destino operacional e restauração real documentada.
@@ -57,19 +60,18 @@ Atualizado em: 19/08/2026
 
 ### Resultado atual
 
-**Ainda não liberar para clientes reais.** A infraestrutura técnica está publicada e validada, porém a abertura comercial ainda depende de fornecedores de KYC/moderação, configuração de e-mail, validação jurídica, testes financeiros reais e piloto operacional.
+**Ainda não liberar para clientes reais.** A infraestrutura técnica está publicada e validada. KYC e moderação não exigem fornecedor pago no piloto, mas a abertura comercial ainda depende de operação humana treinada, configuração de e-mail, validação jurídica, testes financeiros reais e piloto controlado.
 
 ### Próximas ações do responsável — na ordem
 
 1. [ ] Regularizar a cobrança do GitHub, reexecutar os checks da PR de lançamento e mesclar em `main` somente quando todos ficarem verdes.
 2. [ ] Confirmar no painel da Hostinger que `suporte`, `privacidade`, `abuse`, `dmca`, `legal` e `seguranca` recebem mensagens; separar as credenciais SMTP para o Supabase.
-3. [ ] Contratar KYC/idade com prova de vida e confirmação escrita de suporte ao modelo de negócio da Fanlira; fornecer ambiente de teste e chaves pelo gerenciador seguro de segredos.
-4. [ ] Contratar moderação de imagem e vídeo com confirmação escrita de suporte a conteúdo adulto legal; fornecer ambiente de teste e chaves pelo gerenciador seguro de segredos.
-5. [ ] Enviar Termos, Privacidade, DMCA, maioridade, conteúdo não consentido e pagamentos para revisão jurídica brasileira e devolver as versões aprovadas.
-6. [ ] Disponibilizar os aparelhos/contas para a matriz física e autorizar, uma cobrança por vez, os testes PIX de baixo valor e o saque real.
-7. [ ] Definir Supabase Pro ou destino de backup criptografado; executar uma restauração completa em ambiente separado.
-8. [ ] Selecionar 5–10 criadoras adultas reais, concluir KYC/consentimento e operar um piloto fechado por no mínimo 72 horas.
-9. [ ] Definir duas pessoas responsáveis por moderação crítica, suporte e incidentes, com telefone de escalonamento interno.
+3. [ ] Selecionar e treinar duas pessoas responsáveis pela verificação e moderação manual, usando `docs/operations/MANUAL_KYC_AND_MODERATION.md`.
+4. [ ] Enviar Termos, Privacidade, DMCA, maioridade, conteúdo não consentido e pagamentos para revisão jurídica brasileira e devolver as versões aprovadas.
+5. [ ] Disponibilizar os aparelhos/contas para a matriz física e autorizar, uma cobrança por vez, os testes PIX de baixo valor e o saque real.
+6. [ ] Definir destino de backup criptografado e executar uma restauração completa em ambiente separado.
+7. [ ] Selecionar 5–10 criadoras adultas reais, concluir KYC/consentimento e operar um piloto fechado por no mínimo 72 horas.
+8. [ ] Definir telefone de escalonamento interno para moderação crítica, suporte e incidentes.
 
 ## Como usar
 
@@ -144,15 +146,15 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 ### Cadastro e aprovação
 
 - [x] Cadastro por e-mail e recuperação de conta.
-- [~] Envio privado de documento, verso e selfie para KYC.
-- [~] Painel administrativo para aprovar ou rejeitar KYC.
+- [x] Envio privado de documento, verso e selfie para KYC.
+- [x] Painel administrativo para aprovar ou rejeitar KYC e verificação +18 de clientes.
 - [x] Aprovação promove a conta para o papel de criadora no backend.
-- [ ] Integrar um provedor de identidade/KYC aprovado.
+- [x] Adotar revisão humana como processo do MVP; integração automatizada fica para quando o volume justificar.
 - [x] Registrar consentimento, versão dos termos, data, IP e evidência de maioridade.
 
 ### Conteúdo e monetização
 
-- [~] Upload protegido e moderação antes da publicação existem.
+- [x] Upload protegido e moderação manual antes da publicação existem para posts, stories e mídia no chat.
 - [~] Preço de assinatura, planos, cupons, PPV e primeira publicação existem.
 - [x] Criar jornada única pós-aprovação: perfil → preço → dados de saque → primeira publicação.
 - [x] Bloquear publicação monetizada até KYC, perfil e chave de saque estarem válidos.
@@ -171,8 +173,8 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 
 ## 3. Segurança operacional — P0
 
-- [~] Moderação preventiva de imagem e amostras de vídeo com bloqueio em caso de falha.
-- [ ] Contratar/configurar provedor de moderação que aceite legalmente conteúdo adulto.
+- [x] Moderação preventiva manual de imagem e vídeo com bloqueio por padrão até a aprovação.
+- [x] Processo sem fornecedor pago adotado para o piloto; automação passa a ser critério de escala, não de lançamento.
 - [x] Não há aviso global de entrada. A maioridade é validada no cadastro/identidade e novamente antes de assinatura, PPV, mimo, chat pago ou acesso a mídia protegida.
 - [x] Fila de denúncias, estados de análise e ações administrativas existem.
 - [~] Bloqueio, silenciamento, DMCA e auditoria administrativa existem.
@@ -183,7 +185,7 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 - [~] Contatos foram migrados para `@fanlira.com.br`; falta ativar e testar as caixas de e-mail.
 - [ ] Revisão jurídica brasileira especializada em LGPD, conteúdo adulto, consumidor e pagamentos.
 
-`BLOQUEIO EXTERNO`: contrato com provedor, equipe de moderação e parecer jurídico.
+`BLOQUEIO EXTERNO`: equipe humana treinada e parecer jurídico.
 
 ### Planejado para V1.1
 
