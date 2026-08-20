@@ -44,6 +44,13 @@ import {
   cancelWithdrawal,
 } from "@/_server/withdrawals.functions";
 import { useI18n, type Locale } from "@/lib/i18n";
+import {
+  DAILY_WITHDRAWAL_LIMIT,
+  MIN_WITHDRAWAL_CENTS,
+  countDailyWithdrawals,
+  maximumWithdrawalAmount,
+  withdrawalFeeForDailyCount,
+} from "@/lib/withdrawal-policy";
 
 export const Route = createFileRoute("/creator/wallet")({
   component: WalletPage,
@@ -80,6 +87,9 @@ interface Withdrawal {
   paid_at: string | null;
   rejection_reason: string | null;
   pix_key: string;
+  fanlira_withdrawal_fee_cents: number;
+  gateway_fee_cents: number | null;
+  gateway_net_amount_cents: number | null;
 }
 
 interface KycRow {
@@ -161,7 +171,9 @@ export function WalletPage() {
       supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
         .from("withdrawal_requests")
-        .select("id, amount_cents, status, created_at, paid_at, rejection_reason, pix_key")
+        .select(
+          "id, amount_cents, status, created_at, paid_at, rejection_reason, pix_key, fanlira_withdrawal_fee_cents, gateway_fee_cents, gateway_net_amount_cents",
+        )
         .eq("creator_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50),
@@ -242,6 +254,14 @@ export function WalletPage() {
 
   if (!isCreator) return null;
 
+  const dailyWithdrawalCount = countDailyWithdrawals(withdrawals);
+  const nextWithdrawalFee = withdrawalFeeForDailyCount(dailyWithdrawalCount);
+  const maximumRequestCents = maximumWithdrawalAmount(
+    balance?.available_cents ?? 0,
+    dailyWithdrawalCount,
+  );
+  const dailyLimitReached = dailyWithdrawalCount >= DAILY_WITHDRAWAL_LIMIT;
+
   const handleSaveKey = async () => {
     setSubmitting(true);
     try {
@@ -266,17 +286,35 @@ export function WalletPage() {
 
   const handleRequest = async () => {
     const amount = Math.round(parseFloat(amountStr.replace(",", ".")) * 100);
-    if (isNaN(amount) || amount < 3000) {
+    if (dailyLimitReached) {
+      toast.error(
+        tr(
+          "Limite diário de 5 saques atingido. Tente novamente amanhã.",
+          "Daily limit of 5 withdrawals reached. Try again tomorrow.",
+        ),
+      );
+      return;
+    }
+    if (isNaN(amount) || amount < MIN_WITHDRAWAL_CENTS) {
       toast.error(tr("Valor mínimo: R$ 30,00", "Minimum amount: R$ 30.00"));
+      return;
+    }
+    if (amount + nextWithdrawalFee > (balance?.available_cents ?? 0)) {
+      toast.error(
+        tr(
+          `Saldo insuficiente: reserve ${fmt(nextWithdrawalFee, locale)} para a taxa deste saque.`,
+          `Insufficient balance: reserve ${fmt(nextWithdrawalFee, locale)} for this withdrawal fee.`,
+        ),
+      );
       return;
     }
     setSubmitting(true);
     try {
-      await requestFn({ data: { amount_cents: amount } });
+      const result = await requestFn({ data: { amount_cents: amount } });
       toast.success(
         tr(
-          "Saque solicitado! Aguarde a aprovação da administração.",
-          "Withdrawal requested! Wait for admin approval.",
+          `Saque solicitado. Taxa Fanlira: ${fmt(result.fanlira_withdrawal_fee_cents, locale)}.`,
+          `Withdrawal requested. Fanlira fee: ${fmt(result.fanlira_withdrawal_fee_cents, locale)}.`,
         ),
       );
       setWithdrawOpen(false);
@@ -302,12 +340,14 @@ export function WalletPage() {
     }
   };
 
-  const cooldownUntil = key?.withdrawal_eligible_at
-    ? new Date(key.withdrawal_eligible_at)
-    : null;
+  const cooldownUntil = key?.withdrawal_eligible_at ? new Date(key.withdrawal_eligible_at) : null;
   const keyCooldownActive = !!cooldownUntil && cooldownUntil.getTime() > Date.now();
   const canRequest =
-    kycApproved && !!key && !keyCooldownActive && (balance?.available_cents ?? 0) >= 3000;
+    kycApproved &&
+    !!key &&
+    !keyCooldownActive &&
+    !dailyLimitReached &&
+    maximumRequestCents >= MIN_WITHDRAWAL_CENTS;
 
   return (
     <AppShell>
@@ -325,6 +365,11 @@ export function WalletPage() {
               "Taxa da plataforma já descontada · Liberação após D+1",
               "Platform fee already deducted · Released after D+1",
             )}
+          </div>
+          <div className="mt-2 text-xs opacity-90">
+            {tr("Saques hoje", "Withdrawals today")}: {dailyWithdrawalCount}/
+            {DAILY_WITHDRAWAL_LIMIT} · {tr("Próxima taxa", "Next fee")}:{" "}
+            {fmt(nextWithdrawalFee, locale)}
           </div>
           <Button
             onClick={() => setWithdrawOpen(true)}
@@ -455,6 +500,24 @@ export function WalletPage() {
                     <div className="font-medium text-foreground">{fmt(w.amount_cents, locale)}</div>
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(w.created_at).toLocaleString(locale)} · {w.pix_key}
+                    </div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      {tr("Taxa Fanlira", "Fanlira fee")}:{" "}
+                      {fmt(w.fanlira_withdrawal_fee_cents, locale)}
+                      {w.gateway_net_amount_cents !== null && (
+                        <>
+                          {" "}
+                          · {tr("Pix transferido", "Pix transferred")}:{" "}
+                          {fmt(w.gateway_net_amount_cents, locale)}
+                        </>
+                      )}
+                      {(w.gateway_fee_cents ?? 0) > 0 && (
+                        <>
+                          {" "}
+                          · {tr("Taxa da adquirente absorvida", "Provider fee absorbed")}:{" "}
+                          {fmt(w.gateway_fee_cents ?? 0, locale)}
+                        </>
+                      )}
                     </div>
                     {w.rejection_reason && (
                       <div className="mt-1 text-[11px] text-destructive">
@@ -659,6 +722,7 @@ export function WalletPage() {
                 type="number"
                 step="0.01"
                 min="30"
+                max={(maximumRequestCents / 100).toFixed(2)}
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
                 placeholder="0,00"
@@ -668,15 +732,15 @@ export function WalletPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setAmountStr(((balance?.available_cents ?? 0) / 100).toFixed(2))}
+                onClick={() => setAmountStr((maximumRequestCents / 100).toFixed(2))}
               >
                 {tr("Sacar tudo", "Withdraw all")}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               {tr(
-                "Após a solicitação, a administração aprova e o Pix é enviado em até um dia útil.",
-                "After your request, an admin approves it and the Pix payment is sent within one business day.",
+                `Hoje: ${dailyWithdrawalCount} de ${DAILY_WITHDRAWAL_LIMIT}. O primeiro saque do dia é grátis; do segundo ao quinto, a taxa é R$ 3,00. A taxa cobrada pela Impulse Pay é absorvida pela Fanlira e não reduz seu saldo.`,
+                `Today: ${dailyWithdrawalCount} of ${DAILY_WITHDRAWAL_LIMIT}. The first withdrawal of the day is free; the second through fifth cost R$ 3.00. Fanlira absorbs the Impulse Pay fee, so it does not reduce your balance.`,
               )}
             </p>
           </div>
@@ -684,7 +748,7 @@ export function WalletPage() {
             <Button variant="ghost" onClick={() => setWithdrawOpen(false)}>
               {tr("Cancelar", "Cancel")}
             </Button>
-            <Button onClick={handleRequest} disabled={submitting}>
+            <Button onClick={handleRequest} disabled={submitting || dailyLimitReached}>
               {submitting ? tr("Enviando...", "Submitting...") : tr("Solicitar", "Request")}
             </Button>
           </DialogFooter>

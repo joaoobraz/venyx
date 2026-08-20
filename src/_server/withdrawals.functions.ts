@@ -120,6 +120,9 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     });
     if (error || !withdrawalId) {
       const message = error?.message ?? "";
+      if (message.includes("FANLIRA_DAILY_WITHDRAWAL_LIMIT")) {
+        throw new Error("Limite diário de 5 saques atingido. Tente novamente amanhã");
+      }
       if (message.includes("VENYX_KYC_REQUIRED")) {
         throw new Error("Você precisa concluir o KYC antes de sacar");
       }
@@ -141,14 +144,30 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       throw safeError(error);
     }
 
+    const { data: withdrawal, error: withdrawalError } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select("fanlira_withdrawal_fee_cents")
+      .eq("id", withdrawalId)
+      .eq("creator_id", userId)
+      .single();
+    if (withdrawalError || !withdrawal) throw safeError(withdrawalError);
+
     await notify(
       userId,
       "Saque solicitado",
-      `Seu pedido de ${fmtBRL(data.amount_cents)} foi enviado e está aguardando aprovação.`,
-      { withdrawal_id: withdrawalId, amount_cents: data.amount_cents },
+      `Seu pedido de ${fmtBRL(data.amount_cents)} foi enviado. Taxa Fanlira: ${fmtBRL(withdrawal.fanlira_withdrawal_fee_cents)}.`,
+      {
+        withdrawal_id: withdrawalId,
+        amount_cents: data.amount_cents,
+        fanlira_withdrawal_fee_cents: withdrawal.fanlira_withdrawal_fee_cents,
+      },
     );
 
-    return { ok: true, withdrawal_id: withdrawalId };
+    return {
+      ok: true,
+      withdrawal_id: withdrawalId,
+      fanlira_withdrawal_fee_cents: withdrawal.fanlira_withdrawal_fee_cents,
+    };
   });
 
 // ===================== Cancelar (criadora) =====================
@@ -220,7 +239,9 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id,amount_cents,status,pix_key,pix_key_type,holder_document")
+      .select(
+        "creator_id,amount_cents,fanlira_withdrawal_fee_cents,status,pix_key,pix_key_type,holder_document",
+      )
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
@@ -243,6 +264,8 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
     if (error) throw safeError(error);
     if (!claimed) throw new Error("Este saque já foi processado");
 
+    let submittedNetAmount = w.amount_cents;
+    let absorbedProviderFee = 0;
     try {
       const transfer = await createImpulsePayWithdrawal({
         amountCents: w.amount_cents,
@@ -250,9 +273,19 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
         pixKeyType: toImpulsePayPixKeyType(w.pix_key_type),
         document: w.holder_document,
       });
-      if (!transfer?.id || transfer.amount !== w.amount_cents) {
+      if (
+        !transfer?.id ||
+        transfer.amount !== w.amount_cents ||
+        !Number.isInteger(transfer.net_amount) ||
+        transfer.net_amount < 0 ||
+        transfer.net_amount > transfer.amount ||
+        !Number.isInteger(transfer.fee) ||
+        transfer.fee < 0
+      ) {
         throw new Error("A Impulse Pay retornou um saque inválido");
       }
+      submittedNetAmount = transfer.net_amount;
+      absorbedProviderFee = transfer.amount - transfer.net_amount;
 
       const internalStatus = transfer.status === "PROCESSING" ? "processing" : "approved";
       const { error: gatewayUpdateError } = await supabaseAdmin
@@ -314,8 +347,14 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
     await notify(
       w.creator_id,
       "Saque enviado",
-      `Seu saque de ${fmtBRL(w.amount_cents)} foi enviado à Impulse Pay e está em processamento.`,
-      { withdrawal_id: data.withdrawal_id },
+      `A Impulse Pay está processando ${fmtBRL(submittedNetAmount)}. A Fanlira absorveu ${fmtBRL(absorbedProviderFee)} da adquirente; taxa deste saque: ${fmtBRL(w.fanlira_withdrawal_fee_cents)}.`,
+      {
+        withdrawal_id: data.withdrawal_id,
+        requested_amount_cents: w.amount_cents,
+        gateway_net_amount_cents: submittedNetAmount,
+        gateway_fee_absorbed_cents: absorbedProviderFee,
+        fanlira_withdrawal_fee_cents: w.fanlira_withdrawal_fee_cents,
+      },
     );
     return { ok: true };
   });

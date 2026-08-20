@@ -114,9 +114,10 @@ Critério de aceite: um pagamento confirmado na Impulse Pay deve aparecer uma ú
 - [x] O MVP não oferece solicitação ou botão de estorno; cancelamentos encerram somente no vencimento.
 - [x] Reversões excepcionais recebidas do provedor continuam conciliadas internamente para impedir acesso ou saldo incorreto.
 - [~] Renovação manual por novo PIX e avisos de 7, 3 e 1 dia implementados; agendador configurado e falta validar com uma cobrança real.
-- [ ] Definir outro meio/provedor se a decisão comercial exigir renovação automática.
+- [x] Confirmado em 20/08/2026 na documentação oficial: a Impulse Pay oferece recorrência documentada somente por cartão; `POST /v1/transactions` cria PIX avulso e não expõe PIX Automático.
+- [ ] Definir outro meio/provedor ou aguardar endpoint oficial da Impulse Pay se a decisão comercial exigir PIX Automático.
 
-Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A cobrança recorrente por cartão só será habilitada após concluir checkout, tokenização, 3DS e webhooks de assinatura da Impulse Pay. Não haverá fluxo de estorno solicitado pelo usuário no MVP.
+Decisão do MVP: assinaturas atuais continuam com renovação manual por um novo PIX. A cobrança recorrente por cartão só será habilitada após concluir checkout, tokenização, 3DS e webhooks de assinatura da Impulse Pay. Não haverá fluxo de estorno solicitado pelo usuário no MVP.
 
 ### Saldo e saque
 
@@ -125,6 +126,9 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 - [~] Aprovação, rejeição, marcação como pago e comprovante existem no painel administrativo.
 - [x] Integrar o saque da Fanlira ao endpoint `/v1/transfers` da Impulse Pay.
 - [x] Conciliar `withdrawal.processing`, `withdrawal.completed` e `withdrawal.failed` da Impulse Pay.
+- [x] Aplicar mínimo de R$ 30,00 e limite atômico de 5 saques por dia no fuso de São Paulo.
+- [x] Primeiro saque válido do dia grátis; do segundo ao quinto, cobrar R$ 3,00 por saque.
+- [x] Absorver a taxa da Impulse Pay no saldo da Fanlira: depois da resposta do gateway, a carteira da criadora é debitada pelo líquido transferido mais somente a taxa Fanlira aplicável. Como a API não publica cotação antecipada da tarifa, a interface mostra separadamente valor solicitado, líquido transferido e tarifa absorvida.
 - [ ] Executar e comprovar um saque real de baixo valor.
 
 ### Webhook e conciliação

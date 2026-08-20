@@ -3203,6 +3203,7 @@ export type Database = {
           amount_cents: number;
           created_at: string;
           creator_id: string;
+          fanlira_withdrawal_fee_cents: number;
           gateway_end_to_end: string | null;
           gateway_fee_cents: number | null;
           gateway_net_amount_cents: number | null;
@@ -3226,6 +3227,7 @@ export type Database = {
           amount_cents: number;
           created_at?: string;
           creator_id: string;
+          fanlira_withdrawal_fee_cents?: number;
           gateway_end_to_end?: string | null;
           gateway_fee_cents?: number | null;
           gateway_net_amount_cents?: number | null;
@@ -3249,6 +3251,7 @@ export type Database = {
           amount_cents?: number;
           created_at?: string;
           creator_id?: string;
+          fanlira_withdrawal_fee_cents?: number;
           gateway_end_to_end?: string | null;
           gateway_fee_cents?: number | null;
           gateway_net_amount_cents?: number | null;

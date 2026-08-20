@@ -12,33 +12,38 @@ import {
 
 const MAX_WEBHOOK_BYTES = 64 * 1024;
 
-const transactionSchema = z.object({
-  event: z.enum([
-    "transaction.waiting_payment",
-    "transaction.paid",
-    "transaction.refunded",
-  ]),
-  transaction: z.object({
-    id: z.string().uuid(),
-    status: z.string(),
-    amount: z.number().int().positive(),
-    paid_at: z.string().nullable().optional(),
-  }).passthrough(),
-  sent_at: z.string(),
-}).passthrough();
+const transactionSchema = z
+  .object({
+    event: z.enum(["transaction.waiting_payment", "transaction.paid", "transaction.refunded"]),
+    transaction: z
+      .object({
+        id: z.string().uuid(),
+        status: z.string(),
+        amount: z.number().int().positive(),
+        paid_at: z.string().nullable().optional(),
+      })
+      .passthrough(),
+    sent_at: z.string(),
+  })
+  .passthrough();
 
-const withdrawalSchema = z.object({
-  event: z.enum(["withdrawal.processing", "withdrawal.completed", "withdrawal.failed"]),
-  withdrawal: z.object({
-    id: z.string().uuid(),
-    status: z.string(),
-    amount: z.number().int().positive(),
-    net_amount: z.number().int().nonnegative(),
-    end_to_end: z.string().nullable().optional(),
-    paid_at: z.string().nullable().optional(),
-  }).passthrough(),
-  sent_at: z.string(),
-}).passthrough();
+const withdrawalSchema = z
+  .object({
+    event: z.enum(["withdrawal.processing", "withdrawal.completed", "withdrawal.failed"]),
+    withdrawal: z
+      .object({
+        id: z.string().uuid(),
+        status: z.string(),
+        amount: z.number().int().positive(),
+        net_amount: z.number().int().nonnegative(),
+        fee: z.number().int().nonnegative().optional(),
+        end_to_end: z.string().nullable().optional(),
+        paid_at: z.string().nullable().optional(),
+      })
+      .passthrough(),
+    sent_at: z.string(),
+  })
+  .passthrough();
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -75,7 +80,11 @@ async function processTransaction(payload: z.infer<typeof transactionSchema>) {
   }
 
   const comparison = compareGatewayCharge(charge, verified);
-  if (!comparison.amountMatches || !comparison.externalIdMatches || !comparison.transactionMatches) {
+  if (
+    !comparison.amountMatches ||
+    !comparison.externalIdMatches ||
+    !comparison.transactionMatches
+  ) {
     console.warn("[impulsepay-webhook] verified transaction mismatch", comparison);
     return jsonResponse({ ok: false, error: "Transaction mismatch" }, 409);
   }
@@ -110,7 +119,7 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
   const external = payload.withdrawal;
   const { data: withdrawal, error } = await supabaseAdmin
     .from("withdrawal_requests")
-    .select("id,creator_id,amount_cents,status,gateway_transfer_id")
+    .select("id,creator_id,amount_cents,fanlira_withdrawal_fee_cents,status,gateway_transfer_id")
     .eq("gateway_transfer_id", external.id)
     .maybeSingle();
   if (error) return jsonResponse({ ok: false, error: "Internal lookup failed" }, 500);
@@ -118,11 +127,20 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
   if (withdrawal.amount_cents !== external.amount) {
     return jsonResponse({ ok: false, error: "Amount mismatch" }, 409);
   }
+  if (external.net_amount > external.amount) {
+    return jsonResponse({ ok: false, error: "Net amount mismatch" }, 409);
+  }
+  const absorbedProviderFee = external.amount - external.net_amount;
+  const gatewayValues = {
+    gateway_status: external.status,
+    gateway_fee_cents: external.fee ?? absorbedProviderFee,
+    gateway_net_amount_cents: external.net_amount,
+  };
 
   if (payload.event === "withdrawal.processing") {
     await supabaseAdmin
       .from("withdrawal_requests")
-      .update({ status: "processing", gateway_status: external.status })
+      .update({ status: "processing", ...gatewayValues })
       .eq("id", withdrawal.id)
       .in("status", ["approved", "processing"]);
     return jsonResponse({ ok: true });
@@ -134,7 +152,7 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
       .from("withdrawal_requests")
       .update({
         status: "rejected",
-        gateway_status: external.status,
+        ...gatewayValues,
         rejection_reason: "Saque recusado pela Impulse Pay",
       })
       .eq("id", withdrawal.id)
@@ -152,12 +170,19 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
     payee_id: withdrawal.creator_id,
     type: "withdrawal",
     status: "paid",
-    amount_cents: withdrawal.amount_cents,
+    amount_cents: external.net_amount + withdrawal.fanlira_withdrawal_fee_cents,
     reference_id: withdrawal.id,
     gateway: "impulsepay",
     gateway_ref: external.id,
     idempotency_key: `withdrawal:${withdrawal.id}`,
-    metadata: { withdrawal_id: withdrawal.id, end_to_end: external.end_to_end ?? null },
+    metadata: {
+      withdrawal_id: withdrawal.id,
+      requested_amount_cents: withdrawal.amount_cents,
+      transferred_amount_cents: external.net_amount,
+      gateway_fee_absorbed_cents: absorbedProviderFee,
+      fanlira_withdrawal_fee_cents: withdrawal.fanlira_withdrawal_fee_cents,
+      end_to_end: external.end_to_end ?? null,
+    },
   });
   if (transactionError && transactionError.code !== "23505") {
     return jsonResponse({ ok: false, error: "Transaction insert failed" }, 500);
@@ -167,7 +192,7 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
     .from("withdrawal_requests")
     .update({
       status: "paid",
-      gateway_status: external.status,
+      ...gatewayValues,
       gateway_end_to_end: external.end_to_end ?? null,
       paid_at: external.paid_at ?? new Date().toISOString(),
     })
@@ -184,9 +209,14 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
       user_id: withdrawal.creator_id,
       type: "withdrawal",
       title: "Saque pago",
-      body: `Seu saque de R$ ${(withdrawal.amount_cents / 100).toFixed(2).replace(".", ",")} foi concluído pela Impulse Pay.`,
+      body: `A Impulse Pay transferiu R$ ${(external.net_amount / 100).toFixed(2).replace(".", ",")}. A taxa de R$ ${(absorbedProviderFee / 100).toFixed(2).replace(".", ",")} da adquirente foi absorvida pela Fanlira.`,
       link: "/creator/wallet",
-      metadata: { withdrawal_id: withdrawal.id },
+      metadata: {
+        withdrawal_id: withdrawal.id,
+        transferred_amount_cents: external.net_amount,
+        gateway_fee_absorbed_cents: absorbedProviderFee,
+        fanlira_withdrawal_fee_cents: withdrawal.fanlira_withdrawal_fee_cents,
+      },
     });
     if (notificationError) {
       console.error("[impulsepay-webhook] withdrawal notification failed", notificationError.code);
@@ -202,7 +232,8 @@ export const Route = createFileRoute("/api/public/impulsepay-webhook")({
       POST: async ({ request }) => {
         const expectedToken = process.env.IMPULSEPAY_WEBHOOK_TOKEN?.trim();
         const url = new URL(request.url);
-        const suppliedToken = request.headers.get("x-webhook-token") ?? url.searchParams.get("token");
+        const suppliedToken =
+          request.headers.get("x-webhook-token") ?? url.searchParams.get("token");
         if (!expectedToken) return jsonResponse({ ok: false, error: "Server misconfigured" }, 503);
         if (!secureTokenMatches(expectedToken, suppliedToken)) {
           return jsonResponse({ ok: false, error: "Unauthorized" }, 401);

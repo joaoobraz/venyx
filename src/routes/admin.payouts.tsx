@@ -40,6 +40,7 @@ interface WithdrawalRow {
   id: string;
   creator_id: string;
   amount_cents: number;
+  fanlira_withdrawal_fee_cents: number;
   pix_key: string;
   pix_key_type: string;
   holder_name: string;
@@ -271,7 +272,7 @@ export function AdminPayoutsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="text-lg font-bold text-foreground">
-                        {fmt(w.amount_cents, locale)}
+                        {tr("Solicitado", "Requested")}: {fmt(w.amount_cents, locale)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {c ? `@${c.username}` : w.creator_id} ·{" "}
@@ -308,6 +309,20 @@ export function AdminPayoutsPage() {
                   </div>
 
                   <div className="mt-3 grid gap-2 rounded-lg bg-background p-3 text-xs sm:grid-cols-2">
+                    <Field
+                      label={tr("Taxa Fanlira", "Fanlira fee")}
+                      value={fmt(w.fanlira_withdrawal_fee_cents, locale)}
+                    />
+                    <Field
+                      label={tr("Pix a transferir/transferido", "Pix to transfer/transferred")}
+                      value={fmt(w.gateway_net_amount_cents ?? w.amount_cents, locale)}
+                    />
+                    {w.gateway_fee_cents !== null && (
+                      <Field
+                        label={tr("Taxa Impulse Pay absorvida", "Absorbed Impulse Pay fee")}
+                        value={fmt(w.gateway_fee_cents, locale)}
+                      />
+                    )}
                     <Field label={tr("Tipo", "Type")} value={w.pix_key_type.toUpperCase()} />
                     <Field
                       label={tr("Chave Pix", "Pix key")}
