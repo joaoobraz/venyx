@@ -44,7 +44,6 @@ const required = [
   "IMPULSEPAY_WEBHOOK_TOKEN",
   "IMPULSEPAY_WEBHOOK_URL",
   "CRON_SECRET",
-  "OPERATIONS_ALERT_WEBHOOK_URL",
   "ALLOWED_ORIGINS",
   "VITE_SUPPORT_EMAIL",
   "VITE_PRIVACY_EMAIL",
@@ -110,13 +109,19 @@ for (const name of ["IMPULSEPAY_WEBHOOK_TOKEN", "CRON_SECRET"]) {
   if (valueOf(name).length < 32) errors.push(`${name} deve ter pelo menos 32 caracteres aleatórios.`);
 }
 
-try {
-  const alertWebhook = new URL(valueOf("OPERATIONS_ALERT_WEBHOOK_URL"));
-  if (alertWebhook.protocol !== "https:") {
-    errors.push("OPERATIONS_ALERT_WEBHOOK_URL deve usar HTTPS.");
+if (valueOf("OPERATIONS_ALERT_WEBHOOK_URL")) {
+  try {
+    const alertWebhook = new URL(valueOf("OPERATIONS_ALERT_WEBHOOK_URL"));
+    if (alertWebhook.protocol !== "https:") {
+      errors.push("OPERATIONS_ALERT_WEBHOOK_URL deve usar HTTPS.");
+    }
+  } catch {
+    errors.push("OPERATIONS_ALERT_WEBHOOK_URL não é uma URL válida.");
   }
-} catch {
-  errors.push("OPERATIONS_ALERT_WEBHOOK_URL não é uma URL válida.");
+} else {
+  warnings.push(
+    "OPERATIONS_ALERT_WEBHOOK_URL não configurado; alertas críticos continuarão registrados no Supabase, sem encaminhamento externo.",
+  );
 }
 
 for (const name of [

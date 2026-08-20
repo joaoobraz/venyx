@@ -20,32 +20,36 @@ Atualizado em: 19/08/2026
 - [x] Home, login, cadastro, exploração, perfil, mimos, Fanlira Links e ajuda validados no navegador local.
 - [x] Responsividade das jornadas públicas validada em 390 × 844 sem rolagem lateral.
 - [x] Deploy configurado para exigir os segredos críticos e bloquear o subdomínio público `workers.dev`.
+- [x] Turnstile criado para raiz e `www`, habilitado no Supabase e validado no cadastro público.
+- [x] Worker `fanlira` publicado nos dois domínios; smoke de produção aprovado e nova amostra pública de 80 requisições sem falhas.
+- [x] Chaves da ImpulsePay rotacionadas, autenticadas na API e armazenadas como segredos do Worker.
+- [x] Webhook ImpulsePay cadastrado para pagamentos e saques; proteção publicada validada com rejeição sem token.
 
 ### Bloqueadores para abrir ao público
 
-- [ ] Rotacionar todas as chaves da ImpulsePay que foram compartilhadas em conversa e revogar as anteriores.
-- [ ] Cadastrar no Cloudflare os segredos de produção: `SUPABASE_SERVICE_ROLE_KEY`, chaves ImpulsePay, token do webhook e `CRON_SECRET`.
+- [x] Rotacionar todas as chaves da ImpulsePay que foram compartilhadas em conversa e revogar as anteriores.
+- [x] Cadastrar no Cloudflare os segredos de produção: `SUPABASE_SERVICE_ROLE_KEY`, chaves ImpulsePay, token do webhook e `CRON_SECRET`.
 - [ ] Ativar e validar os e-mails operacionais `@fanlira.com.br` usados no suporte e na recuperação de conta.
-- [ ] Publicar a versão atual: o `/api/public/health` do domínio ainda identifica o serviço antigo como `venyx`, indicando deploy desatualizado.
+- [x] Publicar a versão atual: o `/api/public/health` identifica o serviço como `fanlira` e o smoke de produção foi aprovado.
 - [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
-- [~] Turnstile implementado no cadastro, login e recuperação; falta criar as chaves e habilitar a validação no Supabase.
+- [x] Turnstile implementado no cadastro, login e recuperação, com chaves ativas e validação habilitada no Supabase.
 - [ ] Contratar e integrar um provedor real de verificação de identidade/idade; o adaptador de KYC de produção ainda não está disponível.
 - [ ] Contratar/configurar moderação de imagem e vídeo que aceite contratualmente conteúdo adulto legal e testar o fluxo de revisão humana.
 - [ ] Obter revisão jurídica brasileira dos Termos, Privacidade, conteúdo não consentido, maioridade, DMCA, pagamentos e política de não estorno.
 - [ ] Executar e guardar evidências de pagamentos PIX reais: assinatura, PPV, mimo, chat/upsell, webhook idempotente e saque.
-- [~] Webhook externo sanitizado, monitor de produção e backup integral foram implementados; faltam credencial/destino e restauração real documentada.
+- [~] Monitor de produção e backup integral foram implementados; o webhook externo de alertas é opcional no MVP, mas ainda faltam destino operacional e restauração real documentada.
 - [ ] Testar fisicamente em iPhone/Safari, Android/Chrome e desktop/Safari, incluindo troca para o aplicativo bancário e retorno do PIX.
 - [ ] Cadastrar e aprovar 5–10 criadoras reais, revisar consentimentos e aprovar a primeira publicação de cada uma.
 - [ ] Rodar piloto controlado por pelo menos 72 horas antes da abertura pública.
 - [x] Histórico Git restaurado sem sobrescrever arquivos; branch local reconectada a `origin/demo-investidores`.
 - [x] Conta Cloudflare e Worker existentes auditados: Worker `fanlira`, domínio oficial e logs ativos.
-- [ ] Reautenticar o Wrangler deste computador: ele está conectado a outra conta; a conta correta tem ID `77bd53fa8469f1ee770e51db59633e9d`.
-- [ ] Completar os bindings do Worker: a implantação atual não possui nenhuma credencial `IMPULSEPAY_*`, token de webhook, Turnstile nem webhook de alerta.
+- [x] Reautenticar o Wrangler deste computador na conta correta `77bd53fa8469f1ee770e51db59633e9d`.
+- [x] Completar os bindings críticos do Worker: credenciais `IMPULSEPAY_*`, token de webhook, `CRON_SECRET`, Supabase e Turnstile. O encaminhamento externo de alertas permanece opcional.
 - [x] Migração final de menor privilégio aplicada em produção; Security Advisor permanece com 0 erros e caiu de 88 para 29 avisos conhecidos.
 
 ### Resultado atual
 
-**Ainda não liberar para clientes reais.** A aplicação passa na validação técnica local, porém produção ainda depende de credenciais seguras, novo deploy, fornecedores de KYC/moderação, configuração de e-mail, validação jurídica, testes financeiros e piloto operacional.
+**Ainda não liberar para clientes reais.** A infraestrutura técnica está publicada e validada, porém a abertura comercial ainda depende de fornecedores de KYC/moderação, configuração de e-mail, validação jurídica, testes financeiros reais e piloto operacional.
 
 ## Como usar
 
@@ -106,9 +110,9 @@ Decisão do MVP: assinaturas atuais continuam com renovação manual via PIX. A 
 - [x] Endpoint de webhook com limite de corpo, token secreto em comparação de tempo constante e confirmação autenticada na API da Impulse Pay.
 - [x] Não confiar no payload recebido: conferir ID, valor, referência externa e estado diretamente na Impulse Pay antes do fulfillment.
 - [x] Processamento idempotente de pagamento e reversões excepcionais no código.
-- [ ] Configurar as credenciais `IMPULSEPAY_*` descritas em `.env.example`.
-- [ ] Publicar o endpoint em HTTPS e cadastrar a URL com token na Impulse Pay.
-- [~] Varredura protegida implementada como contingência do webhook; falta configurar as chaves reais e agendar o endpoint no endereço público.
+- [x] Configurar as credenciais `IMPULSEPAY_*` como segredos do Worker e validar a autenticação na API.
+- [x] Publicar o endpoint em HTTPS e cadastrar a URL com token na Impulse Pay.
+- [x] Varredura protegida implementada como contingência do webhook, com chaves reais e agendamento no endereço público.
 - [x] Criar painel administrativo de divergências entre Impulse Pay e Fanlira, com histórico e resolução auditada.
 
 `BLOQUEIO EXTERNO`: credenciais reais Impulse Pay, URL pública HTTPS e saldo para transações de validação.

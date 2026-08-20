@@ -23,8 +23,7 @@
       "IMPULSEPAY_SECRET_KEY",
       "IMPULSEPAY_WITHDRAWAL_KEY",
       "IMPULSEPAY_WEBHOOK_TOKEN",
-      "CRON_SECRET",
-      "OPERATIONS_ALERT_WEBHOOK_URL"
+      "CRON_SECRET"
     ]
   },
   "routes": [

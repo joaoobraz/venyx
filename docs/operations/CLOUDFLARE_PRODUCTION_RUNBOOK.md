@@ -32,7 +32,10 @@ Variáveis e segredos**, sempre com o tipo **Segredo**:
 - `IMPULSEPAY_WITHDRAWAL_KEY`
 - `IMPULSEPAY_WEBHOOK_TOKEN`
 - `CRON_SECRET`
-- `OPERATIONS_ALERT_WEBHOOK_URL`
+
+`OPERATIONS_ALERT_WEBHOOK_URL` é opcional no MVP. Configure-o quando houver um
+canal externo para alertas críticos; os eventos continuam sendo registrados no
+Supabase mesmo sem esse webhook.
 
 O token do webhook e o segredo de cron devem ter ao menos 32 caracteres aleatórios.
 

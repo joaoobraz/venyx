@@ -24,7 +24,9 @@ impedir que um deploy seja enviado acidentalmente para outra conta Cloudflare.
 
 O Worker deve possuir, no mínimo, os segredos `SUPABASE_SERVICE_ROLE_KEY`,
 `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`,
-`IMPULSEPAY_WEBHOOK_TOKEN`, `CRON_SECRET` e `OPERATIONS_ALERT_WEBHOOK_URL`.
+`IMPULSEPAY_WEBHOOK_TOKEN` e `CRON_SECRET`. `OPERATIONS_ALERT_WEBHOOK_URL` é
+opcional no MVP: sem ele, os alertas continuam registrados no Supabase, mas não
+são encaminhados a um canal externo.
 
 ## Pode ser validado localmente
 

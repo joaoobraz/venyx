@@ -54,7 +54,9 @@ Atualizado em 02/08/2026.
 - [ ] Configurar `AI_CHAT_COMPLETIONS_URL`, `AI_API_KEY`, `AI_TEXT_MODEL`, `AI_VISION_MODEL` e `ALLOWED_ORIGINS` no staging; até lá, novos uploads permanecem bloqueados de forma segura.
 - [x] Testar denúncia, bloqueio e silenciamento ponta a ponta no staging, incluindo tentativas negadas pelas políticas de segurança.
 - [x] Proteger webhook Impulse Pay com token de URL, consulta autenticada, referência/valor divergente e idempotência.
-- [ ] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` no staging.
+- [x] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` em produção.
+- [x] Criar o Turnstile, habilitar a proteção no Supabase e validar o widget no cadastro público.
+- [x] Publicar o Worker `fanlira` em `fanlira.com.br` e `www.fanlira.com.br`, com smoke e carga leve aprovados.
 - [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
 - [~] Código atualizado para contatos `@fanlira.com.br`; falta ativar e testar as caixas. Razão social, CNPJ e endereço ficam planejados para a V1.1.
