@@ -14,8 +14,8 @@ export const LEGAL_ENTITY = {
 export const LEGAL_CONTACTS = {
   support: publicValue("VITE_SUPPORT_EMAIL", "suporte@fanlira.com.br"),
   privacy: publicValue("VITE_PRIVACY_EMAIL", "privacidade@fanlira.com.br"),
-  abuse: publicValue("VITE_ABUSE_EMAIL", "abuse@fanlira.com.br"),
-  dmca: publicValue("VITE_DMCA_EMAIL", "dmca@fanlira.com.br"),
+  abuse: publicValue("VITE_ABUSE_EMAIL", "seguranca@fanlira.com.br"),
+  dmca: publicValue("VITE_DMCA_EMAIL", "privacidade@fanlira.com.br"),
 } as const;
 
 export function legalEntityDescription() {

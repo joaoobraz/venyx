@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { requireAdminServer, updateDmcaReportServer } from "@/_server/admin.functions";
 import { useI18n } from "@/lib/i18n";
+import { LEGAL_CONTACTS } from "@/lib/legal-config";
 
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {
@@ -116,7 +117,7 @@ The owner declares under penalty of perjury:
 
 We request the immediate takedown of the infringing content.
 
-Fanlira contact: legal@fanlira.com.br
+Fanlira contact: ${LEGAL_CONTACTS.dmca}
 Administrative notes: ${r.admin_notes ?? "—"}
 
 Digital signature: FANLIRA-DMCA-${r.id.slice(0, 8).toUpperCase()}`
@@ -140,7 +141,7 @@ A titular declara, sob pena de perjúrio:
 
 Solicitamos a remoção imediata (takedown) do conteúdo infrator.
 
-Contato Fanlira: legal@fanlira.com.br
+Contato Fanlira: ${LEGAL_CONTACTS.dmca}
 Notas administrativas: ${r.admin_notes ?? "—"}
 
 Assinatura digital: FANLIRA-DMCA-${r.id.slice(0, 8).toUpperCase()}`;

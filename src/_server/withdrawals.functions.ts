@@ -264,8 +264,8 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
     if (error) throw safeError(error);
     if (!claimed) throw new Error("Este saque já foi processado");
 
-    let submittedNetAmount = w.amount_cents;
-    let absorbedProviderFee = 0;
+    let submittedNetAmount: number;
+    let absorbedProviderFee: number;
     try {
       const transfer = await createImpulsePayWithdrawal({
         amountCents: w.amount_cents,

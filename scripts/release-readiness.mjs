@@ -50,18 +50,21 @@ checks.push(
 );
 
 if (!codeOnly && !predeploy) {
-  checks.push(["production-smoke", ["smoke:production", "--", targetUrl ?? "--url=https://fanlira.com.br"]]);
+  checks.push([
+    "production-smoke",
+    ["smoke:production", "--", targetUrl ?? "--url=https://fanlira.com.br"],
+  ]);
 }
 
 for (const [label, args] of checks) {
   console.log(`\n[Fanlira] ${label}`);
   const result = packageManagerScript
-    ? spawnSync(process.execPath, [packageManagerScript, ...args], {
+    ? spawnSync(process.execPath, [packageManagerScript, "run", ...args], {
         env: childEnv,
         stdio: "inherit",
         shell: false,
       })
-    : spawnSync(process.platform === "win32" ? "pnpm.cmd" : "pnpm", args, {
+    : spawnSync(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["run", ...args], {
         env: childEnv,
         stdio: "inherit",
         shell: process.platform === "win32",

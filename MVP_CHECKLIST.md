@@ -1,8 +1,8 @@
 # Checklist de abertura do MVP Fanlira
 
-Atualizado em: 19/08/2026
+Atualizado em: 21/08/2026
 
-## Auditoria de prontidão — 19/08/2026
+## Auditoria de prontidão — 21/08/2026
 
 ### Validado nesta auditoria
 
@@ -16,7 +16,7 @@ Atualizado em: 19/08/2026
 - [x] Domínio raiz e `www` respondendo com HTTPS e cabeçalhos de segurança.
 - [x] Endpoint público de saúde respondendo com banco conectado.
 - [x] Typecheck aprovado.
-- [x] 91 testes automatizados aprovados; os dois testes removidos pertenciam ao aviso global de idade descontinuado.
+- [x] 96 testes automatizados aprovados, incluindo o gate de lançamento e a política de saques.
 - [x] Lint aprovado sem erros (restam avisos de manutenção).
 - [x] Build Cloudflare aprovado.
 - [x] Teste de carga público aprovado sem falhas em 180 requisições, com concorrência 12 (p95 de 744 ms na amostra).
@@ -37,10 +37,10 @@ Atualizado em: 19/08/2026
 
 - [x] Rotacionar todas as chaves da ImpulsePay que foram compartilhadas em conversa e revogar as anteriores.
 - [x] Cadastrar no Cloudflare os segredos de produção: `SUPABASE_SERVICE_ROLE_KEY`, chaves ImpulsePay, token do webhook e `CRON_SECRET`.
-- [ ] Ativar e validar os e-mails operacionais `@fanlira.com.br` usados no suporte e na recuperação de conta.
+- [~] A caixa `no-reply@fanlira.com.br` e os aliases `suporte`, `privacidade` e `seguranca` estão ativos; falta validar recebimento e envio em caixas reais.
 - [x] Publicar a versão atual: o `/api/public/health` identifica o serviço como `fanlira` e o smoke de produção foi aprovado.
-- [ ] Configurar SMTP transacional próprio e validar SPF, DKIM, DMARC, confirmação de cadastro e recuperação de senha.
-- [~] O domínio já publica MX da Hostinger, SPF e DMARC; ainda faltam confirmar DKIM, configurar o SMTP no Supabase e testar entrega/recuperação em caixas reais.
+- [~] Configurar SMTP transacional próprio e validar confirmação de cadastro e recuperação de senha.
+- [x] O domínio publica MX, SPF, DKIM e DMARC da Hostinger. O SMTP customizado do Supabase permanece desligado até o responsável informar a senha da caixa sem compartilhá-la em texto aberto.
 - [x] Turnstile implementado no cadastro, login e recuperação, com chaves ativas e validação habilitada no Supabase.
 - [x] Ativar verificação manual de identidade/idade com documento, selfie, trilha de auditoria e decisão administrativa.
 - [x] Ativar moderação manual preventiva de posts, stories e mídias do chat, bloqueando a entrega até a decisão humana.
@@ -64,14 +64,16 @@ Atualizado em: 19/08/2026
 
 ### Próximas ações do responsável — na ordem
 
-1. [ ] Regularizar a cobrança do GitHub, reexecutar os checks da PR de lançamento e mesclar em `main` somente quando todos ficarem verdes.
-2. [ ] Confirmar no painel da Hostinger que `suporte`, `privacidade`, `abuse`, `dmca`, `legal` e `seguranca` recebem mensagens; separar as credenciais SMTP para o Supabase.
+1. [ ] Renovar o e-mail da Hostinger antes de 06/09/2026 e configurar no Supabase a senha SMTP da caixa `no-reply`, sem enviá-la por conversa.
+2. [ ] Regularizar a cobrança do GitHub: o run `32363880725` confirmou que a conta está bloqueada por cobrança; depois reexecutar os checks da PR e mesclar em `main` somente quando todos ficarem verdes.
 3. [ ] Selecionar e treinar duas pessoas responsáveis pela verificação e moderação manual, usando `docs/operations/MANUAL_KYC_AND_MODERATION.md`.
 4. [ ] Enviar Termos, Privacidade, DMCA, maioridade, conteúdo não consentido e pagamentos para revisão jurídica brasileira e devolver as versões aprovadas.
 5. [ ] Disponibilizar os aparelhos/contas para a matriz física e autorizar, uma cobrança por vez, os testes PIX de baixo valor e o saque real.
 6. [ ] Definir destino de backup criptografado e executar uma restauração completa em ambiente separado.
 7. [ ] Selecionar 5–10 criadoras adultas reais, concluir KYC/consentimento e operar um piloto fechado por no mínimo 72 horas.
 8. [ ] Definir telefone de escalonamento interno para moderação crítica, suporte e incidentes.
+
+O mapa detalhado por responsável está em `docs/operations/LAUNCH_RESPONSIBILITY_MAP.md`.
 
 ## Como usar
 
@@ -115,7 +117,7 @@ Critério de aceite: um pagamento confirmado na Impulse Pay deve aparecer uma ú
 - [x] Reversões excepcionais recebidas do provedor continuam conciliadas internamente para impedir acesso ou saldo incorreto.
 - [~] Renovação manual por novo PIX e avisos de 7, 3 e 1 dia implementados; agendador configurado e falta validar com uma cobrança real.
 - [x] Confirmado em 20/08/2026 na documentação oficial: a Impulse Pay oferece recorrência documentada somente por cartão; `POST /v1/transactions` cria PIX avulso e não expõe PIX Automático.
-- [ ] Definir outro meio/provedor ou aguardar endpoint oficial da Impulse Pay se a decisão comercial exigir PIX Automático.
+- [~] Aguardar a liberação do endpoint de PIX Automático prometida pela equipe da Impulse Pay; integrar somente depois de receber contrato da API, eventos de webhook, idempotência e ambiente de teste.
 
 Decisão do MVP: assinaturas atuais continuam com renovação manual por um novo PIX. A cobrança recorrente por cartão só será habilitada após concluir checkout, tokenização, 3DS e webhooks de assinatura da Impulse Pay. Não haverá fluxo de estorno solicitado pelo usuário no MVP.
 
