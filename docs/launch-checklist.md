@@ -1,6 +1,6 @@
 # Fanlira — checklist de lançamento
 
-Atualizado em 22/08/2026.
+Atualizado em 26/08/2026.
 
 ## Bloco 1 — experiência, demonstração e segurança
 
@@ -57,6 +57,7 @@ Atualizado em 22/08/2026.
 - [x] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` em produção.
 - [x] Criar o Turnstile, habilitar a proteção no Supabase e validar o widget no cadastro público.
 - [x] Publicar o Worker `fanlira` em `fanlira.com.br` e `www.fanlira.com.br`, com smoke e carga leve aprovados.
+- [x] Revalidar o deploy `a06511f7-e9f4-4e59-8c97-ba747ce9ab04`: smoke aprovado e 120 requisições públicas sem falha (p95 354 ms).
 - [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
 - [~] Contatos `@fanlira.com.br` criados e SMTP preparado; falta salvar a senha no Supabase e testar cadastro/recuperação. Identificação jurídica completa passou a ser P0 por exigência vigente.

@@ -162,8 +162,16 @@ for (const origin of origins) {
   }
 }
 
-for (const name of ["AI_CHAT_COMPLETIONS_URL", "AI_API_KEY", "AI_TEXT_MODEL", "AI_VISION_MODEL"]) {
-  if (!valueOf(name)) warnings.push(`${name} não configurada; uploads reais continuarão bloqueados.`);
+const missingAiSettings = [
+  "AI_CHAT_COMPLETIONS_URL",
+  "AI_API_KEY",
+  "AI_TEXT_MODEL",
+  "AI_VISION_MODEL",
+].filter((name) => !valueOf(name));
+if (missingAiSettings.length > 0) {
+  warnings.push(
+    `triagem por IA desativada (${missingAiSettings.join(", ")}); uploads reais continuam privados e pendentes até revisão humana.`,
+  );
 }
 
 for (const warning of warnings) console.warn(`AVISO: ${warning}`);
