@@ -205,6 +205,10 @@ function KycForm({ onDone }: { onDone: () => void }) {
           <Link to="/terms" target="_blank" className="text-primary underline">{tr("Termos", "Terms")}</Link>
           {" "}{tr("e", "and")}{" "}
           <Link to="/privacy" target="_blank" className="text-primary underline">{tr("Privacidade", "Privacy")}</Link>.
+          {" "}{tr("Também aceito a", "I also accept the")} {" "}
+          <Link to="/content-policy" target="_blank" className="text-primary underline">
+            {tr("Política de Conteúdo e Segurança", "Content and Safety Policy")}
+          </Link>.
         </span>
       </label>
       <label className="flex items-start gap-2 text-sm text-foreground">

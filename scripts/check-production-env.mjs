@@ -141,7 +141,7 @@ for (const name of [
   "VITE_LEGAL_ENTITY_ADDRESS",
 ]) {
   if (looksPlaceholder(valueOf(name))) {
-    warnings.push(`${name} não configurada; completar os dados empresariais na V1.1.`);
+    errors.push(`${name} não configurada; a identificação da operadora é obrigatória antes da abertura pública.`);
   }
 }
 

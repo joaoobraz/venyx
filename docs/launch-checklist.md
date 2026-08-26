@@ -1,6 +1,6 @@
 # Fanlira — checklist de lançamento
 
-Atualizado em 02/08/2026.
+Atualizado em 22/08/2026.
 
 ## Bloco 1 — experiência, demonstração e segurança
 
@@ -51,7 +51,7 @@ Atualizado em 02/08/2026.
 - [x] Fazer moderação de imagem e vídeo falhar de forma segura quando o provedor estiver indisponível.
 - [x] Remover os casos em que vídeos ou arquivos grandes pulam a moderação (cinco quadros por vídeo; imagem grande redimensionada).
 - [x] Publicar `moderate-media-v2`, `translate-message` e `suggest-caption` no staging, com autenticação e CORS validados.
-- [ ] Configurar `AI_CHAT_COMPLETIONS_URL`, `AI_API_KEY`, `AI_TEXT_MODEL`, `AI_VISION_MODEL` e `ALLOWED_ORIGINS` no staging; até lá, novos uploads permanecem bloqueados de forma segura.
+- [x] Manter uploads adultos em fila privada para revisão humana no MVP sem provedor pago; integrações de IA permanecem opcionais e não podem liberar conteúdo automaticamente.
 - [x] Testar denúncia, bloqueio e silenciamento ponta a ponta no staging, incluindo tentativas negadas pelas políticas de segurança.
 - [x] Proteger webhook Impulse Pay com token de URL, consulta autenticada, referência/valor divergente e idempotência.
 - [x] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` em produção.
@@ -59,7 +59,8 @@ Atualizado em 02/08/2026.
 - [x] Publicar o Worker `fanlira` em `fanlira.com.br` e `www.fanlira.com.br`, com smoke e carga leve aprovados.
 - [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
 - [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
-- [~] Código atualizado para contatos `@fanlira.com.br`; falta ativar e testar as caixas. Razão social, CNPJ e endereço ficam planejados para a V1.1.
+- [~] Contatos `@fanlira.com.br` criados e SMTP preparado; falta salvar a senha no Supabase e testar cadastro/recuperação. Identificação jurídica completa passou a ser P0 por exigência vigente.
+- [x] Ampliar Termos, Privacidade e Política de Conteúdo para maioridade confiável, consentimento, NCII/deepfake, recursos, consumidor, pagamentos e saques.
 - [ ] Confirmar termos, privacidade, DMCA e política de conteúdo com assessoria jurídica.
 
 ## Bloco 3 — operação do lançamento
@@ -86,11 +87,12 @@ Atualizado em 02/08/2026.
 - [x] Validar typecheck, lint, build e 90 testes automatizados; carga local anterior de 120 requisições sem falhas.
 - [x] Validar as telas locais de ajuda e apresentação em desktop e viewport 390 × 844 sem rolagem lateral.
 - [x] Aplicar e conferir as quatro migrações de fechamento no Supabase staging.
-- [ ] Contratar e configurar o provedor real de moderação e sua equipe de plantão.
-- [ ] Contratar um provedor de identidade/idade compatível e implementar o adaptador real; a validação local de CPF permanece proibida em produção.
+- [x] Implementar fila privada de moderação humana que falha fechada, sem custo de fornecedor no piloto.
+- [x] Implementar envio privado de documento/selfie e aprovação humana de idade; checksum local de CPF permanece proibido em produção.
+- [ ] Executar casos reais de KYC e moderação pelo fundador, registrar evidências e manter inconclusivos bloqueados.
 - [ ] Obter parecer jurídico escrito sobre termos, privacidade, conteúdo, maioridade, DMCA e política sem estorno voluntário.
 - [ ] Selecionar, verificar e acompanhar 5–10 criadoras reais no piloto.
-- [ ] Ativar backup no plano/provedor e registrar uma restauração real aprovada no painel.
+- [~] Script de backup AES-256-GCM, chave local e procedimento de restauração preparados; falta preencher duas credenciais, gerar a cópia e restaurar em projeto isolado.
 - [ ] Executar a matriz em iPhone, Android e Safari físicos e anexar evidências.
 - [ ] Executar os pagamentos reais ponta a ponta quando a rodada financeira for retomada.
 

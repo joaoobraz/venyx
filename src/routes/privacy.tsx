@@ -53,6 +53,10 @@ export function PrivacyPage() {
               privately with access restricted to authorized compliance reviewers.
             </li>
             <li>
+              <strong>Buyer verification:</strong> full name, birth date, CPF, phone number and the
+              result and evidence needed to confirm identity and adulthood.
+            </li>
+            <li>
               <strong>Payments:</strong> transaction amount, date, and method. Full card data is
               handled by the payment gateway and is never stored on our servers.
             </li>
@@ -62,6 +66,10 @@ export function PrivacyPage() {
             <li>
               <strong>Usage and device:</strong> IP address, user agent, visited pages, and link
               clicks for security and fraud prevention.
+            </li>
+            <li>
+              <strong>Safety and support:</strong> reports, appeals, consent records, moderation
+              decisions, support requests and evidence preserved for investigations.
             </li>
           </ul>
           <h2>3. Legal bases</h2>
@@ -74,6 +82,10 @@ export function PrivacyPage() {
               authority requests.
             </li>
             <li>
+              <strong>Regular exercise of rights and protection of life:</strong> disputes,
+              evidence preservation, victim protection and urgent safety response.
+            </li>
+            <li>
               <strong>Legitimate interest:</strong> fraud prevention, moderation, and platform
               security.
             </li>
@@ -82,7 +94,9 @@ export function PrivacyPage() {
             </li>
           </ul>
           <h2>4. Sharing</h2>
-          <p>We do not sell personal data. We only share it with:</p>
+          <p>
+            We do not sell personal data. Access is limited to what is necessary and may involve:
+          </p>
           <ul>
             <li>Payment processors;</li>
             <li>Cloud and transactional-email providers;</li>
@@ -95,29 +109,41 @@ export function PrivacyPage() {
             </li>
             <li>Public authorities under a valid legal request or court order.</li>
           </ul>
+          <p>
+            Current key providers include Supabase (database, authentication and private storage),
+            Cloudflare (delivery and security), Hostinger (transactional email) and Impulse Pay
+            (payments and withdrawals). Their own privacy notices also apply to their processing.
+          </p>
           <h2>5. Your LGPD rights</h2>
           <ul>
             <li>Confirmation of processing and access to your data;</li>
             <li>Correction of incomplete or outdated data;</li>
             <li>Anonymization, blocking, or deletion of unnecessary data;</li>
-            <li>Data portability, deletion of consent-based data, and withdrawal of consent.</li>
+            <li>Data portability and deletion of consent-based data;</li>
+            <li>Information about sharing, withdrawal of consent and review of relevant decisions.</li>
           </ul>
           <p>
             Contact <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a> to
-            exercise these rights. We respond within 15 days.
+            exercise these rights. We verify identity before disclosure and respond within the legal
+            deadlines; a complete access statement is provided within up to 15 days when applicable.
           </p>
           <h2>6. Retention</h2>
           <ul>
             <li>Active account data: for the duration of the relationship.</li>
             <li>
-              Financial, tax, and identity-verification records: up to five years after closure.
+              Financial and tax records: for the legally required period, generally up to five years
+              after closure.
             </li>
-            <li>Security logs: up to six months.</li>
+            <li>Identity evidence: only for the period needed for age assurance, fraud, disputes and legal duties.</li>
+            <li>Security logs: normally up to six months, or longer when linked to an incident or legal hold.</li>
+            <li>Reports, consent and moderation evidence: while needed to protect victims, exercise rights or comply with law.</li>
           </ul>
           <h2>7. Security</h2>
           <p>
             We use encryption in transit and at rest, role-based access controls, optional 2FA, and
-            continuous monitoring. Incidents are reported as required by Article 48 of the LGPD.
+            security logging. Relevant incidents are assessed and reported to the ANPD and affected
+            people within the applicable deadline, currently three business days when the regulation
+            requires notice.
           </p>
           <h2>8. Cookies</h2>
           <p>
@@ -133,10 +159,19 @@ export function PrivacyPage() {
           </Button>
           <h2>9. International transfers</h2>
           <p>
-            Some infrastructure providers may store data outside Brazil under appropriate
-            contractual safeguards.
+            Some providers may process data outside Brazil. Transfers use a mechanism permitted by
+            the LGPD and ANPD Resolution 19/2024, including adequacy decisions or approved
+            contractual safeguards when applicable.
           </p>
-          <h2>10. Changes</h2>
+          <h2>10. Adults only and decisions</h2>
+          <p>
+            Fanlira is not intended for minors. Suspected minor accounts are blocked and the minimum
+            evidence required may be preserved for protection and legal cooperation. Age, fraud and
+            moderation signals can support a decision, but the MVP uses authorized human review for
+            identity and adult-content approvals. Affected users may request review unless prohibited
+            by law or victim-safety requirements.
+          </p>
+          <h2>11. Changes</h2>
           <p>Material updates will be communicated by email or through a platform notice.</p>
         </article>
       </AppShell>
@@ -175,6 +210,10 @@ export function PrivacyPage() {
             compliance autorizados.
           </li>
           <li>
+            <strong>Verificação do comprador:</strong> nome completo, nascimento, CPF, telefone e
+            resultado ou evidência necessária para confirmar identidade e maioridade.
+          </li>
+          <li>
             <strong>Pagamentos:</strong> registros de transação (valor, data, método). Dados
             completos de cartão são processados diretamente pelo gateway e <strong>nunca</strong>{" "}
             trafegam ou são armazenados em nossos servidores.
@@ -185,6 +224,10 @@ export function PrivacyPage() {
           <li>
             <strong>Uso e dispositivo:</strong> IP, user-agent, páginas visitadas, cliques em links
             — para segurança e prevenção a fraude.
+          </li>
+          <li>
+            <strong>Segurança e atendimento:</strong> denúncias, recursos, consentimentos, decisões
+            de moderação, chamados e evidências preservadas para apuração.
           </li>
         </ul>
 
@@ -198,6 +241,10 @@ export function PrivacyPage() {
             autoridades.
           </li>
           <li>
+            <strong>Exercício regular de direitos e proteção da vida:</strong> disputas, preservação
+            de evidência, proteção de vítimas e resposta urgente de segurança.
+          </li>
+          <li>
             <strong>Legítimo interesse:</strong> prevenção a fraude, moderação, segurança da
             plataforma.
           </li>
@@ -208,7 +255,9 @@ export function PrivacyPage() {
         </ul>
 
         <h2>4. Compartilhamento</h2>
-        <p>Não vendemos dados pessoais. Compartilhamos apenas com:</p>
+        <p>
+          Não vendemos dados pessoais. O acesso é limitado ao necessário e pode envolver:
+        </p>
         <ul>
           <li>Processador de pagamento Impulse Pay;</li>
           <li>Provedores de infraestrutura (cloud, e-mail transacional);</li>
@@ -222,6 +271,12 @@ export function PrivacyPage() {
           </li>
           <li>Autoridades públicas, mediante ordem judicial ou requisição legal válida.</li>
         </ul>
+        <p>
+          Os principais provedores atuais incluem Supabase (banco, autenticação e armazenamento
+          privado), Cloudflare (entrega e segurança), Hostinger (e-mail transacional) e Impulse Pay
+          (pagamentos e saques). Os avisos de privacidade próprios desses fornecedores também se
+          aplicam ao tratamento que realizam.
+        </p>
 
         <h2>5. Seus direitos (art. 18 LGPD)</h2>
         <ul>
@@ -231,26 +286,30 @@ export function PrivacyPage() {
           <li>Portabilidade dos dados a outro fornecedor;</li>
           <li>Eliminação dos dados tratados com seu consentimento;</li>
           <li>Revogação do consentimento.</li>
+          <li>Informação sobre compartilhamento e revisão de decisões relevantes.</li>
         </ul>
         <p>
           Para exercer qualquer direito, escreva para{" "}
-          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>. Respondemos em
-          até 15 dias.
+          <a href={`mailto:${LEGAL_CONTACTS.privacy}`}>{LEGAL_CONTACTS.privacy}</a>. Confirmamos a
+          identidade antes de entregar dados e respondemos nos prazos legais; a declaração completa
+          de acesso é fornecida em até 15 dias quando aplicável.
         </p>
 
         <h2>6. Retenção</h2>
         <ul>
           <li>Conta ativa: enquanto durar o vínculo.</li>
-          <li>Dados financeiros e fiscais: até 5 anos após o encerramento (obrigação legal).</li>
-          <li>Documentos de KYC: até 5 anos após o encerramento da conta.</li>
-          <li>Logs de segurança: até 6 meses.</li>
+          <li>Dados financeiros e fiscais: pelo prazo legal, em regra até 5 anos após o encerramento.</li>
+          <li>Provas de identidade: somente enquanto necessárias para maioridade, fraude, disputas e deveres legais.</li>
+          <li>Logs de segurança: em regra até 6 meses, ou mais quando ligados a incidente ou retenção legal.</li>
+          <li>Denúncias, consentimentos e moderação: enquanto necessários para proteger vítimas, exercer direitos ou cumprir a lei.</li>
         </ul>
 
         <h2>7. Segurança</h2>
         <p>
           Aplicamos criptografia em trânsito (HTTPS/TLS) e em repouso, controle de acesso por papéis
-          (RLS), autenticação de dois fatores opcional, e monitoramento contínuo. Em caso de
-          incidente, notificaremos a ANPD e os titulares afetados conforme o art. 48 da LGPD.
+          (RLS), autenticação de dois fatores e registros de segurança. Incidentes relevantes são
+          avaliados e comunicados à ANPD e aos titulares no prazo aplicável, atualmente de três dias
+          úteis quando a regulamentação exigir notificação.
         </p>
 
         <h2>8. Cookies</h2>
@@ -268,11 +327,21 @@ export function PrivacyPage() {
 
         <h2>9. Transferência internacional</h2>
         <p>
-          Alguns provedores de infraestrutura podem armazenar dados fora do Brasil. Garantimos
-          cláusulas contratuais adequadas conforme o art. 33 da LGPD.
+          Alguns provedores podem tratar dados fora do Brasil. A transferência utiliza mecanismo
+          permitido pela LGPD e pela Resolução CD/ANPD nº 19/2024, incluindo decisão de adequação ou
+          cláusulas contratuais aprovadas quando aplicável.
         </p>
 
-        <h2>10. Alterações</h2>
+        <h2>10. Uso adulto e decisões</h2>
+        <p>
+          A Fanlira não é destinada a menores. Contas suspeitas são bloqueadas e a evidência mínima
+          necessária pode ser preservada para proteção e cooperação legal. Sinais de idade, fraude e
+          moderação podem apoiar decisões, mas no MVP identidade e conteúdo adulto passam por revisão
+          humana autorizada. O afetado pode pedir revisão, salvo impedimento legal ou risco de
+          revitimização.
+        </p>
+
+        <h2>11. Alterações</h2>
         <p>
           Podemos atualizar esta política. Mudanças relevantes serão comunicadas por e-mail ou aviso
           na plataforma.

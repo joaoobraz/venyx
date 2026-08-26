@@ -1060,6 +1060,7 @@ function Landing() {
           <nav className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-muted-foreground">
             <Link to={routeTo("/terms")} className="transition-colors hover:text-primary">{tr("Termos", "Terms")}</Link>
             <Link to={routeTo("/privacy")} className="transition-colors hover:text-primary">{tr("Privacidade", "Privacy")}</Link>
+            <Link to="/content-policy" className="transition-colors hover:text-primary">{tr("Conteúdo e segurança", "Content and safety")}</Link>
             <Link to={routeTo("/help")} className="transition-colors hover:text-primary">{tr("Ajuda", "Help")}</Link>
           </nav>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">

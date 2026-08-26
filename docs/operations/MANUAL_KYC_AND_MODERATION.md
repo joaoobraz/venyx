@@ -7,12 +7,15 @@ antes de ser liberado.
 ## Regras obrigatórias
 
 - Somente administradores autorizados, autenticados com MFA, podem revisar.
-- Mantenha pelo menos duas pessoas treinadas. Casos críticos nunca devem depender de uma única
-  pessoa.
+- Durante o piloto fechado, o fundador pode atuar como revisor único provisório. Nesse regime,
+  cadastros e uploads só devem ser liberados dentro da janela diária em que ele estiver disponível;
+  não prometa atendimento 24h e pause novas aprovações quando não houver cobertura.
+- O revisor nunca pode aprovar o próprio KYC, conteúdo próprio ou decisão em que tenha interesse.
+  Esses casos permanecem bloqueados até revisão independente.
 - Documento, selfie e mídia são confidenciais. Não baixe, copie, encaminhe ou registre esses
   arquivos fora do painel.
-- Na dúvida sobre idade, identidade, consentimento ou legalidade, rejeite e encaminhe para uma
-  segunda revisão.
+- Na dúvida sobre idade, identidade, consentimento ou legalidade, rejeite ou mantenha bloqueado.
+  Enquanto não houver segunda pessoa, não existe exceção para "aprovar provisoriamente".
 - Registre uma justificativa objetiva em toda aprovação ou rejeição. O sistema guarda o revisor,
   a data e a decisão.
 
@@ -54,9 +57,22 @@ usuário nem compartilhe o material em canais informais.
 - Priorizar suspeita de menoridade ou não consentimento imediatamente.
 - Manter tempo de resposta informado aos participantes do piloto; não prometer atendimento 24h
   sem uma escala real.
-- Auditar semanalmente uma amostra de aprovações e rejeições pela segunda pessoa responsável.
+- Enquanto houver um único revisor, auditar semanalmente todas as decisões usando o log do painel;
+  quando a segunda pessoa entrar, ela deve revisar retrospectivamente a amostra do piloto.
 - Registrar incidentes e correções sem incluir documento, CPF, selfie ou mídia em planilhas e
   mensageiros externos.
+
+## Limites do revisor único
+
+O revisor único é uma solução temporária para um piloto pequeno, não uma escala definitiva. A
+operação deve adicionar uma segunda pessoa treinada antes de volume contínuo, plantão, férias do
+fundador ou qualquer cenário em que denúncias urgentes possam ficar sem resposta. Até lá:
+
+1. publicar horário de atendimento realista;
+2. revisar KYC e mídia antes de qualquer liberação;
+3. bloquear casos inconclusivos;
+4. registrar cada decisão e incidente;
+5. manter um contato jurídico/de emergência para casos de menoridade, exploração ou ordem legal.
 
 ## Quando considerar automação paga
 

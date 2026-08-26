@@ -17,6 +17,7 @@ import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as ContentPolicyRouteImport } from './routes/content-policy'
 import { Route as DmcaRouteImport } from './routes/dmca'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as ExplorarRouteImport } from './routes/explorar'
@@ -34,6 +35,7 @@ import { Route as MensajesRouteImport } from './routes/mensajes'
 import { Route as NotificacionesRouteImport } from './routes/notificaciones'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PoliticaDeConteudoRouteImport } from './routes/politica-de-conteudo'
 import { Route as PresentationRouteImport } from './routes/presentation'
 import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
@@ -207,6 +209,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContentPolicyRoute = ContentPolicyRouteImport.update({
+  id: '/content-policy',
+  path: '/content-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DmcaRoute = DmcaRouteImport.update({
   id: '/dmca',
   path: '/dmca',
@@ -290,6 +297,11 @@ const NotificacoesRoute = NotificacoesRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeConteudoRoute = PoliticaDeConteudoRouteImport.update({
+  id: '/politica-de-conteudo',
+  path: '/politica-de-conteudo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PresentationRoute = PresentationRouteImport.update({
@@ -979,6 +991,7 @@ export interface FileRoutesByFullPath {
   '/buscar': typeof BuscarRoute
   '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
   '/entrar': typeof EntrarRoute
   '/explorar': typeof ExplorarRoute
@@ -996,6 +1009,7 @@ export interface FileRoutesByFullPath {
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
   '/presentation': typeof PresentationRouteWithChildren
   '/privacidad': typeof PrivacidadRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -1138,6 +1152,7 @@ export interface FileRoutesByTo {
   '/buscar': typeof BuscarRoute
   '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
   '/entrar': typeof EntrarRoute
   '/explorar': typeof ExplorarRoute
@@ -1155,6 +1170,7 @@ export interface FileRoutesByTo {
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
   '/presentation': typeof PresentationRouteWithChildren
   '/privacidad': typeof PrivacidadRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -1298,6 +1314,7 @@ export interface FileRoutesById {
   '/buscar': typeof BuscarRoute
   '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
   '/entrar': typeof EntrarRoute
   '/explorar': typeof ExplorarRoute
@@ -1315,6 +1332,7 @@ export interface FileRoutesById {
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
   '/presentation': typeof PresentationRouteWithChildren
   '/privacidad': typeof PrivacidadRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -1459,6 +1477,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
     | '/entrar'
     | '/explorar'
@@ -1476,6 +1495,7 @@ export interface FileRouteTypes {
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
     | '/presentation'
     | '/privacidad'
     | '/privacidade'
@@ -1618,6 +1638,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
     | '/entrar'
     | '/explorar'
@@ -1635,6 +1656,7 @@ export interface FileRouteTypes {
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
     | '/presentation'
     | '/privacidad'
     | '/privacidade'
@@ -1777,6 +1799,7 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
     | '/entrar'
     | '/explorar'
@@ -1794,6 +1817,7 @@ export interface FileRouteTypes {
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
     | '/presentation'
     | '/privacidad'
     | '/privacidade'
@@ -1937,6 +1961,7 @@ export interface RootRouteChildren {
   BuscarRoute: typeof BuscarRoute
   CadastroRoute: typeof CadastroRoute
   ChatRoute: typeof ChatRoute
+  ContentPolicyRoute: typeof ContentPolicyRoute
   DmcaRoute: typeof DmcaRoute
   EntrarRoute: typeof EntrarRoute
   ExplorarRoute: typeof ExplorarRoute
@@ -1954,6 +1979,7 @@ export interface RootRouteChildren {
   NotificacionesRoute: typeof NotificacionesRoute
   NotificacoesRoute: typeof NotificacoesRoute
   NotificationsRoute: typeof NotificationsRoute
+  PoliticaDeConteudoRoute: typeof PoliticaDeConteudoRoute
   PresentationRoute: typeof PresentationRouteWithChildren
   PrivacidadRoute: typeof PrivacidadRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -2145,6 +2171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/content-policy': {
+      id: '/content-policy'
+      path: '/content-policy'
+      fullPath: '/content-policy'
+      preLoaderRoute: typeof ContentPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dmca': {
       id: '/dmca'
       path: '/dmca'
@@ -2262,6 +2295,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-conteudo': {
+      id: '/politica-de-conteudo'
+      path: '/politica-de-conteudo'
+      fullPath: '/politica-de-conteudo'
+      preLoaderRoute: typeof PoliticaDeConteudoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/presentation': {
@@ -3212,6 +3252,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuscarRoute: BuscarRoute,
   CadastroRoute: CadastroRoute,
   ChatRoute: ChatRoute,
+  ContentPolicyRoute: ContentPolicyRoute,
   DmcaRoute: DmcaRoute,
   EntrarRoute: EntrarRoute,
   ExplorarRoute: ExplorarRoute,
@@ -3229,6 +3270,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificacionesRoute: NotificacionesRoute,
   NotificacoesRoute: NotificacoesRoute,
   NotificationsRoute: NotificationsRoute,
+  PoliticaDeConteudoRoute: PoliticaDeConteudoRoute,
   PresentationRoute: PresentationRouteWithChildren,
   PrivacidadRoute: PrivacidadRoute,
   PrivacidadeRoute: PrivacidadeRoute,

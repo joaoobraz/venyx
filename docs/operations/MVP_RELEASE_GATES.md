@@ -39,11 +39,12 @@ são encaminhados a um canal externo.
 
 ## Exige terceiros ou operação real
 
-- Duas pessoas treinadas e escala ativa para KYC e moderação manual.
+- Fundador treinado e disponível para o piloto manual; segunda pessoa antes de operação contínua.
 - Teste financeiro real com o provedor de pagamentos.
 - Parecer jurídico.
-- Restauração de backup no plano/provedor contratado.
+- Restauração do backup criptografado em projeto Supabase isolado.
 - Teste em iPhone, Android e Safari reais.
-- Seleção e validação de 5–10 criadoras reais.
+- Primeira criadora real para o teste financeiro e, depois, seleção de 5–10 para o piloto.
+- Identificação pública completa da operadora e de seu representante no Brasil.
 
 Nenhum item externo deve ser marcado como concluído apenas porque a tela ou o procedimento existe. A abertura pública depende de evidência real registrada.

@@ -13,12 +13,13 @@ Atualizado em 21/08/2026. Este documento separa desenvolvimento, decisões do fu
 
 ## 2. Fundador — ação necessária agora
 
-1. **E-mail:** renovar o plano Hostinger antes de 06/09/2026. A caixa é `no-reply@fanlira.com.br`; `suporte`, `privacidade` e `seguranca` são aliases ativos. Não é necessário comprar outra caixa no MVP: denúncias usam `seguranca` e DMCA usa `privacidade`.
+1. **E-mail:** o plano Hostinger atual expira em 06/09/2026. Renovar antes dessa data mantém cadastro, recuperação de senha, suporte e denúncias funcionando; não é uma compra adicional para hoje. A caixa é `no-reply@fanlira.com.br`; `suporte`, `privacidade` e `seguranca` são aliases ativos.
 2. **SMTP:** no Supabase, habilitar o SMTP customizado com `smtp.hostinger.com`, porta `465`, TLS/SSL e usuário `no-reply@fanlira.com.br`. A senha deve ser digitada pelo fundador no painel, nunca enviada em conversa ou versionada.
-3. **GitHub:** regularizar a cobrança da conta. O workflow não chega a executar: o run `32363880725` informa que a conta está bloqueada por cobrança.
+3. **GitHub:** corrigir a autorização do cartão. A conta está em GitHub Free e não possui pagamentos no histórico; o painel informa `Invalid payment method - authorization hold failed`. O workflow não chega a executar enquanto a autorização não for regularizada.
 4. **Testes financeiros:** autorizar, um por vez, PIX reais de baixo valor para assinatura, PPV, mimo, chat/upsell e um saque de pelo menos R$ 30. Registrar ID da Impulse Pay, ID Fanlira, horário, valor e resultado.
-5. **Backup:** escolher um destino criptografado fora do servidor, fornecer localmente a URL direta do banco e executar `npm run backup:production -- --env-file=ARQUIVO --output=DESTINO`. Depois restaurar em ambiente separado.
-6. **Escala:** escolher telefone e duas pessoas para incidentes, suporte, KYC e moderação.
+5. **Backup:** preencher localmente as duas credenciais no arquivo preparado e executar `npm run backup:production -- --env-file=ARQUIVO --key-file=CHAVE --output=DESTINO`. Depois restaurar em ambiente Supabase separado. Nunca enviar chave ou credenciais em conversa.
+6. **Escala:** no piloto, o fundador será o revisor único provisório, seguindo os limites de `MANUAL_KYC_AND_MODERATION.md`. Antes de operação contínua, escolher uma segunda pessoa e um contato jurídico/de emergência.
+7. **Identificação jurídica:** antes da abertura pública, constituir/manter a representação exigida no Brasil e publicar nome empresarial, documento, endereço e contato do representante nos Termos e atendimento. Os campos técnicos já existem como variáveis `VITE_LEGAL_ENTITY_*`, mas não podem permanecer vazios no lançamento.
 
 ## 3. Criadoras do piloto — 5 a 10 pessoas reais
 
@@ -33,11 +34,14 @@ Para cada criadora:
 
 A lista individual está em `CREATOR_PILOT_CHECKLIST.md`. O piloto deve permanecer fechado por pelo menos 72 horas antes da abertura pública.
 
-## 4. Equipe operacional — mínimo de duas pessoas
+## 4. Operação humana — fundador no piloto, segunda pessoa antes da escala
 
 - Executar o procedimento `MANUAL_KYC_AND_MODERATION.md`; na dúvida, rejeitar ou escalar, nunca aprovar.
 - Tratar suspeita de menor, exploração ou conteúdo não consentido imediatamente e preservar evidências.
-- Cobrir diariamente suporte, denúncias, DMCA, conciliação e saques.
+- No piloto, o fundador cobre diariamente suporte, denúncias, DMCA, conciliação e saques em janela
+  publicada e mantém casos inconclusivos bloqueados.
+- Uma segunda pessoa treinada passa a ser obrigatória antes de operação contínua, plantão, férias ou
+  volume que impeça resposta rápida a denúncias críticas.
 - Usar MFA nas contas administrativas e registrar toda decisão no painel.
 - Fazer um exercício de incidente com o roteiro `INCIDENT_RESPONSE.md` antes do lançamento.
 
@@ -45,7 +49,8 @@ A lista individual está em `CREATOR_PILOT_CHECKLIST.md`. O piloto deve permanec
 
 - Revisar Termos, Privacidade/LGPD, maioridade, consentimento, conteúdo não consentido, DMCA, consumidor, pagamentos, cancelamento e política de não estorno.
 - Devolver textos aprovados, data de vigência e orientação de retenção de dados/evidências.
-- Razão social, CPF/CNPJ e endereço público permanecem planejados para a V1.1 por decisão do fundador; o risco deve ser aceito por escrito pelo jurídico antes da abertura.
+- Validar a identificação da operadora e do representante no Brasil. A legislação atual torna esse
+  ponto requisito pré-lançamento; não deve ser postergado integralmente para a V1.1.
 
 ## 6. Fornecedores e dependências externas
 
@@ -58,8 +63,8 @@ A lista individual está em `CREATOR_PILOT_CHECKLIST.md`. O piloto deve permanec
 
 1. SMTP e teste de cadastro/recuperação.
 2. GitHub desbloqueado, checks verdes e branch de lançamento mesclada.
-3. Duas pessoas treinadas e revisão jurídica concluída.
+3. Fundador treinado para o piloto, contato jurídico/de emergência definido e revisão jurídica concluída.
 4. Pagamentos e saque reais com evidências.
 5. Backup restaurado e matriz física de aparelhos concluída.
-6. Cinco a dez criadoras aprovadas e piloto fechado de 72 horas.
+6. Primeira criadora real aprovada para o teste financeiro; depois cinco a dez criadoras e piloto fechado de 72 horas.
 7. Reunião final: **abrir**, **adiar** ou **abrir limitado**, registrando riscos conhecidos.

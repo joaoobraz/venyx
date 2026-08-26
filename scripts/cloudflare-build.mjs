@@ -5,9 +5,17 @@ import { fileURLToPath } from "node:url";
 const viteBin = fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url));
 const result = spawnSync(
   process.execPath,
-  [viteBin, "build"],
+  // O carregador nativo evita que o esbuild percorra a raiz do Windows e
+  // continua permitindo o import dinâmico do plugin da Cloudflare.
+  [viteBin, "build", "--configLoader", "native"],
   {
-    env: { ...process.env, CLOUDFLARE_BUILD: "true" },
+    env: {
+      ...process.env,
+      CLOUDFLARE_BUILD: "true",
+      // O artefato é a fonte de verdade do CI; logs locais do Wrangler não
+      // devem tornar o build dependente de uma pasta global gravável.
+      WRANGLER_WRITE_LOGS: "false",
+    },
     stdio: "inherit",
   },
 );
