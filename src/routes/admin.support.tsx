@@ -49,9 +49,9 @@ export function AdminSupportPage() {
     try {
       const result = await listFn();
       setData({
-        support: result.support as unknown as AnyRow[],
-        recovery: result.recovery as unknown as AnyRow[],
-        privacy: result.privacy as unknown as AnyRow[],
+        support: Array.isArray(result?.support) ? (result.support as unknown as AnyRow[]) : [],
+        recovery: Array.isArray(result?.recovery) ? (result.recovery as unknown as AnyRow[]) : [],
+        privacy: Array.isArray(result?.privacy) ? (result.privacy as unknown as AnyRow[]) : [],
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : tr("Erro ao carregar a central.", "Could not load service desk."));

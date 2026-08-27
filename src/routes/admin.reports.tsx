@@ -86,7 +86,7 @@ export function ReportsAdminPage() {
   const load = useCallback(async () => {
     try {
       const result = await listFn();
-      setReports(result.rows as ReportRow[]);
+      setReports(Array.isArray(result?.rows) ? (result.rows as ReportRow[]) : []);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : tr("Erro ao carregar denúncias.", "Could not load reports."));
     } finally {

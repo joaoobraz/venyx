@@ -36,7 +36,14 @@ export function ManualMediaReviewQueue() {
     setLoading(true);
     try {
       const result = await listFn({ data: { status, limit: 100 } });
-      setReviews(result.reviews as Review[]);
+      const rows = Array.isArray(result?.reviews) ? (result.reviews as Review[]) : [];
+      setReviews(
+        rows.map((review) => ({
+          ...review,
+          storage_paths: Array.isArray(review.storage_paths) ? review.storage_paths : [],
+          mediaUrls: Array.isArray(review.mediaUrls) ? review.mediaUrls : [],
+        })),
+      );
     } catch (error) {
       toast.error(
         error instanceof Error

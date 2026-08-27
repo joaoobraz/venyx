@@ -97,6 +97,27 @@ type ReconciliationData = {
   runs: ReconciliationRun[];
 };
 
+const emptyReconciliationData: ReconciliationData = {
+  providerConfigured: false,
+  pendingCharges: 0,
+  issues: [],
+  runs: [],
+};
+
+function normalizeReconciliationData(value: unknown): ReconciliationData {
+  const source =
+    value && typeof value === "object" ? (value as Partial<ReconciliationData>) : {};
+  return {
+    providerConfigured: source.providerConfigured === true,
+    pendingCharges:
+      typeof source.pendingCharges === "number" && Number.isFinite(source.pendingCharges)
+        ? source.pendingCharges
+        : 0,
+    issues: Array.isArray(source.issues) ? source.issues : [],
+    runs: Array.isArray(source.runs) ? source.runs : [],
+  };
+}
+
 const issueLabels: Record<string, string> = {
   missing_gateway_reference: "Cobrança sem referência da Impulse Pay",
   provider_lookup_failed: "Falha ao consultar a Impulse Pay",
@@ -139,7 +160,7 @@ export function AdminReconciliationPage() {
   const load = useCallback(async () => {
     setLoadError("");
     try {
-      setData((await listFn()) as ReconciliationData);
+      setData(normalizeReconciliationData(await listFn()));
     } catch (error) {
       setLoadError(
         error instanceof Error
@@ -155,21 +176,26 @@ export function AdminReconciliationPage() {
     load();
   }, [load]);
 
+  const dataView = data ?? emptyReconciliationData;
   const openIssues = useMemo(
-    () => (data?.issues ?? []).filter((issue) => issue.status === "open"),
-    [data],
+    () => dataView.issues.filter((issue) => issue.status === "open"),
+    [dataView.issues],
   );
   const highIssues = openIssues.filter((issue) => issue.severity === "high").length;
-  const latestRun = data?.runs[0] ?? null;
+  const latestRun = dataView.runs[0] ?? null;
 
   const handleRun = async () => {
     setRunning(true);
     try {
       const result = await runFn({ data: { limit: 100 } });
+      const scanned =
+        typeof result?.scanned === "number" && Number.isFinite(result.scanned)
+          ? result.scanned
+          : 0;
       toast.success(
         tr(
-          `Varredura concluída: ${result.scanned} cobrança(s) analisada(s).`,
-          `Sweep completed: ${result.scanned} charge(s) checked.`,
+          `Varredura concluída: ${scanned} cobrança(s) analisada(s).`,
+          `Sweep completed: ${scanned} charge(s) checked.`,
         ),
       );
       await load();
@@ -227,7 +253,7 @@ export function AdminReconciliationPage() {
           </div>
           <Button
             onClick={handleRun}
-            disabled={running || loading || !data?.providerConfigured}
+            disabled={running || loading || !dataView.providerConfigured}
             className="gap-2"
           >
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -235,7 +261,7 @@ export function AdminReconciliationPage() {
           </Button>
         </div>
 
-        {data && !data.providerConfigured && (
+        {data && !dataView.providerConfigured && (
           <Card className="border-amber-500/40 bg-amber-500/10 p-4">
             <div className="flex gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
@@ -266,7 +292,7 @@ export function AdminReconciliationPage() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <SummaryCard
             label={tr("PIX em análise", "PIX under review")}
-            value={data?.pendingCharges ?? 0}
+            value={dataView.pendingCharges}
             icon={Clock3}
             loading={loading}
           />
@@ -354,9 +380,9 @@ export function AdminReconciliationPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">{tr("Histórico de varreduras", "Sweep history")}</h2>
           <Card className="overflow-hidden">
-            {data?.runs.length ? (
+            {dataView.runs.length ? (
               <div className="divide-y">
-                {data.runs.map((run) => (
+                {dataView.runs.map((run) => (
                   <div key={run.id} className="grid gap-2 p-4 text-sm sm:grid-cols-[1.3fr_repeat(4,0.7fr)] sm:items-center">
                     <div>
                       <p className="font-medium">{runLabels[run.status] ?? run.status}</p>

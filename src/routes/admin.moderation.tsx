@@ -166,13 +166,16 @@ export function AdminModerationPage() {
       try {
         const res = await listDecisionsFn();
         const map: DecisionMap = {};
-        for (const d of res.decisions as Array<{
-          log_id: string;
-          decision: string;
-          decided_at: string;
-          decided_by: string;
-          note: string;
-        }>) {
+        const rows = Array.isArray(res?.decisions)
+          ? (res.decisions as Array<{
+              log_id: string;
+              decision: string;
+              decided_at: string;
+              decided_by: string;
+              note: string;
+            }>)
+          : [];
+        for (const d of rows) {
           if (d.decision === "approved" || d.decision === "rejected") {
             map[d.log_id] = {
               decision: d.decision,

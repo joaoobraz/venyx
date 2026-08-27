@@ -115,7 +115,7 @@ export function AdminUsersPage() {
           limit: 100,
         },
       });
-      setUsers(res.users as UserRow[]);
+      setUsers(Array.isArray(res?.users) ? (res.users as UserRow[]) : []);
     } catch (e: any) {
       toast.error(e?.message ?? tr("Erro ao carregar usuários", "Could not load users"));
     } finally {

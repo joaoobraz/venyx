@@ -64,6 +64,46 @@ type Dashboard = {
   health: { errors24h: number; openAlerts: number; overdueSafety: number; criticalSupport: number };
 };
 
+const emptyHealth: Dashboard["health"] = {
+  errors24h: 0,
+  openAlerts: 0,
+  overdueSafety: 0,
+  criticalSupport: 0,
+};
+
+const emptyDashboard: Dashboard = {
+  days: 30,
+  funnel: [],
+  devices: [],
+  recentErrors: [],
+  alerts: [],
+  backups: [],
+  health: emptyHealth,
+};
+
+function safeNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function normalizeDashboard(value: unknown): Dashboard {
+  const source =
+    value && typeof value === "object" ? (value as Partial<Dashboard>) : emptyDashboard;
+  return {
+    days: safeNumber(source.days) || 30,
+    funnel: Array.isArray(source.funnel) ? source.funnel : [],
+    devices: Array.isArray(source.devices) ? source.devices : [],
+    recentErrors: Array.isArray(source.recentErrors) ? source.recentErrors : [],
+    alerts: Array.isArray(source.alerts) ? source.alerts : [],
+    backups: Array.isArray(source.backups) ? source.backups : [],
+    health: {
+      errors24h: safeNumber(source.health?.errors24h),
+      openAlerts: safeNumber(source.health?.openAlerts),
+      overdueSafety: safeNumber(source.health?.overdueSafety),
+      criticalSupport: safeNumber(source.health?.criticalSupport),
+    },
+  };
+}
+
 const funnelLabels: Record<string, string> = {
   page_view: "Visita",
   signup_completed: "Cadastro",
@@ -92,7 +132,7 @@ export function AdminOperationsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setDashboard((await getDashboard({ data: { days: 30 } })) as Dashboard);
+      setDashboard(normalizeDashboard(await getDashboard({ data: { days: 30 } })));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível carregar a operação.");
     } finally {
@@ -122,7 +162,8 @@ export function AdminOperationsPage() {
     setSaving(true);
     try {
       const result = await readiness();
-      const failed = result.checks.filter((item) => !item.ok);
+      const checks = Array.isArray(result?.checks) ? result.checks : [];
+      const failed = checks.filter((item) => !item.ok);
       if (failed.length) toast.error(`${failed.length} verificação(ões) falharam.`);
       else toast.success("Banco e armazenamento responderam corretamente.");
       await load();
@@ -132,6 +173,10 @@ export function AdminOperationsPage() {
       setSaving(false);
     }
   };
+
+  const dashboardData = normalizeDashboard(dashboard);
+  const health = dashboardData.health;
+  const openAlerts = dashboardData.alerts.filter((alert) => alert.status !== "resolved");
 
   return (
     <AppShell>
@@ -148,10 +193,10 @@ export function AdminOperationsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric title="Erros nas últimas 24h" value={dashboard?.health.errors24h ?? 0} danger={(dashboard?.health.errors24h ?? 0) > 0} />
-          <Metric title="Alertas abertos" value={dashboard?.health.openAlerts ?? 0} danger={(dashboard?.health.openAlerts ?? 0) > 0} />
-          <Metric title="Denúncias fora do SLA" value={dashboard?.health.overdueSafety ?? 0} danger={(dashboard?.health.overdueSafety ?? 0) > 0} />
-          <Metric title="Suportes críticos" value={dashboard?.health.criticalSupport ?? 0} danger={(dashboard?.health.criticalSupport ?? 0) > 0} />
+          <Metric title="Erros nas últimas 24h" value={health.errors24h} danger={health.errors24h > 0} />
+          <Metric title="Alertas abertos" value={health.openAlerts} danger={health.openAlerts > 0} />
+          <Metric title="Denúncias fora do SLA" value={health.overdueSafety} danger={health.overdueSafety > 0} />
+          <Metric title="Suportes críticos" value={health.criticalSupport} danger={health.criticalSupport > 0} />
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
@@ -159,7 +204,7 @@ export function AdminOperationsPage() {
             <h2 className="font-semibold">Funil do MVP</h2>
             <p className="mt-1 text-xs text-muted-foreground">Pessoas únicas por etapa, sem armazenar e-mail, documento ou IP bruto.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-5">
-              {(dashboard?.funnel ?? []).map((step) => (
+              {dashboardData.funnel.map((step) => (
                 <div key={step.name} className="rounded-xl border p-3">
                   <p className="text-xs text-muted-foreground">{funnelLabels[step.name] ?? step.name}</p>
                   <p className="mt-1 text-2xl font-bold">{step.count}</p>
@@ -172,7 +217,7 @@ export function AdminOperationsPage() {
           <Card className="p-5">
             <h2 className="font-semibold">Dispositivos</h2>
             <div className="mt-4 space-y-3">
-              {(dashboard?.devices ?? []).map((device) => (
+              {dashboardData.devices.map((device) => (
                 <div key={device.name} className="flex items-center justify-between text-sm"><span className="capitalize">{device.name}</span><Badge variant="secondary">{device.count}</Badge></div>
               ))}
             </div>
@@ -182,8 +227,8 @@ export function AdminOperationsPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold">Alertas que exigem ação</h2><p className="text-xs text-muted-foreground">Erros de severidade alta ou crítica abrem alerta automaticamente.</p></div></div>
           <div className="mt-4 space-y-3">
-            {(dashboard?.alerts ?? []).filter((alert) => alert.status !== "resolved").length === 0 && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Nenhum alerta aberto.</p>}
-            {(dashboard?.alerts ?? []).filter((alert) => alert.status !== "resolved").map((alert) => (
+            {openAlerts.length === 0 && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Nenhum alerta aberto.</p>}
+            {openAlerts.map((alert) => (
               <button key={alert.id} type="button" onClick={() => setSelectedAlert(alert.id)} className="flex w-full items-center justify-between gap-4 rounded-xl border p-4 text-left hover:bg-muted/40">
                 <div><p className="font-medium">{alert.event?.event_name ?? "Evento indisponível"}</p><p className="text-xs text-muted-foreground">{alert.event?.route ?? "sem rota"} · {new Date(alert.created_at).toLocaleString("pt-BR")}</p></div>
                 <Badge variant={alert.event?.severity === "critical" ? "destructive" : "secondary"}>{alert.event?.severity ?? alert.status}</Badge>
@@ -196,8 +241,8 @@ export function AdminOperationsPage() {
           <Card className="p-5">
             <h2 className="font-semibold">Erros recentes</h2>
             <div className="mt-4 max-h-80 space-y-3 overflow-auto">
-              {(dashboard?.recentErrors ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhum erro registrado no período.</p>}
-              {(dashboard?.recentErrors ?? []).map((event) => (
+              {dashboardData.recentErrors.length === 0 && <p className="text-sm text-muted-foreground">Nenhum erro registrado no período.</p>}
+              {dashboardData.recentErrors.map((event) => (
                 <div key={event.id} className="rounded-xl border p-3"><div className="flex justify-between gap-3"><p className="text-sm font-medium">{event.event_name}</p><Badge variant={event.severity === "critical" ? "destructive" : "outline"}>{event.severity}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{event.route ?? "sem rota"} · {new Date(event.created_at).toLocaleString("pt-BR")}</p></div>
               ))}
             </div>
@@ -206,8 +251,8 @@ export function AdminOperationsPage() {
           <Card className="p-5">
             <div className="flex items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 font-semibold"><DatabaseBackup className="h-4 w-4" />Restauração de backup</h2><p className="mt-1 text-xs text-muted-foreground">Só registre após restaurar um backup real em ambiente isolado.</p></div><Button size="sm" onClick={() => setBackupOpen(true)}>Registrar evidência</Button></div>
             <div className="mt-4 space-y-3">
-              {(dashboard?.backups ?? []).length === 0 && <div className="rounded-xl border border-amber-300/50 bg-amber-500/10 p-4 text-sm"><p className="font-medium">Ainda não validado</p><p className="mt-1 text-muted-foreground">O checklist continua aberto até existir uma restauração real aprovada.</p></div>}
-              {(dashboard?.backups ?? []).map((run) => (
+              {dashboardData.backups.length === 0 && <div className="rounded-xl border border-amber-300/50 bg-amber-500/10 p-4 text-sm"><p className="font-medium">Ainda não validado</p><p className="mt-1 text-muted-foreground">O checklist continua aberto até existir uma restauração real aprovada.</p></div>}
+              {dashboardData.backups.map((run) => (
                 <div key={run.id} className="rounded-xl border p-3"><div className="flex justify-between"><p className="text-sm font-medium">{run.backup_provider} → {run.restore_environment}</p><Badge variant={run.status === "passed" ? "secondary" : "destructive"}>{run.status === "passed" ? "aprovado" : "falhou"}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{run.backup_reference} · {new Date(run.completed_at).toLocaleString("pt-BR")}</p></div>
               ))}
             </div>

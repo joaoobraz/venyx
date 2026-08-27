@@ -73,7 +73,7 @@ export function AdminActionsAuditPage() {
       const res = await list({
         data: filter ? { actionType: filter } : {},
       });
-      setRows(res.rows as Row[]);
+      setRows(Array.isArray(res?.rows) ? (res.rows as Row[]) : []);
     } finally {
       setLoading(false);
     }
