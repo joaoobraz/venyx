@@ -58,15 +58,67 @@ export const submitCreatorKyc = createServerFn({ method: "POST" })
         _user_agent_hash: userAgentHash(request),
       },
     );
-    if (error || !kycId) {
-      const message = error?.message ?? "";
-      if (message.includes("VENYX_KYC_ALREADY_ACTIVE")) {
-        throw new Error("Já existe uma verificação ativa para esta conta.");
-      }
-      console.error("[creator-onboarding.submitKyc]", error?.code);
-      throw new Error("Não foi possível registrar a verificação. Tente novamente.");
+    if (!error && kycId) return { ok: true, kycId };
+
+    const rpcMessage = error?.message ?? "";
+    if (rpcMessage.includes("VENYX_KYC_ALREADY_ACTIVE")) {
+      throw new Error("Já existe uma verificação ativa para esta conta.");
     }
-    return { ok: true, kycId };
+
+    // Fallback compatível com projetos que ainda não recarregaram a última
+    // versão da RPC. Mantemos a mesma validação de caminhos e executamos tudo
+    // com service_role, sem abrir INSERT direto para o navegador.
+    try {
+      const { data: active } = await supabaseAdmin
+        .from("kyc_requests")
+        .select("id, status")
+        .eq("user_id", context.userId)
+        .in("status", ["pending", "approved"])
+        .maybeSingle();
+      if (active) throw new Error("Já existe uma verificação ativa para esta conta.");
+
+      const consentRows = [
+        ["terms", CURRENT_TERMS_VERSION],
+        ["privacy", CURRENT_PRIVACY_VERSION],
+        ["adult_creator", CURRENT_CREATOR_POLICY_VERSION],
+        ["content_rights", CURRENT_CREATOR_POLICY_VERSION],
+      ].map(([consent_type, document_version]) => ({
+        user_id: context.userId,
+        consent_type,
+        document_version,
+        ip_address: clientIp(request),
+        user_agent_hash: userAgentHash(request),
+        evidence: { source: "kyc_submission_fallback" },
+      }));
+      const { error: consentError } = await supabaseAdmin
+        .from("user_consents")
+        .upsert(consentRows, { onConflict: "user_id,consent_type,document_version" });
+      if (consentError) throw consentError;
+
+      const { data: inserted, error: insertError } = await supabaseAdmin
+        .from("kyc_requests")
+        .insert({
+          user_id: context.userId,
+          document_type: data.documentType,
+          document_front_url: data.documentFrontPath,
+          document_back_url: data.documentBackPath,
+          selfie_url: data.selfiePath,
+          status: "pending",
+        })
+        .select("id")
+        .single();
+      if (insertError || !inserted?.id) throw insertError ?? new Error("KYC sem identificador");
+      return { ok: true, kycId: inserted.id };
+    } catch (fallbackError) {
+      if (fallbackError instanceof Error && fallbackError.message.includes("verificação ativa")) {
+        throw fallbackError;
+      }
+      console.error("[creator-onboarding.submitKyc]", {
+        rpcCode: error?.code,
+        fallbackCode: (fallbackError as { code?: string } | null)?.code,
+      });
+      throw new Error("Não foi possível registrar a verificação. Confira os arquivos e tente novamente.");
+    }
   });
 
 export const acceptCurrentCreatorConsents = createServerFn({ method: "POST" })

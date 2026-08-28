@@ -130,14 +130,30 @@ function KycForm({ onDone }: { onDone: () => void }) {
   const [loading, setLoading] = useState(false);
 
   const MAX_SIZE = 8 * 1024 * 1024; // 8MB
-  const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+  const DOCUMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
+  const SELFIE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
-  const upload = async (file: File, name: string) => {
+  const upload = async (file: File, name: string, document = false) => {
     if (!user) throw new Error("no user");
+    const allowedTypes = document ? DOCUMENT_TYPES : SELFIE_TYPES;
     if (file.size > MAX_SIZE) throw new Error(`${name}: ${tr("arquivo maior que 8MB", "file is larger than 8MB")}`);
-    if (!ALLOWED.includes(file.type)) throw new Error(`${name}: ${tr("formato não aceito (use JPG/PNG/WEBP)", "unsupported format (use JPG/PNG/WEBP)")}`);
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-    const path = `${user.id}/${Date.now()}-${name}.${ext}`;
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(
+        `${name}: ${tr(
+          document ? "formato não aceito (use JPG, PNG, WEBP, GIF ou PDF)" : "formato não aceito (use JPG, PNG, WEBP ou GIF)",
+          document ? "unsupported format (use JPG, PNG, WEBP, GIF or PDF)" : "unsupported format (use JPG, PNG, WEBP or GIF)",
+        )}`,
+      );
+    }
+    const extensionByType: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+      "application/pdf": "pdf",
+    };
+    const ext = extensionByType[file.type] ?? file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}-${name}.${ext}`;
     const { error } = await supabase.storage.from("kyc").upload(path, file, { upsert: false, contentType: file.type });
     if (error) throw error;
     return path;
@@ -150,10 +166,14 @@ function KycForm({ onDone }: { onDone: () => void }) {
       return;
     }
     setLoading(true);
+    const uploadedPaths: string[] = [];
     try {
-      const frontPath = await upload(front, "front");
-      const backPath = back ? await upload(back, "back") : null;
+      const frontPath = await upload(front, "front", true);
+      uploadedPaths.push(frontPath);
+      const backPath = back ? await upload(back, "back", true) : null;
+      if (backPath) uploadedPaths.push(backPath);
       const selfiePath = await upload(selfie, "selfie");
+      uploadedPaths.push(selfiePath);
       await submitKycFn({
         data: {
           documentType: docType as "RG" | "CNH" | "Passport",
@@ -169,6 +189,9 @@ function KycForm({ onDone }: { onDone: () => void }) {
       onDone();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro";
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from("kyc").remove(uploadedPaths).catch(() => undefined);
+      }
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -190,9 +213,9 @@ function KycForm({ onDone }: { onDone: () => void }) {
           <option value="Passport">{tr("Passaporte", "Passport")}</option>
         </select>
       </div>
-      <FileField label={t("becomeCreator.kyc.front")} onChange={setFront} />
-      <FileField label={t("becomeCreator.kyc.back")} onChange={setBack} optional />
-      <FileField label={t("becomeCreator.kyc.selfie")} onChange={setSelfie} />
+      <FileField label={t("becomeCreator.kyc.front")} onChange={setFront} accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" />
+      <FileField label={t("becomeCreator.kyc.back")} onChange={setBack} optional accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" />
+      <FileField label={t("becomeCreator.kyc.selfie")} onChange={setSelfie} accept="image/jpeg,image/png,image/webp,image/gif" />
       <label className="flex items-start gap-2 text-sm text-foreground">
         <input
           type="checkbox"
@@ -242,7 +265,7 @@ function KycForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function FileField({ label, onChange, optional }: { label: string; onChange: (f: File | null) => void; optional?: boolean }) {
+function FileField({ label, onChange, optional, accept }: { label: string; onChange: (f: File | null) => void; optional?: boolean; accept: string }) {
   const { tr } = useI18n();
   return (
     <div>
@@ -251,7 +274,7 @@ function FileField({ label, onChange, optional }: { label: string; onChange: (f:
       </Label>
       <Input
         type="file"
-        accept="image/*"
+        accept={accept}
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
         className="mt-1.5"
       />

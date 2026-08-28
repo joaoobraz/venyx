@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
@@ -25,6 +26,9 @@ export function SignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
@@ -44,6 +48,14 @@ export function SignupPage() {
       toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
       return;
     }
+    if (password.length < 8) {
+      toast.error(tr("A senha precisa ter pelo menos 8 caracteres.", "Your password must be at least 8 characters."));
+      return;
+    }
+    if (password !== passwordConfirmation) {
+      toast.error(tr("As senhas não coincidem.", "The passwords do not match."));
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -52,6 +64,9 @@ export function SignupPage() {
         options: {
           emailRedirectTo: createOAuthCallbackUrl(window.location.origin),
           captchaToken: captchaToken ?? undefined,
+          // Disponível nos templates do Supabase como {{ .Data.product_name }}.
+          // Isso mantém o e-mail de confirmação com a identidade da Fanlira.
+          data: { product_name: "Fanlira", brand_name: "Fanlira" },
         },
       });
       if (error) throw error;
@@ -66,6 +81,7 @@ export function SignupPage() {
       setConfirmationEmail(email);
       trackProductEvent("signup_completed", { method: "password", confirmationRequired: true });
       setPassword("");
+      setPasswordConfirmation("");
       toast.success(
         tr(
           "Confira seu e-mail para confirmar a conta.",
@@ -162,16 +178,54 @@ export function SignupPage() {
             </div>
             <div>
               <Label htmlFor="password">{t("auth.password")}</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5"
-              />
+              <div className="relative mt-1.5">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? tr("Ocultar senha", "Hide password") : tr("Mostrar senha", "Show password")}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tr("Use pelo menos 8 caracteres.", "Use at least 8 characters.")}
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="password-confirmation">
+                {tr("Confirme sua senha", "Confirm your password")}
+              </Label>
+              <div className="relative mt-1.5">
+                <Input
+                  id="password-confirmation"
+                  type={showPasswordConfirmation ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={passwordConfirmation}
+                  onChange={(e) => setPasswordConfirmation(e.target.value)}
+                  className="pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirmation((visible) => !visible)}
+                  aria-label={showPasswordConfirmation ? tr("Ocultar confirmação", "Hide confirmation") : tr("Mostrar confirmação", "Show confirmation")}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPasswordConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <TurnstileCaptcha
               action="signup"
