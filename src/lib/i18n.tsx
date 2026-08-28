@@ -1,7 +1,25 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { localeFromPathname } from "./localized-paths";
+import { localeFromBrowserLanguages } from "./locale-detection";
 
 export type Locale = "pt-BR" | "en" | "es";
+
+const LOCALE_STORAGE_KEY = "locale";
+const LOCALE_SOURCE_KEY = "locale-source";
+
+function isLocale(value: string | null): value is Locale {
+  return value === "pt-BR" || value === "en" || value === "es";
+}
+
+function localeFromBrowser(): Locale {
+  if (typeof navigator === "undefined") return "pt-BR";
+  const languages = navigator.languages?.length
+    ? navigator.languages
+    : navigator.language
+      ? [navigator.language]
+      : [];
+  return localeFromBrowserLanguages(languages);
+}
 
 type Dict = Record<string, string>;
 
@@ -618,9 +636,18 @@ const Ctx = createContext<I18nCtx | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("locale") : null;
-    if (saved === "pt-BR" || saved === "en" || saved === "es") return saved;
-    if (typeof window !== "undefined") return localeFromPathname(window.location.pathname) ?? "pt-BR";
+    const saved = typeof window !== "undefined" ? localStorage.getItem(LOCALE_STORAGE_KEY) : null;
+    const source = typeof window !== "undefined" ? localStorage.getItem(LOCALE_SOURCE_KEY) : null;
+    // Only a deliberate choice in the language menu overrides detection. This
+    // lets older sessions that stored the old default locale migrate safely.
+    if (source === "manual" && isLocale(saved)) return saved;
+    if (typeof window !== "undefined") {
+      const pathLocale = localeFromPathname(window.location.pathname);
+      // Portuguese and Spanish URLs are explicit, localized links. English
+      // URLs are the canonical fallback, so they still adapt to the browser.
+      if (pathLocale === "pt-BR" || pathLocale === "es") return pathLocale;
+      return localeFromBrowser();
+    }
     return "pt-BR";
   });
 
@@ -630,7 +657,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = (l: Locale) => {
     setLocaleState(l);
-    if (typeof window !== "undefined") localStorage.setItem("locale", l);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCALE_STORAGE_KEY, l);
+      localStorage.setItem(LOCALE_SOURCE_KEY, "manual");
+    }
   };
 
   const dictionary = locale === "es" ? spanishDictionary : dictionaries[locale];
