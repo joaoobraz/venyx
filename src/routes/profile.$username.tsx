@@ -278,6 +278,7 @@ export function ProfilePage() {
   const isMe = user && profile && user.id === profile.user_id;
   const isDemoCreatorOwner = demoPreviewRole === "creator" && profile?.user_id === "demo-aline";
   const isProfileOwner = Boolean(isMe || isDemoCreatorOwner);
+  const canViewAsClient = Boolean(isCreator || isDemoCreatorOwner);
   const isLeadPreview = canPreviewOwnProfileAsClient({
     requested: preview === CLIENT_PROFILE_PREVIEW,
     authenticatedUserId: user?.id,
@@ -567,16 +568,18 @@ export function ProfilePage() {
                   </div>
                 ) : (
                   <div className="flex flex-wrap justify-end gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link
-                        to="/profile/$username"
-                        params={{ username: profile.username }}
-                        search={{ preview: CLIENT_PROFILE_PREVIEW }}
-                      >
-                        <Eye className="mr-1.5 h-4 w-4" />
-                        {tr("Visualizar como cliente", "View as client")}
-                      </Link>
-                    </Button>
+                    {canViewAsClient && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          to="/profile/$username"
+                          params={{ username: profile.username }}
+                          search={{ preview: CLIENT_PROFILE_PREVIEW }}
+                        >
+                          <Eye className="mr-1.5 h-4 w-4" />
+                          {tr("Visualizar como cliente", "View as client")}
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/settings/profile">
                         <Settings className="mr-1.5 h-4 w-4" />
