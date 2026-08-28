@@ -14,3 +14,7 @@ test("supports Spanish and English browser languages", () => {
 test("falls back to Portuguese for unknown browser languages", () => {
   assert.equal(localeFromBrowserLanguages(["fr-FR", "de-DE"]), "pt-BR");
 });
+
+test("ignores malformed browser language entries", () => {
+  assert.equal(localeFromBrowserLanguages([undefined, null, "en-US"]), "en");
+});

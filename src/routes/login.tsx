@@ -149,6 +149,11 @@ export function LoginPage() {
       });
       if (verifyError) throw verifyError;
 
+      // Persist the elevated aal2 session before navigating. SSR admin guards
+      // read the bearer token attached to the next server-function request.
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) console.warn("[login.mfa] session refresh failed", refreshError);
+
       navigate({ to: routeTo("/feed") });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Código inválido.");

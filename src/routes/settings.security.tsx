@@ -75,6 +75,11 @@ export function SecurityPage() {
       await supabase
         .from("security_settings")
         .upsert({ user_id: user.id, mfa_enabled: true, mfa_required_for_withdraw: requireForWithdraw });
+      // Ensure the access token sent to protected server functions contains
+      // the aal2 claim immediately after enrollment, without requiring a
+      // browser restart or a second login.
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) console.warn("[security.mfa] session refresh failed", refreshError);
       toast.success(tr("2FA ativado!", "2FA enabled!"));
       setEnrolling(null);
       setCode("");
