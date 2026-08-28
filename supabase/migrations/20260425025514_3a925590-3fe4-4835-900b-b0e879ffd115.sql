@@ -25,7 +25,7 @@ CREATE POLICY "User marca suas notificações como lidas"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- ===== Tabela de cobranças PIX (NexusPag) =====
+-- ===== Tabela genérica de cobranças PIX =====
 -- Persiste cada cobrança gerada para que o webhook possa creditar a venda correta
 CREATE TYPE public.pix_charge_purpose AS ENUM ('subscription', 'ppv', 'tip', 'goal', 'chat_ppv');
 CREATE TYPE public.pix_charge_status AS ENUM ('pending', 'paid', 'expired', 'cancelled', 'refunded');

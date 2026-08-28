@@ -2,21 +2,12 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { getMyPointsForCreator } from "@/_server/loyalty.functions";
+import { TIER_META, loyaltyTierFromPoints, type LoyaltyTier } from "@/lib/loyalty";
 
-export type LoyaltyTier = "bronze" | "silver" | "gold" | "diamond";
-
-export const TIER_META: Record<LoyaltyTier, { label: string; emoji: string; color: string; bg: string }> = {
-  bronze:  { label: "Bronze",   emoji: "🥉", color: "text-orange-300",  bg: "bg-orange-500/10 border-orange-500/30" },
-  silver:  { label: "Prata",    emoji: "🥈", color: "text-slate-300",   bg: "bg-slate-500/10 border-slate-500/30" },
-  gold:    { label: "Ouro",     emoji: "🥇", color: "text-yellow-300",  bg: "bg-yellow-500/10 border-yellow-500/30" },
-  diamond: { label: "Diamante", emoji: "💎", color: "text-cyan-300",    bg: "bg-cyan-500/10 border-cyan-500/30" },
-};
+export { TIER_META, type LoyaltyTier } from "@/lib/loyalty";
 
 export function tierFromPoints(points: number): LoyaltyTier {
-  if (points >= 5000) return "diamond";
-  if (points >= 2000) return "gold";
-  if (points >= 500) return "silver";
-  return "bronze";
+  return loyaltyTierFromPoints(points);
 }
 
 export function LoyaltyBadge({

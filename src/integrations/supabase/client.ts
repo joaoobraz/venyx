@@ -14,6 +14,15 @@ function createSupabaseClient() {
     );
   }
 
+  const configuredProjectId =
+    import.meta.env.VITE_SUPABASE_PROJECT_ID || process.env.SUPABASE_PROJECT_ID;
+  const actualProjectId = new URL(SUPABASE_URL).hostname.split(".")[0];
+  if (configuredProjectId && configuredProjectId !== actualProjectId) {
+    throw new Error(
+      `Supabase environment mismatch: expected project ${configuredProjectId}, but the URL targets ${actualProjectId}.`,
+    );
+  }
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
@@ -33,4 +42,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-

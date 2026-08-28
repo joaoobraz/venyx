@@ -9,6 +9,7 @@ import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { demoLocale } from "@/lib/demo-content";
 import { fetchPosts } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 
@@ -16,9 +17,9 @@ export const Route = createFileRoute("/feed")({
   component: FeedPage,
 });
 
-function FeedPage() {
+export function FeedPage() {
   const { user, loading, isCreator } = useAuth();
-  const { t } = useI18n();
+  const { t, tr, locale } = useI18n();
   const nav = useNavigate();
   const [posts, setPosts] = useState<PostWithRelations[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -31,12 +32,12 @@ function FeedPage() {
     if (!user) return;
     setLoadingPosts(true);
     try {
-      const list = await fetchPosts({ viewerId: user.id });
+      const list = await fetchPosts({ viewerId: user.id, locale: demoLocale(locale) });
       setPosts(list);
     } finally {
       setLoadingPosts(false);
     }
-  }, [user]);
+  }, [user, locale]);
 
   useEffect(() => {
     if (user) load();
@@ -56,7 +57,9 @@ function FeedPage() {
           <Link to="/creator/posts">
             <div className="flex items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 transition-colors hover:bg-primary/10">
               <PenSquare className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-foreground">Criar novo post</span>
+              <span className="text-sm font-medium text-foreground">
+                {tr("Criar novo post", "Create a new post")}
+              </span>
             </div>
           </Link>
         )}
@@ -80,4 +83,3 @@ function FeedPage() {
     </AppShell>
   );
 }
-

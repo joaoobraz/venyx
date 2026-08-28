@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Sparkles, ShoppingCart } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/creator/upsells")({
   component: UpsellsPage,
@@ -28,7 +29,8 @@ interface Offer {
   position: number;
 }
 
-function UpsellsPage() {
+export function UpsellsPage() {
+  const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
   const upsertFn = useServerFn(upsertOffer);
@@ -43,7 +45,7 @@ function UpsellsPage() {
     else if (!isCreator) nav({ to: "/become-creator" });
   }, [user, isCreator, loading, nav]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("upsell_offers")
@@ -52,17 +54,17 @@ function UpsellsPage() {
       .order("kind")
       .order("position");
     setOffers((data as Offer[]) ?? []);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user) load();
-  }, [user]);
+  }, [user, load]);
 
   if (!user || !isCreator) return null;
 
   const save = async () => {
     if (!editing || !editing.title || !editing.price_cents || !editing.kind) {
-      toast.error("Preencha título, tipo e preço");
+      toast.error(tr("Preencha título, tipo e preço", "Enter a title, type and price"));
       return;
     }
     setBusy(true);
@@ -79,24 +81,24 @@ function UpsellsPage() {
           position: editing.position ?? 0,
         },
       });
-      toast.success("Oferta salva!");
+      toast.success(tr("Oferta salva!", "Offer saved!"));
       setEditing(null);
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Remover esta oferta?")) return;
+    if (!confirm(tr("Remover esta oferta?", "Remove this offer?"))) return;
     try {
       await deleteFn({ data: { id } });
-      toast.success("Removida");
+      toast.success(tr("Removida", "Removed"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     }
   };
 
@@ -107,18 +109,24 @@ function UpsellsPage() {
     <AppShell>
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Order Bumps & Upsells</h1>
+          <h1 className="text-xl font-bold text-foreground">
+            {tr("Adicionais e upsells", "Order bumps & upsells")}
+          </h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Aumente o ticket médio: ofereça extras no checkout (até 3 bumps) e uma oferta única logo
-            após a assinatura (1 upsell). Toda entrega precisa ficar dentro da plataforma — links
-            externos, redes sociais, telefone e e-mail são bloqueados.
+            {tr(
+              "Aumente o ticket médio: ofereça extras no checkout (até 3 adicionais) e uma oferta única após a assinatura (1 upsell). Toda entrega deve permanecer na plataforma; links externos, redes sociais, telefone e e-mail são bloqueados.",
+              "Increase average order value with checkout extras (up to 3 bumps) and one post-purchase upsell. Delivery must stay on the platform; external links, social handles, phone numbers and email addresses are blocked.",
+            )}
           </p>
         </div>
 
         <Section
           icon={<ShoppingCart className="h-4 w-4 text-accent" />}
-          title="Order Bumps (até 3)"
-          description="Aparecem como checkboxes no checkout da assinatura. O cliente marca e o valor entra no mesmo Pix."
+          title={tr("Adicionais no checkout (até 3)", "Order bumps (up to 3)")}
+          description={tr(
+            "Aparecem como opções no checkout da assinatura. O cliente seleciona e o valor entra no mesmo Pix.",
+            "Shown as optional items during subscription checkout and charged in the same Pix payment.",
+          )}
           offers={bumps}
           max={3}
           onNew={() => setEditing({ kind: "order_bump", is_active: true, position: bumps.length })}
@@ -127,9 +135,12 @@ function UpsellsPage() {
         />
 
         <Section
-          icon={<Sparkles className="h-4 w-4 text-accent" />}
-          title="One-Click Upsell (1 ativo)"
-          description="Mostrado em tela cheia logo após a assinatura ser confirmada. 1 clique gera novo Pix."
+          icon={<ShoppingCart className="h-4 w-4 text-accent" />}
+          title={tr("Upsell em um clique (1 ativo)", "One-click upsell (1 active)")}
+          description={tr(
+            "Exibido logo após a confirmação da assinatura. Um clique gera um novo Pix.",
+            "Shown after the subscription is confirmed. One click creates a new Pix payment.",
+          )}
           offers={upsells}
           max={1}
           onNew={() => setEditing({ kind: "post_purchase_upsell", is_active: true, position: 0 })}
@@ -142,56 +153,77 @@ function UpsellsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editing?.id ? "Editar oferta" : "Nova oferta"}
+              {editing?.id ? tr("Editar oferta", "Edit offer") : tr("Nova oferta", "New offer")}
             </DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground">Título (máx. 60)</label>
+                <label className="text-xs text-muted-foreground">
+                  {tr("Título (máx. 60)", "Title (max. 60)")}
+                </label>
                 <Input
                   value={editing.title ?? ""}
                   maxLength={60}
                   onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                  placeholder="Ex: Pack 10 fotos exclusivas"
+                  placeholder={tr(
+                    "Ex.: pacote com 10 fotos exclusivas",
+                    "E.g. pack of 10 exclusive photos",
+                  )}
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Descrição (opcional, máx. 280)</label>
+                <label className="text-xs text-muted-foreground">
+                  {tr("Descrição (opcional, máx. 280)", "Description (optional, max. 280)")}
+                </label>
                 <Textarea
                   value={editing.description ?? ""}
                   maxLength={280}
                   rows={3}
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                  placeholder="Detalhe o que o cliente recebe — sem links, telefone ou redes sociais."
+                  placeholder={tr(
+                    "Detalhe o que o cliente recebe — sem links, telefone ou redes sociais.",
+                    "Describe what the customer receives—no links, phone numbers or social handles.",
+                  )}
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Preço (R$)</label>
+                <label className="text-xs text-muted-foreground">
+                  {tr("Preço (R$)", "Price (R$)")}
+                </label>
                 <Input
                   type="number"
                   step="0.50"
                   min="1"
                   value={editing.price_cents ? (editing.price_cents / 100).toFixed(2) : ""}
                   onChange={(e) =>
-                    setEditing({ ...editing, price_cents: Math.round(parseFloat(e.target.value || "0") * 100) })
+                    setEditing({
+                      ...editing,
+                      price_cents: Math.round(parseFloat(e.target.value || "0") * 100),
+                    })
                   }
                 />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">
-                  Post de entrega (opcional — UUID de um post seu PPV)
+                  {tr(
+                    "Post de entrega (opcional — UUID de um post PPV seu)",
+                    "Delivery post (optional—UUID of one of your PPV posts)",
+                  )}
                 </label>
                 <Input
                   value={editing.media_post_id ?? ""}
                   onChange={(e) =>
                     setEditing({ ...editing, media_post_id: e.target.value || null })
                   }
-                  placeholder="Ao pagar, libera esse post automaticamente"
+                  placeholder={tr(
+                    "Ao pagar, esse post é liberado automaticamente",
+                    "Payment automatically unlocks this post",
+                  )}
                 />
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted p-3">
-                <span className="text-sm">Ativa</span>
+                <span className="text-sm">{tr("Ativa", "Active")}</span>
                 <Switch
                   checked={editing.is_active ?? true}
                   onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
@@ -202,7 +234,7 @@ function UpsellsPage() {
                 disabled={busy}
                 className="w-full bg-primary text-primary-foreground"
               >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Salvar", "Save")}
               </Button>
             </div>
           )}
@@ -231,6 +263,7 @@ function Section({
   onEdit: (o: Offer) => void;
   onDelete: (id: string) => void;
 }) {
+  const { tr } = useI18n();
   const activeCount = offers.filter((o) => o.is_active).length;
   return (
     <div className="space-y-2 rounded-2xl bg-card p-5">
@@ -238,7 +271,7 @@ function Section({
         {icon}
         <h2 className="text-sm font-bold text-foreground">{title}</h2>
         <span className="ml-auto text-[10px] font-semibold text-muted-foreground">
-          {activeCount}/{max} ativas
+          {activeCount}/{max} {tr("ativas", "active")}
         </span>
       </div>
       <p className="text-xs text-muted-foreground">{description}</p>
@@ -246,7 +279,7 @@ function Section({
       <div className="space-y-2 pt-2">
         {offers.length === 0 && (
           <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-            Nenhuma oferta ainda.
+            {tr("Nenhuma oferta ainda.", "No offers yet.")}
           </p>
         )}
         {offers.map((o) => (
@@ -256,7 +289,7 @@ function Section({
                 <span className="text-sm font-bold text-foreground">{o.title}</span>
                 {!o.is_active && (
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    inativa
+                    {tr("inativa", "inactive")}
                   </span>
                 )}
               </div>
@@ -268,7 +301,7 @@ function Section({
               </div>
             </div>
             <Button size="sm" variant="outline" onClick={() => onEdit(o)}>
-              Editar
+              {tr("Editar", "Edit")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => onDelete(o.id)}>
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -284,7 +317,7 @@ function Section({
         variant="outline"
         className="w-full"
       >
-        <Plus className="mr-1 h-4 w-4" /> Nova oferta
+        <Plus className="mr-1 h-4 w-4" /> {tr("Nova oferta", "New offer")}
       </Button>
     </div>
   );

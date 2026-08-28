@@ -9,6 +9,8 @@
  */
 
 const APP_DOMAINS = [
+  "fanlira.com.br",
+  "fanlira.com",
   "venyx.app",
   "venyx.com",
   "venyx.com.br",
@@ -54,10 +56,10 @@ const PATTERNS: Array<{ id: string; label: string; re: RegExp }> = [
   { id: "phone", label: "Telefone", re: /(?:\+?\d{1,3})?\d{10,14}/ },
 
   // E-mail
-  { id: "email", label: "E-mail", re: /[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/i },
+  { id: "email", label: "E-mail", re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i },
 
   // URLs externas (não-app)
-  { id: "url", label: "Link externo", re: /\b(?:https?:\/\/|www\.)[a-z0-9.\-]+\.[a-z]{2,}(?:\/[^\s]*)?/i },
+  { id: "url", label: "Link externo", re: /\b(?:https?:\/\/|www\.)[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s]*)?/i },
 ];
 
 export interface ContactDetection {
@@ -82,12 +84,30 @@ export function detectExternalContact(text: string): ContactDetection {
     matches.push({ id: p.id, label: p.label, sample });
   }
 
+  const compactDigits = text.replace(/\D/g, "");
+  if (
+    compactDigits.length >= 10 &&
+    compactDigits.length <= 15 &&
+    !matches.some((match) => match.id === "phone")
+  ) {
+    matches.push({ id: "phone", label: "Telefone", sample: compactDigits });
+  }
+
   return { blocked: matches.length > 0, matches };
 }
 
 /** Mensagem amigável para exibir ao usuário ao bloquear envio. */
-export function contactBlockMessage(d: ContactDetection): string {
+export function contactBlockMessage(
+  d: ContactDetection,
+  locale: "pt-BR" | "en" | "es" = "pt-BR",
+): string {
   if (!d.blocked) return "";
   const labels = Array.from(new Set(d.matches.map((m) => m.label))).join(", ");
-  return `Mensagem bloqueada: detectamos compartilhamento de contato externo (${labels}). Para sua segurança e da plataforma, mantenha as conversas e pagamentos dentro do Venyx.`;
+  if (locale === "en") {
+    return `Message blocked: we detected external contact sharing (${labels}). For your safety and the platform's safety, keep conversations and payments inside Fanlira.`;
+  }
+  if (locale === "es") {
+    return `Mensaje bloqueado: detectamos contacto externo (${labels}). Por tu seguridad y la de la plataforma, mantén las conversaciones y pagos dentro de Fanlira.`;
+  }
+  return `Mensagem bloqueada: detectamos compartilhamento de contato externo (${labels}). Para sua segurança e da plataforma, mantenha as conversas e pagamentos dentro do Fanlira.`;
 }

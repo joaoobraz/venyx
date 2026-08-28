@@ -1,53 +1,183 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { CircleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
+import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
+import { getPasswordLoginError } from "@/lib/auth-errors";
+import { localizedPathname } from "@/lib/localized-paths";
+import { trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-function LoginPage() {
-  const { t } = useI18n();
+export function LoginPage() {
+  const { t, tr, locale } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoverySent, setRecoverySent] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginCaptchaToken, setLoginCaptchaToken] = useState<string | null>(null);
+  const [loginCaptchaReset, setLoginCaptchaReset] = useState(0);
+  const [recoveryCaptchaToken, setRecoveryCaptchaToken] = useState<string | null>(null);
+  const [recoveryCaptchaReset, setRecoveryCaptchaReset] = useState(0);
+  const captchaRequired = isTurnstileEnabled();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
+  const feedRoute = routeTo("/feed");
 
   useEffect(() => {
-    if (user) navigate({ to: "/feed" });
-  }, [user, navigate]);
+    if (user) navigate({ to: feedRoute });
+  }, [user, navigate, feedRoute]);
+
+  const prepareMfaChallenge = async (): Promise<boolean> => {
+    const { data: aal, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aalError) throw aalError;
+
+    if (aal.currentLevel !== "aal1" || aal.nextLevel !== "aal2") return false;
+
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (factorsError) throw factorsError;
+    const verifiedFactor = factors.totp.find((factor) => factor.status === "verified");
+    if (!verifiedFactor) return false;
+
+    setMfaFactorId(verifiedFactor.id);
+    return true;
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    if (captchaRequired && !loginCaptchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
       return;
     }
-    navigate({ to: "/feed" });
+    setLoginError(null);
+    setRecoverySent(false);
+    setLoading(true);
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+        options: { captchaToken: loginCaptchaToken ?? undefined },
+      });
+      if (error) throw error;
+      if (await prepareMfaChallenge()) return;
+      navigate({ to: routeTo("/feed") });
+    } catch (error) {
+      trackProductEvent("login_failed", {
+        method: "password",
+        reason: error instanceof Error ? error.name : "unknown",
+      });
+      const message = getPasswordLoginError(error, locale);
+      setLoginError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setLoginCaptchaToken(null);
+      setLoginCaptchaReset((current) => current + 1);
+    }
+  };
+
+  const sendPasswordRecovery = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
+    if (captchaRequired && !recoveryCaptchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
+
+    setRecoveryLoading(true);
+    setRecoverySent(false);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
+        captchaToken: recoveryCaptchaToken ?? undefined,
+      });
+      if (error) throw error;
+      setRecoverySent(true);
+      toast.success(
+        tr(
+          "Enviamos o link para ativar ou redefinir a senha da Fanlira.",
+          "We sent the link to activate or reset your Fanlira password.",
+        ),
+      );
+    } catch {
+      toast.error(
+        tr(
+          "Não foi possível enviar o link agora. Tente novamente em alguns minutos.",
+          "We could not send the link right now. Try again in a few minutes.",
+        ),
+      );
+    } finally {
+      setRecoveryLoading(false);
+      setRecoveryCaptchaToken(null);
+      setRecoveryCaptchaReset((current) => current + 1);
+    }
+  };
+
+  const verifyMfa = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId) return;
+    setLoading(true);
+    try {
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: mfaFactorId,
+      });
+      if (challengeError) throw challengeError;
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: challenge.id,
+        code: mfaCode,
+      });
+      if (verifyError) throw verifyError;
+
+      navigate({ to: routeTo("/feed") });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Código inválido.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
+    setGoogleLoading(true);
+    try {
+      await ensureGoogleAuthIsEnabled();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: createOAuthCallbackUrl(window.location.origin),
+          queryParams: { prompt: "select_account" },
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("O Google não retornou uma página de login.");
+      window.location.assign(data.url);
+    } catch (error) {
+      setGoogleLoading(false);
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível abrir o login do Google.",
+      );
     }
-    if (result.redirected) return;
-    navigate({ to: "/feed" });
   };
 
   return (
@@ -57,21 +187,133 @@ function LoginPage() {
         <h1 className="text-3xl font-bold text-foreground">{t("auth.login.title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("auth.login.subtitle")}</p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          <div>
-            <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" />
-          </div>
-          <div>
-            <Label htmlFor="password">{t("auth.password")}</Label>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1.5" />
-          </div>
-          <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            {loading ? t("common.loading") : t("auth.login.button")}
-          </Button>
-        </form>
+        {mfaFactorId ? (
+          <form onSubmit={verifyMfa} className="mt-8 space-y-4">
+            <div>
+              <Label htmlFor="mfa-code">Código da autenticação em dois fatores</Label>
+              <Input
+                id="mfa-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                className="mt-1.5 text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading || mfaCode.length !== 6}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {loading ? t("common.loading") : "Confirmar código"}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            <div>
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setLoginError(null);
+                  setRecoverySent(false);
+                }}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setLoginError(null);
+                }}
+                className="mt-1.5"
+              />
+            </div>
+            <TurnstileCaptcha
+              action="login"
+              onTokenChange={setLoginCaptchaToken}
+              resetSignal={loginCaptchaReset}
+            />
+            <Button
+              type="submit"
+              disabled={loading || (captchaRequired && !loginCaptchaToken)}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {loading ? t("common.loading") : t("auth.login.button")}
+            </Button>
+          </form>
+        )}
 
-        <Link to="/reset-password" className="mt-3 text-center text-sm text-muted-foreground hover:text-primary">
+        {loginError && !mfaFactorId && (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+          >
+            <div className="flex gap-3">
+              <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-medium text-foreground">{loginError}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {tr(
+                    "Se ainda não criou uma conta Fanlira, faça o cadastro. Se já criou, redefina a senha.",
+                    "Create a Fanlira account if you do not have one yet, or reset its password.",
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button asChild type="button" size="sm">
+                <Link to={routeTo("/signup")}>{tr("Criar conta Fanlira", "Create Fanlira account")}</Link>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={recoveryLoading || (captchaRequired && !recoveryCaptchaToken)}
+                onClick={sendPasswordRecovery}
+              >
+                {recoveryLoading
+                  ? t("common.loading")
+                  : tr("Ativar/redefinir senha", "Activate/reset password")}
+              </Button>
+            </div>
+            <div className="mt-3">
+              <TurnstileCaptcha
+                action="password_recovery"
+                onTokenChange={setRecoveryCaptchaToken}
+                resetSignal={recoveryCaptchaReset}
+              />
+            </div>
+            {recoverySent && (
+              <p className="mt-3 text-xs font-medium text-foreground" role="status">
+                {tr(
+                  "Confira a caixa de entrada e o spam. Abra o link no mesmo computador para escolher a senha da Fanlira.",
+                  "Check your inbox and spam. Open the link on this computer to choose your Fanlira password.",
+                )}
+              </p>
+            )}
+          </div>
+        )}
+
+        <Link
+          to={routeTo("/reset-password")}
+          className="mt-3 text-center text-sm text-muted-foreground hover:text-primary"
+        >
           {t("auth.login.forgot")}
         </Link>
 
@@ -81,13 +323,19 @@ function LoginPage() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <Button variant="outline" onClick={onGoogle} className="w-full">
-          {t("auth.google")}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onGoogle}
+          disabled={googleLoading}
+          className="w-full"
+        >
+          {googleLoading ? t("common.loading") : t("auth.google")}
         </Button>
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           {t("auth.login.noAccount")}{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
+          <Link to={routeTo("/signup")} className="font-medium text-primary hover:underline">
             {t("nav.signup")}
           </Link>
         </p>

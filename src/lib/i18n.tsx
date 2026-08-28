@@ -1,10 +1,29 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { localeFromPathname } from "./localized-paths";
+import { localeFromBrowserLanguages } from "./locale-detection";
 
-export type Locale = "pt-BR" | "en";
+export type Locale = "pt-BR" | "en" | "es";
+
+const LOCALE_STORAGE_KEY = "locale";
+const LOCALE_SOURCE_KEY = "locale-source";
+
+function isLocale(value: string | null): value is Locale {
+  return value === "pt-BR" || value === "en" || value === "es";
+}
+
+function localeFromBrowser(): Locale {
+  if (typeof navigator === "undefined") return "pt-BR";
+  const languages = navigator.languages?.length
+    ? navigator.languages
+    : navigator.language
+      ? [navigator.language]
+      : [];
+  return localeFromBrowserLanguages(languages);
+}
 
 type Dict = Record<string, string>;
 
-const dictionaries: Record<Locale, Dict> = {
+const dictionaries: Record<Exclude<Locale, "es">, Dict> = {
   "pt-BR": {
     "nav.home": "Início",
     "nav.feed": "Feed",
@@ -15,30 +34,57 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.profile": "Perfil",
     "nav.settings": "Configurações",
     "nav.wallet": "Carteira",
+    "nav.payments": "Pagamentos",
     "nav.login": "Entrar",
     "nav.signup": "Criar conta",
     "nav.logout": "Sair",
+    "nav.mobile": "Navegação principal",
+    "nav.menu": "Abrir menu",
+    "nav.account": "Minha conta",
+    "nav.wishlist": "Favoritos",
+    "nav.loyalty": "Fidelidade",
+    "nav.creatorArea": "Área da criadora",
+    "nav.newPost": "Novo post",
+    "nav.plans": "Planos",
+    "nav.coupons": "Cupons",
+    "nav.mailing": "Mensagens em massa",
+    "nav.topFans": "Top fãs",
+    "nav.linkTree": "Fanlira Links",
+    "nav.gifts": "Lista de Mimos",
+    "nav.affiliate": "Afiliado",
+    "nav.security": "Segurança",
+    "nav.commentModeration": "Moderação de comentários",
+
+    "preview.viewAs": "Visualizar como",
+    "preview.realAccount": "Site normal",
+    "preview.client": "Cliente (lead)",
+    "preview.creator": "Modelo",
+    "preview.moderator": "Administrador",
+    "preview.safety": "A troca local não altera as permissões reais da conta.",
+    "preview.openPanel": "Abrir painel da visão",
+    "preview.reports": "Denúncias",
+    "preview.users": "Usuários",
+    "preview.audit": "Auditoria",
+    "preview.moderation": "Moderação",
 
     "landing.hero.badge": "Plataforma +18",
     "landing.hero.title": "Conteúdo exclusivo. Direto da criadora pra você.",
-    "landing.hero.subtitle": "Assine, troque mensagens e desbloqueie conteúdos PPV das suas criadoras favoritas.",
+    "landing.hero.subtitle":
+      "Assine, troque mensagens e desbloqueie conteúdos PPV das suas criadoras favoritas.",
     "landing.hero.cta": "Começar agora",
     "landing.hero.cta2": "Já tenho conta",
 
     "landing.features.title": "Tudo o que você precisa",
     "landing.features.subscribe.title": "Assinaturas mensais",
-    "landing.features.subscribe.desc": "Acesse todo o conteúdo da sua criadora favorita por uma mensalidade.",
+    "landing.features.subscribe.desc":
+      "Acesse todo o conteúdo da sua criadora favorita por uma mensalidade.",
     "landing.features.ppv.title": "Conteúdo PPV",
     "landing.features.ppv.desc": "Compre conteúdos avulsos sem precisar assinar.",
     "landing.features.chat.title": "Chat privado",
     "landing.features.chat.desc": "Converse 1-a-1, envie mimos e desbloqueie mídias exclusivas.",
     "landing.features.creator.title": "Seja criadora",
-    "landing.features.creator.desc": "Monetize seu conteúdo com segurança. Saques rápidos, suporte direto.",
-
-    "age.title": "Conteúdo para maiores de 18 anos",
-    "age.body": "Este site contém material adulto explícito. Ao continuar, você confirma que tem 18 anos ou mais e que aceita os termos de uso.",
-    "age.confirm": "Sim, tenho 18+",
-    "age.leave": "Sair",
+    "landing.features.creator.desc":
+      "Monetize seu conteúdo com segurança. Saques rápidos, suporte direto.",
 
     "auth.email": "E-mail",
     "auth.password": "Senha",
@@ -59,7 +105,8 @@ const dictionaries: Record<Locale, Dict> = {
     "auth.reset.update": "Atualizar senha",
 
     "becomeCreator.banner.title": "Torne-se Criadora",
-    "becomeCreator.banner.subtitle": "Comece a ganhar dinheiro com seu conteúdo. Verificação rápida.",
+    "becomeCreator.banner.subtitle":
+      "Comece a ganhar dinheiro com seu conteúdo. Verificação rápida.",
     "becomeCreator.banner.cta": "Quero ser criadora",
     "becomeCreator.banner.pending": "Verificação em análise",
     "becomeCreator.title": "Vire criadora e monetize seu conteúdo",
@@ -89,6 +136,11 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.new": "Novas criadoras",
     "explore.categories": "Categorias",
 
+    "top.title": "Top 15 Criadoras",
+    "top.refresh": "Ranking atualizado a cada 6 horas.",
+    "top.empty.title": "As primeiras criadoras estão chegando",
+    "top.empty.body": "O ranking aparecerá assim que houver perfis verificados e com plano ativo.",
+
     "profile.subscribe": "ASSINAR",
     "profile.subscribed": "Assinante",
     "profile.message": "Mensagem",
@@ -98,6 +150,11 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.about": "Sobre",
     "profile.followers": "Seguidores",
     "profile.following": "Seguindo",
+    "profile.noBio": "Esta criadora ainda não adicionou uma bio.",
+    "profile.previewBio": "Conteúdo exclusivo, bastidores e novidades toda semana.",
+    "profile.previewOnly": "Ação indisponível no modo de apresentação",
+    "profile.noMedia": "Nenhuma mídia publicada ainda.",
+    "profile.noPosts": "Nenhum post publicado ainda.",
 
     "chat.title": "Mensagens",
     "chat.search": "Buscar conversas",
@@ -105,11 +162,40 @@ const dictionaries: Record<Locale, Dict> = {
     "chat.placeholder": "Digite uma mensagem...",
     "chat.send": "Enviar",
     "chat.empty": "Selecione uma conversa",
+    "chat.noConversations": "Nenhuma conversa ainda.",
+    "chat.activeSubscriber": "Assinante ativo",
+
+    "safety.actions": "Ações de segurança",
+    "safety.report": "Denunciar",
+    "safety.block": "Bloquear",
+    "safety.unblock": "Desbloquear",
+    "safety.mute": "Silenciar",
+    "safety.unmute": "Ativar notificações",
+    "safety.reportTitle": "Enviar denúncia",
+    "safety.reportDescription": "Nossa equipe analisará a denúncia.",
+    "safety.reportAbout": "Denunciar",
+    "safety.reason": "Motivo",
+    "safety.reason.spam": "Spam ou fraude",
+    "safety.reason.harassment": "Assédio ou ameaça",
+    "safety.reason.impersonation": "Falsa identidade",
+    "safety.reason.underage": "Possível menor de idade",
+    "safety.reason.nonConsensual": "Conteúdo não consentido",
+    "safety.reason.illegal": "Conteúdo ilegal",
+    "safety.reason.other": "Outro",
+    "safety.details": "Conte o que aconteceu (opcional)",
+    "safety.submit": "Enviar denúncia",
+    "safety.reported": "Denúncia enviada para análise.",
+    "safety.blocked": "Perfil bloqueado.",
+    "safety.unblocked": "Perfil desbloqueado.",
+    "safety.muted": "Perfil silenciado.",
+    "safety.unmuted": "Notificações reativadas.",
+    "safety.error": "Não foi possível concluir. Tente novamente.",
 
     "common.cancel": "Cancelar",
     "common.save": "Salvar",
     "common.loading": "Carregando...",
     "common.required": "Campo obrigatório",
+    "common.back": "Voltar",
   },
   en: {
     "nav.home": "Home",
@@ -121,30 +207,56 @@ const dictionaries: Record<Locale, Dict> = {
     "nav.profile": "Profile",
     "nav.settings": "Settings",
     "nav.wallet": "Wallet",
+    "nav.payments": "Payments",
     "nav.login": "Sign in",
     "nav.signup": "Sign up",
     "nav.logout": "Sign out",
+    "nav.mobile": "Primary navigation",
+    "nav.menu": "Open menu",
+    "nav.account": "My account",
+    "nav.wishlist": "Favorites",
+    "nav.loyalty": "Loyalty",
+    "nav.creatorArea": "Creator area",
+    "nav.newPost": "New post",
+    "nav.plans": "Plans",
+    "nav.coupons": "Coupons",
+    "nav.mailing": "Mass messages",
+    "nav.topFans": "Top fans",
+    "nav.linkTree": "Fanlira Links",
+    "nav.gifts": "Gift List",
+    "nav.affiliate": "Affiliate",
+    "nav.security": "Security",
+    "nav.commentModeration": "Comment moderation",
+
+    "preview.viewAs": "View as",
+    "preview.realAccount": "Regular website",
+    "preview.client": "Client (lead)",
+    "preview.creator": "Creator",
+    "preview.moderator": "Administrator",
+    "preview.safety": "Local switching does not change the account's real permissions.",
+    "preview.openPanel": "Open view dashboard",
+    "preview.reports": "Reports",
+    "preview.users": "Users",
+    "preview.audit": "Audit",
+    "preview.moderation": "Moderation",
 
     "landing.hero.badge": "Adult platform",
     "landing.hero.title": "Exclusive content. Straight from the creator.",
-    "landing.hero.subtitle": "Subscribe, message and unlock PPV content from your favorite creators.",
+    "landing.hero.subtitle":
+      "Subscribe, message and unlock PPV content from your favorite creators.",
     "landing.hero.cta": "Get started",
     "landing.hero.cta2": "I have an account",
 
     "landing.features.title": "Everything you need",
     "landing.features.subscribe.title": "Monthly subscriptions",
-    "landing.features.subscribe.desc": "Access all your favorite creator's content with one monthly fee.",
+    "landing.features.subscribe.desc":
+      "Access all your favorite creator's content with one monthly fee.",
     "landing.features.ppv.title": "PPV content",
     "landing.features.ppv.desc": "Buy individual posts without subscribing.",
     "landing.features.chat.title": "Private chat",
     "landing.features.chat.desc": "1-on-1 messages, tips and exclusive media unlocks.",
     "landing.features.creator.title": "Become a creator",
     "landing.features.creator.desc": "Monetize your content safely. Fast payouts, real support.",
-
-    "age.title": "Adults only (18+)",
-    "age.body": "This site contains explicit adult material. By continuing you confirm you are 18 or older and accept the terms.",
-    "age.confirm": "Yes, I'm 18+",
-    "age.leave": "Leave",
 
     "auth.email": "Email",
     "auth.password": "Password",
@@ -195,6 +307,11 @@ const dictionaries: Record<Locale, Dict> = {
     "explore.new": "New creators",
     "explore.categories": "Categories",
 
+    "top.title": "Top 15 Creators",
+    "top.refresh": "Ranking refreshes every 6 hours.",
+    "top.empty.title": "The first creators are on their way",
+    "top.empty.body": "The ranking will appear once verified creators have active plans.",
+
     "profile.subscribe": "SUBSCRIBE",
     "profile.subscribed": "Subscribed",
     "profile.message": "Message",
@@ -204,6 +321,11 @@ const dictionaries: Record<Locale, Dict> = {
     "profile.about": "About",
     "profile.followers": "Followers",
     "profile.following": "Following",
+    "profile.noBio": "This creator has not added a bio yet.",
+    "profile.previewBio": "Exclusive content, behind the scenes and new releases every week.",
+    "profile.previewOnly": "Action unavailable in presentation mode",
+    "profile.noMedia": "No media published yet.",
+    "profile.noPosts": "No posts published yet.",
 
     "chat.title": "Messages",
     "chat.search": "Search conversations",
@@ -211,38 +333,342 @@ const dictionaries: Record<Locale, Dict> = {
     "chat.placeholder": "Type a message...",
     "chat.send": "Send",
     "chat.empty": "Select a conversation",
+    "chat.noConversations": "No conversations yet.",
+    "chat.activeSubscriber": "Active subscriber",
+
+    "safety.actions": "Safety actions",
+    "safety.report": "Report",
+    "safety.block": "Block",
+    "safety.unblock": "Unblock",
+    "safety.mute": "Mute",
+    "safety.unmute": "Unmute",
+    "safety.reportTitle": "Submit a report",
+    "safety.reportDescription": "Our team will review this report.",
+    "safety.reportAbout": "Report",
+    "safety.reason": "Reason",
+    "safety.reason.spam": "Spam or scam",
+    "safety.reason.harassment": "Harassment or threat",
+    "safety.reason.impersonation": "Impersonation",
+    "safety.reason.underage": "Possible underage person",
+    "safety.reason.nonConsensual": "Non-consensual content",
+    "safety.reason.illegal": "Illegal content",
+    "safety.reason.other": "Other",
+    "safety.details": "Tell us what happened (optional)",
+    "safety.submit": "Submit report",
+    "safety.reported": "Report submitted for review.",
+    "safety.blocked": "Profile blocked.",
+    "safety.unblocked": "Profile unblocked.",
+    "safety.muted": "Profile muted.",
+    "safety.unmuted": "Notifications restored.",
+    "safety.error": "We couldn't complete that. Please try again.",
 
     "common.cancel": "Cancel",
     "common.save": "Save",
     "common.loading": "Loading...",
     "common.required": "Required",
+    "common.back": "Back",
   },
 };
+
+const spanishDictionary: Dict = {
+  ...dictionaries.en,
+  "nav.home": "Inicio",
+  "nav.feed": "Feed",
+  "nav.explore": "Explorar",
+  "nav.search": "Buscar",
+  "nav.chat": "Mensajes",
+  "nav.notifications": "Notificaciones",
+  "nav.profile": "Perfil",
+  "nav.settings": "Configuración",
+  "nav.wallet": "Cartera",
+  "nav.payments": "Pagos",
+  "nav.login": "Entrar",
+  "nav.signup": "Crear cuenta",
+  "nav.logout": "Salir",
+  "nav.mobile": "Navegación principal",
+  "nav.menu": "Abrir menú",
+  "nav.account": "Mi cuenta",
+  "nav.wishlist": "Favoritos",
+  "nav.loyalty": "Fidelidad",
+  "nav.creatorArea": "Área de creadora",
+  "nav.newPost": "Nueva publicación",
+  "nav.plans": "Planes",
+  "nav.coupons": "Cupones",
+  "nav.mailing": "Mensajes masivos",
+  "nav.topFans": "Top fans",
+  "nav.linkTree": "Fanlira Links",
+  "nav.gifts": "Lista de regalos",
+  "nav.affiliate": "Afiliada",
+  "nav.security": "Seguridad",
+  "nav.commentModeration": "Moderación de comentarios",
+
+  "preview.viewAs": "Ver como",
+  "preview.realAccount": "Sitio normal",
+  "preview.client": "Cliente (lead)",
+  "preview.creator": "Creadora",
+  "preview.moderator": "Administrador",
+  "preview.safety": "El cambio local no altera los permisos reales de la cuenta.",
+  "preview.openPanel": "Abrir panel de visión",
+  "preview.reports": "Denuncias",
+  "preview.users": "Usuarios",
+  "preview.audit": "Auditoría",
+  "preview.moderation": "Moderación",
+
+  "landing.hero.badge": "Plataforma +18",
+  "landing.hero.title": "Contenido exclusivo. Directo de la creadora para ti.",
+  "landing.hero.subtitle":
+    "Suscríbete, envía mensajes y desbloquea contenidos PPV de tus creadoras favoritas.",
+  "landing.hero.cta": "Empezar ahora",
+  "landing.hero.cta2": "Ya tengo cuenta",
+  "landing.features.title": "Todo lo que necesitas",
+  "landing.features.subscribe.title": "Suscripciones mensuales",
+  "landing.features.subscribe.desc":
+    "Accede al contenido de tu creadora favorita con una mensualidad.",
+  "landing.features.ppv.title": "Contenido PPV",
+  "landing.features.ppv.desc": "Compra contenidos individuales sin suscribirte.",
+  "landing.features.chat.title": "Chat privado",
+  "landing.features.chat.desc": "Mensajes 1 a 1, regalos y medios exclusivos.",
+  "landing.features.creator.title": "Sé creadora",
+  "landing.features.creator.desc": "Monetiza tu contenido con seguridad, pagos rápidos y soporte.",
+
+  "auth.email": "E-mail",
+  "auth.password": "Contraseña",
+  "auth.signup.title": "Crear tu cuenta",
+  "auth.signup.subtitle": "Accede a miles de creadoras +18",
+  "auth.signup.button": "Crear cuenta gratis",
+  "auth.signup.haveAccount": "¿Ya tienes cuenta?",
+  "auth.login.title": "Entrar",
+  "auth.login.subtitle": "Bienvenido de vuelta",
+  "auth.login.button": "Entrar",
+  "auth.login.noAccount": "¿Aún no tienes cuenta?",
+  "auth.login.forgot": "Olvidé mi contraseña",
+  "auth.google": "Continuar con Google",
+  "auth.or": "o",
+  "auth.reset.title": "Recuperar contraseña",
+  "auth.reset.send": "Enviar enlace",
+  "auth.reset.new": "Nueva contraseña",
+  "auth.reset.update": "Actualizar contraseña",
+
+  "becomeCreator.banner.title": "Conviértete en creadora",
+  "becomeCreator.banner.subtitle": "Empieza a ganar dinero con tu contenido. Verificación rápida.",
+  "becomeCreator.banner.cta": "Quiero ser creadora",
+  "becomeCreator.banner.pending": "Verificación en análisis",
+  "becomeCreator.title": "Sé creadora y monetiza tu contenido",
+  "becomeCreator.benefit1": "Recibe mensualidades de suscriptores",
+  "becomeCreator.benefit2": "Vende contenidos PPV individuales",
+  "becomeCreator.benefit3": "Recibe regalos en el chat",
+  "becomeCreator.benefit4": "Pagos rápidos y soporte humano",
+  "becomeCreator.start": "Iniciar verificación",
+  "becomeCreator.kyc.title": "Verificación de identidad",
+  "becomeCreator.kyc.docType": "Tipo de documento",
+  "becomeCreator.kyc.front": "Frente del documento",
+  "becomeCreator.kyc.back": "Dorso del documento",
+  "becomeCreator.kyc.selfie": "Selfie sosteniendo el documento",
+  "becomeCreator.kyc.terms": "Confirmo tener 18+ y aceptar los términos de la plataforma.",
+  "becomeCreator.kyc.submit": "Enviar verificación",
+  "becomeCreator.kyc.success": "Verificación enviada. Te avisaremos cuando sea aprobada.",
+
+  "feed.empty.title": "Tu feed está vacío",
+  "feed.empty.cta": "Explorar creadoras",
+  "feed.like": "Me gusta",
+  "feed.comment": "Comentar",
+  "feed.tip": "Regalo",
+  "feed.unlock": "Desbloquear por",
+  "feed.subscribers": "Solo para suscriptores",
+
+  "explore.trending": "En tendencia",
+  "explore.new": "Nuevas creadoras",
+  "explore.categories": "Categorías",
+
+  "top.title": "Top 15 creadoras",
+  "top.refresh": "Ranking actualizado cada 6 horas.",
+  "top.empty.title": "Las primeras creadoras están llegando",
+  "top.empty.body": "El ranking aparecerá cuando haya perfiles verificados y con plan activo.",
+
+  "profile.subscribe": "SUSCRIBIRME",
+  "profile.subscribed": "Suscriptor",
+  "profile.message": "Mensaje",
+  "profile.tip": "Enviar regalo",
+  "profile.posts": "Posts",
+  "profile.media": "Medios",
+  "profile.about": "Sobre",
+  "profile.followers": "Seguidores",
+  "profile.following": "Siguiendo",
+  "profile.noBio": "Esta creadora aún no agregó una bio.",
+  "profile.previewBio": "Contenido exclusivo, bastidores y novedades todas las semanas.",
+  "profile.previewOnly": "Acción no disponible en modo de presentación",
+  "profile.noMedia": "Todavía no hay medios publicados.",
+  "profile.noPosts": "Todavía no hay publicaciones.",
+
+  "chat.title": "Mensajes",
+  "chat.search": "Buscar conversaciones",
+  "chat.online": "Online",
+  "chat.placeholder": "Escribe un mensaje...",
+  "chat.send": "Enviar",
+  "chat.empty": "Selecciona una conversación",
+  "chat.noConversations": "Aún no hay conversaciones.",
+  "chat.activeSubscriber": "Suscriptor activo",
+
+  "safety.actions": "Acciones de seguridad",
+  "safety.report": "Denunciar",
+  "safety.block": "Bloquear",
+  "safety.unblock": "Desbloquear",
+  "safety.mute": "Silenciar",
+  "safety.unmute": "Activar notificaciones",
+  "safety.reportTitle": "Enviar denuncia",
+  "safety.reportDescription": "Nuestro equipo revisará esta denuncia.",
+  "safety.reportAbout": "Denunciar",
+  "safety.reason": "Motivo",
+  "safety.reason.spam": "Spam o fraude",
+  "safety.reason.harassment": "Acoso o amenaza",
+  "safety.reason.impersonation": "Falsa identidad",
+  "safety.reason.underage": "Posible menor de edad",
+  "safety.reason.nonConsensual": "Contenido no consentido",
+  "safety.reason.illegal": "Contenido ilegal",
+  "safety.reason.other": "Otro",
+  "safety.details": "Cuéntanos qué ocurrió (opcional)",
+  "safety.submit": "Enviar denuncia",
+  "safety.reported": "Denuncia enviada para análisis.",
+  "safety.blocked": "Perfil bloqueado.",
+  "safety.unblocked": "Perfil desbloqueado.",
+  "safety.muted": "Perfil silenciado.",
+  "safety.unmuted": "Notificaciones reactivadas.",
+  "safety.error": "No fue posible concluir. Inténtalo de nuevo.",
+
+  "common.cancel": "Cancelar",
+  "common.save": "Guardar",
+  "common.loading": "Cargando...",
+  "common.required": "Campo obligatorio",
+  "common.back": "Volver",
+};
+
+const SPANISH_PHRASES: Record<string, string> = {
+  "Busque por criadoras (nome ou @usuÃ¡rio)...": "Busca creadoras por nombre o @usuario...",
+  "Search creators by name or @username...": "Busca creadoras por nombre o @usuario...",
+  "Buscando...": "Buscando...",
+  "Searching...": "Buscando...",
+  "Comece a digitar para encontrar criadoras.": "Empieza a escribir para encontrar creadoras.",
+  "Start typing to find creators.": "Empieza a escribir para encontrar creadoras.",
+  "Nenhuma criadora encontrada": "No se encontró ninguna creadora",
+  "No creators found": "No se encontró ninguna creadora",
+  "Privacidade": "Privacidad",
+  "Privacy": "Privacidad",
+  "Ajuda": "Ayuda",
+  "Help": "Ayuda",
+  "Voltar": "Volver",
+  "Back": "Volver",
+  "Media": "Medios",
+  "Video": "Video",
+  "Could not load this conversation": "No fue posible cargar esta conversación",
+  "Could not load this conversation.": "No fue posible cargar esta conversación.",
+  "This conversation is read-only while either account is paused.":
+    "Esta conversación está solo en modo lectura mientras una de las cuentas esté pausada.",
+  "Sign in again.": "Inicia sesión nuevamente.",
+  "Error": "Error",
+  "Minimum PPV price is BRL 1.00.": "El precio mínimo del PPV es R$ 1,00.",
+  "Choose an image or video.": "Elige una imagen o video.",
+  "File must be at most 50 MB.": "El archivo debe tener como máximo 50 MB.",
+  "PPV content": "Contenido PPV",
+  "Media sent.": "Medio enviado.",
+  "Couldn't use this media.": "No fue posible usar este medio.",
+  "Chat PPV": "PPV en el chat",
+  "Demo payment confirmed. Media unlocked!": "Pago demostrativo confirmado. ¡Medio desbloqueado!",
+  "Segment: VIP fans": "Segmento: fans VIP",
+  "Segment: Gold+ fans": "Segmento: fans Oro+",
+  "Clear": "Limpiar",
+  "Fanlira tier": "Nivel Fanlira",
+  "typing…": "escribiendo…",
+  "online": "online",
+  "offline": "offline",
+  "Gift confirmed": "Regalo confirmado",
+  "Paid": "Pagado",
+  "Amount sent": "Valor enviado",
+  "Payment confirmed": "Pago confirmado",
+  "Awaiting payment": "Esperando pago",
+  "Save edit": "Guardar edición",
+  "Cancel edit": "Cancelar edición",
+  "edited": "editada",
+  "Edit message": "Editar mensaje",
+  "Read": "Leída",
+  "Sent": "Enviada",
+  "Message read": "Mensaje leído",
+  "Message sent": "Mensaje enviado",
+  "Choose media": "Elegir medio",
+  "Cancel PPV": "Cancelar PPV",
+  "Send photo or video": "Enviar foto o video",
+  "Paused account — read-only history": "Cuenta pausada — historial solo lectura",
+  "Send message": "Enviar mensaje",
+  "Unlock price": "Precio para desbloquear",
+  "PPV message (optional)": "Mensaje del PPV (opcional)",
+  "Choose media for the PPV": "Elegir medio para el PPV",
+  "Confirm demo payment": "Confirmar pago simulado",
+  "Unlock media": "Desbloquear medio",
+  "Sharing external contact details (WhatsApp, Telegram, phone or social media) is prohibited.":
+    "Está prohibido compartir contacto externo (WhatsApp, Telegram, teléfono o redes sociales).",
+  "The message contains external contact details and cannot be sent.":
+    "El mensaje contiene contacto externo y no se podrá enviar.",
+  "Paid content: set the price to unlock the next media":
+    "Contenido pago: define el precio para desbloquear el próximo medio",
+  "Charge to unlock the next media (PPV)":
+    "Cobrar para desbloquear el próximo medio (PPV)",
+  "The original media is released to the lead only after payment is confirmed.":
+    "El medio original solo se libera para el lead después de confirmar el pago.",
+  "Set the price the lead will pay, then choose the photo or video that will be locked.":
+    "Define cuánto pagará el lead y luego elige la foto o el video que quedará bloqueado.",
+  "Send paid media": "Enviar medio pago",
+  "Optional PPV message": "Mensaje opcional del PPV",
+  "Example: I prepared something special for you…":
+    "Ej.: Preparé algo especial para ti…",
+};
+
+function translatedSpanishPhrase(pt: string, en: string, es?: string) {
+  return es ?? SPANISH_PHRASES[pt] ?? SPANISH_PHRASES[en] ?? en;
+}
 
 interface I18nCtx {
   locale: Locale;
   setLocale: (l: Locale) => void;
   t: (key: string) => string;
+  tr: (pt: string, en: string, es?: string) => string;
 }
 
 const Ctx = createContext<I18nCtx | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("pt-BR");
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem(LOCALE_STORAGE_KEY) : null;
+    const source = typeof window !== "undefined" ? localStorage.getItem(LOCALE_SOURCE_KEY) : null;
+    // Only a deliberate choice in the language menu overrides detection. This
+    // lets older sessions that stored the old default locale migrate safely.
+    if (source === "manual" && isLocale(saved)) return saved;
+    if (typeof window !== "undefined") {
+      const pathLocale = localeFromPathname(window.location.pathname);
+      // Portuguese and Spanish URLs are explicit, localized links. English
+      // URLs are the canonical fallback, so they still adapt to the browser.
+      if (pathLocale === "pt-BR" || pathLocale === "es") return pathLocale;
+      return localeFromBrowser();
+    }
+    return "pt-BR";
+  });
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("locale") : null;
-    if (saved === "pt-BR" || saved === "en") setLocaleState(saved);
-  }, []);
+    if (typeof document !== "undefined") document.documentElement.lang = locale;
+  }, [locale]);
 
   const setLocale = (l: Locale) => {
     setLocaleState(l);
-    if (typeof window !== "undefined") localStorage.setItem("locale", l);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCALE_STORAGE_KEY, l);
+      localStorage.setItem(LOCALE_SOURCE_KEY, "manual");
+    }
   };
 
-  const t = (key: string) => dictionaries[locale][key] ?? key;
+  const dictionary = locale === "es" ? spanishDictionary : dictionaries[locale];
+  const t = (key: string) => dictionary[key] ?? key;
+  const tr = (pt: string, en: string, es?: string) =>
+    locale === "en" ? en : locale === "es" ? translatedSpanishPhrase(pt, en, es) : pt;
 
-  return <Ctx.Provider value={{ locale, setLocale, t }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ locale, setLocale, t, tr }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

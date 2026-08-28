@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { verifyIdentity } from "@/_server/verification.functions";
 import { formatCpf, isValidCpf, isAdult, onlyDigits } from "@/lib/cpf";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,24 +20,31 @@ import {
 
 /**
  * Verificação de identidade exigida ao assinar conteúdo de uma criadora.
- * Visual próprio da Venyx (inspirado em fluxos do mercado, sem cópia).
+ * Visual próprio da Fanlira (inspirado em fluxos do mercado, sem cópia).
  */
 export function IdentityVerificationModal({
   open,
   onOpenChange,
   onVerified,
+  onPending,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onVerified: () => void;
+  onPending?: () => void;
 }) {
-  const { session } = useAuth();
+  const { user, session } = useAuth();
   const verifyFn = useServerFn(verifyIdentity);
 
   const [country, setCountry] = useState("BR");
   const [cpf, setCpf] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [documentType, setDocumentType] = useState<"RG" | "CNH" | "Passport">("RG");
+  const [documentFront, setDocumentFront] = useState<File | null>(null);
+  const [documentBack, setDocumentBack] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +59,10 @@ export function IdentityVerificationModal({
       setError("Digite seu nome completo, como no documento.");
       return;
     }
+    if (!/^\d{10,11}$/.test(onlyDigits(phone))) {
+      setError("Informe um telefone válido com DDD.");
+      return;
+    }
     if (!birthDate) {
       setError("Informe sua data de nascimento.");
       return;
@@ -59,23 +71,64 @@ export function IdentityVerificationModal({
       setError("Você precisa ter 18 anos ou mais para acessar este conteúdo.");
       return;
     }
+    if (!documentFront || !selfie) {
+      setError("Envie a frente do documento e uma selfie atual.");
+      return;
+    }
 
     const authHeaders = session?.access_token
       ? { Authorization: `Bearer ${session.access_token}` }
       : null;
-    if (!authHeaders) {
+    if (!authHeaders || !user) {
       setError("Faça login para continuar.");
       return;
     }
 
     setBusy(true);
     try {
+      const upload = async (file: File, label: string) => {
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+        if (!allowed.includes(file.type)) {
+          throw new Error(`${label}: use JPG, PNG ou WEBP.`);
+        }
+        if (file.size <= 0 || file.size > 8 * 1024 * 1024) {
+          throw new Error(`${label}: o arquivo deve ter até 8 MB.`);
+        }
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/age-${crypto.randomUUID()}-${label}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("kyc").upload(path, file, {
+          upsert: false,
+          contentType: file.type,
+        });
+        if (uploadError) throw uploadError;
+        return path;
+      };
+
+      const documentFrontPath = await upload(documentFront, "front");
+      const documentBackPath = documentBack ? await upload(documentBack, "back") : null;
+      const selfiePath = await upload(selfie, "selfie");
       const res = await verifyFn({
-        data: { country, cpf: onlyDigits(cpf), full_name: fullName.trim(), birth_date: birthDate },
+        data: {
+          country,
+          cpf: onlyDigits(cpf),
+          full_name: fullName.trim(),
+          phone: onlyDigits(phone),
+          birth_date: birthDate,
+          document_type: documentType,
+          document_front_path: documentFrontPath,
+          document_back_path: documentBackPath,
+          selfie_path: selfiePath,
+        },
         headers: authHeaders,
       });
       if (!res.ok) {
         setError(res.error);
+        return;
+      }
+      if (res.status === "pending") {
+        toast.success("Documentos enviados para análise manual.");
+        onOpenChange(false);
+        onPending?.();
         return;
       }
       toast.success("Identidade confirmada! ✅");
@@ -152,6 +205,22 @@ export function IdentityVerificationModal({
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="phone">Telefone com DDD</Label>
+            <Input
+              id="phone"
+              inputMode="tel"
+              autoComplete="tel-national"
+              placeholder="11999999999"
+              value={phone}
+              onChange={(e) => {
+                setPhone(onlyDigits(e.target.value).slice(0, 11));
+                setError(null);
+              }}
+              maxLength={11}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="birth_date">Data de nascimento</Label>
             <Input
               id="birth_date"
@@ -164,6 +233,35 @@ export function IdentityVerificationModal({
               max="2099-12-31"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <Label>Documento</Label>
+            <Select
+              value={documentType}
+              onValueChange={(value) => setDocumentType(value as "RG" | "CNH" | "Passport")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="RG">RG</SelectItem>
+                <SelectItem value="CNH">CNH</SelectItem>
+                <SelectItem value="Passport">Passaporte</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <VerificationFile
+            label="Frente do documento"
+            file={documentFront}
+            onChange={setDocumentFront}
+          />
+          <VerificationFile
+            label="Verso do documento (opcional)"
+            file={documentBack}
+            onChange={setDocumentBack}
+          />
+          <VerificationFile label="Selfie atual" file={selfie} onChange={setSelfie} />
         </div>
 
         <div className="flex gap-2 pt-1">
@@ -185,5 +283,27 @@ export function IdentityVerificationModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function VerificationFile({
+  label,
+  file,
+  onChange,
+}: {
+  label: string;
+  file: File | null;
+  onChange: (file: File | null) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic"
+        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+      />
+      {file && <p className="truncate text-[11px] text-muted-foreground">{file.name}</p>}
+    </div>
   );
 }

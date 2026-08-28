@@ -1,11 +1,15 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryViewer, type StoryGroup } from "@/components/StoryViewer";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getStoryMediaUrls } from "@/_server/media.functions";
+import { DEMO_MODE } from "@/lib/demo-creators";
+import { demoLocale, getDemoStoryGroups } from "@/lib/demo-content";
+import { useI18n } from "@/lib/i18n";
+import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 
 interface RawStory {
   id: string;
@@ -19,11 +23,18 @@ interface RawStory {
 
 export function StoriesBar() {
   const { user, isCreator } = useAuth();
+  const { tr, locale } = useI18n();
+  const storyMediaFn = useServerFn(getStoryMediaUrls);
+  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
+    if (DEMO_MODE) {
+      setGroups(getDemoStoryGroups(demoLocale(locale)));
+      return;
+    }
     const { data: stories } = await supabase
       .from("stories")
       .select("*")
@@ -34,18 +45,35 @@ export function StoriesBar() {
       setGroups([]);
       return;
     }
+    let urlsByStoryId: Record<string, { url: string; mime_type: string }> = {};
+    try {
+      const signed = await storyMediaFn({
+        data: { storyIds: list.map((story) => story.id) },
+      });
+      urlsByStoryId = signed.urlsByStoryId;
+    } catch {
+      setGroups([]);
+      return;
+    }
     const ids = Array.from(new Set(list.map((s) => s.creator_id)));
     const { data: profs } = await supabase
       .from("profiles")
       .select("user_id, username, display_name, avatar_url")
       .in("user_id", ids);
     const profById = new Map(
-      ((profs ?? []) as { user_id: string; username: string; display_name: string | null; avatar_url: string | null }[]).map(
-        (p) => [p.user_id, p],
-      ),
+      (
+        (profs ?? []) as {
+          user_id: string;
+          username: string;
+          display_name: string | null;
+          avatar_url: string | null;
+        }[]
+      ).map((p) => [p.user_id, p]),
     );
     const grouped = new Map<string, StoryGroup>();
     list.forEach((s) => {
+      const signed = urlsByStoryId[s.id];
+      if (!signed) return;
       const p = profById.get(s.creator_id);
       if (!p) return;
       const g = grouped.get(s.creator_id) ?? {
@@ -57,18 +85,18 @@ export function StoriesBar() {
       };
       g.stories.push({
         id: s.id,
-        url: `${SUPABASE_URL}/storage/v1/object/public/stories/${s.media_path}`,
-        mime: s.mime_type,
+        url: signed.url,
+        mime: signed.mime_type,
         created_at: s.created_at,
       });
       grouped.set(s.creator_id, g);
     });
     setGroups(Array.from(grouped.values()));
-  };
+  }, [locale, storyMediaFn]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const upload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!user) return;
@@ -78,19 +106,26 @@ export function StoriesBar() {
     try {
       const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
-      const { error: ue } = await supabase.storage.from("stories").upload(path, f, { contentType: f.type });
+      const { error: ue } = await supabase.storage
+        .from("stories")
+        .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { error: ie } = await supabase.from("stories").insert({
-        creator_id: user.id,
-        media_path: path,
-        mime_type: f.type,
-        visibility: "public",
-      });
-      if (ie) throw ie;
-      toast.success("Story publicado!");
+      const { data: story, error: ie } = await supabase
+        .from("stories")
+        .insert({
+          creator_id: user.id,
+          media_path: path,
+          mime_type: f.type,
+          visibility: "public",
+        })
+        .select("id")
+        .single();
+      if (ie || !story) throw ie ?? new Error("Falha ao criar story");
+      await submitManualReviewFn({ data: { surface: "story", targetId: story.id } });
+      toast.success(tr("Story enviado para análise manual.", "Story sent for manual review."));
       load();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
+      toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -102,7 +137,7 @@ export function StoriesBar() {
   return (
     <>
       <div className="flex gap-3 overflow-x-auto pb-2">
-        {isCreator && (
+        {isCreator && !DEMO_MODE && (
           <label className="flex shrink-0 cursor-pointer flex-col items-center gap-1.5">
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-primary/50 bg-card hover:border-primary">
               {uploading ? (
@@ -111,7 +146,9 @@ export function StoriesBar() {
                 <Plus className="h-6 w-6 text-primary" />
               )}
             </div>
-            <span className="text-[10px] font-medium text-muted-foreground">Seu story</span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {tr("Seu story", "Your story")}
+            </span>
             <input type="file" accept="image/*,video/*" className="hidden" onChange={upload} />
           </label>
         )}
@@ -139,11 +176,7 @@ export function StoriesBar() {
         ))}
       </div>
       {openIdx !== null && groups[openIdx] && (
-        <StoryViewer
-          groups={groups}
-          startIdx={openIdx}
-          onClose={() => setOpenIdx(null)}
-        />
+        <StoryViewer groups={groups} startIdx={openIdx} onClose={() => setOpenIdx(null)} />
       )}
     </>
   );

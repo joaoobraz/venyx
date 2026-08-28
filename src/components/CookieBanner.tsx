@@ -1,30 +1,35 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-
-const STORAGE_KEY = "cookie-consent-v1";
+import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
+import {
+  OPEN_COOKIE_SETTINGS_EVENT,
+  readCookieConsent,
+  saveCookieConsent,
+  type CookieConsentChoice,
+} from "@/lib/cookie-consent";
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const { locale } = useI18n();
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
+      if (!readCookieConsent()) setVisible(true);
     } catch {
       // localStorage indisponível (modo privado / SSR) — não exibe
     }
+    const open = () => setVisible(true);
+    window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
   }, []);
 
-  function accept(value: "all" | "essential") {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ value, at: new Date().toISOString() }),
-      );
-    } catch {
-      // ignore
-    }
+  function accept(value: CookieConsentChoice) {
+    const previous = readCookieConsent()?.value;
+    saveCookieConsent(value);
     setVisible(false);
+    if (previous === "all" && value === "essential") window.location.reload();
   }
 
   if (!visible) return null;
@@ -38,10 +43,11 @@ export function CookieBanner() {
     >
       <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur-md sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            Usamos cookies essenciais para autenticação e funcionamento do site.
-            Saiba mais na{" "}
-            <Link to="/privacy" className="underline underline-offset-2">
+          <p className="text-sm leading-5 text-muted-foreground">
+            Usamos cookies essenciais para o site funcionar. Com sua autorização, pixels de
+            marketing podem medir visitas, cliques e campanhas nas páginas Fanlira Links. Você pode
+            recusar ou alterar essa escolha depois. Saiba mais na{" "}
+            <Link to={localizedPathname("/privacy", locale) as never} className="underline underline-offset-2">
               Política de Privacidade
             </Link>
             .
@@ -51,7 +57,7 @@ export function CookieBanner() {
               Apenas essenciais
             </Button>
             <Button size="sm" onClick={() => accept("all")}>
-              Aceitar
+              Aceitar marketing
             </Button>
           </div>
         </div>

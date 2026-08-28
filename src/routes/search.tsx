@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Search as SearchIcon, Loader2 } from "lucide-react";
@@ -6,16 +6,23 @@ import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { CreatorCard, type CreatorSummary } from "@/components/CreatorCard";
 import { searchCreators } from "@/_server/discovery.functions";
+import { useI18n } from "@/lib/i18n";
+import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
+
+export type SearchRouteSearch = { q?: string };
+
+export const searchRouteSearchValidator = (s: Record<string, unknown>): SearchRouteSearch => ({
+  q: typeof s.q === "string" ? s.q : undefined,
+});
 
 export const Route = createFileRoute("/search")({
-  validateSearch: (s: Record<string, unknown>): { q?: string } => ({
-    q: typeof s.q === "string" ? s.q : undefined,
-  }),
+  validateSearch: searchRouteSearchValidator,
   component: SearchPage,
 });
 
-function SearchPage() {
-  const initial = Route.useSearch().q ?? "";
+export function SearchPage() {
+  const { tr } = useI18n();
+  const initial = (useSearch({ strict: false }) as SearchRouteSearch).q ?? "";
   const [query, setQuery] = useState(initial);
   const [results, setResults] = useState<CreatorSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,6 +33,19 @@ function SearchPage() {
   useEffect(() => {
     const term = query.trim();
     const id = ++reqId.current;
+    if (DEMO_MODE) {
+      const normalized = term.toLocaleLowerCase();
+      const creators = DEMO_CREATORS.filter((creator) =>
+        [creator.display_name, creator.username, creator.category, creator.category_en]
+          .join(" ")
+          .toLocaleLowerCase()
+          .includes(normalized),
+      );
+      setResults(creators);
+      setSearched(true);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const handle = setTimeout(async () => {
       try {
@@ -57,7 +77,10 @@ function SearchPage() {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Busque por criadoras (nome ou @usuário)..."
+            placeholder={tr(
+              "Busque por criadoras (nome ou @usuário)...",
+              "Search creators by name or @username...",
+            )}
             className="h-12 pl-11 pr-11"
           />
         </div>
@@ -65,16 +88,22 @@ function SearchPage() {
         {results.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {results.map((c) => (
-              <CreatorCard key={c.user_id} c={c} />
+              <CreatorCard key={c.user_id} c={c} visitSource="venyx_search" />
             ))}
           </div>
         ) : (
           <p className="px-1 text-sm text-muted-foreground">
             {loading
-              ? "Buscando..."
+              ? tr("Buscando...", "Searching...")
               : searched && query.trim()
-                ? `Nenhuma criadora encontrada para "${query.trim()}".`
-                : "Comece a digitar para encontrar criadoras."}
+                ? tr(
+                    `Nenhuma criadora encontrada para "${query.trim()}".`,
+                    `No creators found for "${query.trim()}".`,
+                  )
+                : tr(
+                    "Comece a digitar para encontrar criadoras.",
+                    "Start typing to find creators.",
+                  )}
           </p>
         )}
       </div>

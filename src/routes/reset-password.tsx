@@ -3,21 +3,27 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
-function ResetPage() {
-  const { t } = useI18n();
+export function ResetPage() {
+  const { t, locale } = useI18n();
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const captchaRequired = isTurnstileEnabled();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -30,11 +36,18 @@ function ResetPage() {
 
   const sendLink = async (e: FormEvent) => {
     e.preventDefault();
+    if (captchaRequired && !captchaToken) {
+      toast.error("Conclua a verificação de segurança.");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
+      captchaToken: captchaToken ?? undefined,
     });
     setLoading(false);
+    setCaptchaToken(null);
+    setCaptchaReset((current) => current + 1);
     if (error) console.error("[reset-password]", error);
     // Mensagem genérica em todos os casos para evitar enumeração de e-mails
     toast.success("Se este e-mail existir em nossa base, enviamos um link de redefinição.");
@@ -48,7 +61,7 @@ function ResetPage() {
     if (error) toast.error(error.message);
     else {
       toast.success("Senha atualizada!");
-      window.location.href = "/feed";
+      window.location.href = localizedPathname("/feed", locale);
     }
   };
 
@@ -66,7 +79,8 @@ function ResetPage() {
                 id="np"
                 type="password"
                 required
-                minLength={6}
+                minLength={8}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1.5"
@@ -82,7 +96,12 @@ function ResetPage() {
               <Label htmlFor="em">{t("auth.email")}</Label>
               <Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" />
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+            <TurnstileCaptcha
+              action="password_recovery"
+              onTokenChange={setCaptchaToken}
+              resetSignal={captchaReset}
+            />
+            <Button type="submit" disabled={loading || (captchaRequired && !captchaToken)} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
               {t("auth.reset.send")}
             </Button>
           </form>

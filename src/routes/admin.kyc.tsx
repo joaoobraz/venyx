@@ -6,7 +6,13 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { requireAdminServer, getKycSignedUrlServer, reviewKycServer } from "@/_server/admin.functions";
+import {
+  requireAdminServer,
+  getKycSignedUrlServer,
+  reviewKycServer,
+  reviewIdentityVerificationServer,
+} from "@/_server/admin.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/kyc")({
   beforeLoad: async () => {
@@ -22,6 +28,7 @@ export const Route = createFileRoute("/admin/kyc")({
 interface Row {
   id: string;
   user_id: string;
+  source: "creator" | "customer";
   document_type: string;
   document_front_url: string;
   document_back_url: string | null;
@@ -30,12 +37,16 @@ interface Row {
   rejection_reason: string | null;
   reviewed_at: string | null;
   created_at: string;
+  full_name?: string | null;
+  cpf?: string | null;
+  birth_date?: string | null;
   profile?: { username: string; display_name: string | null } | null;
 }
 
 type Tab = "pending" | "approved" | "rejected";
 
-function AdminKycPage() {
+export function AdminKycPage() {
+  const { tr } = useI18n();
   const { user, isAdmin, loading } = useAuth();
   const nav = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
@@ -50,12 +61,54 @@ function AdminKycPage() {
 
   const load = async () => {
     setLoadingRows(true);
-    const { data } = await supabase
-      .from("kyc_requests")
-      .select("*")
-      .eq("status", tab)
-      .order("created_at", { ascending: tab === "pending" });
-    const list = (data ?? []) as Row[];
+    const [{ data: creatorData }, { data: customerData }] = await Promise.all([
+      supabase
+        .from("kyc_requests")
+        .select("*")
+        .eq("status", tab)
+        .order("created_at", { ascending: tab === "pending" }),
+      supabase
+        .from("identity_verifications")
+        .select("*")
+        .eq("method", "manual_document_review")
+        .eq("status", tab === "approved" ? "verified" : tab)
+        .order("created_at", { ascending: tab === "pending" }),
+    ]);
+    const creatorRows = ((creatorData ?? []) as Omit<Row, "source">[]).map((row) => ({
+      ...row,
+      source: "creator" as const,
+    }));
+    const customerRows = (
+      (customerData ?? []) as Array<{
+        id: string;
+        user_id: string;
+        document_type: string | null;
+        document_front_url: string | null;
+        document_back_url: string | null;
+        selfie_url: string | null;
+        status: "pending" | "verified" | "rejected";
+        rejection_reason: string | null;
+        reviewed_at: string | null;
+        created_at: string;
+        full_name: string;
+        cpf: string;
+        birth_date: string;
+      }>
+    )
+      .filter((row) => row.document_front_url && row.selfie_url)
+      .map((row) => ({
+        ...row,
+        source: "customer" as const,
+        status: (row.status === "verified" ? "approved" : row.status) as Row["status"],
+        document_type: row.document_type ?? "Documento",
+        document_front_url: row.document_front_url as string,
+        selfie_url: row.selfie_url as string,
+      }));
+    const list: Row[] = [...creatorRows, ...customerRows].sort((a, b) =>
+      tab === "pending"
+        ? a.created_at.localeCompare(b.created_at)
+        : b.created_at.localeCompare(a.created_at),
+    );
     // Buscar profiles em batch
     const ids = [...new Set(list.map((r) => r.user_id))];
     if (ids.length) {
@@ -80,41 +133,69 @@ function AdminKycPage() {
 
   const approve = async (r: Row) => {
     try {
-      await reviewKycServer({ data: { kycId: r.id, decision: "approved" } });
-      toast.success("KYC aprovado — usuária promovida a criadora");
+      if (r.source === "creator") {
+        await reviewKycServer({ data: { kycId: r.id, decision: "approved" } });
+      } else {
+        await reviewIdentityVerificationServer({
+          data: { verificationId: r.id, decision: "approved" },
+        });
+      }
+      toast.success(
+        r.source === "creator"
+          ? tr(
+              "KYC aprovado — usuária promovida a criadora",
+              "KYC approved—user promoted to creator",
+            )
+          : tr("Maioridade aprovada — acesso liberado", "Age check approved—access granted"),
+      );
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao aprovar");
+      toast.error(e instanceof Error ? e.message : tr("Erro ao aprovar", "Could not approve"));
     }
   };
 
   const reject = async (r: Row) => {
-    const reason = window.prompt("Motivo da rejeição (será mostrado para a criadora)?");
+    const reason = window.prompt(
+      tr(
+        "Motivo da rejeição (será mostrado para a criadora)?",
+        "Reason for rejection (shown to the creator)?",
+      ),
+    );
     if (!reason) return;
     try {
-      await reviewKycServer({
-        data: { kycId: r.id, decision: "rejected", rejectionReason: reason },
-      });
-      toast.success("Rejeitado");
+      if (r.source === "creator") {
+        await reviewKycServer({
+          data: { kycId: r.id, decision: "rejected", rejectionReason: reason },
+        });
+      } else {
+        await reviewIdentityVerificationServer({
+          data: {
+            verificationId: r.id,
+            decision: "rejected",
+            rejectionReason: reason,
+          },
+        });
+      }
+      toast.success(tr("Rejeitado", "Rejected"));
       load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao rejeitar");
+      toast.error(e instanceof Error ? e.message : tr("Erro ao rejeitar", "Could not reject"));
     }
   };
 
   if (!isAdmin) return null;
 
   const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
-    { id: "pending", label: "Em análise", icon: Clock },
-    { id: "approved", label: "Aprovados", icon: Check },
-    { id: "rejected", label: "Rejeitados", icon: X },
+    { id: "pending", label: tr("Em análise", "Under review"), icon: Clock },
+    { id: "approved", label: tr("Aprovados", "Approved"), icon: Check },
+    { id: "rejected", label: tr("Rejeitados", "Rejected"), icon: X },
   ];
 
   return (
     <AppShell>
       <div className="mx-auto max-w-3xl">
         <h1 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
-          <ShieldCheck className="h-5 w-5 text-primary" /> Painel KYC
+          <ShieldCheck className="h-5 w-5 text-primary" /> {tr("Painel KYC", "KYC dashboard")}
         </h1>
 
         <div className="mb-4 flex gap-1 rounded-xl bg-card p-1">
@@ -126,7 +207,9 @@ function AdminKycPage() {
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" /> {t.label}
@@ -136,15 +219,23 @@ function AdminKycPage() {
         </div>
 
         {loadingRows ? (
-          <div className="rounded-2xl border border-border p-10 text-center text-sm text-muted-foreground">Carregando…</div>
+          <div className="rounded-2xl border border-border p-10 text-center text-sm text-muted-foreground">
+            {tr("Carregando…", "Loading…")}
+          </div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Nada por aqui.
+            {tr("Nada por aqui.", "Nothing here.")}
           </div>
         ) : (
           <div className="space-y-3">
             {rows.map((r) => (
-              <KycCard key={r.id} row={r} tab={tab} onApprove={() => approve(r)} onReject={() => reject(r)} />
+              <KycCard
+                key={r.id}
+                row={r}
+                tab={tab}
+                onApprove={() => approve(r)}
+                onReject={() => reject(r)}
+              />
             ))}
           </div>
         )}
@@ -153,7 +244,18 @@ function AdminKycPage() {
   );
 }
 
-function KycCard({ row, tab, onApprove, onReject }: { row: Row; tab: Tab; onApprove: () => void; onReject: () => void }) {
+function KycCard({
+  row,
+  tab,
+  onApprove,
+  onReject,
+}: {
+  row: Row;
+  tab: Tab;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const { locale, tr } = useI18n();
   return (
     <div className="rounded-2xl bg-card p-4">
       <div className="flex items-start justify-between gap-3">
@@ -161,33 +263,49 @@ function KycCard({ row, tab, onApprove, onReject }: { row: Row; tab: Tab; onAppr
           <div className="text-sm font-semibold text-foreground">
             @{row.profile?.username ?? "—"}{" "}
             {row.profile?.display_name && (
-              <span className="font-normal text-muted-foreground">· {row.profile.display_name}</span>
+              <span className="font-normal text-muted-foreground">
+                · {row.profile.display_name}
+              </span>
             )}
           </div>
+          <div className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            {row.source === "creator"
+              ? tr("Entrada de criadora", "Creator onboarding")
+              : tr("Cliente · verificação +18", "Customer · 18+ check")}
+          </div>
+          {row.source === "customer" && (
+            <div className="mt-2 rounded-lg border border-border/60 bg-background/40 p-2 text-xs text-foreground">
+              <div>{row.full_name}</div>
+              <div className="text-muted-foreground">
+                CPF {row.cpf} · {tr("nascimento", "date of birth")} {row.birth_date}
+              </div>
+            </div>
+          )}
           <div className="mt-0.5 text-xs text-muted-foreground">
             <FileText className="mr-1 inline h-3 w-3" />
-            {row.document_type} · enviado em {new Date(row.created_at).toLocaleString("pt-BR")}
+            {row.document_type} · {tr("enviado em", "submitted")}{" "}
+            {new Date(row.created_at).toLocaleString(locale)}
           </div>
           {row.reviewed_at && (
             <div className="mt-0.5 text-xs text-muted-foreground">
-              Revisado em {new Date(row.reviewed_at).toLocaleString("pt-BR")}
+              {tr("Revisado em", "Reviewed")} {new Date(row.reviewed_at).toLocaleString(locale)}
             </div>
           )}
           {row.rejection_reason && (
             <div className="mt-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
-              Motivo: {row.rejection_reason}
+              {tr("Motivo", "Reason")}: {row.rejection_reason}
             </div>
           )}
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <DocPreview path={row.document_front_url} label="Frente" />
+        <DocPreview path={row.document_front_url} label={tr("Frente", "Front")} />
         {row.document_back_url ? (
-          <DocPreview path={row.document_back_url} label="Verso" />
+          <DocPreview path={row.document_back_url} label={tr("Verso", "Back")} />
         ) : (
           <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-muted text-[10px] text-muted-foreground">
-            sem verso
+            {tr("sem verso", "no back")}
           </div>
         )}
         <DocPreview path={row.selfie_url} label="Selfie" />
@@ -195,11 +313,15 @@ function KycCard({ row, tab, onApprove, onReject }: { row: Row; tab: Tab; onAppr
 
       {tab === "pending" && (
         <div className="mt-3 flex gap-2">
-          <Button size="sm" onClick={onApprove} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Check className="mr-1 h-4 w-4" /> Aprovar
+          <Button
+            size="sm"
+            onClick={onApprove}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Check className="mr-1 h-4 w-4" /> {tr("Aprovar", "Approve")}
           </Button>
           <Button size="sm" variant="outline" onClick={onReject}>
-            <X className="mr-1 h-4 w-4" /> Rejeitar
+            <X className="mr-1 h-4 w-4" /> {tr("Rejeitar", "Reject")}
           </Button>
         </div>
       )}
@@ -208,6 +330,7 @@ function KycCard({ row, tab, onApprove, onReject }: { row: Row; tab: Tab; onAppr
 }
 
 function DocPreview({ path, label }: { path: string; label: string }) {
+  const { tr } = useI18n();
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -221,7 +344,7 @@ function DocPreview({ path, label }: { path: string; label: string }) {
       return signedUrl;
     } catch {
       setLoading(false);
-      toast.error("Não foi possível abrir o documento");
+      toast.error(tr("Não foi possível abrir o documento", "Could not open the document"));
       return null;
     }
   };
@@ -243,7 +366,7 @@ function DocPreview({ path, label }: { path: string; label: string }) {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      toast.error("Falha no download");
+      toast.error(tr("Falha no download", "Download failed"));
     }
   };
 
@@ -251,7 +374,6 @@ function DocPreview({ path, label }: { path: string; label: string }) {
     <div className="group relative overflow-hidden rounded-lg bg-muted">
       <div className="flex aspect-[4/3] items-center justify-center">
         {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={label} className="h-full w-full object-cover" />
         ) : (
           <button
@@ -259,15 +381,23 @@ function DocPreview({ path, label }: { path: string; label: string }) {
             disabled={loading}
             className="text-[10px] text-muted-foreground hover:text-foreground"
           >
-            {loading ? "…" : `Carregar ${label.toLowerCase()}`}
+            {loading ? "…" : tr(`Carregar ${label.toLowerCase()}`, `Load ${label.toLowerCase()}`)}
           </button>
         )}
       </div>
       <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 px-2 py-1 text-[10px] text-white">
         <span>{label}</span>
         <div className="flex gap-1">
-          <button onClick={view} title="Abrir" className="hover:text-primary"><Eye className="h-3 w-3" /></button>
-          <button onClick={download} title="Baixar" className="hover:text-primary"><Download className="h-3 w-3" /></button>
+          <button onClick={view} title={tr("Abrir", "Open")} className="hover:text-primary">
+            <Eye className="h-3 w-3" />
+          </button>
+          <button
+            onClick={download}
+            title={tr("Baixar", "Download")}
+            className="hover:text-primary"
+          >
+            <Download className="h-3 w-3" />
+          </button>
         </div>
       </div>
     </div>

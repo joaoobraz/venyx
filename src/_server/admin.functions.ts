@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getRequest } from "@tanstack/react-start/server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction as auditLog } from "@/_server/admin-audit.server";
 
@@ -9,11 +9,7 @@ function getClientIp(req: Request | undefined): string | null {
   if (!req?.headers) return null;
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]!.trim();
-  return (
-    req.headers.get("cf-connecting-ip") ||
-    req.headers.get("x-real-ip") ||
-    null
-  );
+  return req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || null;
 }
 
 const adminGuardSchema = z.object({
@@ -25,10 +21,8 @@ const adminGuardSchema = z.object({
  * Registra cada tentativa (concedida ou negada) em admin_access_audit.
  */
 export const requireAdminServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    adminGuardSchema.parse(input ?? {})
-  )
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => adminGuardSchema.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const req = getRequest();
@@ -70,8 +64,8 @@ const decisionSchema = z.object({
 });
 
 export const recordModerationDecision = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => decisionSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => decisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -82,18 +76,16 @@ export const recordModerationDecision = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { error } = await supabaseAdmin
-      .from("moderation_decisions")
-      .upsert(
-        {
-          log_id: data.logId,
-          decision: data.decision,
-          decided_by: userId,
-          decided_at: new Date().toISOString(),
-          note: data.note,
-        },
-        { onConflict: "log_id" }
-      );
+    const { error } = await supabaseAdmin.from("moderation_decisions").upsert(
+      {
+        log_id: data.logId,
+        decision: data.decision,
+        decided_by: userId,
+        decided_at: new Date().toISOString(),
+        note: data.note,
+      },
+      { onConflict: "log_id" },
+    );
     if (error) {
       console.error("[admin.recordModerationDecision]", error);
       throw new Error("Não foi possível registrar a decisão. Tente novamente.");
@@ -102,7 +94,7 @@ export const recordModerationDecision = createServerFn({ method: "POST" })
   });
 
 export const listModerationDecisions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .handler(async ({ context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -113,9 +105,7 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { data } = await supabaseAdmin
-      .from("moderation_decisions")
-      .select("*");
+    const { data } = await supabaseAdmin.from("moderation_decisions").select("*");
     return { decisions: data ?? [] };
   });
 
@@ -125,10 +115,8 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
  * impedindo bypass das guards de rota via cliente.
  */
 export const getKycSignedUrlServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ path: z.string().min(1).max(500) }).parse(input)
-  )
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -139,8 +127,7 @@ export const getKycSignedUrlServer = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { data: signed, error } = await supabaseAdmin
-      .storage
+    const { data: signed, error } = await supabaseAdmin.storage
       .from("kyc")
       .createSignedUrl(data.path, 300);
     if (error || !signed) {
@@ -163,8 +150,6 @@ async function assertAdmin(userId: string) {
   if (!roleRow) throw new Error("forbidden");
 }
 
-
-
 const kycDecisionSchema = z.object({
   kycId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
@@ -176,8 +161,8 @@ const kycDecisionSchema = z.object({
  * e marca o profile como verificado. Tudo via service role no servidor.
  */
 export const reviewKycServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => kycDecisionSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => kycDecisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     await assertAdmin(userId);
@@ -238,10 +223,7 @@ export const reviewKycServer = createServerFn({ method: "POST" })
       throw new Error("KYC aprovado, mas não foi possível promover a criadora.");
     }
 
-    await supabaseAdmin
-      .from("profiles")
-      .update({ is_verified: true })
-      .eq("user_id", kyc.user_id);
+    await supabaseAdmin.from("profiles").update({ is_verified: true }).eq("user_id", kyc.user_id);
 
     await auditLog({
       adminId: userId,
@@ -255,6 +237,70 @@ export const reviewKycServer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const identityDecisionSchema = z.object({
+  verificationId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+  rejectionReason: z.string().min(3).max(500).optional(),
+});
+
+/**
+ * Revisao humana de identidade/maioridade do cliente no MVP sem fornecedor.
+ * Aprovacao libera o gate +18, mas nunca concede o papel de criadora.
+ */
+export const reviewIdentityVerificationServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => identityDecisionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    await assertAdmin(userId);
+
+    const { data: verification, error: lookupError } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("id, user_id, status, method, document_front_url, selfie_url")
+      .eq("id", data.verificationId)
+      .maybeSingle();
+    if (lookupError || !verification) throw new Error("Verificação não encontrada");
+    if (verification.method !== "manual_document_review") {
+      throw new Error("Esta verificação não pertence à fila manual.");
+    }
+    if (!verification.document_front_url || !verification.selfie_url) {
+      throw new Error("Documento e selfie são obrigatórios para a decisão.");
+    }
+
+    const approved = data.decision === "approved";
+    if (!approved && !data.rejectionReason) throw new Error("Motivo obrigatório");
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("identity_verifications")
+      .update({
+        status: approved ? "verified" : "rejected",
+        rejection_reason: approved ? null : data.rejectionReason,
+        reviewed_by: userId,
+        reviewed_at: now,
+        verified_at: approved ? now : null,
+        updated_at: now,
+      })
+      .eq("id", data.verificationId);
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Este CPF já está aprovado em outra conta.");
+      }
+      console.error("[admin.reviewIdentityVerification]", error);
+      throw new Error("Não foi possível salvar a decisão.");
+    }
+
+    await auditLog({
+      adminId: userId,
+      actionType: approved ? "age_verification_approved" : "age_verification_rejected",
+      targetType: "identity_verification",
+      targetId: data.verificationId,
+      targetUserId: verification.user_id,
+      metadata: approved ? { method: "manual_document_review" } : { reason: data.rejectionReason },
+    });
+
+    return { ok: true };
+  });
+
 const dmcaSchema = z.object({
   reportId: z.string().uuid(),
   status: z.enum(["notified", "resolved", "rejected"]),
@@ -262,8 +308,8 @@ const dmcaSchema = z.object({
 });
 
 export const updateDmcaReportServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => dmcaSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => dmcaSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: report } = await supabaseAdmin
@@ -297,21 +343,24 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
  * Lista as últimas ações administrativas registradas (para a tela de auditoria).
  */
 export const listAdminActionsAudit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) =>
     z
       .object({
         actionType: z.string().max(64).optional(),
         limit: z.number().int().min(1).max(500).optional(),
       })
-      .parse(input ?? {})
+      .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const limit = data.limit ?? 200;
 
-    let query = (supabaseAdmin.from("admin_action_audit") as any)
-      .select("id, admin_id, action_type, target_type, target_id, target_user_id, metadata, created_at")
+    let query = supabaseAdmin
+      .from("admin_action_audit")
+      .select(
+        "id, admin_id, action_type, target_type, target_id, target_user_id, metadata, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(limit);
     if (data.actionType) query = query.eq("action_type", data.actionType);
@@ -323,7 +372,7 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
     }
 
     const userIds = new Set<string>();
-    (rows ?? []).forEach((r: any) => {
+    (rows ?? []).forEach((r) => {
       if (r.admin_id) userIds.add(r.admin_id);
       if (r.target_user_id) userIds.add(r.target_user_id);
     });
@@ -339,10 +388,12 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
       });
     }
 
-    const enriched = (rows ?? []).map((r: any) => ({
+    const enriched = (rows ?? []).map((r) => ({
       ...r,
       admin_username: profilesById.get(r.admin_id)?.username ?? null,
-      target_username: r.target_user_id ? (profilesById.get(r.target_user_id)?.username ?? null) : null,
+      target_username: r.target_user_id
+        ? (profilesById.get(r.target_user_id)?.username ?? null)
+        : null,
     }));
 
     return { rows: enriched };

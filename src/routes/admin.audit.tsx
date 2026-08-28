@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { requireAdminServer } from "@/_server/admin.functions";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/audit")({
   beforeLoad: async () => {
@@ -37,7 +38,8 @@ type Row = {
   created_at: string;
 };
 
-function AdminAuditPage() {
+export function AdminAuditPage() {
+  const { locale, tr } = useI18n();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "denied" | "granted">("denied");
@@ -67,10 +69,13 @@ function AdminAuditPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Shield className="h-7 w-7 text-primary" />
-            Auditoria de acessos admin
+            {tr("Auditoria de acessos administrativos", "Admin access audit")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Tentativas de acesso às rotas /admin (últimos 200 registros).
+            {tr(
+              "Tentativas de acesso às rotas /admin (últimos 200 registros).",
+              "Access attempts to /admin routes (latest 200 records).",
+            )}
           </p>
         </div>
 
@@ -80,21 +85,21 @@ function AdminAuditPage() {
             variant={filter === "denied" ? "default" : "outline"}
             onClick={() => setFilter("denied")}
           >
-            Negados
+            {tr("Negados", "Denied")}
           </Button>
           <Button
             size="sm"
             variant={filter === "granted" ? "default" : "outline"}
             onClick={() => setFilter("granted")}
           >
-            Liberados
+            {tr("Liberados", "Granted")}
           </Button>
           <Button
             size="sm"
             variant={filter === "all" ? "default" : "outline"}
             onClick={() => setFilter("all")}
           >
-            Todos
+            {tr("Todos", "All")}
           </Button>
         </div>
 
@@ -104,7 +109,7 @@ function AdminAuditPage() {
           </div>
         ) : rows.length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground">
-            Nenhum registro encontrado.
+            {tr("Nenhum registro encontrado.", "No records found.")}
           </Card>
         ) : (
           <Card className="overflow-hidden">
@@ -113,9 +118,9 @@ function AdminAuditPage() {
                 <thead className="bg-muted/40 text-left">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Quando</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Quando", "When")}</th>
                     <th className="px-4 py-3 font-semibold">User ID</th>
-                    <th className="px-4 py-3 font-semibold">Rota</th>
+                    <th className="px-4 py-3 font-semibold">{tr("Rota", "Route")}</th>
                     <th className="px-4 py-3 font-semibold">IP</th>
                     <th className="px-4 py-3 font-semibold">User-Agent</th>
                   </tr>
@@ -126,27 +131,24 @@ function AdminAuditPage() {
                       <td className="px-4 py-3">
                         {r.granted ? (
                           <Badge variant="secondary" className="gap-1">
-                            <Shield className="h-3 w-3" /> liberado
+                            <Shield className="h-3 w-3" /> {tr("liberado", "granted")}
                           </Badge>
                         ) : (
                           <Badge variant="destructive" className="gap-1">
-                            <ShieldOff className="h-3 w-3" /> negado
+                            <ShieldOff className="h-3 w-3" /> {tr("negado", "denied")}
                           </Badge>
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                        {new Date(r.created_at).toLocaleString("pt-BR")}
+                        {new Date(r.created_at).toLocaleString(locale)}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs">
-                        {r.user_id ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs">
-                        {r.path ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs">
-                        {r.ip_address ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 max-w-xs truncate text-xs text-muted-foreground" title={r.user_agent ?? ""}>
+                      <td className="px-4 py-3 font-mono text-xs">{r.user_id ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{r.path ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs">{r.ip_address ?? "—"}</td>
+                      <td
+                        className="px-4 py-3 max-w-xs truncate text-xs text-muted-foreground"
+                        title={r.user_agent ?? ""}
+                      >
                         {r.user_agent ?? "—"}
                       </td>
                     </tr>

@@ -1,0 +1,100 @@
+# Fanlira — checklist de lançamento
+
+Atualizado em 26/08/2026.
+
+## Bloco 1 — experiência, demonstração e segurança
+
+- [x] Preparar 15 perfis de apresentação com retratos distintos de adultas fictícias geradas por IA.
+- [x] Impedir que os assets de demonstração sejam usados como fallback em produção.
+- [x] Top 15, com atualização/cache de 6 horas.
+- [x] Mostrar empty state honesto quando ainda não houver criadoras verificadas com plano ativo.
+- [x] Navegação mobile fixa, menu de conta e acesso à área da criadora.
+- [x] Chat mobile em fluxo lista → conversa, com botão de voltar.
+- [x] Revisar feed, explorar, perfil e chat em 390 × 844 e desktop.
+- [x] Marca-d'água no formato `Fanlira.com.br/profile/nome-da-criadora`.
+- [x] Denunciar, bloquear e silenciar em posts, perfis e conversas.
+- [x] Fila administrativa para analisar denúncias.
+- [x] PT/EN no site público e nas jornadas principais do assinante.
+- [x] Tradução sob demanda para textos publicados por usuários.
+- [x] Curtidas com incremento/decremento único e bloqueio de clique duplicado.
+- [x] Comentários persistentes, exibidos dentro do post e removíveis pelo autor ou pela criadora.
+- [x] Contagem de comentários reconciliada com os comentários realmente visíveis.
+- [x] Denunciar e bloquear diretamente em cada comentário.
+- [x] Limite de cinco comentários por minuto, bloqueio de duplicatas e filtro anti-spam.
+- [x] Respostas e menções `@username` nos comentários.
+- [x] Paginação de comentários em blocos de 20.
+- [x] Notificar a criadora por curtidas e comentários, além de avisar respostas e menções.
+- [x] Chat com envio persistente, restauração após recarregar e confirmação de leitura.
+- [x] Badge de não lidos e prévia da última mensagem no chat.
+- [x] Fazer cada aviso de mensagem abrir a conversa exata e eliminar notificações órfãs.
+- [x] Criar conversas fictícias identificadas como demonstração, com envio e persistência local.
+- [x] Indicadores de presença online/offline e “digitando…” por conversa.
+- [x] Edição de comentários e mensagens por até 15 minutos.
+- [x] Silenciamento de notificações por publicação e por conversa.
+- [x] Painel da criadora para bloquear palavras e usuários recorrentes nos comentários.
+- [x] Favoritos com prévia visual, nome e `@username` da criadora.
+- [x] Capa obrigatória escolhida pela criadora para publicações em vídeo.
+- [x] Aplicar e testar a migração de segurança no Supabase staging.
+- [x] Aplicar e testar a migração de curtidas, comentários e capas no Supabase staging.
+- [x] Aplicar e testar a migração de comentários, notificações e chat no Supabase staging.
+- [x] Aplicar e testar a migração de preferências, edição e moderação da criadora no Supabase staging.
+- [x] Aplicar e testar a migração de reconciliação de estornos no Supabase staging.
+- [x] Aplicar e validar a migração de integridade das notificações do chat no Supabase staging.
+- [x] Remover dependências operacionais da Lovable e gerar um build portátil para hospedagem própria.
+- [x] Completar a tradução PT/EN do backoffice interno de criadoras e administradores.
+- [x] Restringir o seletor temporário cliente/modelo/moderador à conta autorizada, sem elevar permissões reais.
+- [x] Isolar feed, stories, perfis, favoritos, chat, notificações e painéis de apresentação em armazenamento local.
+- [x] Bloquear o modo de apresentação quando `VITE_APP_ENV=production`, mesmo com flags copiadas por engano.
+
+## Bloco 2 — P0 antes de abrir ao público
+
+- [x] Fazer moderação de imagem e vídeo falhar de forma segura quando o provedor estiver indisponível.
+- [x] Remover os casos em que vídeos ou arquivos grandes pulam a moderação (cinco quadros por vídeo; imagem grande redimensionada).
+- [x] Publicar `moderate-media-v2`, `translate-message` e `suggest-caption` no staging, com autenticação e CORS validados.
+- [x] Manter uploads adultos em fila privada para revisão humana no MVP sem provedor pago; integrações de IA permanecem opcionais e não podem liberar conteúdo automaticamente.
+- [x] Testar denúncia, bloqueio e silenciamento ponta a ponta no staging, incluindo tentativas negadas pelas políticas de segurança.
+- [x] Proteger webhook Impulse Pay com token de URL, consulta autenticada, referência/valor divergente e idempotência.
+- [x] Configurar `IMPULSEPAY_PUBLIC_KEY`, `IMPULSEPAY_SECRET_KEY`, `IMPULSEPAY_WITHDRAWAL_KEY`, `IMPULSEPAY_WEBHOOK_TOKEN` e `IMPULSEPAY_WEBHOOK_URL` em produção.
+- [x] Criar o Turnstile, habilitar a proteção no Supabase e validar o widget no cadastro público.
+- [x] Publicar o Worker `fanlira` em `fanlira.com.br` e `www.fanlira.com.br`, com smoke e carga leve aprovados.
+- [x] Revalidar o deploy `a06511f7-e9f4-4e59-8c97-ba747ce9ab04`: smoke aprovado e 120 requisições públicas sem falha (p95 354 ms).
+- [ ] Testar assinatura PIX manual, PPV, mimo e webhook com idempotência; validar também a reconciliação defensiva caso a adquirente envie um estorno.
+- [x] Apontar o localhost explicitamente para o Supabase staging e impedir mistura acidental entre identificador e URL de projetos diferentes.
+- [~] Contatos `@fanlira.com.br` criados e SMTP preparado; falta salvar a senha no Supabase e testar cadastro/recuperação. Identificação jurídica completa passou a ser P0 por exigência vigente.
+- [x] Ampliar Termos, Privacidade e Política de Conteúdo para maioridade confiável, consentimento, NCII/deepfake, recursos, consumidor, pagamentos e saques.
+- [ ] Confirmar termos, privacidade, DMCA e política de conteúdo com assessoria jurídica.
+
+## Bloco 3 — operação do lançamento
+
+- [ ] Cadastrar apenas criadoras reais, verificadas e com plano ativo no ranking público.
+- [x] Definir rotina de revisão de denúncias e SLA para risco de menor de idade.
+- [x] Criar dados de demonstração identificados e separados dos dados reais, com conversas locais que não poluem o staging.
+- [x] Criar endpoint de saúde e manual operacional de incidentes, moderação e lançamento gradual.
+- [ ] Ativar monitoramento e alertas externos e validar restauração de backup no provedor escolhido.
+- [ ] Rodar teste completo em iPhone/Android e nos principais navegadores.
+- [ ] Fazer lançamento gradual com grupo pequeno antes de liberar todo o tráfego.
+
+## Bloco 4 — fechamento do MVP em 02/08/2026
+
+- [x] Tornar indivisível o envio do KYC e dos consentimentos atuais de termos, privacidade, maioridade e direitos sobre o conteúdo.
+- [x] Criar jornada de onboarding da criadora com KYC, consentimentos, perfil, preço, saque e primeira publicação.
+- [x] Bloquear monetização no banco e no servidor enquanto a criadora não estiver pronta.
+- [x] Priorizar denúncias de menor e conteúdo não consentido com SLA crítico de 15 minutos.
+- [x] Preservar evidências, retenção e cadeia de custódia para incidentes de segurança.
+- [x] Criar central de ajuda, protocolos, recuperação de conta e fila administrativa.
+- [x] Criar solicitações rastreáveis de exportação e exclusão de dados com MFA.
+- [x] Registrar erros e funil sem e-mail, documento, token, cookie ou chave Pix.
+- [x] Criar painel administrativo de operação, alertas, SLA, dispositivos e restauração de backup.
+- [x] Validar typecheck, lint, build e 90 testes automatizados; carga local anterior de 120 requisições sem falhas.
+- [x] Validar as telas locais de ajuda e apresentação em desktop e viewport 390 × 844 sem rolagem lateral.
+- [x] Aplicar e conferir as quatro migrações de fechamento no Supabase staging.
+- [x] Implementar fila privada de moderação humana que falha fechada, sem custo de fornecedor no piloto.
+- [x] Implementar envio privado de documento/selfie e aprovação humana de idade; checksum local de CPF permanece proibido em produção.
+- [ ] Executar casos reais de KYC e moderação pelo fundador, registrar evidências e manter inconclusivos bloqueados.
+- [ ] Obter parecer jurídico escrito sobre termos, privacidade, conteúdo, maioridade, DMCA e política sem estorno voluntário.
+- [ ] Selecionar, verificar e acompanhar 5–10 criadoras reais no piloto.
+- [~] Script de backup AES-256-GCM, chave local e procedimento de restauração preparados; falta preencher duas credenciais, gerar a cópia e restaurar em projeto isolado.
+- [ ] Executar a matriz em iPhone, Android e Safari físicos e anexar evidências.
+- [ ] Executar os pagamentos reais ponta a ponta quando a rodada financeira for retomada.
+
+Os procedimentos e critérios de evidência estão em `docs/operations/`. Itens externos permanecem abertos até existir contrato, parecer, pessoa real, aparelho real ou restauração real; uma tela pronta não substitui essa evidência.

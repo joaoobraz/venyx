@@ -9,121 +9,169 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WishlistRouteImport } from './routes/wishlist'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as LoyaltyRouteImport } from './routes/loyalty'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as FeedRouteImport } from './routes/feed'
-import { Route as ExploreRouteImport } from './routes/explore'
-import { Route as DmcaRouteImport } from './routes/dmca'
-import { Route as ChatRouteImport } from './routes/chat'
-import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
-import { Route as R403RouteImport } from './routes/403'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as R403RouteImport } from './routes/403'
+import { Route as AjudaRouteImport } from './routes/ajuda'
+import { Route as AyudaRouteImport } from './routes/ayuda'
+import { Route as BecomeCreatorRouteImport } from './routes/become-creator'
+import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as ContentPolicyRouteImport } from './routes/content-policy'
+import { Route as DmcaRouteImport } from './routes/dmca'
+import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as ExplorarRouteImport } from './routes/explorar'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as FeedRouteImport } from './routes/feed'
+import { Route as FidelidadRouteImport } from './routes/fidelidad'
+import { Route as FidelidadeRouteImport } from './routes/fidelidade'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as InicioRouteImport } from './routes/inicio'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as MensagensRouteImport } from './routes/mensagens'
+import { Route as MensajesRouteImport } from './routes/mensajes'
+import { Route as NotificacionesRouteImport } from './routes/notificaciones'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PoliticaDeConteudoRouteImport } from './routes/politica-de-conteudo'
+import { Route as PresentationRouteImport } from './routes/presentation'
+import { Route as PrivacidadRouteImport } from './routes/privacidad'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RecuperarContrasenaRouteImport } from './routes/recuperar-contrasena'
+import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
+import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SejaCriadoraRouteImport } from './routes/seja-criadora'
+import { Route as SerCreadoraRouteImport } from './routes/ser-creadora'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TerminosRouteImport } from './routes/terminos'
+import { Route as TermosRouteImport } from './routes/termos'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
-import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
-import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
-import { Route as RCodeRouteImport } from './routes/r.$code'
-import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
-import { Route as LinksUsernameRouteImport } from './routes/links.$username'
-import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
-import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
-import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
-import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
-import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
-import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
-import { Route as CreatorLinksRouteImport } from './routes/creator.links'
-import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
-import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
-import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
-import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
-import { Route as CCodeRouteImport } from './routes/c.$code'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
-import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
-import { Route as AdminKycRouteImport } from './routes/admin.kyc'
-import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
-import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminActionsAuditRouteImport } from './routes/admin.actions-audit'
-import { Route as ApiPublicNexuspagWebhookRouteImport } from './routes/api.public.nexuspag-webhook'
-import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
-import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminDmcaRouteImport } from './routes/admin.dmca'
+import { Route as AdminKycRouteImport } from './routes/admin.kyc'
+import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
+import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
+import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
+import { Route as AdminReconciliationRouteImport } from './routes/admin.reconciliation'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdministracaoIndexRouteImport } from './routes/administracao.index'
+import { Route as AdministracaoAuditoriaRouteImport } from './routes/administracao.auditoria'
+import { Route as AdministracaoAuditoriaAcoesRouteImport } from './routes/administracao.auditoria-acoes'
+import { Route as AdministracaoConciliacaoRouteImport } from './routes/administracao.conciliacao'
+import { Route as AdministracaoDmcaRouteImport } from './routes/administracao.dmca'
+import { Route as AdministracaoKycRouteImport } from './routes/administracao.kyc'
+import { Route as AdministracaoModeracaoRouteImport } from './routes/administracao.moderacao'
+import { Route as AdministracaoOperacoesRouteImport } from './routes/administracao.operacoes'
+import { Route as AdministracaoRelatoriosRouteImport } from './routes/administracao.relatorios'
+import { Route as AdministracaoSaquesRouteImport } from './routes/administracao.saques'
+import { Route as AdministracaoSuporteRouteImport } from './routes/administracao.suporte'
+import { Route as AdministracaoUsuariosRouteImport } from './routes/administracao.usuarios'
+import { Route as AdministracionIndexRouteImport } from './routes/administracion.index'
+import { Route as AdministracionAuditoriaRouteImport } from './routes/administracion.auditoria'
+import { Route as AdministracionAuditoriaAccionesRouteImport } from './routes/administracion.auditoria-acciones'
+import { Route as AdministracionConciliacionRouteImport } from './routes/administracion.conciliacion'
+import { Route as AdministracionDmcaRouteImport } from './routes/administracion.dmca'
+import { Route as AdministracionKycRouteImport } from './routes/administracion.kyc'
+import { Route as AdministracionModeracionRouteImport } from './routes/administracion.moderacion'
+import { Route as AdministracionOperacionesRouteImport } from './routes/administracion.operaciones'
+import { Route as AdministracionReportesRouteImport } from './routes/administracion.reportes'
+import { Route as AdministracionRetirosRouteImport } from './routes/administracion.retiros'
+import { Route as AdministracionSoporteRouteImport } from './routes/administracion.soporte'
+import { Route as AdministracionUsuariosRouteImport } from './routes/administracion.usuarios'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as CCodeRouteImport } from './routes/c.$code'
+import { Route as ConfiguracionPagosRouteImport } from './routes/configuracion.pagos'
+import { Route as ConfiguracionPerfilRouteImport } from './routes/configuracion.perfil'
+import { Route as ConfiguracionPrivacidadRouteImport } from './routes/configuracion.privacidad'
+import { Route as ConfiguracionSeguridadRouteImport } from './routes/configuracion.seguridad'
+import { Route as ConfiguracoesPagamentosRouteImport } from './routes/configuracoes.pagamentos'
+import { Route as ConfiguracoesPerfilRouteImport } from './routes/configuracoes.perfil'
+import { Route as ConfiguracoesPrivacidadeRouteImport } from './routes/configuracoes.privacidade'
+import { Route as ConfiguracoesSegurancaRouteImport } from './routes/configuracoes.seguranca'
+import { Route as CreadoraAfiliadosRouteImport } from './routes/creadora.afiliados'
+import { Route as CreadoraBibliotecaRouteImport } from './routes/creadora.biblioteca'
+import { Route as CreadoraCarteraRouteImport } from './routes/creadora.cartera'
+import { Route as CreadoraCuponesRouteImport } from './routes/creadora.cupones'
+import { Route as CreadoraDmcaRouteImport } from './routes/creadora.dmca'
+import { Route as CreadoraEnlacesRouteImport } from './routes/creadora.enlaces'
+import { Route as CreadoraFidelidadRouteImport } from './routes/creadora.fidelidad'
+import { Route as CreadoraMensajesEnMasaRouteImport } from './routes/creadora.mensajes-en-masa'
+import { Route as CreadoraMetricasRouteImport } from './routes/creadora.metricas'
+import { Route as CreadoraModeracionRouteImport } from './routes/creadora.moderacion'
+import { Route as CreadoraOfertasAdicionalesRouteImport } from './routes/creadora.ofertas-adicionales'
+import { Route as CreadoraPlanesRouteImport } from './routes/creadora.planes'
+import { Route as CreadoraPublicacionesRouteImport } from './routes/creadora.publicaciones'
+import { Route as CreadoraRegalosRouteImport } from './routes/creadora.regalos'
+import { Route as CreadoraRegistroRouteImport } from './routes/creadora.registro'
+import { Route as CreatorAffiliateRouteImport } from './routes/creator.affiliate'
+import { Route as CreatorAnalyticsRouteImport } from './routes/creator.analytics'
+import { Route as CreatorCouponsRouteImport } from './routes/creator.coupons'
+import { Route as CreatorDmcaRouteImport } from './routes/creator.dmca'
+import { Route as CreatorGiftsRouteImport } from './routes/creator.gifts'
+import { Route as CreatorLinksRouteImport } from './routes/creator.links'
+import { Route as CreatorLoyaltyRouteImport } from './routes/creator.loyalty'
+import { Route as CreatorMailingRouteImport } from './routes/creator.mailing'
+import { Route as CreatorMediaLibraryRouteImport } from './routes/creator.media-library'
+import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
+import { Route as CreatorOnboardingRouteImport } from './routes/creator.onboarding'
+import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
+import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
+import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
+import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as CriadoraAcervoRouteImport } from './routes/criadora.acervo'
+import { Route as CriadoraAfiliadosRouteImport } from './routes/criadora.afiliados'
+import { Route as CriadoraCadastroRouteImport } from './routes/criadora.cadastro'
+import { Route as CriadoraCarteiraRouteImport } from './routes/criadora.carteira'
+import { Route as CriadoraCuponsRouteImport } from './routes/criadora.cupons'
+import { Route as CriadoraDmcaRouteImport } from './routes/criadora.dmca'
+import { Route as CriadoraFidelidadeRouteImport } from './routes/criadora.fidelidade'
+import { Route as CriadoraLinksRouteImport } from './routes/criadora.links'
+import { Route as CriadoraMensagensEmMassaRouteImport } from './routes/criadora.mensagens-em-massa'
+import { Route as CriadoraMetricasRouteImport } from './routes/criadora.metricas'
+import { Route as CriadoraMimosRouteImport } from './routes/criadora.mimos'
+import { Route as CriadoraModeracaoRouteImport } from './routes/criadora.moderacao'
+import { Route as CriadoraOfertasAdicionaisRouteImport } from './routes/criadora.ofertas-adicionais'
+import { Route as CriadoraPlanosRouteImport } from './routes/criadora.planos'
+import { Route as CriadoraPublicacoesRouteImport } from './routes/criadora.publicacoes'
+import { Route as EnlacesUsernameRouteImport } from './routes/enlaces.$username'
+import { Route as GiftsUsernameRouteImport } from './routes/gifts.$username'
+import { Route as GuardadoPostIdRouteImport } from './routes/guardado.$postId'
+import { Route as LinksUsernameRouteImport } from './routes/links.$username'
+import { Route as MimosUsernameRouteImport } from './routes/mimos.$username'
+import { Route as PerfilUsernameRouteImport } from './routes/perfil.$username'
+import { Route as PresentationSectionRouteImport } from './routes/presentation.$section'
+import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as RCodeRouteImport } from './routes/r.$code'
+import { Route as RegalosUsernameRouteImport } from './routes/regalos.$username'
+import { Route as SalvoPostIdRouteImport } from './routes/salvo.$postId'
+import { Route as SavedPostIdRouteImport } from './routes/saved.$postId'
+import { Route as SettingsPaymentsRouteImport } from './routes/settings.payments'
+import { Route as SettingsPrivacyRouteImport } from './routes/settings.privacy'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
+import { Route as ApiPublicImpulsepayWebhookRouteImport } from './routes/api.public.impulsepay-webhook'
+import { Route as ApiPublicLinkEventRouteImport } from './routes/api.public.link-event'
+import { Route as ApiPublicTelemetryRouteImport } from './routes/api.public.telemetry'
 import { Route as ApiPublicCronCleanupStoriesRouteImport } from './routes/api.public.cron.cleanup-stories'
+import { Route as ApiPublicCronExpireSubscriptionsRouteImport } from './routes/api.public.cron.expire-subscriptions'
+import { Route as ApiPublicCronProcessMassDmRouteImport } from './routes/api.public.cron.process-mass-dm'
+import { Route as ApiPublicCronReconcilePixRouteImport } from './routes/api.public.cron.reconcile-pix'
+import { Route as ApiPublicCronSubscriptionRemindersRouteImport } from './routes/api.public.cron.subscription-reminders'
 
-const WishlistRoute = WishlistRouteImport.update({
-  id: '/wishlist',
-  path: '/wishlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoyaltyRoute = LoyaltyRouteImport.update({
-  id: '/loyalty',
-  path: '/loyalty',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedRoute = FeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExploreRoute = ExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DmcaRoute = DmcaRouteImport.update({
-  id: '/dmca',
-  path: '/dmca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatRoute = ChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
-  id: '/become-creator',
-  path: '/become-creator',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const R403Route = R403RouteImport.update({
@@ -131,9 +179,209 @@ const R403Route = R403RouteImport.update({
   path: '/403',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AyudaRoute = AyudaRouteImport.update({
+  id: '/ayuda',
+  path: '/ayuda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BecomeCreatorRoute = BecomeCreatorRouteImport.update({
+  id: '/become-creator',
+  path: '/become-creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContentPolicyRoute = ContentPolicyRouteImport.update({
+  id: '/content-policy',
+  path: '/content-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DmcaRoute = DmcaRouteImport.update({
+  id: '/dmca',
+  path: '/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExplorarRoute = ExplorarRouteImport.update({
+  id: '/explorar',
+  path: '/explorar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FidelidadRoute = FidelidadRouteImport.update({
+  id: '/fidelidad',
+  path: '/fidelidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FidelidadeRoute = FidelidadeRouteImport.update({
+  id: '/fidelidade',
+  path: '/fidelidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InicioRoute = InicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MensagensRoute = MensagensRouteImport.update({
+  id: '/mensagens',
+  path: '/mensagens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MensajesRoute = MensajesRouteImport.update({
+  id: '/mensajes',
+  path: '/mensajes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacionesRoute = NotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PoliticaDeConteudoRoute = PoliticaDeConteudoRouteImport.update({
+  id: '/politica-de-conteudo',
+  path: '/politica-de-conteudo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresentationRoute = PresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadRoute = PrivacidadRouteImport.update({
+  id: '/privacidad',
+  path: '/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarContrasenaRoute = RecuperarContrasenaRouteImport.update({
+  id: '/recuperar-contrasena',
+  path: '/recuperar-contrasena',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistroRoute = RegistroRouteImport.update({
+  id: '/registro',
+  path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SejaCriadoraRoute = SejaCriadoraRouteImport.update({
+  id: '/seja-criadora',
+  path: '/seja-criadora',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SerCreadoraRoute = SerCreadoraRouteImport.update({
+  id: '/ser-creadora',
+  path: '/ser-creadora',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminosRoute = TerminosRouteImport.update({
+  id: '/terminos',
+  path: '/terminos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -141,44 +389,372 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
-  id: '/settings/security',
-  path: '/settings/security',
+const AdminActionsAuditRoute = AdminActionsAuditRouteImport.update({
+  id: '/admin/actions-audit',
+  path: '/admin/actions-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/settings/profile',
-  path: '/settings/profile',
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SavedPostIdRoute = SavedPostIdRouteImport.update({
-  id: '/saved/$postId',
-  path: '/saved/$postId',
+const AdminDmcaRoute = AdminDmcaRouteImport.update({
+  id: '/admin/dmca',
+  path: '/admin/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RCodeRoute = RCodeRouteImport.update({
-  id: '/r/$code',
-  path: '/r/$code',
+const AdminKycRoute = AdminKycRouteImport.update({
+  id: '/admin/kyc',
+  path: '/admin/kyc',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
-  id: '/profile/$username',
-  path: '/profile/$username',
+const AdminModerationRoute = AdminModerationRouteImport.update({
+  id: '/admin/moderation',
+  path: '/admin/moderation',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LinksUsernameRoute = LinksUsernameRouteImport.update({
-  id: '/links/$username',
-  path: '/links/$username',
+const AdminOperationsRoute = AdminOperationsRouteImport.update({
+  id: '/admin/operations',
+  path: '/admin/operations',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorWalletRoute = CreatorWalletRouteImport.update({
-  id: '/creator/wallet',
-  path: '/creator/wallet',
+const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
+  id: '/admin/payouts',
+  path: '/admin/payouts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorUpsellsRoute = CreatorUpsellsRouteImport.update({
-  id: '/creator/upsells',
-  path: '/creator/upsells',
+const AdminReconciliationRoute = AdminReconciliationRouteImport.update({
+  id: '/admin/reconciliation',
+  path: '/admin/reconciliation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/admin/support',
+  path: '/admin/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoIndexRoute = AdministracaoIndexRouteImport.update({
+  id: '/administracao/',
+  path: '/administracao/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoAuditoriaRoute = AdministracaoAuditoriaRouteImport.update({
+  id: '/administracao/auditoria',
+  path: '/administracao/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoAuditoriaAcoesRoute =
+  AdministracaoAuditoriaAcoesRouteImport.update({
+    id: '/administracao/auditoria-acoes',
+    path: '/administracao/auditoria-acoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracaoConciliacaoRoute =
+  AdministracaoConciliacaoRouteImport.update({
+    id: '/administracao/conciliacao',
+    path: '/administracao/conciliacao',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracaoDmcaRoute = AdministracaoDmcaRouteImport.update({
+  id: '/administracao/dmca',
+  path: '/administracao/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoKycRoute = AdministracaoKycRouteImport.update({
+  id: '/administracao/kyc',
+  path: '/administracao/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoModeracaoRoute = AdministracaoModeracaoRouteImport.update({
+  id: '/administracao/moderacao',
+  path: '/administracao/moderacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoOperacoesRoute = AdministracaoOperacoesRouteImport.update({
+  id: '/administracao/operacoes',
+  path: '/administracao/operacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoRelatoriosRoute = AdministracaoRelatoriosRouteImport.update({
+  id: '/administracao/relatorios',
+  path: '/administracao/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoSaquesRoute = AdministracaoSaquesRouteImport.update({
+  id: '/administracao/saques',
+  path: '/administracao/saques',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoSuporteRoute = AdministracaoSuporteRouteImport.update({
+  id: '/administracao/suporte',
+  path: '/administracao/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracaoUsuariosRoute = AdministracaoUsuariosRouteImport.update({
+  id: '/administracao/usuarios',
+  path: '/administracao/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionIndexRoute = AdministracionIndexRouteImport.update({
+  id: '/administracion/',
+  path: '/administracion/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionAuditoriaRoute = AdministracionAuditoriaRouteImport.update({
+  id: '/administracion/auditoria',
+  path: '/administracion/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionAuditoriaAccionesRoute =
+  AdministracionAuditoriaAccionesRouteImport.update({
+    id: '/administracion/auditoria-acciones',
+    path: '/administracion/auditoria-acciones',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracionConciliacionRoute =
+  AdministracionConciliacionRouteImport.update({
+    id: '/administracion/conciliacion',
+    path: '/administracion/conciliacion',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracionDmcaRoute = AdministracionDmcaRouteImport.update({
+  id: '/administracion/dmca',
+  path: '/administracion/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionKycRoute = AdministracionKycRouteImport.update({
+  id: '/administracion/kyc',
+  path: '/administracion/kyc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionModeracionRoute =
+  AdministracionModeracionRouteImport.update({
+    id: '/administracion/moderacion',
+    path: '/administracion/moderacion',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracionOperacionesRoute =
+  AdministracionOperacionesRouteImport.update({
+    id: '/administracion/operaciones',
+    path: '/administracion/operaciones',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdministracionReportesRoute = AdministracionReportesRouteImport.update({
+  id: '/administracion/reportes',
+  path: '/administracion/reportes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionRetirosRoute = AdministracionRetirosRouteImport.update({
+  id: '/administracion/retiros',
+  path: '/administracion/retiros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionSoporteRoute = AdministracionSoporteRouteImport.update({
+  id: '/administracion/soporte',
+  path: '/administracion/soporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdministracionUsuariosRoute = AdministracionUsuariosRouteImport.update({
+  id: '/administracion/usuarios',
+  path: '/administracion/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CCodeRoute = CCodeRouteImport.update({
+  id: '/c/$code',
+  path: '/c/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracionPagosRoute = ConfiguracionPagosRouteImport.update({
+  id: '/configuracion/pagos',
+  path: '/configuracion/pagos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracionPerfilRoute = ConfiguracionPerfilRouteImport.update({
+  id: '/configuracion/perfil',
+  path: '/configuracion/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracionPrivacidadRoute = ConfiguracionPrivacidadRouteImport.update({
+  id: '/configuracion/privacidad',
+  path: '/configuracion/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracionSeguridadRoute = ConfiguracionSeguridadRouteImport.update({
+  id: '/configuracion/seguridad',
+  path: '/configuracion/seguridad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesPagamentosRoute = ConfiguracoesPagamentosRouteImport.update({
+  id: '/configuracoes/pagamentos',
+  path: '/configuracoes/pagamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesPerfilRoute = ConfiguracoesPerfilRouteImport.update({
+  id: '/configuracoes/perfil',
+  path: '/configuracoes/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesPrivacidadeRoute =
+  ConfiguracoesPrivacidadeRouteImport.update({
+    id: '/configuracoes/privacidade',
+    path: '/configuracoes/privacidade',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ConfiguracoesSegurancaRoute = ConfiguracoesSegurancaRouteImport.update({
+  id: '/configuracoes/seguranca',
+  path: '/configuracoes/seguranca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraAfiliadosRoute = CreadoraAfiliadosRouteImport.update({
+  id: '/creadora/afiliados',
+  path: '/creadora/afiliados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraBibliotecaRoute = CreadoraBibliotecaRouteImport.update({
+  id: '/creadora/biblioteca',
+  path: '/creadora/biblioteca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraCarteraRoute = CreadoraCarteraRouteImport.update({
+  id: '/creadora/cartera',
+  path: '/creadora/cartera',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraCuponesRoute = CreadoraCuponesRouteImport.update({
+  id: '/creadora/cupones',
+  path: '/creadora/cupones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraDmcaRoute = CreadoraDmcaRouteImport.update({
+  id: '/creadora/dmca',
+  path: '/creadora/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraEnlacesRoute = CreadoraEnlacesRouteImport.update({
+  id: '/creadora/enlaces',
+  path: '/creadora/enlaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraFidelidadRoute = CreadoraFidelidadRouteImport.update({
+  id: '/creadora/fidelidad',
+  path: '/creadora/fidelidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraMensajesEnMasaRoute = CreadoraMensajesEnMasaRouteImport.update({
+  id: '/creadora/mensajes-en-masa',
+  path: '/creadora/mensajes-en-masa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraMetricasRoute = CreadoraMetricasRouteImport.update({
+  id: '/creadora/metricas',
+  path: '/creadora/metricas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraModeracionRoute = CreadoraModeracionRouteImport.update({
+  id: '/creadora/moderacion',
+  path: '/creadora/moderacion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraOfertasAdicionalesRoute =
+  CreadoraOfertasAdicionalesRouteImport.update({
+    id: '/creadora/ofertas-adicionales',
+    path: '/creadora/ofertas-adicionales',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CreadoraPlanesRoute = CreadoraPlanesRouteImport.update({
+  id: '/creadora/planes',
+  path: '/creadora/planes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraPublicacionesRoute = CreadoraPublicacionesRouteImport.update({
+  id: '/creadora/publicaciones',
+  path: '/creadora/publicaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraRegalosRoute = CreadoraRegalosRouteImport.update({
+  id: '/creadora/regalos',
+  path: '/creadora/regalos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreadoraRegistroRoute = CreadoraRegistroRouteImport.update({
+  id: '/creadora/registro',
+  path: '/creadora/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
+  id: '/creator/affiliate',
+  path: '/creator/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorAnalyticsRoute = CreatorAnalyticsRouteImport.update({
+  id: '/creator/analytics',
+  path: '/creator/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
+  id: '/creator/coupons',
+  path: '/creator/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
+  id: '/creator/dmca',
+  path: '/creator/dmca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorGiftsRoute = CreatorGiftsRouteImport.update({
+  id: '/creator/gifts',
+  path: '/creator/gifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLinksRoute = CreatorLinksRouteImport.update({
+  id: '/creator/links',
+  path: '/creator/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
+  id: '/creator/loyalty',
+  path: '/creator/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorMailingRoute = CreatorMailingRouteImport.update({
+  id: '/creator/mailing',
+  path: '/creator/mailing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorMediaLibraryRoute = CreatorMediaLibraryRouteImport.update({
+  id: '/creator/media-library',
+  path: '/creator/media-library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorModerationRoute = CreatorModerationRouteImport.update({
+  id: '/creator/moderation',
+  path: '/creator/moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorOnboardingRoute = CreatorOnboardingRouteImport.update({
+  id: '/creator/onboarding',
+  path: '/creator/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorPostsRoute = CreatorPostsRouteImport.update({
+  id: '/creator/posts',
+  path: '/creator/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorSubscriptionPlansRoute =
@@ -187,96 +763,198 @@ const CreatorSubscriptionPlansRoute =
     path: '/creator/subscription-plans',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CreatorPostsRoute = CreatorPostsRouteImport.update({
-  id: '/creator/posts',
-  path: '/creator/posts',
+const CreatorUpsellsRoute = CreatorUpsellsRouteImport.update({
+  id: '/creator/upsells',
+  path: '/creator/upsells',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorMailingRoute = CreatorMailingRouteImport.update({
-  id: '/creator/mailing',
-  path: '/creator/mailing',
+const CreatorWalletRoute = CreatorWalletRouteImport.update({
+  id: '/creator/wallet',
+  path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorLoyaltyRoute = CreatorLoyaltyRouteImport.update({
-  id: '/creator/loyalty',
-  path: '/creator/loyalty',
+const CriadoraAcervoRoute = CriadoraAcervoRouteImport.update({
+  id: '/criadora/acervo',
+  path: '/criadora/acervo',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorLinksRoute = CreatorLinksRouteImport.update({
-  id: '/creator/links',
-  path: '/creator/links',
+const CriadoraAfiliadosRoute = CriadoraAfiliadosRouteImport.update({
+  id: '/criadora/afiliados',
+  path: '/criadora/afiliados',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorDmcaRoute = CreatorDmcaRouteImport.update({
-  id: '/creator/dmca',
-  path: '/creator/dmca',
+const CriadoraCadastroRoute = CriadoraCadastroRouteImport.update({
+  id: '/criadora/cadastro',
+  path: '/criadora/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorCouponsRoute = CreatorCouponsRouteImport.update({
-  id: '/creator/coupons',
-  path: '/creator/coupons',
+const CriadoraCarteiraRoute = CriadoraCarteiraRouteImport.update({
+  id: '/criadora/carteira',
+  path: '/criadora/carteira',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorAnalyticsRoute = CreatorAnalyticsRouteImport.update({
-  id: '/creator/analytics',
-  path: '/creator/analytics',
+const CriadoraCuponsRoute = CriadoraCuponsRouteImport.update({
+  id: '/criadora/cupons',
+  path: '/criadora/cupons',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorAffiliateRoute = CreatorAffiliateRouteImport.update({
-  id: '/creator/affiliate',
-  path: '/creator/affiliate',
+const CriadoraDmcaRoute = CriadoraDmcaRouteImport.update({
+  id: '/criadora/dmca',
+  path: '/criadora/dmca',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CCodeRoute = CCodeRouteImport.update({
-  id: '/c/$code',
-  path: '/c/$code',
+const CriadoraFidelidadeRoute = CriadoraFidelidadeRouteImport.update({
+  id: '/criadora/fidelidade',
+  path: '/criadora/fidelidade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
+const CriadoraLinksRoute = CriadoraLinksRouteImport.update({
+  id: '/criadora/links',
+  path: '/criadora/links',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
-  id: '/admin/payouts',
-  path: '/admin/payouts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminModerationRoute = AdminModerationRouteImport.update({
-  id: '/admin/moderation',
-  path: '/admin/moderation',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminKycRoute = AdminKycRouteImport.update({
-  id: '/admin/kyc',
-  path: '/admin/kyc',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDmcaRoute = AdminDmcaRouteImport.update({
-  id: '/admin/dmca',
-  path: '/admin/dmca',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAuditRoute = AdminAuditRouteImport.update({
-  id: '/admin/audit',
-  path: '/admin/audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminActionsAuditRoute = AdminActionsAuditRouteImport.update({
-  id: '/admin/actions-audit',
-  path: '/admin/actions-audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicNexuspagWebhookRoute =
-  ApiPublicNexuspagWebhookRouteImport.update({
-    id: '/api/public/nexuspag-webhook',
-    path: '/api/public/nexuspag-webhook',
+const CriadoraMensagensEmMassaRoute =
+  CriadoraMensagensEmMassaRouteImport.update({
+    id: '/criadora/mensagens-em-massa',
+    path: '/criadora/mensagens-em-massa',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronProcessMassDmRoute =
-  ApiPublicCronProcessMassDmRouteImport.update({
-    id: '/api/public/cron/process-mass-dm',
-    path: '/api/public/cron/process-mass-dm',
+const CriadoraMetricasRoute = CriadoraMetricasRouteImport.update({
+  id: '/criadora/metricas',
+  path: '/criadora/metricas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadoraMimosRoute = CriadoraMimosRouteImport.update({
+  id: '/criadora/mimos',
+  path: '/criadora/mimos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadoraModeracaoRoute = CriadoraModeracaoRouteImport.update({
+  id: '/criadora/moderacao',
+  path: '/criadora/moderacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadoraOfertasAdicionaisRoute =
+  CriadoraOfertasAdicionaisRouteImport.update({
+    id: '/criadora/ofertas-adicionais',
+    path: '/criadora/ofertas-adicionais',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CriadoraPlanosRoute = CriadoraPlanosRouteImport.update({
+  id: '/criadora/planos',
+  path: '/criadora/planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadoraPublicacoesRoute = CriadoraPublicacoesRouteImport.update({
+  id: '/criadora/publicacoes',
+  path: '/criadora/publicacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnlacesUsernameRoute = EnlacesUsernameRouteImport.update({
+  id: '/enlaces/$username',
+  path: '/enlaces/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftsUsernameRoute = GiftsUsernameRouteImport.update({
+  id: '/gifts/$username',
+  path: '/gifts/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuardadoPostIdRoute = GuardadoPostIdRouteImport.update({
+  id: '/guardado/$postId',
+  path: '/guardado/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinksUsernameRoute = LinksUsernameRouteImport.update({
+  id: '/links/$username',
+  path: '/links/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MimosUsernameRoute = MimosUsernameRouteImport.update({
+  id: '/mimos/$username',
+  path: '/mimos/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilUsernameRoute = PerfilUsernameRouteImport.update({
+  id: '/perfil/$username',
+  path: '/perfil/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresentationSectionRoute = PresentationSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => PresentationRoute,
+} as any)
+const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
+  id: '/profile/$username',
+  path: '/profile/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RCodeRoute = RCodeRouteImport.update({
+  id: '/r/$code',
+  path: '/r/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegalosUsernameRoute = RegalosUsernameRouteImport.update({
+  id: '/regalos/$username',
+  path: '/regalos/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalvoPostIdRoute = SalvoPostIdRouteImport.update({
+  id: '/salvo/$postId',
+  path: '/salvo/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedPostIdRoute = SavedPostIdRouteImport.update({
+  id: '/saved/$postId',
+  path: '/saved/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPaymentsRoute = SettingsPaymentsRouteImport.update({
+  id: '/settings/payments',
+  path: '/settings/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPrivacyRoute = SettingsPrivacyRouteImport.update({
+  id: '/settings/privacy',
+  path: '/settings/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImpulsepayWebhookRoute =
+  ApiPublicImpulsepayWebhookRouteImport.update({
+    id: '/api/public/impulsepay-webhook',
+    path: '/api/public/impulsepay-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicLinkEventRoute = ApiPublicLinkEventRouteImport.update({
+  id: '/api/public/link-event',
+  path: '/api/public/link-event',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTelemetryRoute = ApiPublicTelemetryRouteImport.update({
+  id: '/api/public/telemetry',
+  path: '/api/public/telemetry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronCleanupStoriesRoute =
+  ApiPublicCronCleanupStoriesRouteImport.update({
+    id: '/api/public/cron/cleanup-stories',
+    path: '/api/public/cron/cleanup-stories',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCronExpireSubscriptionsRoute =
@@ -285,28 +963,67 @@ const ApiPublicCronExpireSubscriptionsRoute =
     path: '/api/public/cron/expire-subscriptions',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicCronCleanupStoriesRoute =
-  ApiPublicCronCleanupStoriesRouteImport.update({
-    id: '/api/public/cron/cleanup-stories',
-    path: '/api/public/cron/cleanup-stories',
+const ApiPublicCronProcessMassDmRoute =
+  ApiPublicCronProcessMassDmRouteImport.update({
+    id: '/api/public/cron/process-mass-dm',
+    path: '/api/public/cron/process-mass-dm',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronReconcilePixRoute =
+  ApiPublicCronReconcilePixRouteImport.update({
+    id: '/api/public/cron/reconcile-pix',
+    path: '/api/public/cron/reconcile-pix',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronSubscriptionRemindersRoute =
+  ApiPublicCronSubscriptionRemindersRouteImport.update({
+    id: '/api/public/cron/subscription-reminders',
+    path: '/api/public/cron/subscription-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/403': typeof R403Route
+  '/ajuda': typeof AjudaRoute
+  '/ayuda': typeof AyudaRoute
   '/become-creator': typeof BecomeCreatorRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
+  '/entrar': typeof EntrarRoute
+  '/explorar': typeof ExplorarRoute
   '/explore': typeof ExploreRoute
+  '/favoritos': typeof FavoritosRoute
   '/feed': typeof FeedRoute
+  '/fidelidad': typeof FidelidadRoute
+  '/fidelidade': typeof FidelidadeRoute
+  '/help': typeof HelpRoute
+  '/inicio': typeof InicioRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
+  '/mensagens': typeof MensagensRoute
+  '/mensajes': typeof MensajesRoute
+  '/notificaciones': typeof NotificacionesRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
+  '/presentation': typeof PresentationRouteWithChildren
+  '/privacidad': typeof PrivacidadRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/registro': typeof RegistroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
+  '/seja-criadora': typeof SejaCriadoraRoute
+  '/ser-creadora': typeof SerCreadoraRoute
   '/signup': typeof SignupRoute
+  '/terminos': typeof TerminosRoute
+  '/termos': typeof TermosRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
@@ -314,47 +1031,160 @@ export interface FileRoutesByFullPath {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
+  '/administracao/auditoria-acoes': typeof AdministracaoAuditoriaAcoesRoute
+  '/administracao/conciliacao': typeof AdministracaoConciliacaoRoute
+  '/administracao/dmca': typeof AdministracaoDmcaRoute
+  '/administracao/kyc': typeof AdministracaoKycRoute
+  '/administracao/moderacao': typeof AdministracaoModeracaoRoute
+  '/administracao/operacoes': typeof AdministracaoOperacoesRoute
+  '/administracao/relatorios': typeof AdministracaoRelatoriosRoute
+  '/administracao/saques': typeof AdministracaoSaquesRoute
+  '/administracao/suporte': typeof AdministracaoSuporteRoute
+  '/administracao/usuarios': typeof AdministracaoUsuariosRoute
+  '/administracion/auditoria': typeof AdministracionAuditoriaRoute
+  '/administracion/auditoria-acciones': typeof AdministracionAuditoriaAccionesRoute
+  '/administracion/conciliacion': typeof AdministracionConciliacionRoute
+  '/administracion/dmca': typeof AdministracionDmcaRoute
+  '/administracion/kyc': typeof AdministracionKycRoute
+  '/administracion/moderacion': typeof AdministracionModeracionRoute
+  '/administracion/operaciones': typeof AdministracionOperacionesRoute
+  '/administracion/reportes': typeof AdministracionReportesRoute
+  '/administracion/retiros': typeof AdministracionRetirosRoute
+  '/administracion/soporte': typeof AdministracionSoporteRoute
+  '/administracion/usuarios': typeof AdministracionUsuariosRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
+  '/configuracion/pagos': typeof ConfiguracionPagosRoute
+  '/configuracion/perfil': typeof ConfiguracionPerfilRoute
+  '/configuracion/privacidad': typeof ConfiguracionPrivacidadRoute
+  '/configuracion/seguridad': typeof ConfiguracionSeguridadRoute
+  '/configuracoes/pagamentos': typeof ConfiguracoesPagamentosRoute
+  '/configuracoes/perfil': typeof ConfiguracoesPerfilRoute
+  '/configuracoes/privacidade': typeof ConfiguracoesPrivacidadeRoute
+  '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
+  '/creadora/afiliados': typeof CreadoraAfiliadosRoute
+  '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/cartera': typeof CreadoraCarteraRoute
+  '/creadora/cupones': typeof CreadoraCuponesRoute
+  '/creadora/dmca': typeof CreadoraDmcaRoute
+  '/creadora/enlaces': typeof CreadoraEnlacesRoute
+  '/creadora/fidelidad': typeof CreadoraFidelidadRoute
+  '/creadora/mensajes-en-masa': typeof CreadoraMensajesEnMasaRoute
+  '/creadora/metricas': typeof CreadoraMetricasRoute
+  '/creadora/moderacion': typeof CreadoraModeracionRoute
+  '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/planes': typeof CreadoraPlanesRoute
+  '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
+  '/creadora/regalos': typeof CreadoraRegalosRoute
+  '/creadora/registro': typeof CreadoraRegistroRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
+  '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/criadora/acervo': typeof CriadoraAcervoRoute
+  '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/cadastro': typeof CriadoraCadastroRoute
+  '/criadora/carteira': typeof CriadoraCarteiraRoute
+  '/criadora/cupons': typeof CriadoraCuponsRoute
+  '/criadora/dmca': typeof CriadoraDmcaRoute
+  '/criadora/fidelidade': typeof CriadoraFidelidadeRoute
+  '/criadora/links': typeof CriadoraLinksRoute
+  '/criadora/mensagens-em-massa': typeof CriadoraMensagensEmMassaRoute
+  '/criadora/metricas': typeof CriadoraMetricasRoute
+  '/criadora/mimos': typeof CriadoraMimosRoute
+  '/criadora/moderacao': typeof CriadoraModeracaoRoute
+  '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/planos': typeof CriadoraPlanosRoute
+  '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
+  '/enlaces/$username': typeof EnlacesUsernameRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
+  '/guardado/$postId': typeof GuardadoPostIdRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/mimos/$username': typeof MimosUsernameRoute
+  '/perfil/$username': typeof PerfilUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/regalos/$username': typeof RegalosUsernameRoute
+  '/salvo/$postId': typeof SalvoPostIdRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/administracao/': typeof AdministracaoIndexRoute
+  '/administracion/': typeof AdministracionIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/403': typeof R403Route
+  '/ajuda': typeof AjudaRoute
+  '/ayuda': typeof AyudaRoute
   '/become-creator': typeof BecomeCreatorRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
+  '/entrar': typeof EntrarRoute
+  '/explorar': typeof ExplorarRoute
   '/explore': typeof ExploreRoute
+  '/favoritos': typeof FavoritosRoute
   '/feed': typeof FeedRoute
+  '/fidelidad': typeof FidelidadRoute
+  '/fidelidade': typeof FidelidadeRoute
+  '/help': typeof HelpRoute
+  '/inicio': typeof InicioRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
+  '/mensagens': typeof MensagensRoute
+  '/mensajes': typeof MensajesRoute
+  '/notificaciones': typeof NotificacionesRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
+  '/presentation': typeof PresentationRouteWithChildren
+  '/privacidad': typeof PrivacidadRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/registro': typeof RegistroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
+  '/seja-criadora': typeof SejaCriadoraRoute
+  '/ser-creadora': typeof SerCreadoraRoute
   '/signup': typeof SignupRoute
+  '/terminos': typeof TerminosRoute
+  '/termos': typeof TermosRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
@@ -362,48 +1192,161 @@ export interface FileRoutesByTo {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
+  '/administracao/auditoria-acoes': typeof AdministracaoAuditoriaAcoesRoute
+  '/administracao/conciliacao': typeof AdministracaoConciliacaoRoute
+  '/administracao/dmca': typeof AdministracaoDmcaRoute
+  '/administracao/kyc': typeof AdministracaoKycRoute
+  '/administracao/moderacao': typeof AdministracaoModeracaoRoute
+  '/administracao/operacoes': typeof AdministracaoOperacoesRoute
+  '/administracao/relatorios': typeof AdministracaoRelatoriosRoute
+  '/administracao/saques': typeof AdministracaoSaquesRoute
+  '/administracao/suporte': typeof AdministracaoSuporteRoute
+  '/administracao/usuarios': typeof AdministracaoUsuariosRoute
+  '/administracion/auditoria': typeof AdministracionAuditoriaRoute
+  '/administracion/auditoria-acciones': typeof AdministracionAuditoriaAccionesRoute
+  '/administracion/conciliacion': typeof AdministracionConciliacionRoute
+  '/administracion/dmca': typeof AdministracionDmcaRoute
+  '/administracion/kyc': typeof AdministracionKycRoute
+  '/administracion/moderacion': typeof AdministracionModeracionRoute
+  '/administracion/operaciones': typeof AdministracionOperacionesRoute
+  '/administracion/reportes': typeof AdministracionReportesRoute
+  '/administracion/retiros': typeof AdministracionRetirosRoute
+  '/administracion/soporte': typeof AdministracionSoporteRoute
+  '/administracion/usuarios': typeof AdministracionUsuariosRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
+  '/configuracion/pagos': typeof ConfiguracionPagosRoute
+  '/configuracion/perfil': typeof ConfiguracionPerfilRoute
+  '/configuracion/privacidad': typeof ConfiguracionPrivacidadRoute
+  '/configuracion/seguridad': typeof ConfiguracionSeguridadRoute
+  '/configuracoes/pagamentos': typeof ConfiguracoesPagamentosRoute
+  '/configuracoes/perfil': typeof ConfiguracoesPerfilRoute
+  '/configuracoes/privacidade': typeof ConfiguracoesPrivacidadeRoute
+  '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
+  '/creadora/afiliados': typeof CreadoraAfiliadosRoute
+  '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/cartera': typeof CreadoraCarteraRoute
+  '/creadora/cupones': typeof CreadoraCuponesRoute
+  '/creadora/dmca': typeof CreadoraDmcaRoute
+  '/creadora/enlaces': typeof CreadoraEnlacesRoute
+  '/creadora/fidelidad': typeof CreadoraFidelidadRoute
+  '/creadora/mensajes-en-masa': typeof CreadoraMensajesEnMasaRoute
+  '/creadora/metricas': typeof CreadoraMetricasRoute
+  '/creadora/moderacion': typeof CreadoraModeracionRoute
+  '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/planes': typeof CreadoraPlanesRoute
+  '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
+  '/creadora/regalos': typeof CreadoraRegalosRoute
+  '/creadora/registro': typeof CreadoraRegistroRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
+  '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/criadora/acervo': typeof CriadoraAcervoRoute
+  '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/cadastro': typeof CriadoraCadastroRoute
+  '/criadora/carteira': typeof CriadoraCarteiraRoute
+  '/criadora/cupons': typeof CriadoraCuponsRoute
+  '/criadora/dmca': typeof CriadoraDmcaRoute
+  '/criadora/fidelidade': typeof CriadoraFidelidadeRoute
+  '/criadora/links': typeof CriadoraLinksRoute
+  '/criadora/mensagens-em-massa': typeof CriadoraMensagensEmMassaRoute
+  '/criadora/metricas': typeof CriadoraMetricasRoute
+  '/criadora/mimos': typeof CriadoraMimosRoute
+  '/criadora/moderacao': typeof CriadoraModeracaoRoute
+  '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/planos': typeof CriadoraPlanosRoute
+  '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
+  '/enlaces/$username': typeof EnlacesUsernameRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
+  '/guardado/$postId': typeof GuardadoPostIdRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/mimos/$username': typeof MimosUsernameRoute
+  '/perfil/$username': typeof PerfilUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/regalos/$username': typeof RegalosUsernameRoute
+  '/salvo/$postId': typeof SalvoPostIdRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin': typeof AdminIndexRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/administracao': typeof AdministracaoIndexRoute
+  '/administracion': typeof AdministracionIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/403': typeof R403Route
+  '/ajuda': typeof AjudaRoute
+  '/ayuda': typeof AyudaRoute
   '/become-creator': typeof BecomeCreatorRoute
+  '/buscar': typeof BuscarRoute
+  '/cadastro': typeof CadastroRoute
   '/chat': typeof ChatRoute
+  '/content-policy': typeof ContentPolicyRoute
   '/dmca': typeof DmcaRoute
+  '/entrar': typeof EntrarRoute
+  '/explorar': typeof ExplorarRoute
   '/explore': typeof ExploreRoute
+  '/favoritos': typeof FavoritosRoute
   '/feed': typeof FeedRoute
+  '/fidelidad': typeof FidelidadRoute
+  '/fidelidade': typeof FidelidadeRoute
+  '/help': typeof HelpRoute
+  '/inicio': typeof InicioRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
+  '/mensagens': typeof MensagensRoute
+  '/mensajes': typeof MensajesRoute
+  '/notificaciones': typeof NotificacionesRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
+  '/politica-de-conteudo': typeof PoliticaDeConteudoRoute
+  '/presentation': typeof PresentationRouteWithChildren
+  '/privacidad': typeof PrivacidadRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/registro': typeof RegistroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
+  '/seja-criadora': typeof SejaCriadoraRoute
+  '/ser-creadora': typeof SerCreadoraRoute
   '/signup': typeof SignupRoute
+  '/terminos': typeof TerminosRoute
+  '/termos': typeof TermosRoute
   '/terms': typeof TermsRoute
   '/wishlist': typeof WishlistRoute
   '/admin/actions-audit': typeof AdminActionsAuditRoute
@@ -411,49 +1354,162 @@ export interface FileRoutesById {
   '/admin/dmca': typeof AdminDmcaRoute
   '/admin/kyc': typeof AdminKycRoute
   '/admin/moderation': typeof AdminModerationRoute
+  '/admin/operations': typeof AdminOperationsRoute
   '/admin/payouts': typeof AdminPayoutsRoute
+  '/admin/reconciliation': typeof AdminReconciliationRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
+  '/administracao/auditoria-acoes': typeof AdministracaoAuditoriaAcoesRoute
+  '/administracao/conciliacao': typeof AdministracaoConciliacaoRoute
+  '/administracao/dmca': typeof AdministracaoDmcaRoute
+  '/administracao/kyc': typeof AdministracaoKycRoute
+  '/administracao/moderacao': typeof AdministracaoModeracaoRoute
+  '/administracao/operacoes': typeof AdministracaoOperacoesRoute
+  '/administracao/relatorios': typeof AdministracaoRelatoriosRoute
+  '/administracao/saques': typeof AdministracaoSaquesRoute
+  '/administracao/suporte': typeof AdministracaoSuporteRoute
+  '/administracao/usuarios': typeof AdministracaoUsuariosRoute
+  '/administracion/auditoria': typeof AdministracionAuditoriaRoute
+  '/administracion/auditoria-acciones': typeof AdministracionAuditoriaAccionesRoute
+  '/administracion/conciliacion': typeof AdministracionConciliacionRoute
+  '/administracion/dmca': typeof AdministracionDmcaRoute
+  '/administracion/kyc': typeof AdministracionKycRoute
+  '/administracion/moderacion': typeof AdministracionModeracionRoute
+  '/administracion/operaciones': typeof AdministracionOperacionesRoute
+  '/administracion/reportes': typeof AdministracionReportesRoute
+  '/administracion/retiros': typeof AdministracionRetirosRoute
+  '/administracion/soporte': typeof AdministracionSoporteRoute
+  '/administracion/usuarios': typeof AdministracionUsuariosRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$code': typeof CCodeRoute
+  '/configuracion/pagos': typeof ConfiguracionPagosRoute
+  '/configuracion/perfil': typeof ConfiguracionPerfilRoute
+  '/configuracion/privacidad': typeof ConfiguracionPrivacidadRoute
+  '/configuracion/seguridad': typeof ConfiguracionSeguridadRoute
+  '/configuracoes/pagamentos': typeof ConfiguracoesPagamentosRoute
+  '/configuracoes/perfil': typeof ConfiguracoesPerfilRoute
+  '/configuracoes/privacidade': typeof ConfiguracoesPrivacidadeRoute
+  '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
+  '/creadora/afiliados': typeof CreadoraAfiliadosRoute
+  '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/cartera': typeof CreadoraCarteraRoute
+  '/creadora/cupones': typeof CreadoraCuponesRoute
+  '/creadora/dmca': typeof CreadoraDmcaRoute
+  '/creadora/enlaces': typeof CreadoraEnlacesRoute
+  '/creadora/fidelidad': typeof CreadoraFidelidadRoute
+  '/creadora/mensajes-en-masa': typeof CreadoraMensajesEnMasaRoute
+  '/creadora/metricas': typeof CreadoraMetricasRoute
+  '/creadora/moderacion': typeof CreadoraModeracionRoute
+  '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/planes': typeof CreadoraPlanesRoute
+  '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
+  '/creadora/regalos': typeof CreadoraRegalosRoute
+  '/creadora/registro': typeof CreadoraRegistroRoute
   '/creator/affiliate': typeof CreatorAffiliateRoute
   '/creator/analytics': typeof CreatorAnalyticsRoute
   '/creator/coupons': typeof CreatorCouponsRoute
   '/creator/dmca': typeof CreatorDmcaRoute
+  '/creator/gifts': typeof CreatorGiftsRoute
   '/creator/links': typeof CreatorLinksRoute
   '/creator/loyalty': typeof CreatorLoyaltyRoute
   '/creator/mailing': typeof CreatorMailingRoute
+  '/creator/media-library': typeof CreatorMediaLibraryRoute
+  '/creator/moderation': typeof CreatorModerationRoute
+  '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/criadora/acervo': typeof CriadoraAcervoRoute
+  '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/cadastro': typeof CriadoraCadastroRoute
+  '/criadora/carteira': typeof CriadoraCarteiraRoute
+  '/criadora/cupons': typeof CriadoraCuponsRoute
+  '/criadora/dmca': typeof CriadoraDmcaRoute
+  '/criadora/fidelidade': typeof CriadoraFidelidadeRoute
+  '/criadora/links': typeof CriadoraLinksRoute
+  '/criadora/mensagens-em-massa': typeof CriadoraMensagensEmMassaRoute
+  '/criadora/metricas': typeof CriadoraMetricasRoute
+  '/criadora/mimos': typeof CriadoraMimosRoute
+  '/criadora/moderacao': typeof CriadoraModeracaoRoute
+  '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/planos': typeof CriadoraPlanosRoute
+  '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
+  '/enlaces/$username': typeof EnlacesUsernameRoute
+  '/gifts/$username': typeof GiftsUsernameRoute
+  '/guardado/$postId': typeof GuardadoPostIdRoute
   '/links/$username': typeof LinksUsernameRoute
+  '/mimos/$username': typeof MimosUsernameRoute
+  '/perfil/$username': typeof PerfilUsernameRoute
+  '/presentation/$section': typeof PresentationSectionRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/r/$code': typeof RCodeRoute
+  '/regalos/$username': typeof RegalosUsernameRoute
+  '/salvo/$postId': typeof SalvoPostIdRoute
   '/saved/$postId': typeof SavedPostIdRoute
+  '/settings/payments': typeof SettingsPaymentsRoute
+  '/settings/privacy': typeof SettingsPrivacyRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/settings/security': typeof SettingsSecurityRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/nexuspag-webhook': typeof ApiPublicNexuspagWebhookRoute
+  '/administracao/': typeof AdministracaoIndexRoute
+  '/administracion/': typeof AdministracionIndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/impulsepay-webhook': typeof ApiPublicImpulsepayWebhookRoute
+  '/api/public/link-event': typeof ApiPublicLinkEventRoute
+  '/api/public/telemetry': typeof ApiPublicTelemetryRoute
   '/api/public/cron/cleanup-stories': typeof ApiPublicCronCleanupStoriesRoute
   '/api/public/cron/expire-subscriptions': typeof ApiPublicCronExpireSubscriptionsRoute
   '/api/public/cron/process-mass-dm': typeof ApiPublicCronProcessMassDmRoute
+  '/api/public/cron/reconcile-pix': typeof ApiPublicCronReconcilePixRoute
+  '/api/public/cron/subscription-reminders': typeof ApiPublicCronSubscriptionRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/403'
+    | '/ajuda'
+    | '/ayuda'
     | '/become-creator'
+    | '/buscar'
+    | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
+    | '/entrar'
+    | '/explorar'
     | '/explore'
+    | '/favoritos'
     | '/feed'
+    | '/fidelidad'
+    | '/fidelidade'
+    | '/help'
+    | '/inicio'
     | '/login'
     | '/loyalty'
+    | '/mensagens'
+    | '/mensajes'
+    | '/notificaciones'
+    | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
+    | '/presentation'
+    | '/privacidad'
+    | '/privacidade'
     | '/privacy'
+    | '/recuperar-contrasena'
+    | '/recuperar-senha'
+    | '/registro'
     | '/reset-password'
     | '/search'
+    | '/seja-criadora'
+    | '/ser-creadora'
     | '/signup'
+    | '/terminos'
+    | '/termos'
     | '/terms'
     | '/wishlist'
     | '/admin/actions-audit'
@@ -461,47 +1517,160 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
+    | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/administracao/auditoria'
+    | '/administracao/auditoria-acoes'
+    | '/administracao/conciliacao'
+    | '/administracao/dmca'
+    | '/administracao/kyc'
+    | '/administracao/moderacao'
+    | '/administracao/operacoes'
+    | '/administracao/relatorios'
+    | '/administracao/saques'
+    | '/administracao/suporte'
+    | '/administracao/usuarios'
+    | '/administracion/auditoria'
+    | '/administracion/auditoria-acciones'
+    | '/administracion/conciliacion'
+    | '/administracion/dmca'
+    | '/administracion/kyc'
+    | '/administracion/moderacion'
+    | '/administracion/operaciones'
+    | '/administracion/reportes'
+    | '/administracion/retiros'
+    | '/administracion/soporte'
+    | '/administracion/usuarios'
+    | '/auth/callback'
     | '/c/$code'
+    | '/configuracion/pagos'
+    | '/configuracion/perfil'
+    | '/configuracion/privacidad'
+    | '/configuracion/seguridad'
+    | '/configuracoes/pagamentos'
+    | '/configuracoes/perfil'
+    | '/configuracoes/privacidade'
+    | '/configuracoes/seguranca'
+    | '/creadora/afiliados'
+    | '/creadora/biblioteca'
+    | '/creadora/cartera'
+    | '/creadora/cupones'
+    | '/creadora/dmca'
+    | '/creadora/enlaces'
+    | '/creadora/fidelidad'
+    | '/creadora/mensajes-en-masa'
+    | '/creadora/metricas'
+    | '/creadora/moderacion'
+    | '/creadora/ofertas-adicionales'
+    | '/creadora/planes'
+    | '/creadora/publicaciones'
+    | '/creadora/regalos'
+    | '/creadora/registro'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
+    | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/criadora/acervo'
+    | '/criadora/afiliados'
+    | '/criadora/cadastro'
+    | '/criadora/carteira'
+    | '/criadora/cupons'
+    | '/criadora/dmca'
+    | '/criadora/fidelidade'
+    | '/criadora/links'
+    | '/criadora/mensagens-em-massa'
+    | '/criadora/metricas'
+    | '/criadora/mimos'
+    | '/criadora/moderacao'
+    | '/criadora/ofertas-adicionais'
+    | '/criadora/planos'
+    | '/criadora/publicacoes'
+    | '/enlaces/$username'
+    | '/gifts/$username'
+    | '/guardado/$postId'
     | '/links/$username'
+    | '/mimos/$username'
+    | '/perfil/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
+    | '/regalos/$username'
+    | '/salvo/$postId'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
-    | '/api/public/nexuspag-webhook'
+    | '/administracao/'
+    | '/administracion/'
+    | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
+    | '/api/public/link-event'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/403'
+    | '/ajuda'
+    | '/ayuda'
     | '/become-creator'
+    | '/buscar'
+    | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
+    | '/entrar'
+    | '/explorar'
     | '/explore'
+    | '/favoritos'
     | '/feed'
+    | '/fidelidad'
+    | '/fidelidade'
+    | '/help'
+    | '/inicio'
     | '/login'
     | '/loyalty'
+    | '/mensagens'
+    | '/mensajes'
+    | '/notificaciones'
+    | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
+    | '/presentation'
+    | '/privacidad'
+    | '/privacidade'
     | '/privacy'
+    | '/recuperar-contrasena'
+    | '/recuperar-senha'
+    | '/registro'
     | '/reset-password'
     | '/search'
+    | '/seja-criadora'
+    | '/ser-creadora'
     | '/signup'
+    | '/terminos'
+    | '/termos'
     | '/terms'
     | '/wishlist'
     | '/admin/actions-audit'
@@ -509,47 +1678,160 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
+    | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/administracao/auditoria'
+    | '/administracao/auditoria-acoes'
+    | '/administracao/conciliacao'
+    | '/administracao/dmca'
+    | '/administracao/kyc'
+    | '/administracao/moderacao'
+    | '/administracao/operacoes'
+    | '/administracao/relatorios'
+    | '/administracao/saques'
+    | '/administracao/suporte'
+    | '/administracao/usuarios'
+    | '/administracion/auditoria'
+    | '/administracion/auditoria-acciones'
+    | '/administracion/conciliacion'
+    | '/administracion/dmca'
+    | '/administracion/kyc'
+    | '/administracion/moderacion'
+    | '/administracion/operaciones'
+    | '/administracion/reportes'
+    | '/administracion/retiros'
+    | '/administracion/soporte'
+    | '/administracion/usuarios'
+    | '/auth/callback'
     | '/c/$code'
+    | '/configuracion/pagos'
+    | '/configuracion/perfil'
+    | '/configuracion/privacidad'
+    | '/configuracion/seguridad'
+    | '/configuracoes/pagamentos'
+    | '/configuracoes/perfil'
+    | '/configuracoes/privacidade'
+    | '/configuracoes/seguranca'
+    | '/creadora/afiliados'
+    | '/creadora/biblioteca'
+    | '/creadora/cartera'
+    | '/creadora/cupones'
+    | '/creadora/dmca'
+    | '/creadora/enlaces'
+    | '/creadora/fidelidad'
+    | '/creadora/mensajes-en-masa'
+    | '/creadora/metricas'
+    | '/creadora/moderacion'
+    | '/creadora/ofertas-adicionales'
+    | '/creadora/planes'
+    | '/creadora/publicaciones'
+    | '/creadora/regalos'
+    | '/creadora/registro'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
+    | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/criadora/acervo'
+    | '/criadora/afiliados'
+    | '/criadora/cadastro'
+    | '/criadora/carteira'
+    | '/criadora/cupons'
+    | '/criadora/dmca'
+    | '/criadora/fidelidade'
+    | '/criadora/links'
+    | '/criadora/mensagens-em-massa'
+    | '/criadora/metricas'
+    | '/criadora/mimos'
+    | '/criadora/moderacao'
+    | '/criadora/ofertas-adicionais'
+    | '/criadora/planos'
+    | '/criadora/publicacoes'
+    | '/enlaces/$username'
+    | '/gifts/$username'
+    | '/guardado/$postId'
     | '/links/$username'
+    | '/mimos/$username'
+    | '/perfil/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
+    | '/regalos/$username'
+    | '/salvo/$postId'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin'
-    | '/api/public/nexuspag-webhook'
+    | '/administracao'
+    | '/administracion'
+    | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
+    | '/api/public/link-event'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   id:
     | '__root__'
     | '/'
     | '/403'
+    | '/ajuda'
+    | '/ayuda'
     | '/become-creator'
+    | '/buscar'
+    | '/cadastro'
     | '/chat'
+    | '/content-policy'
     | '/dmca'
+    | '/entrar'
+    | '/explorar'
     | '/explore'
+    | '/favoritos'
     | '/feed'
+    | '/fidelidad'
+    | '/fidelidade'
+    | '/help'
+    | '/inicio'
     | '/login'
     | '/loyalty'
+    | '/mensagens'
+    | '/mensajes'
+    | '/notificaciones'
+    | '/notificacoes'
     | '/notifications'
+    | '/politica-de-conteudo'
+    | '/presentation'
+    | '/privacidad'
+    | '/privacidade'
     | '/privacy'
+    | '/recuperar-contrasena'
+    | '/recuperar-senha'
+    | '/registro'
     | '/reset-password'
     | '/search'
+    | '/seja-criadora'
+    | '/ser-creadora'
     | '/signup'
+    | '/terminos'
+    | '/termos'
     | '/terms'
     | '/wishlist'
     | '/admin/actions-audit'
@@ -557,48 +1839,161 @@ export interface FileRouteTypes {
     | '/admin/dmca'
     | '/admin/kyc'
     | '/admin/moderation'
+    | '/admin/operations'
     | '/admin/payouts'
+    | '/admin/reconciliation'
+    | '/admin/reports'
+    | '/admin/support'
     | '/admin/users'
+    | '/administracao/auditoria'
+    | '/administracao/auditoria-acoes'
+    | '/administracao/conciliacao'
+    | '/administracao/dmca'
+    | '/administracao/kyc'
+    | '/administracao/moderacao'
+    | '/administracao/operacoes'
+    | '/administracao/relatorios'
+    | '/administracao/saques'
+    | '/administracao/suporte'
+    | '/administracao/usuarios'
+    | '/administracion/auditoria'
+    | '/administracion/auditoria-acciones'
+    | '/administracion/conciliacion'
+    | '/administracion/dmca'
+    | '/administracion/kyc'
+    | '/administracion/moderacion'
+    | '/administracion/operaciones'
+    | '/administracion/reportes'
+    | '/administracion/retiros'
+    | '/administracion/soporte'
+    | '/administracion/usuarios'
+    | '/auth/callback'
     | '/c/$code'
+    | '/configuracion/pagos'
+    | '/configuracion/perfil'
+    | '/configuracion/privacidad'
+    | '/configuracion/seguridad'
+    | '/configuracoes/pagamentos'
+    | '/configuracoes/perfil'
+    | '/configuracoes/privacidade'
+    | '/configuracoes/seguranca'
+    | '/creadora/afiliados'
+    | '/creadora/biblioteca'
+    | '/creadora/cartera'
+    | '/creadora/cupones'
+    | '/creadora/dmca'
+    | '/creadora/enlaces'
+    | '/creadora/fidelidad'
+    | '/creadora/mensajes-en-masa'
+    | '/creadora/metricas'
+    | '/creadora/moderacion'
+    | '/creadora/ofertas-adicionales'
+    | '/creadora/planes'
+    | '/creadora/publicaciones'
+    | '/creadora/regalos'
+    | '/creadora/registro'
     | '/creator/affiliate'
     | '/creator/analytics'
     | '/creator/coupons'
     | '/creator/dmca'
+    | '/creator/gifts'
     | '/creator/links'
     | '/creator/loyalty'
     | '/creator/mailing'
+    | '/creator/media-library'
+    | '/creator/moderation'
+    | '/creator/onboarding'
     | '/creator/posts'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/criadora/acervo'
+    | '/criadora/afiliados'
+    | '/criadora/cadastro'
+    | '/criadora/carteira'
+    | '/criadora/cupons'
+    | '/criadora/dmca'
+    | '/criadora/fidelidade'
+    | '/criadora/links'
+    | '/criadora/mensagens-em-massa'
+    | '/criadora/metricas'
+    | '/criadora/mimos'
+    | '/criadora/moderacao'
+    | '/criadora/ofertas-adicionais'
+    | '/criadora/planos'
+    | '/criadora/publicacoes'
+    | '/enlaces/$username'
+    | '/gifts/$username'
+    | '/guardado/$postId'
     | '/links/$username'
+    | '/mimos/$username'
+    | '/perfil/$username'
+    | '/presentation/$section'
     | '/profile/$username'
     | '/r/$code'
+    | '/regalos/$username'
+    | '/salvo/$postId'
     | '/saved/$postId'
+    | '/settings/payments'
+    | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
     | '/admin/'
-    | '/api/public/nexuspag-webhook'
+    | '/administracao/'
+    | '/administracion/'
+    | '/api/public/health'
+    | '/api/public/impulsepay-webhook'
+    | '/api/public/link-event'
+    | '/api/public/telemetry'
     | '/api/public/cron/cleanup-stories'
     | '/api/public/cron/expire-subscriptions'
     | '/api/public/cron/process-mass-dm'
+    | '/api/public/cron/reconcile-pix'
+    | '/api/public/cron/subscription-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R403Route: typeof R403Route
+  AjudaRoute: typeof AjudaRoute
+  AyudaRoute: typeof AyudaRoute
   BecomeCreatorRoute: typeof BecomeCreatorRoute
+  BuscarRoute: typeof BuscarRoute
+  CadastroRoute: typeof CadastroRoute
   ChatRoute: typeof ChatRoute
+  ContentPolicyRoute: typeof ContentPolicyRoute
   DmcaRoute: typeof DmcaRoute
+  EntrarRoute: typeof EntrarRoute
+  ExplorarRoute: typeof ExplorarRoute
   ExploreRoute: typeof ExploreRoute
+  FavoritosRoute: typeof FavoritosRoute
   FeedRoute: typeof FeedRoute
+  FidelidadRoute: typeof FidelidadRoute
+  FidelidadeRoute: typeof FidelidadeRoute
+  HelpRoute: typeof HelpRoute
+  InicioRoute: typeof InicioRoute
   LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
+  MensagensRoute: typeof MensagensRoute
+  MensajesRoute: typeof MensajesRoute
+  NotificacionesRoute: typeof NotificacionesRoute
+  NotificacoesRoute: typeof NotificacoesRoute
   NotificationsRoute: typeof NotificationsRoute
+  PoliticaDeConteudoRoute: typeof PoliticaDeConteudoRoute
+  PresentationRoute: typeof PresentationRouteWithChildren
+  PrivacidadRoute: typeof PrivacidadRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   PrivacyRoute: typeof PrivacyRoute
+  RecuperarContrasenaRoute: typeof RecuperarContrasenaRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
+  RegistroRoute: typeof RegistroRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
+  SejaCriadoraRoute: typeof SejaCriadoraRoute
+  SerCreadoraRoute: typeof SerCreadoraRoute
   SignupRoute: typeof SignupRoute
+  TerminosRoute: typeof TerminosRoute
+  TermosRoute: typeof TermosRoute
   TermsRoute: typeof TermsRoute
   WishlistRoute: typeof WishlistRoute
   AdminActionsAuditRoute: typeof AdminActionsAuditRoute
@@ -606,131 +2001,125 @@ export interface RootRouteChildren {
   AdminDmcaRoute: typeof AdminDmcaRoute
   AdminKycRoute: typeof AdminKycRoute
   AdminModerationRoute: typeof AdminModerationRoute
+  AdminOperationsRoute: typeof AdminOperationsRoute
   AdminPayoutsRoute: typeof AdminPayoutsRoute
+  AdminReconciliationRoute: typeof AdminReconciliationRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdministracaoAuditoriaRoute: typeof AdministracaoAuditoriaRoute
+  AdministracaoAuditoriaAcoesRoute: typeof AdministracaoAuditoriaAcoesRoute
+  AdministracaoConciliacaoRoute: typeof AdministracaoConciliacaoRoute
+  AdministracaoDmcaRoute: typeof AdministracaoDmcaRoute
+  AdministracaoKycRoute: typeof AdministracaoKycRoute
+  AdministracaoModeracaoRoute: typeof AdministracaoModeracaoRoute
+  AdministracaoOperacoesRoute: typeof AdministracaoOperacoesRoute
+  AdministracaoRelatoriosRoute: typeof AdministracaoRelatoriosRoute
+  AdministracaoSaquesRoute: typeof AdministracaoSaquesRoute
+  AdministracaoSuporteRoute: typeof AdministracaoSuporteRoute
+  AdministracaoUsuariosRoute: typeof AdministracaoUsuariosRoute
+  AdministracionAuditoriaRoute: typeof AdministracionAuditoriaRoute
+  AdministracionAuditoriaAccionesRoute: typeof AdministracionAuditoriaAccionesRoute
+  AdministracionConciliacionRoute: typeof AdministracionConciliacionRoute
+  AdministracionDmcaRoute: typeof AdministracionDmcaRoute
+  AdministracionKycRoute: typeof AdministracionKycRoute
+  AdministracionModeracionRoute: typeof AdministracionModeracionRoute
+  AdministracionOperacionesRoute: typeof AdministracionOperacionesRoute
+  AdministracionReportesRoute: typeof AdministracionReportesRoute
+  AdministracionRetirosRoute: typeof AdministracionRetirosRoute
+  AdministracionSoporteRoute: typeof AdministracionSoporteRoute
+  AdministracionUsuariosRoute: typeof AdministracionUsuariosRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CCodeRoute: typeof CCodeRoute
+  ConfiguracionPagosRoute: typeof ConfiguracionPagosRoute
+  ConfiguracionPerfilRoute: typeof ConfiguracionPerfilRoute
+  ConfiguracionPrivacidadRoute: typeof ConfiguracionPrivacidadRoute
+  ConfiguracionSeguridadRoute: typeof ConfiguracionSeguridadRoute
+  ConfiguracoesPagamentosRoute: typeof ConfiguracoesPagamentosRoute
+  ConfiguracoesPerfilRoute: typeof ConfiguracoesPerfilRoute
+  ConfiguracoesPrivacidadeRoute: typeof ConfiguracoesPrivacidadeRoute
+  ConfiguracoesSegurancaRoute: typeof ConfiguracoesSegurancaRoute
+  CreadoraAfiliadosRoute: typeof CreadoraAfiliadosRoute
+  CreadoraBibliotecaRoute: typeof CreadoraBibliotecaRoute
+  CreadoraCarteraRoute: typeof CreadoraCarteraRoute
+  CreadoraCuponesRoute: typeof CreadoraCuponesRoute
+  CreadoraDmcaRoute: typeof CreadoraDmcaRoute
+  CreadoraEnlacesRoute: typeof CreadoraEnlacesRoute
+  CreadoraFidelidadRoute: typeof CreadoraFidelidadRoute
+  CreadoraMensajesEnMasaRoute: typeof CreadoraMensajesEnMasaRoute
+  CreadoraMetricasRoute: typeof CreadoraMetricasRoute
+  CreadoraModeracionRoute: typeof CreadoraModeracionRoute
+  CreadoraOfertasAdicionalesRoute: typeof CreadoraOfertasAdicionalesRoute
+  CreadoraPlanesRoute: typeof CreadoraPlanesRoute
+  CreadoraPublicacionesRoute: typeof CreadoraPublicacionesRoute
+  CreadoraRegalosRoute: typeof CreadoraRegalosRoute
+  CreadoraRegistroRoute: typeof CreadoraRegistroRoute
   CreatorAffiliateRoute: typeof CreatorAffiliateRoute
   CreatorAnalyticsRoute: typeof CreatorAnalyticsRoute
   CreatorCouponsRoute: typeof CreatorCouponsRoute
   CreatorDmcaRoute: typeof CreatorDmcaRoute
+  CreatorGiftsRoute: typeof CreatorGiftsRoute
   CreatorLinksRoute: typeof CreatorLinksRoute
   CreatorLoyaltyRoute: typeof CreatorLoyaltyRoute
   CreatorMailingRoute: typeof CreatorMailingRoute
+  CreatorMediaLibraryRoute: typeof CreatorMediaLibraryRoute
+  CreatorModerationRoute: typeof CreatorModerationRoute
+  CreatorOnboardingRoute: typeof CreatorOnboardingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
+  CriadoraAcervoRoute: typeof CriadoraAcervoRoute
+  CriadoraAfiliadosRoute: typeof CriadoraAfiliadosRoute
+  CriadoraCadastroRoute: typeof CriadoraCadastroRoute
+  CriadoraCarteiraRoute: typeof CriadoraCarteiraRoute
+  CriadoraCuponsRoute: typeof CriadoraCuponsRoute
+  CriadoraDmcaRoute: typeof CriadoraDmcaRoute
+  CriadoraFidelidadeRoute: typeof CriadoraFidelidadeRoute
+  CriadoraLinksRoute: typeof CriadoraLinksRoute
+  CriadoraMensagensEmMassaRoute: typeof CriadoraMensagensEmMassaRoute
+  CriadoraMetricasRoute: typeof CriadoraMetricasRoute
+  CriadoraMimosRoute: typeof CriadoraMimosRoute
+  CriadoraModeracaoRoute: typeof CriadoraModeracaoRoute
+  CriadoraOfertasAdicionaisRoute: typeof CriadoraOfertasAdicionaisRoute
+  CriadoraPlanosRoute: typeof CriadoraPlanosRoute
+  CriadoraPublicacoesRoute: typeof CriadoraPublicacoesRoute
+  EnlacesUsernameRoute: typeof EnlacesUsernameRoute
+  GiftsUsernameRoute: typeof GiftsUsernameRoute
+  GuardadoPostIdRoute: typeof GuardadoPostIdRoute
   LinksUsernameRoute: typeof LinksUsernameRoute
+  MimosUsernameRoute: typeof MimosUsernameRoute
+  PerfilUsernameRoute: typeof PerfilUsernameRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   RCodeRoute: typeof RCodeRoute
+  RegalosUsernameRoute: typeof RegalosUsernameRoute
+  SalvoPostIdRoute: typeof SalvoPostIdRoute
   SavedPostIdRoute: typeof SavedPostIdRoute
+  SettingsPaymentsRoute: typeof SettingsPaymentsRoute
+  SettingsPrivacyRoute: typeof SettingsPrivacyRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  ApiPublicNexuspagWebhookRoute: typeof ApiPublicNexuspagWebhookRoute
+  AdministracaoIndexRoute: typeof AdministracaoIndexRoute
+  AdministracionIndexRoute: typeof AdministracionIndexRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicImpulsepayWebhookRoute: typeof ApiPublicImpulsepayWebhookRoute
+  ApiPublicLinkEventRoute: typeof ApiPublicLinkEventRoute
+  ApiPublicTelemetryRoute: typeof ApiPublicTelemetryRoute
   ApiPublicCronCleanupStoriesRoute: typeof ApiPublicCronCleanupStoriesRoute
   ApiPublicCronExpireSubscriptionsRoute: typeof ApiPublicCronExpireSubscriptionsRoute
   ApiPublicCronProcessMassDmRoute: typeof ApiPublicCronProcessMassDmRoute
+  ApiPublicCronReconcilePixRoute: typeof ApiPublicCronReconcilePixRoute
+  ApiPublicCronSubscriptionRemindersRoute: typeof ApiPublicCronSubscriptionRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/wishlist': {
-      id: '/wishlist'
-      path: '/wishlist'
-      fullPath: '/wishlist'
-      preLoaderRoute: typeof WishlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/loyalty': {
-      id: '/loyalty'
-      path: '/loyalty'
-      fullPath: '/loyalty'
-      preLoaderRoute: typeof LoyaltyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed': {
-      id: '/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof FeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dmca': {
-      id: '/dmca'
-      path: '/dmca'
-      fullPath: '/dmca'
-      preLoaderRoute: typeof DmcaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat': {
-      id: '/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/become-creator': {
-      id: '/become-creator'
-      path: '/become-creator'
-      fullPath: '/become-creator'
-      preLoaderRoute: typeof BecomeCreatorRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/403': {
@@ -740,11 +2129,291 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R403RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ayuda': {
+      id: '/ayuda'
+      path: '/ayuda'
+      fullPath: '/ayuda'
+      preLoaderRoute: typeof AyudaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/become-creator': {
+      id: '/become-creator'
+      path: '/become-creator'
+      fullPath: '/become-creator'
+      preLoaderRoute: typeof BecomeCreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/content-policy': {
+      id: '/content-policy'
+      path: '/content-policy'
+      fullPath: '/content-policy'
+      preLoaderRoute: typeof ContentPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dmca': {
+      id: '/dmca'
+      path: '/dmca'
+      fullPath: '/dmca'
+      preLoaderRoute: typeof DmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explorar': {
+      id: '/explorar'
+      path: '/explorar'
+      fullPath: '/explorar'
+      preLoaderRoute: typeof ExplorarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fidelidad': {
+      id: '/fidelidad'
+      path: '/fidelidad'
+      fullPath: '/fidelidad'
+      preLoaderRoute: typeof FidelidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fidelidade': {
+      id: '/fidelidade'
+      path: '/fidelidade'
+      fullPath: '/fidelidade'
+      preLoaderRoute: typeof FidelidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inicio': {
+      id: '/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof InicioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mensagens': {
+      id: '/mensagens'
+      path: '/mensagens'
+      fullPath: '/mensagens'
+      preLoaderRoute: typeof MensagensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mensajes': {
+      id: '/mensajes'
+      path: '/mensajes'
+      fullPath: '/mensajes'
+      preLoaderRoute: typeof MensajesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificaciones': {
+      id: '/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof NotificacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politica-de-conteudo': {
+      id: '/politica-de-conteudo'
+      path: '/politica-de-conteudo'
+      fullPath: '/politica-de-conteudo'
+      preLoaderRoute: typeof PoliticaDeConteudoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presentation': {
+      id: '/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidad': {
+      id: '/privacidad'
+      path: '/privacidad'
+      fullPath: '/privacidad'
+      preLoaderRoute: typeof PrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-contrasena': {
+      id: '/recuperar-contrasena'
+      path: '/recuperar-contrasena'
+      fullPath: '/recuperar-contrasena'
+      preLoaderRoute: typeof RecuperarContrasenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registro': {
+      id: '/registro'
+      path: '/registro'
+      fullPath: '/registro'
+      preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seja-criadora': {
+      id: '/seja-criadora'
+      path: '/seja-criadora'
+      fullPath: '/seja-criadora'
+      preLoaderRoute: typeof SejaCriadoraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ser-creadora': {
+      id: '/ser-creadora'
+      path: '/ser-creadora'
+      fullPath: '/ser-creadora'
+      preLoaderRoute: typeof SerCreadoraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminos': {
+      id: '/terminos'
+      path: '/terminos'
+      fullPath: '/terminos'
+      preLoaderRoute: typeof TerminosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -754,165 +2423,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/security': {
-      id: '/settings/security'
-      path: '/settings/security'
-      fullPath: '/settings/security'
-      preLoaderRoute: typeof SettingsSecurityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/settings/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saved/$postId': {
-      id: '/saved/$postId'
-      path: '/saved/$postId'
-      fullPath: '/saved/$postId'
-      preLoaderRoute: typeof SavedPostIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/r/$code': {
-      id: '/r/$code'
-      path: '/r/$code'
-      fullPath: '/r/$code'
-      preLoaderRoute: typeof RCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/$username': {
-      id: '/profile/$username'
-      path: '/profile/$username'
-      fullPath: '/profile/$username'
-      preLoaderRoute: typeof ProfileUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/links/$username': {
-      id: '/links/$username'
-      path: '/links/$username'
-      fullPath: '/links/$username'
-      preLoaderRoute: typeof LinksUsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/wallet': {
-      id: '/creator/wallet'
-      path: '/creator/wallet'
-      fullPath: '/creator/wallet'
-      preLoaderRoute: typeof CreatorWalletRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/upsells': {
-      id: '/creator/upsells'
-      path: '/creator/upsells'
-      fullPath: '/creator/upsells'
-      preLoaderRoute: typeof CreatorUpsellsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/subscription-plans': {
-      id: '/creator/subscription-plans'
-      path: '/creator/subscription-plans'
-      fullPath: '/creator/subscription-plans'
-      preLoaderRoute: typeof CreatorSubscriptionPlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/posts': {
-      id: '/creator/posts'
-      path: '/creator/posts'
-      fullPath: '/creator/posts'
-      preLoaderRoute: typeof CreatorPostsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/mailing': {
-      id: '/creator/mailing'
-      path: '/creator/mailing'
-      fullPath: '/creator/mailing'
-      preLoaderRoute: typeof CreatorMailingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/loyalty': {
-      id: '/creator/loyalty'
-      path: '/creator/loyalty'
-      fullPath: '/creator/loyalty'
-      preLoaderRoute: typeof CreatorLoyaltyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/links': {
-      id: '/creator/links'
-      path: '/creator/links'
-      fullPath: '/creator/links'
-      preLoaderRoute: typeof CreatorLinksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/dmca': {
-      id: '/creator/dmca'
-      path: '/creator/dmca'
-      fullPath: '/creator/dmca'
-      preLoaderRoute: typeof CreatorDmcaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/coupons': {
-      id: '/creator/coupons'
-      path: '/creator/coupons'
-      fullPath: '/creator/coupons'
-      preLoaderRoute: typeof CreatorCouponsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/analytics': {
-      id: '/creator/analytics'
-      path: '/creator/analytics'
-      fullPath: '/creator/analytics'
-      preLoaderRoute: typeof CreatorAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/creator/affiliate': {
-      id: '/creator/affiliate'
-      path: '/creator/affiliate'
-      fullPath: '/creator/affiliate'
-      preLoaderRoute: typeof CreatorAffiliateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/$code': {
-      id: '/c/$code'
-      path: '/c/$code'
-      fullPath: '/c/$code'
-      preLoaderRoute: typeof CCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/payouts': {
-      id: '/admin/payouts'
-      path: '/admin/payouts'
-      fullPath: '/admin/payouts'
-      preLoaderRoute: typeof AdminPayoutsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/moderation': {
-      id: '/admin/moderation'
-      path: '/admin/moderation'
-      fullPath: '/admin/moderation'
-      preLoaderRoute: typeof AdminModerationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/kyc': {
-      id: '/admin/kyc'
-      path: '/admin/kyc'
-      fullPath: '/admin/kyc'
-      preLoaderRoute: typeof AdminKycRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/dmca': {
-      id: '/admin/dmca'
-      path: '/admin/dmca'
-      fullPath: '/admin/dmca'
-      preLoaderRoute: typeof AdminDmcaRouteImport
+    '/admin/actions-audit': {
+      id: '/admin/actions-audit'
+      path: '/admin/actions-audit'
+      fullPath: '/admin/actions-audit'
+      preLoaderRoute: typeof AdminActionsAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/audit': {
@@ -922,32 +2437,760 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/actions-audit': {
-      id: '/admin/actions-audit'
-      path: '/admin/actions-audit'
-      fullPath: '/admin/actions-audit'
-      preLoaderRoute: typeof AdminActionsAuditRouteImport
+    '/admin/dmca': {
+      id: '/admin/dmca'
+      path: '/admin/dmca'
+      fullPath: '/admin/dmca'
+      preLoaderRoute: typeof AdminDmcaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/nexuspag-webhook': {
-      id: '/api/public/nexuspag-webhook'
-      path: '/api/public/nexuspag-webhook'
-      fullPath: '/api/public/nexuspag-webhook'
-      preLoaderRoute: typeof ApiPublicNexuspagWebhookRouteImport
+    '/admin/kyc': {
+      id: '/admin/kyc'
+      path: '/admin/kyc'
+      fullPath: '/admin/kyc'
+      preLoaderRoute: typeof AdminKycRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/process-mass-dm': {
-      id: '/api/public/cron/process-mass-dm'
-      path: '/api/public/cron/process-mass-dm'
-      fullPath: '/api/public/cron/process-mass-dm'
-      preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
+    '/admin/moderation': {
+      id: '/admin/moderation'
+      path: '/admin/moderation'
+      fullPath: '/admin/moderation'
+      preLoaderRoute: typeof AdminModerationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/expire-subscriptions': {
-      id: '/api/public/cron/expire-subscriptions'
-      path: '/api/public/cron/expire-subscriptions'
-      fullPath: '/api/public/cron/expire-subscriptions'
-      preLoaderRoute: typeof ApiPublicCronExpireSubscriptionsRouteImport
+    '/admin/operations': {
+      id: '/admin/operations'
+      path: '/admin/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AdminOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payouts': {
+      id: '/admin/payouts'
+      path: '/admin/payouts'
+      fullPath: '/admin/payouts'
+      preLoaderRoute: typeof AdminPayoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reconciliation': {
+      id: '/admin/reconciliation'
+      path: '/admin/reconciliation'
+      fullPath: '/admin/reconciliation'
+      preLoaderRoute: typeof AdminReconciliationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/admin/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/': {
+      id: '/administracao/'
+      path: '/administracao'
+      fullPath: '/administracao/'
+      preLoaderRoute: typeof AdministracaoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/auditoria': {
+      id: '/administracao/auditoria'
+      path: '/administracao/auditoria'
+      fullPath: '/administracao/auditoria'
+      preLoaderRoute: typeof AdministracaoAuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/auditoria-acoes': {
+      id: '/administracao/auditoria-acoes'
+      path: '/administracao/auditoria-acoes'
+      fullPath: '/administracao/auditoria-acoes'
+      preLoaderRoute: typeof AdministracaoAuditoriaAcoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/conciliacao': {
+      id: '/administracao/conciliacao'
+      path: '/administracao/conciliacao'
+      fullPath: '/administracao/conciliacao'
+      preLoaderRoute: typeof AdministracaoConciliacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/dmca': {
+      id: '/administracao/dmca'
+      path: '/administracao/dmca'
+      fullPath: '/administracao/dmca'
+      preLoaderRoute: typeof AdministracaoDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/kyc': {
+      id: '/administracao/kyc'
+      path: '/administracao/kyc'
+      fullPath: '/administracao/kyc'
+      preLoaderRoute: typeof AdministracaoKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/moderacao': {
+      id: '/administracao/moderacao'
+      path: '/administracao/moderacao'
+      fullPath: '/administracao/moderacao'
+      preLoaderRoute: typeof AdministracaoModeracaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/operacoes': {
+      id: '/administracao/operacoes'
+      path: '/administracao/operacoes'
+      fullPath: '/administracao/operacoes'
+      preLoaderRoute: typeof AdministracaoOperacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/relatorios': {
+      id: '/administracao/relatorios'
+      path: '/administracao/relatorios'
+      fullPath: '/administracao/relatorios'
+      preLoaderRoute: typeof AdministracaoRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/saques': {
+      id: '/administracao/saques'
+      path: '/administracao/saques'
+      fullPath: '/administracao/saques'
+      preLoaderRoute: typeof AdministracaoSaquesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/suporte': {
+      id: '/administracao/suporte'
+      path: '/administracao/suporte'
+      fullPath: '/administracao/suporte'
+      preLoaderRoute: typeof AdministracaoSuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracao/usuarios': {
+      id: '/administracao/usuarios'
+      path: '/administracao/usuarios'
+      fullPath: '/administracao/usuarios'
+      preLoaderRoute: typeof AdministracaoUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/': {
+      id: '/administracion/'
+      path: '/administracion'
+      fullPath: '/administracion/'
+      preLoaderRoute: typeof AdministracionIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/auditoria': {
+      id: '/administracion/auditoria'
+      path: '/administracion/auditoria'
+      fullPath: '/administracion/auditoria'
+      preLoaderRoute: typeof AdministracionAuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/auditoria-acciones': {
+      id: '/administracion/auditoria-acciones'
+      path: '/administracion/auditoria-acciones'
+      fullPath: '/administracion/auditoria-acciones'
+      preLoaderRoute: typeof AdministracionAuditoriaAccionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/conciliacion': {
+      id: '/administracion/conciliacion'
+      path: '/administracion/conciliacion'
+      fullPath: '/administracion/conciliacion'
+      preLoaderRoute: typeof AdministracionConciliacionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/dmca': {
+      id: '/administracion/dmca'
+      path: '/administracion/dmca'
+      fullPath: '/administracion/dmca'
+      preLoaderRoute: typeof AdministracionDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/kyc': {
+      id: '/administracion/kyc'
+      path: '/administracion/kyc'
+      fullPath: '/administracion/kyc'
+      preLoaderRoute: typeof AdministracionKycRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/moderacion': {
+      id: '/administracion/moderacion'
+      path: '/administracion/moderacion'
+      fullPath: '/administracion/moderacion'
+      preLoaderRoute: typeof AdministracionModeracionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/operaciones': {
+      id: '/administracion/operaciones'
+      path: '/administracion/operaciones'
+      fullPath: '/administracion/operaciones'
+      preLoaderRoute: typeof AdministracionOperacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/reportes': {
+      id: '/administracion/reportes'
+      path: '/administracion/reportes'
+      fullPath: '/administracion/reportes'
+      preLoaderRoute: typeof AdministracionReportesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/retiros': {
+      id: '/administracion/retiros'
+      path: '/administracion/retiros'
+      fullPath: '/administracion/retiros'
+      preLoaderRoute: typeof AdministracionRetirosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/soporte': {
+      id: '/administracion/soporte'
+      path: '/administracion/soporte'
+      fullPath: '/administracion/soporte'
+      preLoaderRoute: typeof AdministracionSoporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/administracion/usuarios': {
+      id: '/administracion/usuarios'
+      path: '/administracion/usuarios'
+      fullPath: '/administracion/usuarios'
+      preLoaderRoute: typeof AdministracionUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$code': {
+      id: '/c/$code'
+      path: '/c/$code'
+      fullPath: '/c/$code'
+      preLoaderRoute: typeof CCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracion/pagos': {
+      id: '/configuracion/pagos'
+      path: '/configuracion/pagos'
+      fullPath: '/configuracion/pagos'
+      preLoaderRoute: typeof ConfiguracionPagosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracion/perfil': {
+      id: '/configuracion/perfil'
+      path: '/configuracion/perfil'
+      fullPath: '/configuracion/perfil'
+      preLoaderRoute: typeof ConfiguracionPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracion/privacidad': {
+      id: '/configuracion/privacidad'
+      path: '/configuracion/privacidad'
+      fullPath: '/configuracion/privacidad'
+      preLoaderRoute: typeof ConfiguracionPrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracion/seguridad': {
+      id: '/configuracion/seguridad'
+      path: '/configuracion/seguridad'
+      fullPath: '/configuracion/seguridad'
+      preLoaderRoute: typeof ConfiguracionSeguridadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/pagamentos': {
+      id: '/configuracoes/pagamentos'
+      path: '/configuracoes/pagamentos'
+      fullPath: '/configuracoes/pagamentos'
+      preLoaderRoute: typeof ConfiguracoesPagamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/perfil': {
+      id: '/configuracoes/perfil'
+      path: '/configuracoes/perfil'
+      fullPath: '/configuracoes/perfil'
+      preLoaderRoute: typeof ConfiguracoesPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/privacidade': {
+      id: '/configuracoes/privacidade'
+      path: '/configuracoes/privacidade'
+      fullPath: '/configuracoes/privacidade'
+      preLoaderRoute: typeof ConfiguracoesPrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/seguranca': {
+      id: '/configuracoes/seguranca'
+      path: '/configuracoes/seguranca'
+      fullPath: '/configuracoes/seguranca'
+      preLoaderRoute: typeof ConfiguracoesSegurancaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/afiliados': {
+      id: '/creadora/afiliados'
+      path: '/creadora/afiliados'
+      fullPath: '/creadora/afiliados'
+      preLoaderRoute: typeof CreadoraAfiliadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/biblioteca': {
+      id: '/creadora/biblioteca'
+      path: '/creadora/biblioteca'
+      fullPath: '/creadora/biblioteca'
+      preLoaderRoute: typeof CreadoraBibliotecaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/cartera': {
+      id: '/creadora/cartera'
+      path: '/creadora/cartera'
+      fullPath: '/creadora/cartera'
+      preLoaderRoute: typeof CreadoraCarteraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/cupones': {
+      id: '/creadora/cupones'
+      path: '/creadora/cupones'
+      fullPath: '/creadora/cupones'
+      preLoaderRoute: typeof CreadoraCuponesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/dmca': {
+      id: '/creadora/dmca'
+      path: '/creadora/dmca'
+      fullPath: '/creadora/dmca'
+      preLoaderRoute: typeof CreadoraDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/enlaces': {
+      id: '/creadora/enlaces'
+      path: '/creadora/enlaces'
+      fullPath: '/creadora/enlaces'
+      preLoaderRoute: typeof CreadoraEnlacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/fidelidad': {
+      id: '/creadora/fidelidad'
+      path: '/creadora/fidelidad'
+      fullPath: '/creadora/fidelidad'
+      preLoaderRoute: typeof CreadoraFidelidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/mensajes-en-masa': {
+      id: '/creadora/mensajes-en-masa'
+      path: '/creadora/mensajes-en-masa'
+      fullPath: '/creadora/mensajes-en-masa'
+      preLoaderRoute: typeof CreadoraMensajesEnMasaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/metricas': {
+      id: '/creadora/metricas'
+      path: '/creadora/metricas'
+      fullPath: '/creadora/metricas'
+      preLoaderRoute: typeof CreadoraMetricasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/moderacion': {
+      id: '/creadora/moderacion'
+      path: '/creadora/moderacion'
+      fullPath: '/creadora/moderacion'
+      preLoaderRoute: typeof CreadoraModeracionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/ofertas-adicionales': {
+      id: '/creadora/ofertas-adicionales'
+      path: '/creadora/ofertas-adicionales'
+      fullPath: '/creadora/ofertas-adicionales'
+      preLoaderRoute: typeof CreadoraOfertasAdicionalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/planes': {
+      id: '/creadora/planes'
+      path: '/creadora/planes'
+      fullPath: '/creadora/planes'
+      preLoaderRoute: typeof CreadoraPlanesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/publicaciones': {
+      id: '/creadora/publicaciones'
+      path: '/creadora/publicaciones'
+      fullPath: '/creadora/publicaciones'
+      preLoaderRoute: typeof CreadoraPublicacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/regalos': {
+      id: '/creadora/regalos'
+      path: '/creadora/regalos'
+      fullPath: '/creadora/regalos'
+      preLoaderRoute: typeof CreadoraRegalosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/registro': {
+      id: '/creadora/registro'
+      path: '/creadora/registro'
+      fullPath: '/creadora/registro'
+      preLoaderRoute: typeof CreadoraRegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/affiliate': {
+      id: '/creator/affiliate'
+      path: '/creator/affiliate'
+      fullPath: '/creator/affiliate'
+      preLoaderRoute: typeof CreatorAffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/analytics': {
+      id: '/creator/analytics'
+      path: '/creator/analytics'
+      fullPath: '/creator/analytics'
+      preLoaderRoute: typeof CreatorAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/coupons': {
+      id: '/creator/coupons'
+      path: '/creator/coupons'
+      fullPath: '/creator/coupons'
+      preLoaderRoute: typeof CreatorCouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/dmca': {
+      id: '/creator/dmca'
+      path: '/creator/dmca'
+      fullPath: '/creator/dmca'
+      preLoaderRoute: typeof CreatorDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/gifts': {
+      id: '/creator/gifts'
+      path: '/creator/gifts'
+      fullPath: '/creator/gifts'
+      preLoaderRoute: typeof CreatorGiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/links': {
+      id: '/creator/links'
+      path: '/creator/links'
+      fullPath: '/creator/links'
+      preLoaderRoute: typeof CreatorLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/loyalty': {
+      id: '/creator/loyalty'
+      path: '/creator/loyalty'
+      fullPath: '/creator/loyalty'
+      preLoaderRoute: typeof CreatorLoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/mailing': {
+      id: '/creator/mailing'
+      path: '/creator/mailing'
+      fullPath: '/creator/mailing'
+      preLoaderRoute: typeof CreatorMailingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/media-library': {
+      id: '/creator/media-library'
+      path: '/creator/media-library'
+      fullPath: '/creator/media-library'
+      preLoaderRoute: typeof CreatorMediaLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/moderation': {
+      id: '/creator/moderation'
+      path: '/creator/moderation'
+      fullPath: '/creator/moderation'
+      preLoaderRoute: typeof CreatorModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/onboarding': {
+      id: '/creator/onboarding'
+      path: '/creator/onboarding'
+      fullPath: '/creator/onboarding'
+      preLoaderRoute: typeof CreatorOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/posts': {
+      id: '/creator/posts'
+      path: '/creator/posts'
+      fullPath: '/creator/posts'
+      preLoaderRoute: typeof CreatorPostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/subscription-plans': {
+      id: '/creator/subscription-plans'
+      path: '/creator/subscription-plans'
+      fullPath: '/creator/subscription-plans'
+      preLoaderRoute: typeof CreatorSubscriptionPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/upsells': {
+      id: '/creator/upsells'
+      path: '/creator/upsells'
+      fullPath: '/creator/upsells'
+      preLoaderRoute: typeof CreatorUpsellsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator/wallet': {
+      id: '/creator/wallet'
+      path: '/creator/wallet'
+      fullPath: '/creator/wallet'
+      preLoaderRoute: typeof CreatorWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/acervo': {
+      id: '/criadora/acervo'
+      path: '/criadora/acervo'
+      fullPath: '/criadora/acervo'
+      preLoaderRoute: typeof CriadoraAcervoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/afiliados': {
+      id: '/criadora/afiliados'
+      path: '/criadora/afiliados'
+      fullPath: '/criadora/afiliados'
+      preLoaderRoute: typeof CriadoraAfiliadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/cadastro': {
+      id: '/criadora/cadastro'
+      path: '/criadora/cadastro'
+      fullPath: '/criadora/cadastro'
+      preLoaderRoute: typeof CriadoraCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/carteira': {
+      id: '/criadora/carteira'
+      path: '/criadora/carteira'
+      fullPath: '/criadora/carteira'
+      preLoaderRoute: typeof CriadoraCarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/cupons': {
+      id: '/criadora/cupons'
+      path: '/criadora/cupons'
+      fullPath: '/criadora/cupons'
+      preLoaderRoute: typeof CriadoraCuponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/dmca': {
+      id: '/criadora/dmca'
+      path: '/criadora/dmca'
+      fullPath: '/criadora/dmca'
+      preLoaderRoute: typeof CriadoraDmcaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/fidelidade': {
+      id: '/criadora/fidelidade'
+      path: '/criadora/fidelidade'
+      fullPath: '/criadora/fidelidade'
+      preLoaderRoute: typeof CriadoraFidelidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/links': {
+      id: '/criadora/links'
+      path: '/criadora/links'
+      fullPath: '/criadora/links'
+      preLoaderRoute: typeof CriadoraLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/mensagens-em-massa': {
+      id: '/criadora/mensagens-em-massa'
+      path: '/criadora/mensagens-em-massa'
+      fullPath: '/criadora/mensagens-em-massa'
+      preLoaderRoute: typeof CriadoraMensagensEmMassaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/metricas': {
+      id: '/criadora/metricas'
+      path: '/criadora/metricas'
+      fullPath: '/criadora/metricas'
+      preLoaderRoute: typeof CriadoraMetricasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/mimos': {
+      id: '/criadora/mimos'
+      path: '/criadora/mimos'
+      fullPath: '/criadora/mimos'
+      preLoaderRoute: typeof CriadoraMimosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/moderacao': {
+      id: '/criadora/moderacao'
+      path: '/criadora/moderacao'
+      fullPath: '/criadora/moderacao'
+      preLoaderRoute: typeof CriadoraModeracaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/ofertas-adicionais': {
+      id: '/criadora/ofertas-adicionais'
+      path: '/criadora/ofertas-adicionais'
+      fullPath: '/criadora/ofertas-adicionais'
+      preLoaderRoute: typeof CriadoraOfertasAdicionaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/planos': {
+      id: '/criadora/planos'
+      path: '/criadora/planos'
+      fullPath: '/criadora/planos'
+      preLoaderRoute: typeof CriadoraPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/publicacoes': {
+      id: '/criadora/publicacoes'
+      path: '/criadora/publicacoes'
+      fullPath: '/criadora/publicacoes'
+      preLoaderRoute: typeof CriadoraPublicacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/enlaces/$username': {
+      id: '/enlaces/$username'
+      path: '/enlaces/$username'
+      fullPath: '/enlaces/$username'
+      preLoaderRoute: typeof EnlacesUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gifts/$username': {
+      id: '/gifts/$username'
+      path: '/gifts/$username'
+      fullPath: '/gifts/$username'
+      preLoaderRoute: typeof GiftsUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guardado/$postId': {
+      id: '/guardado/$postId'
+      path: '/guardado/$postId'
+      fullPath: '/guardado/$postId'
+      preLoaderRoute: typeof GuardadoPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/links/$username': {
+      id: '/links/$username'
+      path: '/links/$username'
+      fullPath: '/links/$username'
+      preLoaderRoute: typeof LinksUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mimos/$username': {
+      id: '/mimos/$username'
+      path: '/mimos/$username'
+      fullPath: '/mimos/$username'
+      preLoaderRoute: typeof MimosUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil/$username': {
+      id: '/perfil/$username'
+      path: '/perfil/$username'
+      fullPath: '/perfil/$username'
+      preLoaderRoute: typeof PerfilUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presentation/$section': {
+      id: '/presentation/$section'
+      path: '/$section'
+      fullPath: '/presentation/$section'
+      preLoaderRoute: typeof PresentationSectionRouteImport
+      parentRoute: typeof PresentationRoute
+    }
+    '/profile/$username': {
+      id: '/profile/$username'
+      path: '/profile/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof ProfileUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$code': {
+      id: '/r/$code'
+      path: '/r/$code'
+      fullPath: '/r/$code'
+      preLoaderRoute: typeof RCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regalos/$username': {
+      id: '/regalos/$username'
+      path: '/regalos/$username'
+      fullPath: '/regalos/$username'
+      preLoaderRoute: typeof RegalosUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/salvo/$postId': {
+      id: '/salvo/$postId'
+      path: '/salvo/$postId'
+      fullPath: '/salvo/$postId'
+      preLoaderRoute: typeof SalvoPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved/$postId': {
+      id: '/saved/$postId'
+      path: '/saved/$postId'
+      fullPath: '/saved/$postId'
+      preLoaderRoute: typeof SavedPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/payments': {
+      id: '/settings/payments'
+      path: '/settings/payments'
+      fullPath: '/settings/payments'
+      preLoaderRoute: typeof SettingsPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/privacy': {
+      id: '/settings/privacy'
+      path: '/settings/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof SettingsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/impulsepay-webhook': {
+      id: '/api/public/impulsepay-webhook'
+      path: '/api/public/impulsepay-webhook'
+      fullPath: '/api/public/impulsepay-webhook'
+      preLoaderRoute: typeof ApiPublicImpulsepayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/link-event': {
+      id: '/api/public/link-event'
+      path: '/api/public/link-event'
+      fullPath: '/api/public/link-event'
+      preLoaderRoute: typeof ApiPublicLinkEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telemetry': {
+      id: '/api/public/telemetry'
+      path: '/api/public/telemetry'
+      fullPath: '/api/public/telemetry'
+      preLoaderRoute: typeof ApiPublicTelemetryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/cleanup-stories': {
@@ -957,24 +3200,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronCleanupStoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/expire-subscriptions': {
+      id: '/api/public/cron/expire-subscriptions'
+      path: '/api/public/cron/expire-subscriptions'
+      fullPath: '/api/public/cron/expire-subscriptions'
+      preLoaderRoute: typeof ApiPublicCronExpireSubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/process-mass-dm': {
+      id: '/api/public/cron/process-mass-dm'
+      path: '/api/public/cron/process-mass-dm'
+      fullPath: '/api/public/cron/process-mass-dm'
+      preLoaderRoute: typeof ApiPublicCronProcessMassDmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/reconcile-pix': {
+      id: '/api/public/cron/reconcile-pix'
+      path: '/api/public/cron/reconcile-pix'
+      fullPath: '/api/public/cron/reconcile-pix'
+      preLoaderRoute: typeof ApiPublicCronReconcilePixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/subscription-reminders': {
+      id: '/api/public/cron/subscription-reminders'
+      path: '/api/public/cron/subscription-reminders'
+      fullPath: '/api/public/cron/subscription-reminders'
+      preLoaderRoute: typeof ApiPublicCronSubscriptionRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface PresentationRouteChildren {
+  PresentationSectionRoute: typeof PresentationSectionRoute
+}
+
+const PresentationRouteChildren: PresentationRouteChildren = {
+  PresentationSectionRoute: PresentationSectionRoute,
+}
+
+const PresentationRouteWithChildren = PresentationRoute._addFileChildren(
+  PresentationRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R403Route: R403Route,
+  AjudaRoute: AjudaRoute,
+  AyudaRoute: AyudaRoute,
   BecomeCreatorRoute: BecomeCreatorRoute,
+  BuscarRoute: BuscarRoute,
+  CadastroRoute: CadastroRoute,
   ChatRoute: ChatRoute,
+  ContentPolicyRoute: ContentPolicyRoute,
   DmcaRoute: DmcaRoute,
+  EntrarRoute: EntrarRoute,
+  ExplorarRoute: ExplorarRoute,
   ExploreRoute: ExploreRoute,
+  FavoritosRoute: FavoritosRoute,
   FeedRoute: FeedRoute,
+  FidelidadRoute: FidelidadRoute,
+  FidelidadeRoute: FidelidadeRoute,
+  HelpRoute: HelpRoute,
+  InicioRoute: InicioRoute,
   LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
+  MensagensRoute: MensagensRoute,
+  MensajesRoute: MensajesRoute,
+  NotificacionesRoute: NotificacionesRoute,
+  NotificacoesRoute: NotificacoesRoute,
   NotificationsRoute: NotificationsRoute,
+  PoliticaDeConteudoRoute: PoliticaDeConteudoRoute,
+  PresentationRoute: PresentationRouteWithChildren,
+  PrivacidadRoute: PrivacidadRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   PrivacyRoute: PrivacyRoute,
+  RecuperarContrasenaRoute: RecuperarContrasenaRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
+  RegistroRoute: RegistroRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
+  SejaCriadoraRoute: SejaCriadoraRoute,
+  SerCreadoraRoute: SerCreadoraRoute,
   SignupRoute: SignupRoute,
+  TerminosRoute: TerminosRoute,
+  TermosRoute: TermosRoute,
   TermsRoute: TermsRoute,
   WishlistRoute: WishlistRoute,
   AdminActionsAuditRoute: AdminActionsAuditRoute,
@@ -982,31 +3292,117 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDmcaRoute: AdminDmcaRoute,
   AdminKycRoute: AdminKycRoute,
   AdminModerationRoute: AdminModerationRoute,
+  AdminOperationsRoute: AdminOperationsRoute,
   AdminPayoutsRoute: AdminPayoutsRoute,
+  AdminReconciliationRoute: AdminReconciliationRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdministracaoAuditoriaRoute: AdministracaoAuditoriaRoute,
+  AdministracaoAuditoriaAcoesRoute: AdministracaoAuditoriaAcoesRoute,
+  AdministracaoConciliacaoRoute: AdministracaoConciliacaoRoute,
+  AdministracaoDmcaRoute: AdministracaoDmcaRoute,
+  AdministracaoKycRoute: AdministracaoKycRoute,
+  AdministracaoModeracaoRoute: AdministracaoModeracaoRoute,
+  AdministracaoOperacoesRoute: AdministracaoOperacoesRoute,
+  AdministracaoRelatoriosRoute: AdministracaoRelatoriosRoute,
+  AdministracaoSaquesRoute: AdministracaoSaquesRoute,
+  AdministracaoSuporteRoute: AdministracaoSuporteRoute,
+  AdministracaoUsuariosRoute: AdministracaoUsuariosRoute,
+  AdministracionAuditoriaRoute: AdministracionAuditoriaRoute,
+  AdministracionAuditoriaAccionesRoute: AdministracionAuditoriaAccionesRoute,
+  AdministracionConciliacionRoute: AdministracionConciliacionRoute,
+  AdministracionDmcaRoute: AdministracionDmcaRoute,
+  AdministracionKycRoute: AdministracionKycRoute,
+  AdministracionModeracionRoute: AdministracionModeracionRoute,
+  AdministracionOperacionesRoute: AdministracionOperacionesRoute,
+  AdministracionReportesRoute: AdministracionReportesRoute,
+  AdministracionRetirosRoute: AdministracionRetirosRoute,
+  AdministracionSoporteRoute: AdministracionSoporteRoute,
+  AdministracionUsuariosRoute: AdministracionUsuariosRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CCodeRoute: CCodeRoute,
+  ConfiguracionPagosRoute: ConfiguracionPagosRoute,
+  ConfiguracionPerfilRoute: ConfiguracionPerfilRoute,
+  ConfiguracionPrivacidadRoute: ConfiguracionPrivacidadRoute,
+  ConfiguracionSeguridadRoute: ConfiguracionSeguridadRoute,
+  ConfiguracoesPagamentosRoute: ConfiguracoesPagamentosRoute,
+  ConfiguracoesPerfilRoute: ConfiguracoesPerfilRoute,
+  ConfiguracoesPrivacidadeRoute: ConfiguracoesPrivacidadeRoute,
+  ConfiguracoesSegurancaRoute: ConfiguracoesSegurancaRoute,
+  CreadoraAfiliadosRoute: CreadoraAfiliadosRoute,
+  CreadoraBibliotecaRoute: CreadoraBibliotecaRoute,
+  CreadoraCarteraRoute: CreadoraCarteraRoute,
+  CreadoraCuponesRoute: CreadoraCuponesRoute,
+  CreadoraDmcaRoute: CreadoraDmcaRoute,
+  CreadoraEnlacesRoute: CreadoraEnlacesRoute,
+  CreadoraFidelidadRoute: CreadoraFidelidadRoute,
+  CreadoraMensajesEnMasaRoute: CreadoraMensajesEnMasaRoute,
+  CreadoraMetricasRoute: CreadoraMetricasRoute,
+  CreadoraModeracionRoute: CreadoraModeracionRoute,
+  CreadoraOfertasAdicionalesRoute: CreadoraOfertasAdicionalesRoute,
+  CreadoraPlanesRoute: CreadoraPlanesRoute,
+  CreadoraPublicacionesRoute: CreadoraPublicacionesRoute,
+  CreadoraRegalosRoute: CreadoraRegalosRoute,
+  CreadoraRegistroRoute: CreadoraRegistroRoute,
   CreatorAffiliateRoute: CreatorAffiliateRoute,
   CreatorAnalyticsRoute: CreatorAnalyticsRoute,
   CreatorCouponsRoute: CreatorCouponsRoute,
   CreatorDmcaRoute: CreatorDmcaRoute,
+  CreatorGiftsRoute: CreatorGiftsRoute,
   CreatorLinksRoute: CreatorLinksRoute,
   CreatorLoyaltyRoute: CreatorLoyaltyRoute,
   CreatorMailingRoute: CreatorMailingRoute,
+  CreatorMediaLibraryRoute: CreatorMediaLibraryRoute,
+  CreatorModerationRoute: CreatorModerationRoute,
+  CreatorOnboardingRoute: CreatorOnboardingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
+  CriadoraAcervoRoute: CriadoraAcervoRoute,
+  CriadoraAfiliadosRoute: CriadoraAfiliadosRoute,
+  CriadoraCadastroRoute: CriadoraCadastroRoute,
+  CriadoraCarteiraRoute: CriadoraCarteiraRoute,
+  CriadoraCuponsRoute: CriadoraCuponsRoute,
+  CriadoraDmcaRoute: CriadoraDmcaRoute,
+  CriadoraFidelidadeRoute: CriadoraFidelidadeRoute,
+  CriadoraLinksRoute: CriadoraLinksRoute,
+  CriadoraMensagensEmMassaRoute: CriadoraMensagensEmMassaRoute,
+  CriadoraMetricasRoute: CriadoraMetricasRoute,
+  CriadoraMimosRoute: CriadoraMimosRoute,
+  CriadoraModeracaoRoute: CriadoraModeracaoRoute,
+  CriadoraOfertasAdicionaisRoute: CriadoraOfertasAdicionaisRoute,
+  CriadoraPlanosRoute: CriadoraPlanosRoute,
+  CriadoraPublicacoesRoute: CriadoraPublicacoesRoute,
+  EnlacesUsernameRoute: EnlacesUsernameRoute,
+  GiftsUsernameRoute: GiftsUsernameRoute,
+  GuardadoPostIdRoute: GuardadoPostIdRoute,
   LinksUsernameRoute: LinksUsernameRoute,
+  MimosUsernameRoute: MimosUsernameRoute,
+  PerfilUsernameRoute: PerfilUsernameRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   RCodeRoute: RCodeRoute,
+  RegalosUsernameRoute: RegalosUsernameRoute,
+  SalvoPostIdRoute: SalvoPostIdRoute,
   SavedPostIdRoute: SavedPostIdRoute,
+  SettingsPaymentsRoute: SettingsPaymentsRoute,
+  SettingsPrivacyRoute: SettingsPrivacyRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
   AdminIndexRoute: AdminIndexRoute,
-  ApiPublicNexuspagWebhookRoute: ApiPublicNexuspagWebhookRoute,
+  AdministracaoIndexRoute: AdministracaoIndexRoute,
+  AdministracionIndexRoute: AdministracionIndexRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicImpulsepayWebhookRoute: ApiPublicImpulsepayWebhookRoute,
+  ApiPublicLinkEventRoute: ApiPublicLinkEventRoute,
+  ApiPublicTelemetryRoute: ApiPublicTelemetryRoute,
   ApiPublicCronCleanupStoriesRoute: ApiPublicCronCleanupStoriesRoute,
   ApiPublicCronExpireSubscriptionsRoute: ApiPublicCronExpireSubscriptionsRoute,
   ApiPublicCronProcessMassDmRoute: ApiPublicCronProcessMassDmRoute,
+  ApiPublicCronReconcilePixRoute: ApiPublicCronReconcilePixRoute,
+  ApiPublicCronSubscriptionRemindersRoute:
+    ApiPublicCronSubscriptionRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdultVerification } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
@@ -13,29 +13,22 @@ const postMediaSchema = z.object({
 });
 
 const multiPostMediaSchema = z.object({
-  postIds: z.array(z.string().uuid()),
+  postIds: z
+    .array(z.string().uuid())
+    .max(50)
+    .transform((postIds) => Array.from(new Set(postIds))),
 });
 
-export const getPostMediaUrls = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => postMediaSchema.parse(input))
-  .handler(async ({ data }) => {
-    // viewer pode ser anônimo (post público)
-    let viewerId: string | null = null;
-    try {
-      const { getRequestHeader } = await import("@tanstack/react-start/server");
-      const auth = getRequestHeader("authorization");
-      if (auth?.startsWith("Bearer ")) {
-        const token = auth.slice(7);
-        const { data: claims } = await supabaseAdmin.auth.getClaims(token);
-        viewerId = claims?.claims?.sub ?? null;
-      }
-    } catch {
-      viewerId = null;
-    }
+const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
+export const getPostMediaUrls = createServerFn({ method: "POST" })
+  .middleware([requireAdultVerification])
+  .validator((input: unknown) => postMediaSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const viewerId = context.userId;
     const { data: post } = await supabaseAdmin
       .from("posts")
-      .select("id, creator_id, visibility")
+      .select("id, creator_id, visibility, moderation_status")
       .eq("id", data.postId)
       .maybeSingle();
     if (!post) throw new Error("Post não encontrado");
@@ -61,13 +54,13 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
         try {
           const { data: signed } = await supabaseAdmin.storage
             .from("posts")
-            .createSignedUrl(m.storage_path, 60 * 60);
+            .createSignedUrl(m.storage_path, SIGNED_URL_TTL_SECONDS);
           return { id: m.id, url: signed?.signedUrl ?? "", mime_type: m.mime_type };
         } catch (err) {
           console.error(`Failed to sign URL for ${m.storage_path}:`, err);
           return { id: m.id, url: "", mime_type: m.mime_type };
         }
-      })
+      }),
     );
     return { urls: urls.filter((u) => u.url) };
   });
@@ -76,26 +69,14 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
  * Batch load first media URL for multiple posts (more efficient)
  */
 export const getFirstMediaForPosts = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => multiPostMediaSchema.parse(input))
-  .handler(async ({ data }) => {
-    // viewer pode ser anônimo (post público)
-    let viewerId: string | null = null;
-    try {
-      const { getRequestHeader } = await import("@tanstack/react-start/server");
-      const auth = getRequestHeader("authorization");
-      if (auth?.startsWith("Bearer ")) {
-        const token = auth.slice(7);
-        const { data: claims } = await supabaseAdmin.auth.getClaims(token);
-        viewerId = claims?.claims?.sub ?? null;
-      }
-    } catch {
-      viewerId = null;
-    }
-
+  .middleware([requireAdultVerification])
+  .validator((input: unknown) => multiPostMediaSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const viewerId = context.userId;
     // Check access for all posts
     const { data: posts } = await supabaseAdmin
       .from("posts")
-      .select("id, creator_id, visibility")
+      .select("id, creator_id, visibility, moderation_status")
       .in("id", data.postIds);
 
     const accessMap: Record<string, boolean> = {};
@@ -109,14 +90,42 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
       .map(([postId]) => postId);
 
     if (!accessiblePostIds.length) {
-      return { mediaByPostId: {} as Record<string, { url: string; mime_type: string }> };
+      return {
+        mediaByPostId: {} as Record<
+          string,
+          { url: string; mime_type: string; is_video: boolean; has_custom_cover: boolean }
+        >,
+      };
     }
 
-    const { data: media, error } = await supabaseAdmin
+    const extendedResult = await supabaseAdmin
       .from("post_media")
-      .select("id, post_id, storage_path, mime_type, position")
+      .select("id, post_id, storage_path, cover_storage_path, mime_type, position")
       .in("post_id", accessiblePostIds)
       .order("position", { ascending: true });
+
+    let media = extendedResult.data as Array<{
+      id: string;
+      post_id: string;
+      storage_path: string;
+      cover_storage_path: string | null;
+      mime_type: string;
+      position: number;
+    }> | null;
+    let error = extendedResult.error;
+    if (error) {
+      // Keeps previews working until the video-cover migration is applied in staging.
+      const fallbackResult = await supabaseAdmin
+        .from("post_media")
+        .select("id, post_id, storage_path, mime_type, position")
+        .in("post_id", accessiblePostIds)
+        .order("position", { ascending: true });
+      media = (fallbackResult.data ?? []).map((item) => ({
+        ...item,
+        cover_storage_path: null,
+      }));
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error("Error fetching post_media:", error);
@@ -124,37 +133,67 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
     }
 
     // Build map of first media per post
-    const firstMediaByPost: Record<string, { path: string; type: string; id: string }> = {};
+    const firstMediaByPost: Record<
+      string,
+      { path: string; coverPath: string | null; type: string; id: string }
+    > = {};
     (media ?? []).forEach((m) => {
       if (!firstMediaByPost[m.post_id]) {
-        firstMediaByPost[m.post_id] = { path: m.storage_path, type: m.mime_type, id: m.id };
+        firstMediaByPost[m.post_id] = {
+          path: m.storage_path,
+          coverPath: m.cover_storage_path,
+          type: m.mime_type,
+          id: m.id,
+        };
       }
     });
 
     // Get signed URLs for all media
-    const mediaByPostId: Record<string, { url: string; mime_type: string }> = {};
+    const mediaByPostId: Record<
+      string,
+      { url: string; mime_type: string; is_video: boolean; has_custom_cover: boolean }
+    > = {};
     await Promise.all(
       Object.entries(firstMediaByPost).map(async ([postId, mediaInfo]) => {
         try {
+          const isVideo = mediaInfo.type.startsWith("video/");
+          const previewPath = isVideo && mediaInfo.coverPath ? mediaInfo.coverPath : mediaInfo.path;
           const { data: signed } = await supabaseAdmin.storage
             .from("posts")
-            .createSignedUrl(mediaInfo.path, 60 * 60);
+            .createSignedUrl(previewPath, SIGNED_URL_TTL_SECONDS);
           if (signed?.signedUrl) {
-            mediaByPostId[postId] = { url: signed.signedUrl, mime_type: mediaInfo.type };
+            mediaByPostId[postId] = {
+              url: signed.signedUrl,
+              mime_type: mediaInfo.type,
+              is_video: isVideo,
+              has_custom_cover: isVideo && Boolean(mediaInfo.coverPath),
+            };
           }
         } catch (err) {
           console.error(`Failed to sign URL for post ${postId}:`, err);
         }
-      })
+      }),
     );
 
     return { mediaByPostId };
   });
 
 async function checkPostAccess(
-  post: { id: string; creator_id: string; visibility: string },
-  viewerId: string | null
+  post: { id: string; creator_id: string; visibility: string; moderation_status: string },
+  viewerId: string | null,
 ): Promise<boolean> {
+  if (post.moderation_status !== "approved") {
+    if (!viewerId) return false;
+    if (post.creator_id !== viewerId) {
+      const { data: adminRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", viewerId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!adminRole) return false;
+    }
+  }
   if (post.visibility === "public") return true;
   if (!viewerId) return false;
   if (post.creator_id === viewerId) return true;
@@ -179,19 +218,16 @@ async function checkPostAccess(
     return !!data;
   }
   if (post.visibility === "goal") {
-    const { data: g } = await supabaseAdmin
-      .from("post_goals")
-      .select("is_unlocked")
-      .eq("post_id", post.id)
-      .maybeSingle();
-    if (g?.is_unlocked) return true;
-    const { data: c } = await supabaseAdmin
-      .from("post_goal_contributions")
-      .select("id")
-      .eq("post_id", post.id)
-      .eq("user_id", viewerId)
-      .maybeSingle();
-    return !!c;
+    const [{ data: goal }, { data: contribution }] = await Promise.all([
+      supabaseAdmin.from("post_goals").select("is_unlocked").eq("post_id", post.id).maybeSingle(),
+      supabaseAdmin
+        .from("post_goal_contributions")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", viewerId)
+        .maybeSingle(),
+    ]);
+    return Boolean(goal?.is_unlocked && contribution);
   }
   return false;
 }
@@ -200,19 +236,102 @@ const chatMediaSchema = z.object({
   messageId: z.string().uuid(),
 });
 
+const storyMediaSchema = z.object({
+  storyIds: z
+    .array(z.string().uuid())
+    .max(100)
+    .transform((storyIds) => Array.from(new Set(storyIds))),
+});
+
+export const getStoryMediaUrls = createServerFn({ method: "POST" })
+  .middleware([requireAdultVerification])
+  .validator((input: unknown) => storyMediaSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const now = new Date().toISOString();
+    const { data: stories, error } = await supabaseAdmin
+      .from("stories")
+      .select("id, creator_id, media_path, mime_type, visibility, moderation_status")
+      .in("id", data.storyIds)
+      .gt("expires_at", now);
+    if (error) throw new Error("Não foi possível carregar os stories");
+
+    const { data: adminRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const moderatedStories = (stories ?? []).filter(
+      (story) =>
+        story.moderation_status === "approved" ||
+        story.creator_id === context.userId ||
+        Boolean(adminRole),
+    );
+
+    const subscriberCreatorIds = Array.from(
+      new Set(
+        moderatedStories
+          .filter((story) => story.visibility === "subscribers")
+          .map((story) => story.creator_id),
+      ),
+    );
+    const subscribedTo = new Set<string>();
+    if (subscriberCreatorIds.length > 0) {
+      const { data: subscriptions, error: subscriptionError } = await supabaseAdmin
+        .from("subscriptions")
+        .select("creator_id")
+        .eq("subscriber_id", context.userId)
+        .eq("status", "active")
+        .in("creator_id", subscriberCreatorIds);
+      if (subscriptionError) throw new Error("Não foi possível validar as assinaturas");
+      for (const subscription of subscriptions ?? []) {
+        subscribedTo.add(subscription.creator_id);
+      }
+    }
+
+    const accessible = moderatedStories.filter(
+      (story) =>
+        story.visibility === "public" ||
+        story.creator_id === context.userId ||
+        subscribedTo.has(story.creator_id),
+    );
+    const urlsByStoryId: Record<string, { url: string; mime_type: string }> = {};
+
+    await Promise.all(
+      accessible.map(async (story) => {
+        const { data: signed, error: signError } = await supabaseAdmin.storage
+          .from("stories")
+          .createSignedUrl(story.media_path, SIGNED_URL_TTL_SECONDS);
+        if (!signError && signed?.signedUrl) {
+          urlsByStoryId[story.id] = {
+            url: signed.signedUrl,
+            mime_type: story.mime_type,
+          };
+        }
+      }),
+    );
+
+    return { urlsByStoryId };
+  });
+
 export const getChatMediaUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => chatMediaSchema.parse(input))
+  .middleware([requireAdultVerification])
+  .validator((input: unknown) => chatMediaSchema.parse(input))
   .handler(async ({ data, context }) => {
     try {
       const { userId } = context;
       const { data: msg } = await supabaseAdmin
         .from("chat_messages")
-        .select("id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id")
+        .select(
+          "id, media_path, sender_id, ppv_price_cents, subscribers_only, thread_id, moderation_status",
+        )
         .eq("id", data.messageId)
         .maybeSingle();
       if (!msg || !msg.media_path) {
         return { url: "", error: "NOT_FOUND" as const };
+      }
+      if (msg.moderation_status !== "approved" && msg.sender_id !== userId) {
+        return { url: "", error: "PENDING_REVIEW" as const };
       }
 
       const { data: thread } = await supabaseAdmin
@@ -248,7 +367,7 @@ export const getChatMediaUrl = createServerFn({ method: "POST" })
 
       const { data: signed } = await supabaseAdmin.storage
         .from("chat-media")
-        .createSignedUrl(msg.media_path, 60 * 60);
+        .createSignedUrl(msg.media_path, SIGNED_URL_TTL_SECONDS);
       return { url: signed?.signedUrl ?? "", error: null };
     } catch (e) {
       console.error("getChatMediaUrl failed:", e);
