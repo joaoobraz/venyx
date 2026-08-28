@@ -117,7 +117,9 @@ export const submitCreatorKyc = createServerFn({ method: "POST" })
         rpcCode: error?.code,
         fallbackCode: (fallbackError as { code?: string } | null)?.code,
       });
-      throw new Error("Não foi possível registrar a verificação. Confira os arquivos e tente novamente.");
+      throw new Error("Não foi possível registrar a verificação. Confira os arquivos e tente novamente.", {
+        cause: fallbackError,
+      });
     }
   });
 
