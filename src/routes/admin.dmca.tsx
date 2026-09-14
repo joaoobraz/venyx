@@ -13,6 +13,8 @@ import { LEGAL_CONTACTS } from "@/lib/legal-config";
 
 export const Route = createFileRoute("/admin/dmca")({
   beforeLoad: async () => {
+    // O guard só faz sentido no navegador; no SSR não há sessão no pedido.
+    if (typeof window === "undefined") return;
     try {
       await requireAdminServer({ data: { path: "/admin/dmca" } });
     } catch {

@@ -22,6 +22,8 @@ import { useI18n, type Locale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/reports")({
   beforeLoad: async () => {
+    // O guard só faz sentido no navegador; no SSR não há sessão no pedido.
+    if (typeof window === "undefined") return;
     try {
       await requireAdminServer({ data: { path: "/admin/reports" } });
     } catch {

@@ -27,6 +27,8 @@ import { useI18n, type Locale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/payouts")({
   beforeLoad: async () => {
+    // O guard só faz sentido no navegador; no SSR não há sessão no pedido.
+    if (typeof window === "undefined") return;
     try {
       await requireAdminServer({ data: { path: "/admin/payouts" } });
     } catch {
@@ -294,6 +296,19 @@ export function AdminPayoutsPage() {
                         <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
                           {w.gateway_status ?? tr("Enviado à Impulse Pay", "Sent to Impulse Pay")}
                         </span>
+                      )}
+                      {w.status === "processing" && /FAIL|REFUS|CANCEL|REJECT|ERROR/i.test(w.gateway_status ?? "") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title={tr(
+                            "Confirme no painel da Impulse Pay que a transferência falhou antes de rejeitar; isso devolve o saldo à criadora.",
+                            "Confirm in the Impulse Pay dashboard that the transfer failed before rejecting; this returns the balance to the creator.",
+                          )}
+                          onClick={() => setRejecting(w)}
+                        >
+                          {tr("Rejeitar (falha confirmada)", "Reject (failure confirmed)")}
+                        </Button>
                       )}
                       {w.status === "paid" && w.receipt_url && (
                         <a

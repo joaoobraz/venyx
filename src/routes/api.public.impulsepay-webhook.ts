@@ -148,12 +148,17 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
 
   if (payload.event === "withdrawal.failed") {
     if (withdrawal.status === "paid") return jsonResponse({ ok: true, ignored: true });
+    // SECURITY: não liberar o saldo aqui. Se o saque fosse rejeitado na hora, a
+    // criadora poderia pedir outro saque com o mesmo saldo e, quando a adquirente
+    // reconciliasse o primeiro como COMPLETED, os dois seriam pagos. O pedido
+    // fica em processamento com o status do gateway; o admin confirma no painel
+    // da Impulse Pay e só então rejeita (liberando o saldo).
     const { error: updateError } = await supabaseAdmin
       .from("withdrawal_requests")
       .update({
-        status: "rejected",
+        status: "processing",
         ...gatewayValues,
-        rejection_reason: "Saque recusado pela Impulse Pay",
+        rejection_reason: "Impulse Pay informou falha; aguardando confirmação do admin",
       })
       .eq("id", withdrawal.id)
       .in("status", ["approved", "processing"]);

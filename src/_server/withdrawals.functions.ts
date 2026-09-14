@@ -373,14 +373,19 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
 
     const { data: w } = await supabaseAdmin
       .from("withdrawal_requests")
-      .select("creator_id,amount_cents,status,gateway_transfer_id")
+      .select("creator_id,amount_cents,status,gateway_transfer_id,gateway_status")
       .eq("id", data.withdrawal_id)
       .maybeSingle();
 
-    if (!w || !["pending", "approved"].includes(w.status)) {
+    // Em processamento só pode ser rejeitado depois que a Impulse Pay informou
+    // falha (webhook withdrawal.failed) e o admin confirmou no painel dela.
+    const gatewayFailed = /FAIL|REFUS|CANCEL|REJECT|ERROR/i.test(w?.gateway_status ?? "");
+    const rejectable =
+      !!w && (["pending", "approved"].includes(w.status) || (w.status === "processing" && gatewayFailed));
+    if (!rejectable) {
       throw new Error("Saque não encontrado ou já finalizado");
     }
-    if (w.gateway_transfer_id) {
+    if (w.gateway_transfer_id && !gatewayFailed) {
       throw new Error("Este saque já foi enviado à Impulse Pay e não pode ser rejeitado aqui");
     }
 
@@ -393,7 +398,7 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", data.withdrawal_id)
-      .in("status", ["pending", "approved"])
+      .in("status", gatewayFailed ? ["pending", "approved", "processing"] : ["pending", "approved"])
       .select("id")
       .maybeSingle();
     if (error) throw safeError(error);
