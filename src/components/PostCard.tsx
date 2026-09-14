@@ -542,7 +542,8 @@ export function PostCard({
         )}
       </header>
 
-      {post.body && (
+      {/* SECURITY: o texto faz parte do conteúdo pago; só aparece depois de desbloquear. */}
+      {post.body && !locked && (
         <div className="px-4 pb-3">
           <p data-user-content className="text-sm text-foreground whitespace-pre-wrap">
             {post.body}

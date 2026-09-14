@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crown, Trophy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { listPublicCreators } from "@/_server/discovery.functions";
 import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
 import { useI18n } from "@/lib/i18n";
 
@@ -56,53 +56,24 @@ export function TopCreators({
         // Cache is only an optimization.
       }
 
-      const [{ data: roles }, { data: plans }] = await Promise.all([
-        supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "creator"),
-        supabase
-          .from("subscription_plans")
-          .select("creator_id")
-          .eq("is_active", true),
-      ]);
-      const planIds = new Set((plans ?? []).map((plan) => plan.creator_id));
-      const ids = Array.from(
-        new Set((roles ?? []).map((role) => role.user_id).filter((id) => planIds.has(id))),
-      );
-      if (ids.length === 0) {
-        setLoading(false);
-        return;
+      let ranked: TopCreator[] = [];
+      try {
+        const { creators: publicCreators } = await listPublicCreators({
+          data: { limit: MAX_RANKING_SIZE },
+        });
+        ranked = publicCreators
+          .map((p) => ({
+            user_id: p.user_id,
+            username: p.username,
+            display_name: p.display_name,
+            avatar_url: p.avatar_url,
+            is_verified: p.is_verified,
+            score: p.score,
+          }))
+          .slice(0, safeLimit);
+      } catch (error) {
+        console.error("[TopCreators]", error);
       }
-      const [{ data: profs }, { data: followsRows }, { data: postsRows }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("user_id, username, display_name, avatar_url, is_verified")
-          .in("user_id", ids)
-          .eq("is_verified", true),
-        supabase.from("follows").select("followee_id").in("followee_id", ids),
-        supabase.from("posts").select("creator_id, likes_count").in("creator_id", ids),
-      ]);
-
-      const followCount = new Map<string, number>();
-      (followsRows ?? []).forEach((r: { followee_id: string }) => {
-        followCount.set(r.followee_id, (followCount.get(r.followee_id) ?? 0) + 1);
-      });
-      const likesSum = new Map<string, number>();
-      (postsRows ?? []).forEach((p: { creator_id: string; likes_count: number }) => {
-        likesSum.set(p.creator_id, (likesSum.get(p.creator_id) ?? 0) + p.likes_count);
-      });
-
-      const ranked: TopCreator[] = (profs ?? [])
-        .map((p) => ({
-          ...p,
-          score:
-            (followCount.get(p.user_id) ?? 0) * 100 +
-            (likesSum.get(p.user_id) ?? 0) +
-            (p.is_verified ? 500 : 0),
-        }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, safeLimit);
       setCreators(ranked);
       try {
         localStorage.setItem(
