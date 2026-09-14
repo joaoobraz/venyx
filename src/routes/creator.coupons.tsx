@@ -292,7 +292,10 @@ export function CouponsPage() {
           ) : (
             <div className="flex items-center gap-2">
               <Label className="text-xs text-muted-foreground">
-                {tr("Valor promocional da assinatura", "Promotional subscription price")}
+                {tr(
+                  "Valor promocional TOTAL do período do cupom (não é por mês)",
+                  "Promotional TOTAL for the coupon period (not per month)",
+                )}
               </Label>
               <div className="ml-auto flex items-center gap-1">
                 <span className="text-sm">R$</span>
