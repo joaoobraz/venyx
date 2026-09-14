@@ -4,6 +4,7 @@ import { requireAdultVerification } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fulfillPaidCharge } from "@/_server/payments-fulfillment.server";
 import { assertAccountsActive } from "@/_server/account-pause.server";
+import { assertRateLimit } from "@/_server/rate-limit.server";
 import {
   createImpulsePayPix,
   getImpulsePayCustomer,
@@ -95,6 +96,15 @@ async function checkImpulsePayStatus(lookupId: string) {
 }
 
 async function assertCreatorCanMonetize(creatorId: string, payerId?: string) {
+  if (payerId) {
+    // Anti-abuso: evita spam de cobranças na ImpulsePay por uma única conta.
+    await assertRateLimit(
+      `charge:${payerId}`,
+      10,
+      10 * 60,
+      "Você gerou muitas cobranças em pouco tempo. Aguarde alguns minutos.",
+    );
+  }
   await assertAccountsActive([creatorId, payerId]);
   const { data, error } = await supabaseAdmin.rpc("creator_onboarding_status", {
     _user_id: creatorId,

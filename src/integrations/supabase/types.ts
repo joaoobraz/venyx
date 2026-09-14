@@ -8,6 +8,27 @@ export type Database = {
   };
   public: {
     Tables: {
+      rate_limits: {
+        Row: {
+          bucket_key: string;
+          count: number;
+          updated_at: string;
+          window_started_at: string;
+        };
+        Insert: {
+          bucket_key: string;
+          count?: number;
+          updated_at?: string;
+          window_started_at?: string;
+        };
+        Update: {
+          bucket_key?: string;
+          count?: number;
+          updated_at?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
       backup_verification_runs: {
         Row: {
           backup_provider: string;
@@ -3339,6 +3360,14 @@ export type Database = {
       };
     };
     Functions: {
+      consume_rate_limit: {
+        Args: { _key: string; _limit: number; _window_seconds: number };
+        Returns: boolean;
+      };
+      media_path_belongs_to: {
+        Args: { _owner: string; _path: string };
+        Returns: boolean;
+      };
       award_loyalty_points: {
         Args: {
           _creator_id: string;

@@ -58,7 +58,7 @@ export function BecomeCreatorPage() {
               {tr("Avisaremos por e-mail assim que for aprovado.", "We'll email you as soon as it is approved.")}
             </p>
           </div>
-        ) : kyc?.status === "rejected" ? (
+        ) : kyc?.status === "rejected" && step === "intro" ? (
           <div className="rounded-2xl border border-destructive/30 bg-card p-8">
             <XCircle className="mx-auto h-10 w-10 text-destructive" />
             <h2 className="mt-3 text-center text-xl font-bold text-foreground">

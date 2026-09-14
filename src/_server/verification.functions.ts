@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { onlyDigits, isValidCpf, isAdult } from "@/lib/cpf";
+import { assertRateLimit, clientIpKey } from "@/_server/rate-limit.server";
 
 /**
  * Verificação de identidade/idade do assinante.
@@ -60,6 +61,9 @@ export const verifyIdentity = createServerFn({ method: "POST" })
   .validator((input: unknown) => verifySchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    // Anti-enumeração de CPF e anti-spam de documentos: poucas tentativas por conta e por IP.
+    await assertRateLimit(`verify:user:${userId}`, 5, 60 * 60, "Muitas tentativas de verificação. Aguarde uma hora.");
+    await assertRateLimit(`verify:ip:${clientIpKey()}`, 20, 60 * 60, "Muitas tentativas de verificação. Aguarde uma hora.");
     const cpf = onlyDigits(data.cpf);
 
     if (!isValidCpf(cpf)) {
@@ -137,7 +141,12 @@ export const verifyIdentity = createServerFn({ method: "POST" })
 
     if (error) {
       if (error.code === "23505") {
-        return { ok: false as const, error: "Este CPF já está vinculado a outra conta." };
+        // Mensagem genérica: não confirmar a terceiros que um CPF já existe na base.
+        console.warn("[verifyIdentity] CPF já vinculado a outra conta", userId);
+        return {
+          ok: false as const,
+          error: "Não foi possível concluir a verificação com esses dados. Fale com o suporte.",
+        };
       }
       console.error("[verifyIdentity]", error);
       return {

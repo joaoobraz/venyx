@@ -2,10 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdultVerification } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isOwnedMediaPath } from "@/lib/media-path";
 
 /**
  * SECURITY P0: bucket `posts` e `chat-media` agora são privados.
  * O cliente pede uma URL assinada por aqui; o servidor verifica acesso primeiro.
+ *
+ * SECURITY P0 (2026-09-06): nunca assinar um caminho fora da pasta do dono
+ * (isOwnedMediaPath). O banco também recusa (trigger enforce_*_media_path),
+ * mas linhas antigas ou escritas com service role passam por aqui.
  */
 
 const postMediaSchema = z.object({
@@ -51,6 +56,10 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
 
     const urls = await Promise.all(
       (media ?? []).map(async (m) => {
+        if (!isOwnedMediaPath(post.creator_id, m.storage_path)) {
+          console.error("[media] storage_path fora da pasta da criadora", { postId: post.id, mediaId: m.id });
+          return { id: m.id, url: "", mime_type: m.mime_type };
+        }
         try {
           const { data: signed } = await supabaseAdmin.storage
             .from("posts")
@@ -80,8 +89,10 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
       .in("id", data.postIds);
 
     const accessMap: Record<string, boolean> = {};
+    const creatorByPost: Record<string, string> = {};
     for (const post of posts ?? []) {
       accessMap[post.id] = await checkPostAccess(post, viewerId);
+      creatorByPost[post.id] = post.creator_id;
     }
 
     // Get media for accessible posts
@@ -158,6 +169,10 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
         try {
           const isVideo = mediaInfo.type.startsWith("video/");
           const previewPath = isVideo && mediaInfo.coverPath ? mediaInfo.coverPath : mediaInfo.path;
+          if (!isOwnedMediaPath(creatorByPost[postId], previewPath)) {
+            console.error("[media] preview fora da pasta da criadora", { postId, mediaId: mediaInfo.id });
+            return;
+          }
           const { data: signed } = await supabaseAdmin.storage
             .from("posts")
             .createSignedUrl(previewPath, SIGNED_URL_TTL_SECONDS);
@@ -291,9 +306,10 @@ export const getStoryMediaUrls = createServerFn({ method: "POST" })
 
     const accessible = moderatedStories.filter(
       (story) =>
-        story.visibility === "public" ||
-        story.creator_id === context.userId ||
-        subscribedTo.has(story.creator_id),
+        isOwnedMediaPath(story.creator_id, story.media_path) &&
+        (story.visibility === "public" ||
+          story.creator_id === context.userId ||
+          subscribedTo.has(story.creator_id)),
     );
     const urlsByStoryId: Record<string, { url: string; mime_type: string }> = {};
 
@@ -329,6 +345,10 @@ export const getChatMediaUrl = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!msg || !msg.media_path) {
         return { url: "", error: "NOT_FOUND" as const };
+      }
+      if (!isOwnedMediaPath(msg.sender_id, msg.media_path)) {
+        console.error("[media] media_path fora da pasta do remetente", { messageId: msg.id });
+        return { url: "", error: "FORBIDDEN" as const };
       }
       if (msg.moderation_status !== "approved" && msg.sender_id !== userId) {
         return { url: "", error: "PENDING_REVIEW" as const };

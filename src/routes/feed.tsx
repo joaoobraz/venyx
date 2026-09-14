@@ -12,6 +12,10 @@ import { useI18n } from "@/lib/i18n";
 import { demoLocale } from "@/lib/demo-content";
 import { fetchPosts } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyVerificationStatus } from "@/_server/verification.functions";
+import { IdentityVerificationModal } from "@/components/IdentityVerificationModal";
+import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/feed")({
   component: FeedPage,
@@ -23,6 +27,28 @@ export function FeedPage() {
   const nav = useNavigate();
   const [posts, setPosts] = useState<PostWithRelations[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const checkVerifyFn = useServerFn(getMyVerificationStatus);
+  const [identityStatus, setIdentityStatus] = useState<"unknown" | "verified" | "pending" | "missing">("unknown");
+  const [showVerify, setShowVerify] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    checkVerifyFn()
+      .then((result) => {
+        if (cancelled) return;
+        const status = (result as { verified?: boolean; status?: string | null }).status ?? null;
+        if ((result as { verified?: boolean }).verified) setIdentityStatus("verified");
+        else if (status === "pending") setIdentityStatus("pending");
+        else setIdentityStatus("missing");
+      })
+      .catch(() => {
+        if (!cancelled) setIdentityStatus("unknown");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, checkVerifyFn]);
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/login" });
@@ -52,6 +78,39 @@ export function FeedPage() {
         {isCreator && <OnboardingChecklist />}
         
         <BecomeCreatorBanner />
+
+        {(identityStatus === "missing" || identityStatus === "pending") && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-4 text-sm">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <span className="text-foreground">
+                {identityStatus === "pending"
+                  ? tr(
+                      "Sua verificação de identidade está em análise. O conteúdo aparece assim que for aprovada.",
+                      "Your identity verification is under review. Content appears as soon as it is approved.",
+                    )
+                  : tr(
+                      "Confirme que você é maior de 18 anos para ver o conteúdo das criadoras.",
+                      "Confirm you are over 18 to see creators' content.",
+                    )}
+              </span>
+            </div>
+            {identityStatus === "missing" && (
+              <Button size="sm" onClick={() => setShowVerify(true)}>
+                {tr("Verificar identidade", "Verify identity")}
+              </Button>
+            )}
+          </div>
+        )}
+        <IdentityVerificationModal
+          open={showVerify}
+          onOpenChange={setShowVerify}
+          onVerified={() => {
+            setIdentityStatus("verified");
+            load();
+          }}
+          onPending={() => setIdentityStatus("pending")}
+        />
 
         {isCreator && (
           <Link to="/creator/posts">
