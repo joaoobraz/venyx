@@ -122,12 +122,14 @@ export async function fulfillPaidCharge(opts: {
 
   const paused = await pausedAccountIds([charge.payer_id, charge.payee_id]);
   if (paused.size > 0) {
-    await supabaseAdmin
-      .from("pix_charges")
-      .update({ status: "cancelled" })
-      .eq("id", charge.id)
-      .in("status", ["pending", "processing"]);
-    return { ok: false, reason: "Conta pausada; cobrança não pode ser efetivada" };
+    // O dinheiro já saiu da conta do pagador. Não cancelar: a cobrança fica
+    // pendente e é entregue pelo reenvio do webhook ou pela conciliação assim
+    // que a conta voltar do modo pausado.
+    console.warn("[fulfillPaidCharge] conta pausada; entrega adiada", {
+      chargeId: charge.id,
+      paused: Array.from(paused),
+    });
+    return { ok: false, reason: "Conta pausada; entrega adiada até a reativação" };
   }
 
   // 3) Reserva a cobrança de forma atômica. Uma execução travada pode ser
