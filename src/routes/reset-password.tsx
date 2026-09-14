@@ -23,6 +23,8 @@ export function ResetPage() {
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const captchaRequired = isTurnstileEnabled();
 
   useEffect(() => {
@@ -56,12 +58,45 @@ export function ResetPage() {
   const updatePassword = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else {
+    try {
+      // Conta com 2FA: o link de recuperação abre uma sessão aal1 e o Supabase
+      // exige aal2 para trocar a senha. Pedimos o código do autenticador antes.
+      if (mfaFactorId) {
+        const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: mfaFactorId,
+        });
+        if (challengeError) throw challengeError;
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: mfaFactorId,
+          challengeId: challenge.id,
+          code: mfaCode.replace(/\D/g, ""),
+        });
+        if (verifyError) throw verifyError;
+      } else {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const factor = factors?.totp.find((item) => item.status === "verified");
+          if (factor) {
+            setMfaFactorId(factor.id);
+            toast.message("Digite o código do seu aplicativo autenticador para concluir.");
+            return;
+          }
+        }
+      }
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
       toast.success("Senha atualizada!");
       window.location.href = localizedPathname("/feed", locale);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      toast.error(
+        /aal2|assurance|mfa|code/i.test(message)
+          ? "Código inválido ou expirado. Confira o aplicativo autenticador e tente de novo."
+          : "Não foi possível atualizar a senha. Peça um novo link e tente novamente.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,8 +121,24 @@ export function ResetPage() {
                 className="mt-1.5"
               />
             </div>
+            {mfaFactorId && (
+              <div>
+                <Label htmlFor="mfa-code">Código do autenticador (2FA)</Label>
+                <Input
+                  id="mfa-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  minLength={6}
+                  maxLength={8}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  className="mt-1.5"
+                />
+              </div>
+            )}
             <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              {t("auth.reset.update")}
+              {mfaFactorId ? "Confirmar código e atualizar senha" : t("auth.reset.update")}
             </Button>
           </form>
         ) : (

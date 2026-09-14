@@ -116,7 +116,7 @@ const fmt = (cents: number, locale: Locale) =>
 
 export function WalletPage() {
   const { locale, tr } = useI18n();
-  const { user, isCreator, loading } = useAuth();
+  const { user, isCreator, loading, mfaEnabled } = useAuth();
   const nav = useNavigate();
 
   const [balance, setBalance] = useState<Balance | null>(null);
@@ -352,6 +352,21 @@ export function WalletPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-3xl space-y-4">
+        {!mfaEnabled && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground">
+            <span>
+              {tr(
+                "Para cadastrar chave Pix e sacar, ative a autenticação em dois fatores (2FA).",
+                "To register a Pix key and withdraw, enable two-factor authentication (2FA).",
+              )}
+            </span>
+            <Link to="/settings/security">
+              <Button size="sm" variant="outline">
+                {tr("Ativar 2FA", "Enable 2FA")}
+              </Button>
+            </Link>
+          </div>
+        )}
         {/* Saldo principal */}
         <div className="rounded-2xl bg-gradient-primary p-6 text-primary-foreground shadow-glow">
           <div className="flex items-center gap-2 text-sm font-medium opacity-90">

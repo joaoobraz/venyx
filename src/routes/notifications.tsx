@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   AtSign,
@@ -71,10 +71,15 @@ function iconFor(type: string) {
 }
 
 export function NotifPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const nav = useNavigate();
   const { t, tr, locale } = useI18n();
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) nav({ to: "/login" });
+  }, [authLoading, user, nav]);
 
   const load = useCallback(async () => {
     if (!user) return;

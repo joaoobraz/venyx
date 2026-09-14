@@ -34,6 +34,7 @@ export function SignupPage() {
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const captchaRequired = isTurnstileEnabled();
   const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
   const feedRoute = routeTo("/feed");
@@ -46,6 +47,15 @@ export function SignupPage() {
     e.preventDefault();
     if (captchaRequired && !captchaToken) {
       toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error(
+        tr(
+          "Confirme que você tem 18 anos ou mais e aceita os Termos e a Política de Privacidade.",
+          "Confirm you are 18 or older and accept the Terms and Privacy Policy.",
+        ),
+      );
       return;
     }
     if (password.length < 8) {
@@ -227,6 +237,26 @@ export function SignupPage() {
                 </button>
               </div>
             </div>
+            <label className="flex items-start gap-3 rounded-xl border border-border bg-card/60 p-3 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+              />
+              <span>
+                {tr("Tenho 18 anos ou mais e aceito os ", "I am 18 or older and I accept the ")}
+                <Link to="/terms" className="font-medium text-primary underline-offset-2 hover:underline">
+                  {tr("Termos de Uso", "Terms of Use")}
+                </Link>
+                {tr(" e a ", " and the ")}
+                <Link to="/privacy" className="font-medium text-primary underline-offset-2 hover:underline">
+                  {tr("Política de Privacidade", "Privacy Policy")}
+                </Link>
+                .
+              </span>
+            </label>
             <TurnstileCaptcha
               action="signup"
               onTokenChange={setCaptchaToken}
@@ -234,7 +264,7 @@ export function SignupPage() {
             />
             <Button
               type="submit"
-              disabled={loading || (captchaRequired && !captchaToken)}
+              disabled={loading || !acceptedTerms || (captchaRequired && !captchaToken)}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {loading ? t("common.loading") : t("auth.signup.button")}

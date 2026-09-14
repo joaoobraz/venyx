@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CircleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
@@ -28,6 +28,9 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  // Enquanto o login por senha ainda está decidindo se há 2FA, o redirect
+  // automático fica travado; senão a sessão aal1 ia direto para o feed.
+  const mfaGateRef = useRef(false);
   const [mfaCode, setMfaCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -43,7 +46,7 @@ export function LoginPage() {
   const feedRoute = routeTo("/feed");
 
   useEffect(() => {
-    if (user) navigate({ to: feedRoute });
+    if (user && !mfaGateRef.current) navigate({ to: feedRoute });
   }, [user, navigate, feedRoute]);
 
   const prepareMfaChallenge = async (): Promise<boolean> => {
@@ -72,6 +75,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
+      mfaGateRef.current = true;
       const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -79,8 +83,10 @@ export function LoginPage() {
       });
       if (error) throw error;
       if (await prepareMfaChallenge()) return;
+      mfaGateRef.current = false;
       navigate({ to: routeTo("/feed") });
     } catch (error) {
+      mfaGateRef.current = false;
       trackProductEvent("login_failed", {
         method: "password",
         reason: error instanceof Error ? error.name : "unknown",
