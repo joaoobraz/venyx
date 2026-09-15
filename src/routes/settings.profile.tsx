@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CreatorWatermark, type WatermarkPosition } from "@/components/CreatorWatermark";
 import { Switch } from "@/components/ui/switch";
-import { Gift } from "lucide-react";
+import { Camera, Gift } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { trackProductEvent } from "@/lib/telemetry";
 import { CreatorProfileVisibilitySettings } from "@/components/CreatorProfileVisibilitySettings";
@@ -32,6 +32,12 @@ export function SettingsProfile() {
   const [trialEnabled, setTrialEnabled] = useState(false);
   const [trialDays, setTrialDays] = useState(3);
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const demoCreatorMode = demoPreviewRole === "creator";
   const creatorMode = isCreator || demoCreatorMode;
   const showCreatorControls = creatorMode || DEMO_MODE;
@@ -53,6 +59,8 @@ export function SettingsProfile() {
       setUsername(demoCreator?.username ?? profile.username ?? "");
       setDisplayName(demoCreator?.display_name ?? profile.display_name ?? "");
       setBio(demoCreator?.bio ?? profile.bio ?? "");
+      setAvatarUrl(demoCreator?.avatar_url ?? profile.avatar_url ?? null);
+      setCoverUrl(profile.cover_url ?? null);
       const p = profile as unknown as {
         watermark_position?: string;
         watermark_opacity?: number;
@@ -129,6 +137,55 @@ export function SettingsProfile() {
     }
   };
 
+  const uploadImage = async (
+    e: ChangeEvent<HTMLInputElement>,
+    bucket: "avatars" | "covers",
+    column: "avatar_url" | "cover_url",
+    setUploading: (v: boolean) => void,
+    setUrl: (url: string) => void,
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user || !profile) return;
+    if (demoCreatorMode) {
+      toast.info(
+        tr("A identidade de Aline é demonstrativa; upload desativado nesta prévia.", "Aline's identity is a demo; upload disabled in this preview."),
+      );
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error(tr("Apenas imagens", "Images only"));
+      return;
+    }
+    const maxSize = bucket === "avatars" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(tr(`Máximo de ${maxSize / (1024 * 1024)} MB`, `Maximum size is ${maxSize / (1024 * 1024)} MB`));
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { contentType: file.type, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ [column]: pub.publicUrl } as never)
+        .eq("user_id", profile.user_id);
+      if (updateError) throw updateError;
+      setUrl(pub.publicUrl);
+      toast.success(tr("Foto atualizada!", "Photo updated!"));
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : tr("Erro no envio", "Upload failed"));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (!user || !profile) return null;
 
   return (
@@ -146,6 +203,66 @@ export function SettingsProfile() {
               )}
             </p>
           )}
+
+          <div className="mt-6 space-y-3">
+            <div className="relative h-32 overflow-hidden rounded-xl bg-muted">
+              {coverUrl && (
+                <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+              )}
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => uploadImage(e, "covers", "cover_url", setUploadingCover, setCoverUrl)}
+              />
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur hover:bg-background"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                {uploadingCover
+                  ? tr("Enviando...", "Uploading...")
+                  : tr("Alterar capa", "Change cover")}
+              </button>
+            </div>
+
+            <div className="-mt-10 flex items-end gap-3 pl-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-background bg-muted">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-lg font-bold text-muted-foreground">
+                    {(displayName || displayedUsername || "?").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => uploadImage(e, "avatars", "avatar_url", setUploadingAvatar, setAvatarUrl)}
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity hover:opacity-100"
+                  aria-label={tr("Alterar foto de perfil", "Change profile photo")}
+                >
+                  <Camera className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="pb-1 text-xs text-muted-foreground">
+                {uploadingAvatar
+                  ? tr("Enviando foto de perfil...", "Uploading profile photo...")
+                  : tr("Passe o mouse na foto para trocar", "Hover the photo to change it")}
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={onSave} className="mt-6 space-y-4">
             <div>
               <Label htmlFor="username">{tr("Nome de usuário", "Username")}</Label>
