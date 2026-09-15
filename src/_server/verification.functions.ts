@@ -104,6 +104,23 @@ export const verifyIdentity = createServerFn({ method: "POST" })
       return { ok: true as const, status: "verified" as const };
     }
 
+    // Um mesmo CPF não pode ser usado em outra conta (mesmo ainda pendente).
+    // O índice único do banco só cobre verificados; aqui bloqueamos antes.
+    const { data: cpfOwner } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("user_id")
+      .eq("cpf", cpf)
+      .neq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+    if (cpfOwner) {
+      console.warn("[verifyIdentity] CPF já usado em outra conta", userId);
+      return {
+        ok: false as const,
+        error: "Este CPF já está vinculado a outra conta. Cada pessoa só pode ter uma conta verificada.",
+      };
+    }
+
     const match = await matchCpfWithDocument({
       cpf,
       fullName: data.full_name,

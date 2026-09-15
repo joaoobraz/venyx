@@ -30,8 +30,6 @@ import { createDemoId, updateDemoOperations } from "@/lib/demo-operations";
 import { fetchPosts } from "@/lib/posts";
 import type { PostWithRelations } from "@/components/PostCard";
 import { setPinnedPostForCreator } from "@/lib/post-pinning";
-import { useServerFn } from "@tanstack/react-start";
-import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 
 export const Route = createFileRoute("/creator/posts")({
   component: CreatorPostsPage,
@@ -49,7 +47,6 @@ export function CreatorPostsPage() {
   const { tr } = useI18n();
   const { user, profile, isCreator, loading, demoPreviewRole } = useAuth();
   const nav = useNavigate();
-  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [body, setBody] = useState("");
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
   const [postFormat, setPostFormat] = useState<PostFormat>("text");
@@ -279,14 +276,7 @@ export function CreatorPostsPage() {
         });
       }
 
-      await submitManualReviewFn({ data: { surface: "post", targetId: post.id } });
-
-      toast.success(
-        tr(
-          "Publicação enviada para análise manual. Ela ficará visível após a aprovação.",
-          "Post sent for manual review. It will become visible after approval.",
-        ),
-      );
+      toast.success(tr("Publicação criada!", "Post published!"));
       setBody("");
       setMediaDrafts([]);
       setPostFormat("text");
@@ -328,13 +318,7 @@ export function CreatorPostsPage() {
         visibility: "public",
       });
       if (ie) throw ie;
-      await submitManualReviewFn({ data: { surface: "story", targetId: storyId } });
-      toast.success(
-        tr(
-          "Story enviado para análise. As 24 horas começam após a aprovação.",
-          "Story sent for review. Its 24 hours start after approval.",
-        ),
-      );
+      toast.success(tr("Story publicado! Fica no ar por 24 horas.", "Story published! It stays up for 24 hours."));
       nav({ to: "/feed" });
     } catch (err) {
       toast.error(describeError(err, tr));
