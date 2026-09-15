@@ -217,10 +217,22 @@ export const reviewKycServer = createServerFn({ method: "POST" })
 
     const { error: e2 } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: kyc.user_id, role: "creator" });
-    if (e2 && !e2.message.toLowerCase().includes("duplicate")) {
-      console.error("[admin.reviewKyc.promote]", e2);
-      throw new Error("KYC aprovado, mas não foi possível promover a criadora.");
+      .upsert({ user_id: kyc.user_id, role: "creator" }, { onConflict: "user_id,role" });
+    if (e2) console.error("[admin.reviewKyc.promote]", e2);
+
+    // Sem o papel gravado a criadora não publica nem edita o perfil (a RLS
+    // exige has_role(creator)). Confirmar é o que impede um "aprovado" que não
+    // libera nada — foi o que aconteceu com a primeira criadora real.
+    const { data: creatorRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", kyc.user_id)
+      .eq("role", "creator")
+      .maybeSingle();
+    if (!creatorRole) {
+      throw new Error(
+        "KYC aprovado, mas a conta não foi promovida a criadora. Conceda o papel em Administrador → Usuários e avise o suporte.",
+      );
     }
 
     await supabaseAdmin.from("profiles").update({ is_verified: true }).eq("user_id", kyc.user_id);
