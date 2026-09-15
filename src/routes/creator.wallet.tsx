@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   upsertPayoutKey,
+  getMyPayoutKey,
   requestWithdrawal,
   cancelWithdrawal,
 } from "@/_server/withdrawals.functions";
@@ -169,7 +170,7 @@ export function WalletPage() {
       { data: verifiedIdentity },
     ] = await Promise.all([
       supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
-      supabase.from("creator_payout_keys").select("*").eq("user_id", user.id).maybeSingle(),
+      getMyPayoutKey().then((result) => ({ data: result.key })),
       supabase
         .from("withdrawal_requests")
         .select(

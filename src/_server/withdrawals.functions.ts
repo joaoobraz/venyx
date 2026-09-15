@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseMfa } from "@/_server/access-control.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 import { onlyDigits } from "@/lib/cpf";
@@ -99,6 +100,26 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
       .single();
     if (error || !payoutKey) throw safeError(error);
     return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at };
+  });
+
+/**
+ * A chave é lida no servidor, com a identidade da sessão: a gravação já é
+ * server-only e a leitura pelo navegador dependia de grants/políticas que
+ * divergiram em produção — a chave era salva mas a carteira mostrava vazio.
+ */
+export const getMyPayoutKey = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await supabaseAdmin
+      .from("creator_payout_keys")
+      .select("pix_key, pix_key_type, holder_name, holder_document, key_changed_at, withdrawal_eligible_at")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) {
+      console.error("[withdrawals.getMyPayoutKey]", error.code, error.message);
+      return { key: null };
+    }
+    return { key: data };
   });
 
 // ===================== Pedido de saque (criadora) =====================
