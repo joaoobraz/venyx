@@ -113,9 +113,20 @@ export const submitCreatorKyc = createServerFn({ method: "POST" })
       if (fallbackError instanceof Error && fallbackError.message.includes("verificação ativa")) {
         throw fallbackError;
       }
+      const fallbackDetails =
+        fallbackError && typeof fallbackError === "object"
+          ? (fallbackError as { code?: string; message?: string; details?: string; hint?: string })
+          : null;
       console.error("[creator-onboarding.submitKyc]", {
         rpcCode: error?.code,
-        fallbackCode: (fallbackError as { code?: string } | null)?.code,
+        rpcMessage: error?.message,
+        rpcDetails: error?.details,
+        rpcHint: error?.hint,
+        fallbackCode: fallbackDetails?.code,
+        fallbackMessage:
+          fallbackDetails?.message ?? (fallbackError instanceof Error ? fallbackError.message : String(fallbackError)),
+        fallbackDetails: fallbackDetails?.details,
+        fallbackHint: fallbackDetails?.hint,
       });
       throw new Error("Não foi possível registrar a verificação. Confira os arquivos e tente novamente.", {
         cause: fallbackError,
