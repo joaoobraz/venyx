@@ -83,9 +83,11 @@ export function describeError(error: unknown, tr: Translate): string {
   if (rule) return tr(rule.pt, rule.en);
 
   if (code === "42501" || /permission denied/i.test(message)) {
+    // O detalhe entre aspas nomeia a tabela bloqueada — sem ele não dá para
+    // descobrir qual permissão falta.
     return tr(
-      "Sua conta não tem permissão para esta ação. Se você acha que deveria ter, fale com o suporte.",
-      "Your account isn't allowed to do this. If you think it should be, contact support.",
+      `Sua conta não tem permissão para esta ação. Se você acha que deveria ter, mostre isto ao suporte: "${message || code}".`,
+      `Your account isn't allowed to do this. If you think it should be, show support: "${message || code}".`,
     );
   }
   if (code === "23505") {
