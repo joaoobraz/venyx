@@ -9,7 +9,6 @@ import { getStoryMediaUrls } from "@/_server/media.functions";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { demoLocale, getDemoStoryGroups } from "@/lib/demo-content";
 import { useI18n } from "@/lib/i18n";
-import { submitManualMediaReview } from "@/_server/manual-moderation.functions";
 
 interface RawStory {
   id: string;
@@ -25,7 +24,6 @@ export function StoriesBar() {
   const { user, isCreator } = useAuth();
   const { tr, locale } = useI18n();
   const storyMediaFn = useServerFn(getStoryMediaUrls);
-  const submitManualReviewFn = useServerFn(submitManualMediaReview);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -110,19 +108,15 @@ export function StoriesBar() {
         .from("stories")
         .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { data: story, error: ie } = await supabase
-        .from("stories")
-        .insert({
-          creator_id: user.id,
-          media_path: path,
-          mime_type: f.type,
-          visibility: "public",
-        })
-        .select("id")
-        .single();
-      if (ie || !story) throw ie ?? new Error("Falha ao criar story");
-      await submitManualReviewFn({ data: { surface: "story", targetId: story.id } });
-      toast.success(tr("Story enviado para análise manual.", "Story sent for manual review."));
+      const { error: ie } = await supabase.from("stories").insert({
+        id: crypto.randomUUID(),
+        creator_id: user.id,
+        media_path: path,
+        mime_type: f.type,
+        visibility: "public",
+      });
+      if (ie) throw ie;
+      toast.success(tr("Story publicado! Fica no ar por 24 horas.", "Story published! It stays up for 24 hours."));
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
