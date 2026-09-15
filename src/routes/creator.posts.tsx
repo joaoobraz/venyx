@@ -204,17 +204,19 @@ export function CreatorPostsPage() {
         return;
       }
 
-      const { data: post, error: pe } = await supabase
-        .from("posts")
-        .insert({
-          creator_id: user.id,
-          body: body.trim() || null,
-          visibility,
-          price_cents: priceCents,
-        })
-        .select()
-        .single();
-      if (pe || !post) throw pe ?? new Error(tr("Falha ao criar post", "Couldn't create post"));
+      // O id vem daqui em vez de voltar do banco: pedir o registro de volta
+      // exigiria que a publicação recém-criada já passasse na regra de leitura,
+      // e ela entra pendente de moderação — era o que bloqueava publicar.
+      const postId = crypto.randomUUID();
+      const { error: pe } = await supabase.from("posts").insert({
+        id: postId,
+        creator_id: user.id,
+        body: body.trim() || null,
+        visibility,
+        price_cents: priceCents,
+      });
+      if (pe) throw pe;
+      const post = { id: postId };
 
       if (visibility === "goal") {
         const { error: ge } = await supabase.from("post_goals").insert({

@@ -101,21 +101,24 @@ export function SettingsProfile() {
       return;
     }
     setSaving(true);
-    // O .select() devolve as linhas alteradas: sem ele, um bloqueio de RLS
-    // passaria como sucesso e a pessoa acharia que salvou.
-    const { data: updated, error } = await supabase
+    // count em vez de select: confere se alguma linha mudou (um bloqueio de RLS
+    // devolveria sucesso com zero linhas) sem pedir os dados de volta — o
+    // retorno exigiria leitura de colunas internas que a conta não enxerga.
+    const { count: updated, error } = await supabase
       .from("profiles")
-      .update({
-        username: normalizedUsername,
-        display_name: displayName,
-        bio,
-        watermark_position: wmPosition,
-        watermark_opacity: wmOpacity,
-        trial_days_enabled: trialEnabled,
-        trial_days: Math.max(1, Math.min(14, trialDays)),
-      } as never)
-      .eq("user_id", profile.user_id)
-      .select("user_id");
+      .update(
+        {
+          username: normalizedUsername,
+          display_name: displayName,
+          bio,
+          watermark_position: wmPosition,
+          watermark_opacity: wmOpacity,
+          trial_days_enabled: trialEnabled,
+          trial_days: Math.max(1, Math.min(14, trialDays)),
+        } as never,
+        { count: "exact" },
+      )
+      .eq("user_id", profile.user_id);
     setSaving(false);
     if (error) {
       const message = `${error.code ?? ""} ${error.message ?? ""}`;
@@ -134,7 +137,7 @@ export function SettingsProfile() {
         toast.error(describeError(error, tr));
         await loadIdentityDiagnostic();
       }
-    } else if (!updated || updated.length === 0) {
+    } else if (!updated) {
       await loadIdentityDiagnostic();
       toast.error(
         tr(
