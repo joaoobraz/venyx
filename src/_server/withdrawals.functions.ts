@@ -4,6 +4,7 @@ import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction } from "@/_server/admin-audit.server";
+import { recordOperationalEvent } from "@/_server/observability.server";
 import type { Json } from "@/integrations/supabase/types";
 import { onlyDigits } from "@/lib/cpf";
 import {
@@ -378,8 +379,27 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
           { cause: providerError },
         );
       }
+      // Admin precisa do motivo real (saldo insuficiente, chave inválida...);
+      // a mensagem genérica escondia a causa e impedia o diagnóstico.
+      const providerReason =
+        providerError instanceof ImpulsePayRequestError ? providerError.providerMessage : null;
+      const providerStatus =
+        providerError instanceof ImpulsePayRequestError ? providerError.status : null;
+      console.error("[withdrawals.approve] Impulse Pay recusou", {
+        withdrawal_id: data.withdrawal_id,
+        status: providerStatus,
+        reason: providerReason,
+      });
+      await recordOperationalEvent({
+        eventKind: "error",
+        eventName: "withdrawal_provider_refused",
+        severity: "warning",
+        userId: context.userId,
+        route: "/admin/payouts",
+        metadata: { withdrawal_id: data.withdrawal_id, status: providerStatus, reason: providerReason },
+      });
       throw new Error(
-        providerError instanceof Error ? providerError.message : "A Impulse Pay recusou o saque.",
+        `A Impulse Pay recusou o saque${providerStatus ? ` (HTTP ${providerStatus})` : ""}: ${providerReason ?? (providerError instanceof Error ? providerError.message : "sem detalhes")}`,
         { cause: providerError },
       );
     }

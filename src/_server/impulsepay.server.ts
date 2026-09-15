@@ -61,9 +61,24 @@ export class ImpulsePayRequestError extends Error {
     message: string,
     readonly status: number,
     readonly retryable: boolean,
+    /** Motivo bruto devolvido pela Impulse Pay (só para admin/logs). */
+    readonly providerMessage: string | null = null,
   ) {
     super(message);
   }
+}
+
+// Extrai a mensagem de erro do corpo devolvido pela adquirente, se houver.
+function providerMessageOf(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  const candidates = [d.message, d.error, d.detail, d.errors, (d.data as Record<string, unknown> | undefined)?.message];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim().slice(0, 300);
+    if (Array.isArray(c) && c.length) return JSON.stringify(c).slice(0, 300);
+    if (c && typeof c === "object") return JSON.stringify(c).slice(0, 300);
+  }
+  return null;
 }
 
 function getRequiredEnv(name: "IMPULSEPAY_PUBLIC_KEY" | "IMPULSEPAY_SECRET_KEY") {
@@ -156,7 +171,12 @@ async function impulseFetch(
       if (response.ok) return data;
 
       const retryable = response.status === 429 || response.status >= 500;
-      const error = new ImpulsePayRequestError(errorMessage(response.status), response.status, retryable);
+      const error = new ImpulsePayRequestError(
+        errorMessage(response.status),
+        response.status,
+        retryable,
+        providerMessageOf(data),
+      );
       if (!retryable || attempt === attempts - 1) throw error;
       lastError = error;
     } catch (error) {
