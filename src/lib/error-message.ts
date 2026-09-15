@@ -84,17 +84,23 @@ export function describeError(error: unknown, tr: Translate): string {
 
   if (code === "42501" || /permission denied/i.test(message)) {
     return tr(
-      `Sem permissão no banco de dados para esta ação (${message || code}).`,
-      `Database permission denied for this action (${message || code}).`,
+      "Sua conta não tem permissão para esta ação. Se você acha que deveria ter, fale com o suporte.",
+      "Your account isn't allowed to do this. If you think it should be, contact support.",
     );
   }
   if (code === "23505") {
     return tr("Esse valor já está cadastrado e não pode repetir.", "This value already exists and can't be duplicated.");
   }
-  if (code === "23514" || code === "22023") {
+  if (code === "23502") {
     return tr(
-      `Valor fora do permitido pelas regras do sistema (${message || code}).`,
-      `Value outside the allowed range (${message || code}).`,
+      "Falta preencher um campo obrigatório.",
+      "A required field is missing.",
+    );
+  }
+  if (code === "23514" || code === "22023" || code === "22P02") {
+    return tr(
+      "Algum valor informado não é aceito. Revise os campos e tente de novo.",
+      "One of the values isn't accepted. Review the fields and try again.",
     );
   }
   if (code === "23503") {
@@ -103,7 +109,35 @@ export function describeError(error: unknown, tr: Translate): string {
       "A related record no longer exists. Reload the page and try again.",
     );
   }
+  if (code === "57014" || /timeout|timed out/i.test(message)) {
+    return tr(
+      "A operação demorou demais e foi interrompida. Tente de novo em instantes.",
+      "The operation took too long and was cancelled. Try again shortly.",
+    );
+  }
+  if (/failed to fetch|networkerror|load failed/i.test(message)) {
+    return tr(
+      "Sem conexão com o servidor. Verifique sua internet e tente de novo.",
+      "No connection to the server. Check your internet and try again.",
+    );
+  }
 
-  if (message) return code ? `${message} (${code})` : message;
+  // Erros internos (coluna/tabela/função inexistente, sintaxe): a pessoa não
+  // tem o que corrigir, então a mensagem orienta o contato com o suporte e
+  // mantém o detalhe técnico entre parênteses para o diagnóstico.
+  if (["42703", "42P01", "42883", "42601", "42804", "P0001"].includes(code)) {
+    const technical = message || code;
+    return tr(
+      `Erro interno do sistema. Avise o suporte informando: "${technical}".`,
+      `Internal system error. Contact support with: "${technical}".`,
+    );
+  }
+
+  if (message) {
+    return tr(
+      `Não foi possível concluir: ${message}`,
+      `Couldn't complete: ${message}`,
+    );
+  }
   return tr("Não foi possível concluir. Tente novamente.", "Couldn't complete. Please try again.");
 }
