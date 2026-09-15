@@ -235,6 +235,9 @@ export function WalletPage() {
     const txArr = (txList ?? []) as TxRow[];
     setTxs(txArr);
     if (typeof ps === "number") setSettings((s) => ({ ...s, platform_fee_pct: ps }));
+    // Prazo de liberação real (não fica preso no default 1).
+    const { data: hd } = await supabase.rpc("get_hold_days" as never);
+    if (typeof hd === "number") setSettings((s) => ({ ...s, hold_days: hd }));
 
     // Buscar nomes dos pagadores
     const payerIds = Array.from(new Set(txArr.map((t) => t.payer_id).filter(Boolean))) as string[];
