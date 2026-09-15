@@ -14,6 +14,7 @@ import { Camera, Gift } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { trackProductEvent } from "@/lib/telemetry";
 import { CreatorProfileVisibilitySettings } from "@/components/CreatorProfileVisibilitySettings";
+import { CoverAdjustModal } from "@/components/CoverAdjustModal";
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/settings/profile")({
@@ -36,6 +37,7 @@ export function SettingsProfile() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const demoCreatorMode = demoPreviewRole === "creator";
@@ -137,38 +139,44 @@ export function SettingsProfile() {
     }
   };
 
-  const uploadImage = async (
-    e: ChangeEvent<HTMLInputElement>,
+  const pickImage = (e: ChangeEvent<HTMLInputElement>, bucket: "avatars" | "covers") => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user || !profile) return null;
+    if (demoCreatorMode) {
+      toast.info(
+        tr("A identidade de Aline é demonstrativa; upload desativado nesta prévia.", "Aline's identity is a demo; upload disabled in this preview."),
+      );
+      return null;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error(tr("Apenas imagens", "Images only"));
+      return null;
+    }
+    const maxMb = bucket === "avatars" ? 5 : 10;
+    if (file.size > maxMb * 1024 * 1024) {
+      toast.error(tr(`Máximo de ${maxMb} MB`, `Maximum size is ${maxMb} MB`));
+      return null;
+    }
+    return file;
+  };
+
+  const saveImage = async (
+    data: Blob,
+    ext: string,
+    contentType: string,
     bucket: "avatars" | "covers",
     column: "avatar_url" | "cover_url",
     setUploading: (v: boolean) => void,
     setUrl: (url: string) => void,
   ) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !user || !profile) return;
-    if (demoCreatorMode) {
-      toast.info(
-        tr("A identidade de Aline é demonstrativa; upload desativado nesta prévia.", "Aline's identity is a demo; upload disabled in this preview."),
-      );
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error(tr("Apenas imagens", "Images only"));
-      return;
-    }
-    const maxSize = bucket === "avatars" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error(tr(`Máximo de ${maxSize / (1024 * 1024)} MB`, `Maximum size is ${maxSize / (1024 * 1024)} MB`));
-      return;
-    }
+    if (!user || !profile) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(path, file, { contentType: file.type, upsert: true });
+        .upload(path, data, { contentType, upsert: true });
       if (uploadError) throw uploadError;
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
       const { error: updateError } = await supabase
@@ -205,7 +213,7 @@ export function SettingsProfile() {
           )}
 
           <div className="mt-6 space-y-3">
-            <div className="relative h-32 overflow-hidden rounded-xl bg-muted">
+            <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-muted">
               {coverUrl && (
                 <img src={coverUrl} alt="" className="h-full w-full object-cover" />
               )}
@@ -214,7 +222,10 @@ export function SettingsProfile() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={(e) => uploadImage(e, "covers", "cover_url", setUploadingCover, setCoverUrl)}
+                onChange={(e) => {
+                  const file = pickImage(e, "covers");
+                  if (file) setCoverFile(file);
+                }}
               />
               <button
                 type="button"
@@ -243,7 +254,20 @@ export function SettingsProfile() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
                   className="hidden"
-                  onChange={(e) => uploadImage(e, "avatars", "avatar_url", setUploadingAvatar, setAvatarUrl)}
+                  onChange={(e) => {
+                    const file = pickImage(e, "avatars");
+                    if (!file) return;
+                    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+                    void saveImage(
+                      file,
+                      ext,
+                      file.type,
+                      "avatars",
+                      "avatar_url",
+                      setUploadingAvatar,
+                      setAvatarUrl,
+                    );
+                  }}
                 />
                 <button
                   type="button"
@@ -441,6 +465,23 @@ export function SettingsProfile() {
         </div>
         {showCreatorControls && <CreatorProfileVisibilitySettings />}
       </div>
+
+      <CoverAdjustModal
+        file={coverFile}
+        onCancel={() => setCoverFile(null)}
+        onConfirm={async (blob) => {
+          setCoverFile(null);
+          await saveImage(
+            blob,
+            "jpg",
+            "image/jpeg",
+            "covers",
+            "cover_url",
+            setUploadingCover,
+            setCoverUrl,
+          );
+        }}
+      />
     </AppShell>
   );
 }
