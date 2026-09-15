@@ -237,6 +237,29 @@ export const reviewKycServer = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("profiles").update({ is_verified: true }).eq("user_id", kyc.user_id);
 
+    // O cadastro de criadora grava CPF e os mesmos documentos em
+    // identity_verifications (pendente). Como o admin acabou de revisar esses
+    // documentos, a identidade é concluída aqui — sem isso a criadora fica
+    // aprovada mas não consegue salvar a chave Pix nem publicar conteúdo pago.
+    const now = new Date().toISOString();
+    const { error: identityError } = await supabaseAdmin
+      .from("identity_verifications")
+      .update({
+        status: "verified",
+        rejection_reason: null,
+        reviewed_by: userId,
+        reviewed_at: now,
+        verified_at: now,
+        updated_at: now,
+      })
+      .eq("user_id", kyc.user_id)
+      .eq("status", "pending")
+      .eq("method", "manual_document_review");
+    if (identityError) {
+      // Não desfaz a aprovação: o admin ainda pode decidir a identidade na fila.
+      console.error("[admin.reviewKyc.identity]", identityError.code, identityError.message);
+    }
+
     await auditLog({
       adminId: userId,
       actionType: "kyc_approved",

@@ -44,6 +44,7 @@ import {
   cancelWithdrawal,
 } from "@/_server/withdrawals.functions";
 import { useI18n, type Locale } from "@/lib/i18n";
+import { describeError } from "@/lib/error-message";
 import {
   DAILY_WITHDRAWAL_LIMIT,
   MIN_WITHDRAWAL_CENTS,
@@ -278,7 +279,7 @@ export function WalletPage() {
       setKeyOpen(false);
       await loadAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : tr("Erro ao salvar", "Could not save"));
+      toast.error(describeError(e, tr));
     } finally {
       setSubmitting(false);
     }
