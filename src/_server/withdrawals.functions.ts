@@ -65,9 +65,11 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     const fail = (error: string) => ({ ok: false as const, error });
 
     if ((context.claims as { aal?: string }).aal !== "aal2") {
-      return fail(
-        "Para cadastrar a chave Pix é preciso confirmar o código de autenticação em dois fatores (2FA). Saia da conta e entre de novo digitando o código do seu aplicativo autenticador, depois tente novamente.",
-      );
+      return {
+        ok: false as const,
+        needsMfa: true as const,
+        error: "Confirme o código de autenticação em dois fatores para cadastrar a chave Pix.",
+      };
     }
 
     const { data: roles } = await supabaseAdmin

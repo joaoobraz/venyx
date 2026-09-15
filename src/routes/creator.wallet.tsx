@@ -46,6 +46,7 @@ import {
 } from "@/_server/withdrawals.functions";
 import { useI18n, type Locale } from "@/lib/i18n";
 import { describeError } from "@/lib/error-message";
+import { elevateToAal2 } from "@/lib/mfa-stepup";
 import {
   DAILY_WITHDRAWAL_LIMIT,
   MIN_WITHDRAWAL_CENTS,
@@ -136,6 +137,10 @@ export function WalletPage() {
   const [keyOpen, setKeyOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Passo de 2FA inline (sem logout) para ações financeiras.
+  const [mfaOpen, setMfaOpen] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
 
   // Formulário de chave PIX
   const [keyForm, setKeyForm] = useState<PayoutKey>({
@@ -269,6 +274,11 @@ export function WalletPage() {
     try {
       const result = await upsertKeyFn({ data: keyForm });
       if (!result.ok) {
+        // Precisa confirmar o 2FA: pede o código aqui mesmo, sem logout.
+        if ((result as { needsMfa?: boolean }).needsMfa) {
+          setMfaOpen(true);
+          return;
+        }
         toast.error(result.error ?? tr("Não foi possível salvar a chave Pix.", "Couldn't save the Pix key."));
         return;
       }
@@ -292,6 +302,23 @@ export function WalletPage() {
       toast.error(describeError(e, tr));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleConfirmMfa = async () => {
+    setMfaBusy(true);
+    try {
+      const res = await elevateToAal2(mfaCode);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setMfaOpen(false);
+      setMfaCode("");
+      // Sessão elevada para aal2: repete o salvamento automaticamente.
+      await handleSaveKey();
+    } finally {
+      setMfaBusy(false);
     }
   };
 
@@ -725,6 +752,46 @@ export function WalletPage() {
             </Button>
             <Button onClick={handleSaveKey} disabled={submitting || !identity}>
               {submitting ? tr("Salvando...", "Saving...") : tr("Salvar", "Save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: confirmar 2FA para ações financeiras (sem logout) */}
+      <Dialog open={mfaOpen} onOpenChange={(v) => { setMfaOpen(v); if (!v) setMfaCode(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{tr("Confirme o 2FA", "Confirm 2FA")}</DialogTitle>
+            <DialogDescription>
+              {tr(
+                "Para sua segurança, digite o código do seu aplicativo autenticador para concluir esta ação.",
+                "For your security, enter the code from your authenticator app to complete this action.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <Label htmlFor="wallet-mfa-code">{tr("Código de 6 dígitos", "6-digit code")}</Label>
+            <Input
+              id="wallet-mfa-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              maxLength={8}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+              className="mt-1.5"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setMfaOpen(false); setMfaCode(""); }} disabled={mfaBusy}>
+              {tr("Cancelar", "Cancel")}
+            </Button>
+            <Button
+              onClick={handleConfirmMfa}
+              disabled={mfaBusy || mfaCode.replace(/\D/g, "").length < 6}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {mfaBusy ? tr("Confirmando...", "Confirming...") : tr("Confirmar", "Confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
