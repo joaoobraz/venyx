@@ -10,6 +10,7 @@ import { onlyDigits } from "@/lib/cpf";
 import {
   createImpulsePayWithdrawal,
   getImpulsePayBalance,
+  getImpulsePayTransaction,
   ImpulsePayConfigurationError,
   ImpulsePayRequestError,
   impulsePayIsConfigured,
@@ -498,4 +499,74 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
       metadata: { amount_cents: w.amount_cents, reason: data.reason, gateway_status: w.gateway_status },
     });
     return { ok: true };
+  });
+
+// ===================== Admin: taxas da Impulse Pay =====================
+// Quanto a adquirente cobra de nós, por cobrança e por saque, direto do banco.
+export const getGatewayFeeSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseMfa])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const [{ data: charges }, { data: payouts }] = await Promise.all([
+      supabaseAdmin
+        .from("pix_charges")
+        .select("amount_cents, gateway_fee_cents, gateway_net_amount_cents" as never)
+        .eq("status", "paid"),
+      supabaseAdmin
+        .from("withdrawal_requests")
+        .select("amount_cents, gateway_fee_cents")
+        .eq("status", "paid"),
+    ]);
+    type ChargeRow = { amount_cents: number; gateway_fee_cents: number | null; gateway_net_amount_cents: number | null };
+    const chargeRows = ((charges ?? []) as unknown as ChargeRow[]);
+    const withFee = chargeRows.filter((c) => typeof c.gateway_fee_cents === "number");
+    const chargesGross = withFee.reduce((s, c) => s + c.amount_cents, 0);
+    const chargesFee = withFee.reduce((s, c) => s + (c.gateway_fee_cents ?? 0), 0);
+    const payoutRows = (payouts ?? []) as Array<{ amount_cents: number; gateway_fee_cents: number | null }>;
+    const payoutsFee = payoutRows.reduce((s, p) => s + (p.gateway_fee_cents ?? 0), 0);
+    return {
+      charges: {
+        paidCount: chargeRows.length,
+        withFeeCount: withFee.length,
+        grossCents: chargesGross,
+        feeCents: chargesFee,
+        feePct: chargesGross > 0 ? Math.round((chargesFee / chargesGross) * 10000) / 100 : null,
+      },
+      payouts: { paidCount: payoutRows.length, feeCents: payoutsFee },
+    };
+  });
+
+// Busca na Impulse Pay a taxa das cobranças pagas que ainda não têm registro
+// (pagamentos anteriores a esta funcionalidade). Até 25 por chamada.
+export const refreshGatewayFees = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    if (!impulsePayIsConfigured()) return { ok: false as const, error: "Impulse Pay não configurada." };
+    const { data: rows } = await supabaseAdmin
+      .from("pix_charges")
+      .select("id, gateway_transaction_id, gateway_fee_cents" as never)
+      .eq("status", "paid")
+      .is("gateway_fee_cents" as never, null)
+      .not("gateway_transaction_id", "is", null)
+      .order("paid_at", { ascending: false })
+      .limit(25);
+    let updated = 0;
+    const failures: string[] = [];
+    for (const row of (rows ?? []) as unknown as Array<{ id: string; gateway_transaction_id: string }>) {
+      try {
+        const tx = await getImpulsePayTransaction(row.gateway_transaction_id);
+        if (typeof tx.fee !== "number" && typeof tx.net_amount !== "number") continue;
+        const fee = typeof tx.fee === "number" ? tx.fee : tx.amount - (tx.net_amount ?? tx.amount);
+        const net = typeof tx.net_amount === "number" ? tx.net_amount : tx.amount - fee;
+        const { error } = await supabaseAdmin
+          .from("pix_charges")
+          .update({ gateway_fee_cents: fee, gateway_net_amount_cents: net } as never)
+          .eq("id", row.id);
+        if (!error) updated += 1;
+      } catch (e) {
+        failures.push(e instanceof Error ? e.message : "erro");
+      }
+    }
+    return { ok: true as const, updated, remaining: Math.max(0, (rows?.length ?? 0) - updated), failures: failures.slice(0, 3) };
   });

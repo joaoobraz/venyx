@@ -69,8 +69,10 @@ async function processTransaction(payload: z.infer<typeof transactionSchema>) {
   }
 
   let verified;
+  let rawTransaction: Awaited<ReturnType<typeof getImpulsePayTransaction>> | null = null;
   try {
-    verified = normalizeGatewayCharge(await getImpulsePayTransaction(payload.transaction.id));
+    rawTransaction = await getImpulsePayTransaction(payload.transaction.id);
+    verified = normalizeGatewayCharge(rawTransaction);
   } catch (lookupError) {
     console.error(
       "[impulsepay-webhook] transaction verification failed",
@@ -100,6 +102,18 @@ async function processTransaction(payload: z.infer<typeof transactionSchema>) {
       payerName: verified.payerName,
     });
     if (!result.ok) return jsonResponse({ ok: false, error: "Fulfillment pending" }, 503);
+    // Registra a taxa que a Impulse Pay cobrou nesta cobrança (visível no admin).
+    if (rawTransaction && (typeof rawTransaction.fee === "number" || typeof rawTransaction.net_amount === "number")) {
+      const fee = typeof rawTransaction.fee === "number"
+        ? rawTransaction.fee
+        : rawTransaction.amount - (rawTransaction.net_amount ?? rawTransaction.amount);
+      const net = typeof rawTransaction.net_amount === "number" ? rawTransaction.net_amount : rawTransaction.amount - fee;
+      const { error: feeError } = await supabaseAdmin
+        .from("pix_charges")
+        .update({ gateway_fee_cents: fee, gateway_net_amount_cents: net } as never)
+        .eq("id", charge.id);
+      if (feeError) console.error("[impulsepay-webhook] fee persistence failed", feeError.code);
+    }
     return jsonResponse({ ok: true, fulfilled: !result.alreadyFulfilled });
   }
 

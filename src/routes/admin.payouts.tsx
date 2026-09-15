@@ -21,6 +21,8 @@ import {
 import {
   approveWithdrawal,
   getImpulsePayOperationalBalance,
+  getGatewayFeeSummary,
+  refreshGatewayFees,
   rejectWithdrawal,
 } from "@/_server/withdrawals.functions";
 import { useI18n, type Locale } from "@/lib/i18n";
@@ -84,6 +86,10 @@ export function AdminPayoutsPage() {
   const [creators, setCreators] = useState<Record<string, CreatorMini>>({});
   const [providerBalance, setProviderBalance] = useState<ProviderBalance | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  // Taxas que a Impulse Pay cobra de nós (cobranças + saques), lidas do banco.
+  type FeeSummary = Awaited<ReturnType<typeof getGatewayFeeSummary>>;
+  const [feeSummary, setFeeSummary] = useState<FeeSummary | null>(null);
+  const [feeLoading, setFeeLoading] = useState(false);
   const [tab, setTab] = useState<"pending" | "approved" | "paid" | "rejected">("pending");
 
   const [rejecting, setRejecting] = useState<WithdrawalRow | null>(null);
@@ -92,6 +98,37 @@ export function AdminPayoutsPage() {
 
   const approveFn = useServerFn(approveWithdrawal);
   const getBalanceFn = useServerFn(getImpulsePayOperationalBalance);
+  const getFeeSummaryFn = useServerFn(getGatewayFeeSummary);
+  const refreshFeesFn = useServerFn(refreshGatewayFees);
+
+  const loadFeeSummary = useCallback(async () => {
+    try {
+      setFeeSummary(await getFeeSummaryFn());
+    } catch {
+      setFeeSummary(null);
+    }
+  }, [getFeeSummaryFn]);
+
+  const refreshFees = async () => {
+    setFeeLoading(true);
+    try {
+      const r = await refreshFeesFn();
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(
+        r.updated > 0
+          ? tr(`Taxas atualizadas em ${r.updated} cobrança(s).`, `Fees updated for ${r.updated} charge(s).`)
+          : tr("Todas as cobranças pagas já têm a taxa registrada.", "All paid charges already have their fee recorded."),
+      );
+      await loadFeeSummary();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : tr("Não foi possível buscar as taxas.", "Couldn't fetch fees."));
+    } finally {
+      setFeeLoading(false);
+    }
+  };
   const rejectFn = useServerFn(rejectWithdrawal);
 
   useEffect(() => {
@@ -155,8 +192,9 @@ export function AdminPayoutsPage() {
     if (isAdmin) {
       load();
       loadProviderBalance();
+      void loadFeeSummary();
     }
-  }, [isAdmin, load, loadProviderBalance]);
+  }, [isAdmin, load, loadProviderBalance, loadFeeSummary]);
 
   if (!isAdmin) return null;
 
@@ -243,6 +281,40 @@ export function AdminPayoutsPage() {
           >
             <RefreshCw className={`mr-2 h-3.5 w-3.5 ${balanceLoading ? "animate-spin" : ""}`} />
             {tr("Atualizar", "Refresh")}
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4">
+          <div>
+            <div className="text-sm font-semibold">{tr("Taxas da Impulse Pay (o que ela cobra de nós)", "Impulse Pay fees (what they charge us)")}</div>
+            {feeSummary ? (
+              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                <div>
+                  {tr("Cobranças pagas", "Paid charges")}: {feeSummary.charges.paidCount} ·{" "}
+                  {tr("com taxa registrada", "with fee recorded")}: {feeSummary.charges.withFeeCount}
+                  {feeSummary.charges.withFeeCount > 0 && (
+                    <>
+                      {" "}· {tr("bruto", "gross")} {fmt(feeSummary.charges.grossCents, locale)} · {tr("taxa", "fee")}{" "}
+                      <span className="font-semibold text-foreground">{fmt(feeSummary.charges.feeCents, locale)}</span>
+                      {feeSummary.charges.feePct !== null && <> ({feeSummary.charges.feePct}%)</>}
+                    </>
+                  )}
+                </div>
+                <div>
+                  {tr("Saques pagos", "Paid withdrawals")}: {feeSummary.payouts.paidCount} · {tr("taxa", "fee")}{" "}
+                  <span className="font-semibold text-foreground">{fmt(feeSummary.payouts.feeCents, locale)}</span>
+                </div>
+                {feeSummary.charges.withFeeCount < feeSummary.charges.paidCount && (
+                  <div>{tr("Clique em “Buscar taxas” para consultar as cobranças antigas na Impulse Pay.", "Click “Fetch fees” to query older charges at Impulse Pay.")}</div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1 text-xs text-muted-foreground">{tr("Carregando...", "Loading...")}</div>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={refreshFees} disabled={feeLoading}>
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${feeLoading ? "animate-spin" : ""}`} />
+            {tr("Buscar taxas", "Fetch fees")}
           </Button>
         </div>
 
