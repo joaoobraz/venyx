@@ -57,31 +57,34 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
-    // Confirma que é criadora
+    // Nunca lançar: um erro lançado voltava ao cliente como {} e era tratado
+    // como sucesso ("Chave Pix salva" falso). Sempre devolver ok:true/ok:false.
+    const fail = (error: string) => ({ ok: false as const, error });
+
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    const isCreator = (roles ?? []).some((r) => r.role === "creator");
-    if (!isCreator) throw new Error("Apenas criadoras podem cadastrar chave PIX");
+    if (!(roles ?? []).some((r) => r.role === "creator")) {
+      return fail("Apenas criadoras podem cadastrar chave Pix.");
+    }
 
-    const { data: identity, error: identityError } = await supabaseAdmin
+    const { data: identity } = await supabaseAdmin
       .from("identity_verifications")
       .select("cpf, full_name, status")
       .eq("user_id", userId)
       .eq("status", "verified")
       .maybeSingle();
-    if (identityError || !identity) {
-      throw new Error("Confirme sua identidade e seu CPF antes de cadastrar a chave Pix");
+    if (!identity) {
+      return fail("Sua verificação de identidade ainda não está aprovada. Conclua o cadastro de criadora antes de cadastrar a chave Pix.");
     }
 
     const verifiedCpf = onlyDigits(identity.cpf);
-    const informedDocument = onlyDigits(data.holder_document);
-    if (informedDocument !== verifiedCpf) {
-      throw new Error("O CPF do titular deve ser o mesmo CPF verificado na sua conta");
+    if (onlyDigits(data.holder_document) !== verifiedCpf) {
+      return fail(`O CPF do titular deve ser o mesmo CPF verificado na sua conta (${verifiedCpf.length === 11 ? "•••." + verifiedCpf.slice(3, 6) + ".•••-" + verifiedCpf.slice(9) : "verificado"}).`);
     }
     if (data.pix_key_type === "cpf" && onlyDigits(data.pix_key) !== verifiedCpf) {
-      throw new Error("A chave Pix do tipo CPF deve ser o CPF verificado na sua conta");
+      return fail("A chave Pix do tipo CPF deve ser o CPF verificado na sua conta.");
     }
 
     const { data: payoutKey, error } = await supabaseAdmin
@@ -96,27 +99,14 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
         },
         { onConflict: "user_id" },
       )
-      .select("withdrawal_eligible_at")
-      .single();
-    if (error || !payoutKey) {
-      console.error("[withdrawals.upsertPayoutKey] falha no upsert", error?.code, error?.message, error?.details);
-      throw safeError(error, "Não foi possível salvar a chave Pix. Tente novamente ou fale com o suporte.");
-    }
-
-    // Confirmação: relê a linha logo após gravar. Se não persistiu, não reporta
-    // sucesso falso — foi o que mascarava a chave "salva" que sumia. Devolve a
-    // própria linha para a carteira exibir sem depender de uma segunda leitura.
-    const { data: saved } = await supabaseAdmin
-      .from("creator_payout_keys")
       .select("pix_key, pix_key_type, holder_name, holder_document, key_changed_at, withdrawal_eligible_at")
-      .eq("user_id", userId)
       .maybeSingle();
-    if (!saved) {
-      console.error("[withdrawals.upsertPayoutKey] upsert retornou ok mas a linha não persistiu", userId);
-      throw new Error("A chave não ficou salva no banco. Avise o suporte informando \"payout-key-not-persisted\".");
+    if (error || !payoutKey) {
+      console.error("[withdrawals.upsertPayoutKey]", error?.code, error?.message, error?.details);
+      return fail(`Não foi possível salvar a chave Pix no banco${error?.code ? ` (${error.code})` : ""}. Fale com o suporte.`);
     }
 
-    return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at, key: saved };
+    return { ok: true as const, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at, key: payoutKey };
   });
 
 /**

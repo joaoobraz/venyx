@@ -268,13 +268,16 @@ export function WalletPage() {
     setSubmitting(true);
     try {
       const result = await upsertKeyFn({ data: keyForm });
-      // Reflete imediatamente a chave que o servidor releu e confirmou salva,
-      // sem depender de uma segunda leitura.
+      if (!result.ok) {
+        toast.error(result.error ?? tr("Não foi possível salvar a chave Pix.", "Couldn't save the Pix key."));
+        return;
+      }
+      // Reflete imediatamente a chave que o servidor confirmou salva.
       if (result.key) {
         setKey(result.key as PayoutKey);
         setKeyForm(result.key as PayoutKey);
       }
-      const eligibleAt = new Date(result.withdrawal_eligible_at).getTime();
+      const eligibleAt = new Date(result.withdrawal_eligible_at ?? Date.now()).getTime();
       toast.success(
         eligibleAt > Date.now() + 60_000
           ? tr(
