@@ -5,15 +5,18 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { notifyAdmins } from "@/_server/admin-notify.server";
+import { clientIpKey } from "@/_server/rate-limit.server";
 import {
   CURRENT_CREATOR_POLICY_VERSION,
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
 } from "@/lib/legal-versions";
 
+// IP real (cf-connecting-ip) para a evidência legal de consentimento não ser
+// forjável via x-forwarded-for.
 function clientIp(request: Request | undefined) {
-  const forwarded = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request?.headers.get("cf-connecting-ip") || request?.headers.get("x-real-ip") || null;
+  const ip = clientIpKey(request);
+  return ip === "unknown" ? null : ip;
 }
 
 function userAgentHash(request: Request | undefined) {

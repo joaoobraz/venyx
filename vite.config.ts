@@ -24,6 +24,11 @@ export default defineConfig(async () => {
         importProtection: {
           behavior: "error",
           client: {
+            // Este glob não casa nada neste projeto e não pode ser apertado: a
+            // proteção roda ANTES do compilador do Start remover os handlers, e
+            // os *.functions.ts importam client.server.ts no topo de propósito.
+            // A garantia real de que a service role não vai ao navegador é a
+            // checagem pós-build em scripts/cloudflare-build.mjs.
             files: ["**/server/**"],
             specifiers: ["server-only"],
           },

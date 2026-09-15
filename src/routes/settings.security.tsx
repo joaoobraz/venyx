@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n";
+import { verifyTotpCode } from "@/lib/mfa-stepup";
 
 export const Route = createFileRoute("/settings/security")({
   component: SecurityPage,
@@ -27,6 +28,9 @@ export function SecurityPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [requireForWithdraw, setRequireForWithdraw] = useState(true);
+  // Desativar exige reconfirmar o código atual (sessão roubada não basta).
+  const [confirmingDisable, setConfirmingDisable] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -107,11 +111,18 @@ export function SecurityPage() {
   const disable = async () => {
     setBusy(true);
     try {
+      const check = await verifyTotpCode(disableCode);
+      if (!check.ok) {
+        toast.error(check.error);
+        return;
+      }
       const { data: factors } = await supabase.auth.mfa.listFactors();
       for (const f of factors?.totp ?? []) {
         await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
       await supabase.from("security_settings").upsert({ user_id: user.id, mfa_enabled: false });
+      setConfirmingDisable(false);
+      setDisableCode("");
       toast.success(tr("2FA desativado", "2FA disabled"));
       refresh();
     } catch (e) {
@@ -158,9 +169,43 @@ export function SecurityPage() {
               </p>
             </div>
             {mfaEnabled ? (
-              <Button size="sm" variant="outline" onClick={disable} disabled={busy}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Desativar", "Disable")}
-              </Button>
+              confirmingDisable ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={disableCode}
+                    onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                    className="w-28"
+                    aria-label={tr("Código do autenticador", "Authenticator code")}
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={disable}
+                    disabled={busy || disableCode.length !== 6}
+                  >
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Confirmar", "Confirm")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setConfirmingDisable(false);
+                      setDisableCode("");
+                    }}
+                    disabled={busy}
+                  >
+                    {tr("Cancelar", "Cancel")}
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setConfirmingDisable(true)} disabled={busy}>
+                  {tr("Desativar", "Disable")}
+                </Button>
+              )
             ) : (
               !enrolling && (
                 <Button

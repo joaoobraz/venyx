@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { logAdminAction } from "@/_server/admin-audit.server";
 import type { Json } from "@/integrations/supabase/types";
 import { onlyDigits } from "@/lib/cpf";
 import {
@@ -395,6 +396,18 @@ export const approveWithdrawal = createServerFn({ method: "POST" })
         fanlira_withdrawal_fee_cents: w.fanlira_withdrawal_fee_cents,
       },
     );
+    await logAdminAction({
+      adminId: context.userId,
+      actionType: "withdrawal_approved",
+      targetType: "withdrawal_request",
+      targetId: data.withdrawal_id,
+      targetUserId: w.creator_id,
+      metadata: {
+        amount_cents: w.amount_cents,
+        gateway_net_amount_cents: submittedNetAmount,
+        fanlira_withdrawal_fee_cents: w.fanlira_withdrawal_fee_cents,
+      },
+    });
     return { ok: true };
   });
 
@@ -427,6 +440,13 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
     if (w.gateway_transfer_id && !gatewayFailed) {
       throw new Error("Este saque já foi enviado à Impulse Pay e não pode ser rejeitado aqui");
     }
+    // SECURITY: envio à adquirente sem resposta conclusiva. Rejeitar devolveria o
+    // saldo enquanto o Pix pode ter saído → pagamento duplo. Conciliar antes.
+    if (w.gateway_status === "SUBMISSION_UNKNOWN") {
+      throw new Error(
+        "O envio deste saque à Impulse Pay não foi confirmado. Confira no painel da Impulse Pay e concilie antes de rejeitar.",
+      );
+    }
 
     const { data: rejected, error } = await supabaseAdmin
       .from("withdrawal_requests")
@@ -449,5 +469,13 @@ export const rejectWithdrawal = createServerFn({ method: "POST" })
       `Seu saque de ${fmtBRL(w.amount_cents)} foi rejeitado: ${data.reason}`,
       { withdrawal_id: data.withdrawal_id, reason: data.reason },
     );
+    await logAdminAction({
+      adminId: context.userId,
+      actionType: "withdrawal_rejected",
+      targetType: "withdrawal_request",
+      targetId: data.withdrawal_id,
+      targetUserId: w.creator_id,
+      metadata: { amount_cents: w.amount_cents, reason: data.reason, gateway_status: w.gateway_status },
+    });
     return { ok: true };
   });

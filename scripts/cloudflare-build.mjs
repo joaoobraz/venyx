@@ -1,6 +1,41 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// Marcas que NUNCA podem aparecer no JavaScript entregue ao navegador. O Vite
+// só embute variáveis VITE_*, então um segredo de servidor só chegaria ao
+// cliente se alguém o colasse no código — é isso que este guarda pega.
+// (A importProtection do Vite não serve neste projeto: roda antes do
+// compilador do Start remover os handlers. Observação conhecida: o código
+// de client.server.ts, que LÊ process.env, aparece no bundle via os
+// *.functions.ts; o valor não vai junto porque process.env é {} no navegador.)
+const CLIENT_BUNDLE_FORBIDDEN = [
+  "sb_secret_W", // prefixo + 1º caractere da service role atual, sem expor o resto
+  "IMPULSEPAY_API_KEY",
+  "IMPULSEPAY_WEBHOOK_TOKEN",
+  "IMPULSEPAY_WITHDRAWAL_KEY",
+  "api.impulse-pay.com", // integração é 100% servidor
+  "CRON_SECRET",
+];
+
+function assertClientBundleClean() {
+  const assetsDir = fileURLToPath(new URL("../dist/client/assets", import.meta.url));
+  if (!existsSync(assetsDir)) return;
+  const offenders = [];
+  for (const file of readdirSync(assetsDir)) {
+    if (!file.endsWith(".js")) continue;
+    const source = readFileSync(join(assetsDir, file), "utf8");
+    for (const marker of CLIENT_BUNDLE_FORBIDDEN) {
+      if (source.includes(marker)) offenders.push(`${file}: ${marker}`);
+    }
+  }
+  if (offenders.length > 0) {
+    console.error("BUILD BLOQUEADO — segredo de servidor no bundle do navegador:");
+    for (const line of offenders) console.error("  -", line);
+    process.exit(1);
+  }
+}
 
 const viteBin = fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url));
 const result = spawnSync(
@@ -34,6 +69,7 @@ if (status === 0) {
     const secretArtifact = fileURLToPath(new URL(relativePath, import.meta.url));
     if (existsSync(secretArtifact)) rmSync(secretArtifact, { force: true });
   }
+  assertClientBundleClean();
 }
 
 process.exit(status);

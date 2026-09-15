@@ -46,6 +46,14 @@ function AuthCallbackPage() {
           return;
         }
 
+        // SECURITY: conta com 2FA mas sessão ainda aal1 (Google / link de
+        // e-mail). Sem isto, a senha ou a conta Google sozinha entrava direto.
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2") {
+          window.location.replace("/login");
+          return;
+        }
+
         window.location.replace(next);
       } catch (error) {
         if (!active) return;

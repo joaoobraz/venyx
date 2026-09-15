@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { recordOperationalEvent } from "@/_server/observability.server";
+import { clientIpKey } from "@/_server/rate-limit.server";
 
 const allowedEvents = [
   "page_view",
@@ -23,11 +24,9 @@ const schema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+// cf-connecting-ip primeiro: x-forwarded-for é controlado pelo cliente.
 function ipOf(request: Request) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || request.headers.get("cf-connecting-ip")
-    || request.headers.get("x-real-ip")
-    || "unknown";
+  return clientIpKey(request);
 }
 
 export const Route = createFileRoute("/api/public/telemetry")({

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { clientIpKey, tryRateLimit } from "@/_server/rate-limit.server";
 
 const schema = z
   .object({
@@ -19,13 +20,9 @@ const schema = z
     }
   });
 
+// cf-connecting-ip primeiro: x-forwarded-for é controlado pelo cliente.
 function ipOf(request: Request) {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
+  return clientIpKey(request);
 }
 
 export const Route = createFileRoute("/api/public/link-event")({
@@ -34,6 +31,12 @@ export const Route = createFileRoute("/api/public/link-event")({
       POST: async ({ request }) => {
         const contentLength = Number(request.headers.get("content-length") ?? 0);
         if (contentLength > 4_096) return Response.json({ ok: false }, { status: 413 });
+
+        // Sem limite por IP, views/cliques eram infláveis à vontade (bastava
+        // um anonymousId novo por requisição para furar a dedupe).
+        if (!(await tryRateLimit(`link-event:ip:${ipOf(request)}`, 60, 60))) {
+          return Response.json({ ok: false }, { status: 429 });
+        }
 
         let input: z.infer<typeof schema>;
         try {

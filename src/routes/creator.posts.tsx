@@ -299,9 +299,29 @@ export function CreatorPostsPage() {
   const uploadStory = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f || !user) return;
+    // Whitelist no cliente (o bucket também limita); extensão vem do MIME.
+    const extByType: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/gif": "gif",
+      "video/mp4": "mp4",
+      "video/quicktime": "mov",
+      "video/webm": "webm",
+    };
+    const ext = extByType[f.type];
+    if (!ext || f.size > 100 * 1024 * 1024) {
+      toast.error(
+        tr(
+          "Envie uma imagem (JPG, PNG, WebP, GIF) ou vídeo (MP4, MOV, WebM) de até 100 MB.",
+          "Upload an image (JPG, PNG, WebP, GIF) or video (MP4, MOV, WebM) up to 100 MB.",
+        ),
+      );
+      e.target.value = "";
+      return;
+    }
     setSubmitting(true);
     try {
-      const ext = f.name.split(".").pop() || "bin";
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: ue } = await supabase.storage
         .from("stories")

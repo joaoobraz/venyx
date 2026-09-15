@@ -417,11 +417,30 @@ async function deliverOfferPurchase(opts: {
   // Se a oferta apontar pra um post da criadora, libera PPV automaticamente
   const { data: offer, error: offerError } = await supabaseAdmin
     .from("upsell_offers")
-    .select("media_post_id")
+    .select("media_post_id, creator_id")
     .eq("id", opts.offerId)
     .maybeSingle();
   if (offerError) throw offerError;
+
+  // SECURITY: só libera PPV de post que pertence à própria criadora da oferta.
+  // Sem isso, uma oferta apontando para o post de outra criadora venderia o
+  // conteúdo dela (o trigger enforce_upsell_media_owner reforça no banco).
+  let mediaPostOwned = false;
   if (offer?.media_post_id) {
+    const { data: mediaPost } = await supabaseAdmin
+      .from("posts")
+      .select("creator_id")
+      .eq("id", offer.media_post_id)
+      .maybeSingle();
+    mediaPostOwned = !!mediaPost && mediaPost.creator_id === offer.creator_id;
+    if (!mediaPostOwned) {
+      console.error("[fulfillment] upsell aponta para post de outra criadora; unlock ignorado", {
+        offer_id: opts.offerId,
+        media_post_id: offer.media_post_id,
+      });
+    }
+  }
+  if (offer?.media_post_id && mediaPostOwned) {
     const { data: hasUnlock, error: unlockLookupError } = await supabaseAdmin
       .from("ppv_unlocks")
       .select("id")

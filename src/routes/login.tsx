@@ -64,6 +64,22 @@ export function LoginPage() {
     return true;
   };
 
+  // Sessão já aberta mas sem o 2FA confirmado (voltou do Google, link de
+  // e-mail ou sessão antiga aal1): o AuthProvider trata como deslogado e
+  // manda para cá; mostramos o passo do código direto.
+  useEffect(() => {
+    let cancelled = false;
+    prepareMfaChallenge()
+      .then((pending) => {
+        if (pending && !cancelled) mfaGateRef.current = true;
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (captchaRequired && !loginCaptchaToken) {

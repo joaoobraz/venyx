@@ -4,12 +4,13 @@ import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction as auditLog } from "@/_server/admin-audit.server";
+import { clientIpKey } from "@/_server/rate-limit.server";
 
+// Atrás do Cloudflare, x-forwarded-for é controlado pelo cliente; clientIpKey
+// prioriza cf-connecting-ip para a trilha de auditoria não ser envenenada.
 function getClientIp(req: Request | undefined): string | null {
-  if (!req?.headers) return null;
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || null;
+  const ip = clientIpKey(req);
+  return ip === "unknown" ? null : ip;
 }
 
 const adminGuardSchema = z.object({
@@ -134,6 +135,13 @@ export const getKycSignedUrlServer = createServerFn({ method: "POST" })
       console.error("[admin.getKycSignedUrl]", error);
       throw new Error("Não foi possível abrir o documento");
     }
+    // LGPD: acesso a documento de identidade fica registrado.
+    await auditLog({
+      adminId: userId,
+      actionType: "kyc_document_viewed",
+      targetType: "kyc_document",
+      targetId: data.path,
+    });
     return { url: signed.signedUrl };
   });
 

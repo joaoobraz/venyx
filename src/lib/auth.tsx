@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { ACCOUNT_PAUSE_CHANGED_EVENT, readDemoAccountPause } from "@/lib/account-pause";
+import { mfaStepUpPending } from "@/lib/mfa-stepup";
 
 export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 export type DemoPreviewRole = Extract<AppRole, "subscriber" | "creator" | "admin">;
@@ -40,6 +41,8 @@ interface AuthCtx {
   isAmbassador: boolean;
   isSeller: boolean;
   mfaEnabled: boolean;
+  /** Sessão existe mas o código 2FA ainda não foi confirmado (login incompleto). */
+  mfaPending: boolean;
   accountPaused: boolean;
   accountPausedAt: string | null;
   canUseDemoPreview: boolean;
@@ -51,7 +54,8 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 const DEMO_PREVIEW_STORAGE_KEY = "venyx:demo-preview-role";
-const DEFAULT_DEMO_PREVIEW_EMAIL = "joaobraz.ofc@gmail.com";
+// Sem e-mail embutido no bundle: a lista vem só de VITE_DEMO_PREVIEW_EMAILS.
+const DEFAULT_DEMO_PREVIEW_EMAIL = "";
 const DEMO_PREVIEW_ROLES: DemoPreviewRole[] = ["subscriber", "creator", "admin"];
 
 function previewStorageKey(email: string) {
@@ -86,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [kyc, setKyc] = useState<KycRequest | null>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
   const [accountPaused, setAccountPaused] = useState(false);
   const [accountPausedAt, setAccountPausedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -186,31 +191,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    // SECURITY: sessão aal1 de uma conta com 2FA ativo é um login incompleto.
+    // Tratamos como deslogado (user = null) até o código ser confirmado; senão
+    // quem tivesse só a senha entrava em tudo que o RLS libera.
+    const applySession = async (sess: Session | null, onDone?: () => void) => {
       setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        setTimeout(() => {
-          loadUserData(sess.user.id);
-        }, 0);
-      } else {
+      if (!sess?.user) {
+        setMfaPending(false);
+        setUser(null);
         setProfile(null);
         setRoles([]);
         setKyc(null);
         setMfaEnabled(false);
         setAccountPaused(false);
         setAccountPausedAt(null);
+        onDone?.();
+        return;
       }
+      const pending = await mfaStepUpPending().catch(() => false);
+      setMfaPending(pending);
+      if (pending) {
+        setUser(null);
+        onDone?.();
+        return;
+      }
+      setUser(sess.user);
+      loadUserData(sess.user.id).finally(() => onDone?.());
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      // Fora do callback síncrono para não travar o lock interno do supabase-js.
+      setTimeout(() => {
+        void applySession(sess);
+      }, 0);
     });
 
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        loadUserData(sess.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      void applySession(sess, () => setLoading(false));
     });
 
     return () => sub.subscription.unsubscribe();
@@ -280,6 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAmbassador: roles.includes("ambassador"),
         isSeller: roles.includes("seller"),
         mfaEnabled,
+        mfaPending,
         accountPaused,
         accountPausedAt,
         canUseDemoPreview,

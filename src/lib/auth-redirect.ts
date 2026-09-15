@@ -4,11 +4,15 @@ export function getSafeAuthRedirectPath(
   value: string | null | undefined,
   fallback = DEFAULT_AUTH_REDIRECT_PATH,
 ) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
+  // Barra invertida também é rejeitada: o parser trata "/\evil.com" como
+  // "//evil.com" (protocol-relative) e viraria um open redirect.
+  if (!value || !value.startsWith("/") || /^[\\/]{2}/.test(value) || value.includes("\\")) {
+    return fallback;
+  }
 
   try {
     const parsed = new URL(value, "http://localhost");
-    if (parsed.origin !== "http://localhost") return fallback;
+    if (parsed.origin !== "http://localhost" || parsed.pathname.startsWith("//")) return fallback;
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return fallback;

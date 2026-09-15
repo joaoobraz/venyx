@@ -49,6 +49,9 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
       { property: "og:image", content: "/fanlira-social-card.svg" },
       { name: "twitter:image", content: "/fanlira-social-card.svg" },
+      // Rótulo padrão de conteúdo adulto (RTA), lido por controles parentais.
+      { name: "rating", content: "RTA-5042-1996-1400-1577-RTA" },
+      { name: "rating", content: "adult" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

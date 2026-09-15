@@ -170,6 +170,16 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
     return jsonResponse({ ok: false, error: "Withdrawal is not completed" }, 409);
   }
 
+  // SECURITY: um saque rejeitado já devolveu o saldo à criadora. Marcá-lo como
+  // pago aqui contabilizaria pagamento duplo. Fica para conciliação manual.
+  if (withdrawal.status === "rejected") {
+    console.error("[impulsepay-webhook] COMPLETED para saque rejeitado; conciliar manualmente", {
+      withdrawal_id: withdrawal.id,
+      transfer_id: external.id,
+    });
+    return jsonResponse({ ok: false, error: "Withdrawal was rejected; manual reconciliation required" }, 409);
+  }
+
   const { error: transactionError } = await supabaseAdmin.from("transactions").insert({
     payer_id: null,
     payee_id: withdrawal.creator_id,
@@ -202,9 +212,9 @@ async function processWithdrawal(payload: z.infer<typeof withdrawalSchema>) {
       paid_at: external.paid_at ?? new Date().toISOString(),
     })
     .eq("id", withdrawal.id)
-    // A provider may emit FAILED and later reconcile the same transfer as
-    // COMPLETED. In that case the provider's final settlement is authoritative.
-    .in("status", ["approved", "processing", "rejected"])
+    // FAILED seguido de COMPLETED é aceito enquanto o pedido ainda estiver em
+    // processamento (o webhook failed não rejeita; ver acima). Rejeitados nunca.
+    .in("status", ["approved", "processing"])
     .select("id")
     .maybeSingle();
   if (updateError) return jsonResponse({ ok: false, error: "Withdrawal update failed" }, 500);

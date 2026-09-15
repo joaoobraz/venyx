@@ -15,24 +15,29 @@ export async function fetchPosts(opts: {
   if (DEMO_MODE) {
     return getDemoPosts({ creatorId, postId, viewerId, stateUserId: demoStateUserId, limit, locale });
   }
-  let q = supabase
-    .from("posts")
-    .select(
-      "id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at, is_pinned",
-    )
-    .is("archived_at", null)
-    .order("is_pinned", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (postId) {
-    q = q.eq("id", postId).limit(1);
-  } else if (creatorId) {
-    q = q.eq("creator_id", creatorId);
-  }
-
-  const { data: posts, error } = await q;
+  // SECURITY: o texto de posts pagos não sai do banco sem acesso. A RPC mascara
+  // `body` conforme can_view_post (a tabela também não concede SELECT em body
+  // ao cliente), então nem o DevTools mostra a legenda de um PPV bloqueado.
+  type FeedPostRow = {
+    id: string;
+    creator_id: string;
+    body: string | null;
+    visibility: "public" | "subscribers" | "ppv";
+    price_cents: number;
+    likes_count: number;
+    comments_count: number;
+    created_at: string;
+    is_pinned: boolean;
+    has_access: boolean;
+  };
+  const { data, error } = await supabase.rpc("list_feed_posts_v2" as never, {
+    _creator_id: postId ? null : (creatorId ?? null),
+    _post_id: postId ?? null,
+    _limit: postId ? 1 : limit,
+  } as never);
   if (error) throw error;
-  if (!posts || posts.length === 0) return [];
+  const posts = (data ?? []) as unknown as FeedPostRow[];
+  if (posts.length === 0) return [];
 
   const ids = posts.map((p) => p.id);
   const creatorIds = Array.from(new Set(posts.map((p) => p.creator_id)));

@@ -6,14 +6,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { logAdminAction } from "@/_server/admin-audit.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { clientIpKey } from "@/_server/rate-limit.server";
 
+// cf-connecting-ip primeiro: x-forwarded-for é controlado pelo cliente e
+// permitia furar o rate limit da recuperação de conta (endpoint sem login).
 function requestIp(request: Request | undefined) {
-  return (
-    request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request?.headers.get("cf-connecting-ip") ||
-    request?.headers.get("x-real-ip") ||
-    "unknown"
-  );
+  return clientIpKey(request);
 }
 
 function recoveryIpHash(request: Request | undefined) {
