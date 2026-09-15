@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
 import { isTurnstileEnabled } from "@/lib/turnstile";
+import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
+import { getWeakPasswordError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -58,8 +60,9 @@ export function SignupPage() {
       );
       return;
     }
-    if (password.length < 8) {
-      toast.error(tr("A senha precisa ter pelo menos 8 caracteres.", "Your password must be at least 8 characters."));
+    const passwordProblem = passwordPolicyMessage(password, tr);
+    if (passwordProblem) {
+      toast.error(passwordProblem);
       return;
     }
     if (password !== passwordConfirmation) {
@@ -102,6 +105,7 @@ export function SignupPage() {
       trackClientError("client_error", error, { flow: "signup", method: "password" });
       const errorMessage = error instanceof Error ? error.message : "";
       const normalizedError = errorMessage.toLowerCase();
+      const weakPassword = getWeakPasswordError(error, locale);
       toast.error(
         normalizedError.includes("email rate limit exceeded") ||
           normalizedError.includes("rate limit")
@@ -109,7 +113,7 @@ export function SignupPage() {
               "Muitas solicitações em pouco tempo. Aguarde alguns minutos e tente novamente.",
               "Too many requests in a short time. Wait a few minutes and try again.",
             )
-          : errorMessage || tr("Não foi possível criar a conta.", "Unable to create the account."),
+          : (weakPassword ?? errorMessage ?? tr("Não foi possível criar a conta.", "Unable to create the account.")),
       );
     } finally {
       setLoading(false);
@@ -194,7 +198,7 @@ export function SignupPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  minLength={8}
+                  minLength={PASSWORD_MIN_LENGTH}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pr-11"
@@ -208,9 +212,7 @@ export function SignupPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {tr("Use pelo menos 8 caracteres.", "Use at least 8 characters.")}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{passwordPolicyHint(tr)}</p>
             </div>
             <div>
               <Label htmlFor="password-confirmation">

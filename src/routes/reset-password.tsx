@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
 import { isTurnstileEnabled } from "@/lib/turnstile";
+import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
 export function ResetPage() {
-  const { t, locale } = useI18n();
+  const { t, tr, locale } = useI18n();
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +58,11 @@ export function ResetPage() {
 
   const updatePassword = async (e: FormEvent) => {
     e.preventDefault();
+    const passwordProblem = passwordPolicyMessage(password, tr);
+    if (passwordProblem) {
+      toast.error(passwordProblem);
+      return;
+    }
     setLoading(true);
     try {
       // Conta com 2FA: o link de recuperação abre uma sessão aal1 e o Supabase
@@ -114,12 +120,13 @@ export function ResetPage() {
                 id="np"
                 type="password"
                 required
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1.5"
               />
+              <p className="mt-1 text-xs text-muted-foreground">{passwordPolicyHint(tr)}</p>
             </div>
             {mfaFactorId && (
               <div>
