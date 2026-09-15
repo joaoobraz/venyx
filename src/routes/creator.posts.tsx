@@ -317,18 +317,18 @@ export function CreatorPostsPage() {
         .from("stories")
         .upload(path, f, { contentType: f.type });
       if (ue) throw ue;
-      const { data: story, error: ie } = await supabase
-        .from("stories")
-        .insert({
-          creator_id: user.id,
-          media_path: path,
-          mime_type: f.type,
-          visibility: "public",
-        })
-        .select("id")
-        .single();
-      if (ie || !story) throw ie ?? new Error("Falha ao criar story");
-      await submitManualReviewFn({ data: { surface: "story", targetId: story.id } });
+      // Mesmo motivo do post: não pedir o registro de volta, pois ele entra
+      // pendente de moderação e o retorno reaplicaria a regra de leitura.
+      const storyId = crypto.randomUUID();
+      const { error: ie } = await supabase.from("stories").insert({
+        id: storyId,
+        creator_id: user.id,
+        media_path: path,
+        mime_type: f.type,
+        visibility: "public",
+      });
+      if (ie) throw ie;
+      await submitManualReviewFn({ data: { surface: "story", targetId: storyId } });
       toast.success(
         tr(
           "Story enviado para análise. As 24 horas começam após a aprovação.",
