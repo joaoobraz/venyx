@@ -25,7 +25,7 @@ SET search_path = ''
 AS $$
   SELECT
     auth.uid(),
-    pg_catalog.current_user::text,
+    current_user::text,
     auth.role()::text,
     public.has_role(auth.uid(), 'creator'::public.app_role);
 $$;
