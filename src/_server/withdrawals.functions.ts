@@ -104,10 +104,11 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     }
 
     // Confirmação: relê a linha logo após gravar. Se não persistiu, não reporta
-    // sucesso falso — foi o que mascarava a chave "salva" que sumia.
+    // sucesso falso — foi o que mascarava a chave "salva" que sumia. Devolve a
+    // própria linha para a carteira exibir sem depender de uma segunda leitura.
     const { data: saved } = await supabaseAdmin
       .from("creator_payout_keys")
-      .select("pix_key")
+      .select("pix_key, pix_key_type, holder_name, holder_document, key_changed_at, withdrawal_eligible_at")
       .eq("user_id", userId)
       .maybeSingle();
     if (!saved) {
@@ -115,7 +116,7 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
       throw new Error("A chave não ficou salva no banco. Avise o suporte informando \"payout-key-not-persisted\".");
     }
 
-    return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at };
+    return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at, key: saved };
   });
 
 /**

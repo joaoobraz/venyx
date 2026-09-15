@@ -268,6 +268,12 @@ export function WalletPage() {
     setSubmitting(true);
     try {
       const result = await upsertKeyFn({ data: keyForm });
+      // Reflete imediatamente a chave que o servidor releu e confirmou salva,
+      // sem depender de uma segunda leitura.
+      if (result.key) {
+        setKey(result.key as PayoutKey);
+        setKeyForm(result.key as PayoutKey);
+      }
       const eligibleAt = new Date(result.withdrawal_eligible_at).getTime();
       toast.success(
         eligibleAt > Date.now() + 60_000
