@@ -50,7 +50,12 @@ export function SecurityPage() {
   const startEnroll = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+      // issuer define o nome exibido no app autenticador. Sem ele, o app
+      // mostrava o endereço técnico do Supabase e um ícone aleatório.
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        issuer: "Fanlira",
+      });
       if (error) throw error;
       setEnrolling(data as FactorEnroll);
     } catch (e) {
