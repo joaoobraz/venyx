@@ -174,7 +174,7 @@ export function WalletPage() {
       { data: ps },
       { data: verifiedIdentity },
     ] = await Promise.all([
-      supabase.from("creator_balances").select("*").eq("creator_id", user.id).maybeSingle(),
+      supabase.rpc("get_my_balance" as never).maybeSingle(),
       getMyPayoutKey().then((result) => ({ data: result.key })),
       supabase
         .from("withdrawal_requests")
