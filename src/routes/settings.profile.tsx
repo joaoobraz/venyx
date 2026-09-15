@@ -15,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 import { trackProductEvent } from "@/lib/telemetry";
 import { CreatorProfileVisibilitySettings } from "@/components/CreatorProfileVisibilitySettings";
 import { CoverAdjustModal } from "@/components/CoverAdjustModal";
+import { describeError } from "@/lib/error-message";
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
 
 export const Route = createFileRoute("/settings/profile")({
@@ -99,7 +100,9 @@ export function SettingsProfile() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
+    // O .select() devolve as linhas alteradas: sem ele, um bloqueio de RLS
+    // passaria como sucesso e a pessoa acharia que salvou.
+    const { data: updated, error } = await supabase
       .from("profiles")
       .update({
         username: normalizedUsername,
@@ -110,7 +113,8 @@ export function SettingsProfile() {
         trial_days_enabled: trialEnabled,
         trial_days: Math.max(1, Math.min(14, trialDays)),
       } as never)
-      .eq("user_id", profile.user_id);
+      .eq("user_id", profile.user_id)
+      .select("user_id");
     setSaving(false);
     if (error) {
       const message = `${error.code ?? ""} ${error.message ?? ""}`;
@@ -126,8 +130,15 @@ export function SettingsProfile() {
       } else if (message.includes("USERNAME_INVALID") || error.code === "22023") {
         toast.error(tr("Esse nome de usuário não é válido.", "This username is not valid."));
       } else {
-        toast.error(error.message);
+        toast.error(describeError(error, tr));
       }
+    } else if (!updated || updated.length === 0) {
+      toast.error(
+        tr(
+          "O banco não permitiu alterar este perfil (nenhuma linha foi atualizada). Fale com o suporte.",
+          "The database didn't allow updating this profile (no rows changed). Contact support.",
+        ),
+      );
     }
     else {
       setUsername(normalizedUsername);
@@ -188,7 +199,7 @@ export function SettingsProfile() {
       toast.success(tr("Foto atualizada!", "Photo updated!"));
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : tr("Erro no envio", "Upload failed"));
+      toast.error(describeError(err, tr));
     } finally {
       setUploading(false);
     }

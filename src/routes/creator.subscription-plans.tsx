@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { describeError } from "@/lib/error-message";
 
 export const Route = createFileRoute("/creator/subscription-plans")({
   component: PlansPage,
@@ -113,7 +114,7 @@ export function PlansPage() {
       toast.success(tr("Planos atualizados!", "Plans updated!"));
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : tr("Erro", "Error"));
+      toast.error(describeError(error, tr));
     } finally {
       setBusy(false);
     }

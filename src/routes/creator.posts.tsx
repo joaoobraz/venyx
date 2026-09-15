@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { CaptionSuggest } from "@/components/CaptionSuggest";
 import { useI18n } from "@/lib/i18n";
+import { describeError } from "@/lib/error-message";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { createDemoId, updateDemoOperations } from "@/lib/demo-operations";
 import { fetchPosts } from "@/lib/posts";
@@ -297,7 +298,7 @@ export function CreatorPostsPage() {
         params: { username: profile?.username ?? "aline" },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : tr("Erro ao publicar", "Couldn't publish"));
+      toast.error(describeError(e, tr));
     } finally {
       setSubmitting(false);
     }
@@ -334,7 +335,7 @@ export function CreatorPostsPage() {
       );
       nav({ to: "/feed" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : tr("Erro", "Error"));
+      toast.error(describeError(err, tr));
     } finally {
       setSubmitting(false);
     }
