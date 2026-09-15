@@ -52,7 +52,10 @@ const upsertKeySchema = z.object({
 });
 
 export const upsertPayoutKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseMfa])
+  // Usa requireSupabaseAuth (não requireSupabaseMfa): o gate de 2FA lançava um
+  // erro que voltava ao cliente como {} e virava "salva" falso. O 2FA continua
+  // exigido, mas como resposta estruturada, com instrução clara.
+  .middleware([requireSupabaseAuth])
   .validator((input: unknown) => upsertKeySchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -60,6 +63,12 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     // Nunca lançar: um erro lançado voltava ao cliente como {} e era tratado
     // como sucesso ("Chave Pix salva" falso). Sempre devolver ok:true/ok:false.
     const fail = (error: string) => ({ ok: false as const, error });
+
+    if ((context.claims as { aal?: string }).aal !== "aal2") {
+      return fail(
+        "Para cadastrar a chave Pix é preciso confirmar o código de autenticação em dois fatores (2FA). Saia da conta e entre de novo digitando o código do seu aplicativo autenticador, depois tente novamente.",
+      );
+    }
 
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
