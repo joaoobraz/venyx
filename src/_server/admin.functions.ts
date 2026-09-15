@@ -434,40 +434,90 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
     return { rows: enriched };
   });
 
-// ===================== Moderação de conteúdo (liga/desliga) =====================
-export const getContentModeration = createServerFn({ method: "POST" })
+// ===================== Configurações da plataforma =====================
+// Chavinhas operacionais editáveis pelo admin (2FA obrigatório, com auditoria).
+// A leitura pública para o app fica na RPC get_public_platform_settings.
+export type PlatformSettingsRow = {
+  platform_fee_pct: number;
+  hold_days: number;
+  min_withdrawal_cents: number;
+  manual_moderation_enabled: boolean;
+  updated_at: string | null;
+};
+
+const PLATFORM_SETTINGS_COLUMNS =
+  "platform_fee_pct, hold_days, min_withdrawal_cents, manual_moderation_enabled, updated_at";
+
+export const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("platform_settings")
-      .select("manual_moderation_enabled")
+      .select(PLATFORM_SETTINGS_COLUMNS)
       .eq("id", 1)
       .maybeSingle();
-    return { enabled: Boolean((data as { manual_moderation_enabled?: boolean } | null)?.manual_moderation_enabled) };
+    if (error || !data) {
+      console.error("[admin.getPlatformSettings]", error?.code, error?.message);
+      return { ok: false as const, error: "Não foi possível carregar as configurações." };
+    }
+    return { ok: true as const, settings: data as unknown as PlatformSettingsRow };
   });
 
-const moderationToggleSchema = z.object({ enabled: z.boolean() });
+// Mesmas faixas dos CHECKs do banco (migration 20260915100000), para o erro
+// aparecer em português antes de chegar ao Postgres.
+const platformSettingsSchema = z
+  .object({
+    platform_fee_pct: z.number().int().min(0).max(50).optional(),
+    hold_days: z.number().int().min(0).max(30).optional(),
+    min_withdrawal_cents: z.number().int().min(1).max(100_000_000).optional(),
+    manual_moderation_enabled: z.boolean().optional(),
+  })
+  .strict();
 
-export const setContentModeration = createServerFn({ method: "POST" })
+export const updatePlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
-  .validator((input: unknown) => moderationToggleSchema.parse(input))
+  .validator((input: unknown) => {
+    const parsed = platformSettingsSchema.safeParse(input);
+    // Nunca lançar do validator: viraria {} no cliente. Devolve um marcador.
+    return parsed.success ? parsed.data : { __invalid: true as const };
+  })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin
-      .from("platform_settings")
-      .update({ manual_moderation_enabled: data.enabled, updated_at: new Date().toISOString() } as never)
-      .eq("id", 1);
-    if (error) {
-      console.error("[admin.setContentModeration]", error.code, error.message);
-      return { ok: false as const, error: "Não foi possível salvar a configuração de moderação." };
+    if ("__invalid" in data) {
+      return {
+        ok: false as const,
+        error:
+          "Valores fora do permitido: taxa 0–50%, retenção 0–30 dias, saque mínimo entre R$ 0,01 e R$ 1.000.000,00.",
+      };
     }
+    if (Object.keys(data).length === 0) {
+      return { ok: false as const, error: "Nada para salvar." };
+    }
+
+    const { data: before } = await supabaseAdmin
+      .from("platform_settings")
+      .select(PLATFORM_SETTINGS_COLUMNS)
+      .eq("id", 1)
+      .maybeSingle();
+
+    const { data: after, error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({ ...data, updated_at: new Date().toISOString() } as never)
+      .eq("id", 1)
+      .select(PLATFORM_SETTINGS_COLUMNS)
+      .maybeSingle();
+    if (error || !after) {
+      console.error("[admin.updatePlatformSettings]", error?.code, error?.message);
+      return { ok: false as const, error: "Não foi possível salvar as configurações." };
+    }
+
     await auditLog({
       adminId: context.userId,
-      actionType: data.enabled ? "moderation_manual_on" : "moderation_manual_off",
+      actionType: "platform_settings_updated",
       targetType: "platform_settings",
       targetId: "1",
-      metadata: { manual_moderation_enabled: data.enabled },
+      metadata: { before: before ?? null, changes: data },
     });
-    return { ok: true as const, enabled: data.enabled };
+    return { ok: true as const, settings: after as unknown as PlatformSettingsRow };
   });

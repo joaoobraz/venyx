@@ -15,6 +15,7 @@ import {
   CircleDollarSign,
   Headphones,
   Activity,
+  Settings,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
@@ -188,6 +189,15 @@ export function AdminHomePage() {
       ),
       icon: Activity,
       link: "/admin/operations",
+    },
+    {
+      title: tr("Configurações da plataforma", "Platform settings"),
+      description: tr(
+        "Moderação manual, modo teste de saque, taxa da plataforma, retenção e saque mínimo.",
+        "Manual moderation, withdrawal test mode, platform fee, hold and minimum withdrawal.",
+      ),
+      icon: Settings,
+      link: "/admin/settings",
     },
   ];
 

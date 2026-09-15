@@ -112,6 +112,7 @@ interface TxRow {
 interface PlatformSettings {
   platform_fee_pct: number;
   hold_days: number;
+  min_withdrawal_cents: number;
 }
 
 const fmt = (cents: number, locale: Locale) =>
@@ -132,6 +133,7 @@ export function WalletPage() {
   const [settings, setSettings] = useState<PlatformSettings>({
     platform_fee_pct: 15,
     hold_days: 1,
+    min_withdrawal_cents: MIN_WITHDRAWAL_CENTS,
   });
 
   const [keyOpen, setKeyOpen] = useState(false);
@@ -235,9 +237,17 @@ export function WalletPage() {
     const txArr = (txList ?? []) as TxRow[];
     setTxs(txArr);
     if (typeof ps === "number") setSettings((s) => ({ ...s, platform_fee_pct: ps }));
-    // Prazo de liberação real (não fica preso no default 1).
-    const { data: hd } = await supabase.rpc("get_hold_days" as never);
-    if (typeof hd === "number") setSettings((s) => ({ ...s, hold_days: hd }));
+    // Regras reais (retenção e saque mínimo vêm do painel do admin, não de constante).
+    const { data: rules } = await supabase.rpc("get_public_platform_settings" as never);
+    const r = rules as Partial<PlatformSettings> | null;
+    if (r && typeof r === "object") {
+      setSettings((s) => ({
+        platform_fee_pct: typeof r.platform_fee_pct === "number" ? r.platform_fee_pct : s.platform_fee_pct,
+        hold_days: typeof r.hold_days === "number" ? r.hold_days : s.hold_days,
+        min_withdrawal_cents:
+          typeof r.min_withdrawal_cents === "number" ? r.min_withdrawal_cents : s.min_withdrawal_cents,
+      }));
+    }
 
     // Buscar nomes dos pagadores
     const payerIds = Array.from(new Set(txArr.map((t) => t.payer_id).filter(Boolean))) as string[];
@@ -336,8 +346,13 @@ export function WalletPage() {
       );
       return;
     }
-    if (isNaN(amount) || amount < MIN_WITHDRAWAL_CENTS) {
-      toast.error(tr("Valor mínimo: R$ 30,00", "Minimum amount: R$ 30.00"));
+    if (isNaN(amount) || amount < settings.min_withdrawal_cents) {
+      toast.error(
+        tr(
+          `Valor mínimo: ${fmt(settings.min_withdrawal_cents, locale)}`,
+          `Minimum amount: ${fmt(settings.min_withdrawal_cents, locale)}`,
+        ),
+      );
       return;
     }
     if (amount + nextWithdrawalFee > (balance?.available_cents ?? 0)) {
@@ -388,7 +403,7 @@ export function WalletPage() {
     !!key &&
     !keyCooldownActive &&
     !dailyLimitReached &&
-    maximumRequestCents >= MIN_WITHDRAWAL_CENTS;
+    maximumRequestCents >= settings.min_withdrawal_cents;
 
   return (
     <AppShell>

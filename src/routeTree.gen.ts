@@ -62,6 +62,7 @@ import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
 import { Route as AdminPayoutsRouteImport } from './routes/admin.payouts'
 import { Route as AdminReconciliationRouteImport } from './routes/admin.reconciliation'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdministracaoIndexRouteImport } from './routes/administracao.index'
@@ -432,6 +433,11 @@ const AdminReconciliationRoute = AdminReconciliationRouteImport.update({
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/admin/reports',
   path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
@@ -1035,6 +1041,7 @@ export interface FileRoutesByFullPath {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
@@ -1196,6 +1203,7 @@ export interface FileRoutesByTo {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
@@ -1358,6 +1366,7 @@ export interface FileRoutesById {
   '/admin/payouts': typeof AdminPayoutsRoute
   '/admin/reconciliation': typeof AdminReconciliationRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/administracao/auditoria': typeof AdministracaoAuditoriaRoute
@@ -1521,6 +1530,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/users'
     | '/administracao/auditoria'
@@ -1682,6 +1692,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/users'
     | '/administracao/auditoria'
@@ -1843,6 +1854,7 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/reconciliation'
     | '/admin/reports'
+    | '/admin/settings'
     | '/admin/support'
     | '/admin/users'
     | '/administracao/auditoria'
@@ -2005,6 +2017,7 @@ export interface RootRouteChildren {
   AdminPayoutsRoute: typeof AdminPayoutsRoute
   AdminReconciliationRoute: typeof AdminReconciliationRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdministracaoAuditoriaRoute: typeof AdministracaoAuditoriaRoute
@@ -2484,6 +2497,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/support': {
@@ -3296,6 +3316,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPayoutsRoute: AdminPayoutsRoute,
   AdminReconciliationRoute: AdminReconciliationRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdministracaoAuditoriaRoute: AdministracaoAuditoriaRoute,

@@ -1,6 +1,7 @@
--- Rode isto (no SQL Editor do Supabase) para SAIR do modo teste de saque
--- e voltar às regras de produção. Não é uma migration para não conflitar
--- com o histórico; é um SQL avulso, seguro de rodar a qualquer momento.
+-- Preferido: Administrador → Configurações da plataforma → desligar
+-- "Modo teste de saque" (faz exatamente isto, com auditoria).
+--
+-- Alternativa manual (SQL Editor do Supabase), caso o painel esteja fora:
 
 UPDATE public.platform_settings
 SET hold_days = 1,

@@ -35,8 +35,7 @@ test("withdraw-all reserves the Fanlira fee without going below zero", () => {
   assert.equal(maximumWithdrawalAmount(10_000, 0), 10_000);
   assert.equal(maximumWithdrawalAmount(10_000, 1), 9_700);
   assert.equal(maximumWithdrawalAmount(200, 1), 0);
-  // MODO TESTE de saque: mínimo baixado temporariamente (restaurar 3_000).
-  assert.ok(MIN_WITHDRAWAL_CENTS >= 1);
+  assert.equal(MIN_WITHDRAWAL_CENTS, 3_000);
   assert.equal(DAILY_WITHDRAWAL_LIMIT, 5);
 });
 

@@ -4,8 +4,8 @@ import {
   requireAdminServer,
   recordModerationDecision,
   listModerationDecisions,
-  getContentModeration,
-  setContentModeration,
+  getPlatformSettings,
+  updatePlatformSettings,
 } from "@/_server/admin.functions";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useMemo, useState } from "react";
@@ -1141,14 +1141,14 @@ function TrustBadge({
 
 function ModerationToggleCard() {
   const { tr } = useI18n();
-  const getFn = useServerFn(getContentModeration);
-  const setFn = useServerFn(setContentModeration);
+  const getFn = useServerFn(getPlatformSettings);
+  const setFn = useServerFn(updatePlatformSettings);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getFn()
-      .then((r) => setEnabled(Boolean(r.enabled)))
+      .then((r) => setEnabled(r.ok ? Boolean(r.settings.manual_moderation_enabled) : null))
       .catch(() => setEnabled(null));
   }, [getFn]);
 
@@ -1157,7 +1157,7 @@ function ModerationToggleCard() {
     const previous = enabled;
     setEnabled(next);
     try {
-      const r = await setFn({ data: { enabled: next } });
+      const r = await setFn({ data: { manual_moderation_enabled: next } });
       if (!r.ok) {
         setEnabled(previous);
         toast.error(r.error ?? tr("Não foi possível salvar.", "Couldn't save."));
