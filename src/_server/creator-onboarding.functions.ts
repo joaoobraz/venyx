@@ -4,6 +4,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { notifyAdmins } from "@/_server/admin-notify.server";
 import {
   CURRENT_CREATOR_POLICY_VERSION,
   CURRENT_PRIVACY_VERSION,
@@ -58,7 +59,16 @@ export const submitCreatorKyc = createServerFn({ method: "POST" })
         _user_agent_hash: userAgentHash(request),
       },
     );
-    if (!error && kycId) return { ok: true, kycId };
+    if (!error && kycId) {
+      await notifyAdmins(
+        "kyc_review",
+        "Novo cadastro de criadora pendente",
+        "Uma nova conta enviou documentos para virar criadora.",
+        "/admin/kyc",
+        { user_id: context.userId, kyc_id: kycId as string },
+      );
+      return { ok: true, kycId };
+    }
 
     const rpcMessage = error?.message ?? "";
     if (rpcMessage.includes("VENYX_KYC_ALREADY_ACTIVE")) {
@@ -108,6 +118,13 @@ export const submitCreatorKyc = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (insertError || !inserted?.id) throw insertError ?? new Error("KYC sem identificador");
+      await notifyAdmins(
+        "kyc_review",
+        "Novo cadastro de criadora pendente",
+        "Uma nova conta enviou documentos para virar criadora.",
+        "/admin/kyc",
+        { user_id: context.userId, kyc_id: inserted.id },
+      );
       return { ok: true, kycId: inserted.id };
     } catch (fallbackError) {
       if (fallbackError instanceof Error && fallbackError.message.includes("verificação ativa")) {

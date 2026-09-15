@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { onlyDigits, isValidCpf, isAdult } from "@/lib/cpf";
 import { assertRateLimit, clientIpKey } from "@/_server/rate-limit.server";
+import { notifyAdmins } from "@/_server/admin-notify.server";
 
 /**
  * Verificação de identidade/idade do assinante.
@@ -153,6 +154,16 @@ export const verifyIdentity = createServerFn({ method: "POST" })
         ok: false as const,
         error: "Não foi possível concluir a verificação. Tente novamente.",
       };
+    }
+
+    if (!verified) {
+      await notifyAdmins(
+        "identity_review",
+        "Nova verificação de identidade pendente",
+        `${data.full_name.trim()} enviou documentos para confirmar maioridade.`,
+        "/admin/kyc",
+        { user_id: userId },
+      );
     }
 
     return {
