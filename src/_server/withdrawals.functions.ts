@@ -98,7 +98,23 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
       )
       .select("withdrawal_eligible_at")
       .single();
-    if (error || !payoutKey) throw safeError(error);
+    if (error || !payoutKey) {
+      console.error("[withdrawals.upsertPayoutKey] falha no upsert", error?.code, error?.message, error?.details);
+      throw safeError(error, "Não foi possível salvar a chave Pix. Tente novamente ou fale com o suporte.");
+    }
+
+    // Confirmação: relê a linha logo após gravar. Se não persistiu, não reporta
+    // sucesso falso — foi o que mascarava a chave "salva" que sumia.
+    const { data: saved } = await supabaseAdmin
+      .from("creator_payout_keys")
+      .select("pix_key")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!saved) {
+      console.error("[withdrawals.upsertPayoutKey] upsert retornou ok mas a linha não persistiu", userId);
+      throw new Error("A chave não ficou salva no banco. Avise o suporte informando \"payout-key-not-persisted\".");
+    }
+
     return { ok: true, withdrawal_eligible_at: payoutKey.withdrawal_eligible_at };
   });
 
