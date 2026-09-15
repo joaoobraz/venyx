@@ -39,6 +39,7 @@ export function SettingsProfile() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [identityDiagnostic, setIdentityDiagnostic] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const demoCreatorMode = demoPreviewRole === "creator";
@@ -131,8 +132,10 @@ export function SettingsProfile() {
         toast.error(tr("Esse nome de usuário não é válido.", "This username is not valid."));
       } else {
         toast.error(describeError(error, tr));
+        await loadIdentityDiagnostic();
       }
     } else if (!updated || updated.length === 0) {
+      await loadIdentityDiagnostic();
       toast.error(
         tr(
           "O banco não permitiu alterar este perfil (nenhuma linha foi atualizada). Fale com o suporte.",
@@ -148,6 +151,29 @@ export function SettingsProfile() {
       toast.success(tr("Perfil atualizado!", "Profile updated!"));
       await refresh();
     }
+  };
+
+  /**
+   * Quando o banco recusa a gravação, mostra como ele enxerga a sessão.
+   * É o que separa "falta permissão" de "o banco não sabe quem é você".
+   */
+  const loadIdentityDiagnostic = async () => {
+    const { data, error } = await supabase.rpc("session_identity" as never);
+    if (error) {
+      setIdentityDiagnostic(tr("Não foi possível consultar a sessão.", "Couldn't read the session."));
+      return;
+    }
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { user_id: string | null; db_role: string | null; jwt_role: string | null; is_creator: boolean | null }
+      | undefined;
+    if (!row) return;
+    setIdentityDiagnostic(
+      [
+        `${tr("Usuário no banco", "Database user")}: ${row.user_id ?? tr("não identificado", "unidentified")}`,
+        `${tr("Papel da conexão", "Connection role")}: ${row.jwt_role ?? row.db_role ?? "?"}`,
+        `${tr("Reconhecida como criadora", "Recognized as creator")}: ${row.is_creator ? tr("sim", "yes") : tr("não", "no")}`,
+      ].join(" · "),
+    );
   };
 
   const pickImage = (e: ChangeEvent<HTMLInputElement>, bucket: "avatars" | "covers") => {
@@ -462,6 +488,15 @@ export function SettingsProfile() {
                     />
                   </div>
                 )}
+              </div>
+            )}
+
+            {identityDiagnostic && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+                <p className="text-xs font-medium text-foreground">
+                  {tr("Diagnóstico da sessão", "Session diagnostic")}
+                </p>
+                <p className="mt-1 break-all text-xs text-muted-foreground">{identityDiagnostic}</p>
               </div>
             )}
 
