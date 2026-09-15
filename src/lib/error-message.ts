@@ -62,12 +62,53 @@ const DOMAIN_RULES: Array<{ match: RegExp; pt: string; en: string }> = [
   },
 ];
 
+/** Nome da tabela citada em erros de RLS/permissão, para explicar a área afetada. */
+function tableFrom(message: string): string | null {
+  return /table "?([a-z_]+)"?/i.exec(message)?.[1] ?? null;
+}
+
+const AREA_BY_TABLE: Record<string, { pt: string; en: string }> = {
+  posts: { pt: "publicar", en: "post" },
+  post_media: { pt: "publicar mídia", en: "post media" },
+  stories: { pt: "publicar stories", en: "post stories" },
+  profiles: { pt: "editar o perfil", en: "edit the profile" },
+  subscription_plans: { pt: "definir planos de assinatura", en: "set subscription plans" },
+  chat_messages: { pt: "enviar mensagens", en: "send messages" },
+};
+
 function asRecord(error: unknown): SupabaseLikeError | null {
   return error && typeof error === "object" ? (error as SupabaseLikeError) : null;
 }
 
 function text(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+/** Bloqueios de acesso: RLS (regra da linha) e falta de privilégio na tabela. */
+function accessMessage(code: string, message: string, tr: Translate): string | null {
+  const deniedByRls = code === "42501" && /row-level security/i.test(message);
+  const deniedByGrant = code === "42501" || /permission denied/i.test(message);
+  if (!deniedByRls && !deniedByGrant) return null;
+
+  const table = tableFrom(message) ?? "";
+  const area = AREA_BY_TABLE[table];
+
+  // Publicar exige o papel de criadora; é o caso mais comum e merece instrução.
+  if (deniedByRls && ["posts", "post_media", "stories"].includes(table)) {
+    return tr(
+      "Sua conta ainda não está liberada como criadora para publicar. Se seu cadastro já foi aprovado, saia e entre de novo; se continuar assim, fale com o suporte.",
+      "Your account isn't enabled as a creator yet. If your application was approved, sign out and back in; if it persists, contact support.",
+    );
+  }
+
+  const actionPt = area ? area.pt : "esta ação";
+  const actionEn = area ? area.en : "do this";
+  const referencePt = table ? ` informando "${table}"` : "";
+  const referenceEn = table ? ` mentioning "${table}"` : "";
+  return tr(
+    `Sua conta não tem permissão para ${actionPt}. Se você acha que deveria ter, fale com o suporte${referencePt}.`,
+    `Your account isn't allowed to ${actionEn}. If you think it should be, contact support${referenceEn}.`,
+  );
 }
 
 /** Mensagem explicando o motivo real da falha, pronta para mostrar num toast. */
@@ -82,14 +123,8 @@ export function describeError(error: unknown, tr: Translate): string {
   const rule = DOMAIN_RULES.find((candidate) => candidate.match.test(haystack));
   if (rule) return tr(rule.pt, rule.en);
 
-  if (code === "42501" || /permission denied/i.test(message)) {
-    // O detalhe entre aspas nomeia a tabela bloqueada — sem ele não dá para
-    // descobrir qual permissão falta.
-    return tr(
-      `Sua conta não tem permissão para esta ação. Se você acha que deveria ter, mostre isto ao suporte: "${message || code}".`,
-      `Your account isn't allowed to do this. If you think it should be, show support: "${message || code}".`,
-    );
-  }
+  const access = accessMessage(code, message, tr);
+  if (access) return access;
   if (code === "23505") {
     return tr("Esse valor já está cadastrado e não pode repetir.", "This value already exists and can't be duplicated.");
   }

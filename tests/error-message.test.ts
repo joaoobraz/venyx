@@ -7,14 +7,25 @@ const tr = (pt: string) => pt;
 test("erro do Supabase não é instância de Error e mesmo assim explica a causa", () => {
   const supabaseError = {
     code: "42501",
-    message: "permission denied for table posts",
+    message: "permission denied for table profiles",
     details: null,
     hint: null,
   };
   const message = describeError(supabaseError, tr);
   assert.ok(!(supabaseError instanceof Error));
   assert.match(message, /permissão/i);
+  assert.match(message, /editar o perfil/i);
   assert.doesNotMatch(message, /^Erro$/);
+});
+
+test("recusa por regra de linha ao publicar orienta sobre o papel de criadora", () => {
+  const message = describeError(
+    { code: "42501", message: 'new row violates row-level security policy for table "posts"' },
+    tr,
+  );
+  assert.match(message, /criadora/i);
+  // A pessoa não deve precisar entender jargão de banco para saber o que fazer.
+  assert.doesNotMatch(message, /row-level|policy|violates/i);
 });
 
 test("regras de negócio do banco viram orientação acionável", () => {
