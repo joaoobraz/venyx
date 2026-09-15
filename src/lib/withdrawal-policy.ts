@@ -1,4 +1,6 @@
-export const MIN_WITHDRAWAL_CENTS = 3_000;
+// MODO TESTE: mínimo baixado para validar o saque. Restaurar para 3_000
+// antes do lançamento (ver docs/REVERTER-modo-teste-saque.sql).
+export const MIN_WITHDRAWAL_CENTS = 1;
 export const DAILY_WITHDRAWAL_LIMIT = 5;
 export const ADDITIONAL_WITHDRAWAL_FEE_CENTS = 300;
 

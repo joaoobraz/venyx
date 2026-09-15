@@ -142,7 +142,7 @@ export const getMyPayoutKey = createServerFn({ method: "POST" })
 
 // ===================== Pedido de saque (criadora) =====================
 const requestSchema = z.object({
-  amount_cents: z.number().int().min(3000).max(100_000_000),
+  amount_cents: z.number().int().min(1).max(100_000_000),
 });
 
 export const requestWithdrawal = createServerFn({ method: "POST" })
