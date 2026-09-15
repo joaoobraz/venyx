@@ -4,7 +4,10 @@ import {
   requireAdminServer,
   recordModerationDecision,
   listModerationDecisions,
+  getContentModeration,
+  setContentModeration,
 } from "@/_server/admin.functions";
+import { Switch } from "@/components/ui/switch";
 import { useEffect, useMemo, useState } from "react";
 import {
   ShieldAlert,
@@ -521,6 +524,8 @@ export function AdminModerationPage() {
               </Button>
             </div>
           </header>
+
+          <ModerationToggleCard />
 
           <ManualMediaReviewQueue />
 
@@ -1131,5 +1136,66 @@ function TrustBadge({
         </ul>
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+function ModerationToggleCard() {
+  const { tr } = useI18n();
+  const getFn = useServerFn(getContentModeration);
+  const setFn = useServerFn(setContentModeration);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getFn()
+      .then((r) => setEnabled(Boolean(r.enabled)))
+      .catch(() => setEnabled(null));
+  }, [getFn]);
+
+  const toggle = async (next: boolean) => {
+    setSaving(true);
+    const previous = enabled;
+    setEnabled(next);
+    try {
+      const r = await setFn({ data: { enabled: next } });
+      if (!r.ok) {
+        setEnabled(previous);
+        toast.error(r.error ?? tr("Não foi possível salvar.", "Couldn't save."));
+        return;
+      }
+      toast.success(
+        next
+          ? tr("Moderação manual ATIVADA. Novos posts entram para aprovação.", "Manual moderation ON. New posts require approval.")
+          : tr("Moderação manual DESATIVADA. Posts publicam na hora.", "Manual moderation OFF. Posts publish instantly."),
+      );
+    } catch {
+      setEnabled(previous);
+      toast.error(tr("Não foi possível salvar.", "Couldn't save."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          {tr("Moderação manual de posts e stories", "Manual moderation for posts and stories")}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {enabled
+            ? tr(
+                "Ativada: cada post/story só aparece depois que um admin aprovar.",
+                "On: each post/story appears only after an admin approves it.",
+              )
+            : tr(
+                "Desativada: posts e stories publicam na hora, sem revisão. Ative antes de abrir ao público.",
+                "Off: posts and stories publish instantly, without review. Turn on before going public.",
+              )}
+        </p>
+      </div>
+      <Switch checked={Boolean(enabled)} disabled={enabled === null || saving} onCheckedChange={toggle} />
+    </div>
   );
 }

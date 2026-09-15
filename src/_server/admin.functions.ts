@@ -433,3 +433,41 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
 
     return { rows: enriched };
   });
+
+// ===================== Moderação de conteúdo (liga/desliga) =====================
+export const getContentModeration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("platform_settings")
+      .select("manual_moderation_enabled")
+      .eq("id", 1)
+      .maybeSingle();
+    return { enabled: Boolean((data as { manual_moderation_enabled?: boolean } | null)?.manual_moderation_enabled) };
+  });
+
+const moderationToggleSchema = z.object({ enabled: z.boolean() });
+
+export const setContentModeration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => moderationToggleSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({ manual_moderation_enabled: data.enabled, updated_at: new Date().toISOString() } as never)
+      .eq("id", 1);
+    if (error) {
+      console.error("[admin.setContentModeration]", error.code, error.message);
+      return { ok: false as const, error: "Não foi possível salvar a configuração de moderação." };
+    }
+    await auditLog({
+      adminId: context.userId,
+      actionType: data.enabled ? "moderation_manual_on" : "moderation_manual_off",
+      targetType: "platform_settings",
+      targetId: "1",
+      metadata: { manual_moderation_enabled: data.enabled },
+    });
+    return { ok: true as const, enabled: data.enabled };
+  });
