@@ -169,6 +169,29 @@ export function ProfilePage() {
       .catch(() => setRequestSettings(null));
   }, [profile?.user_id, user, requestSettingsFn]);
   const [subOpen, setSubOpen] = useState(false);
+  // Assinatura real ativa do visitante com esta criadora (RLS: só a própria).
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const refreshActiveSubscription = useCallback(async () => {
+    const creatorUserId = profile?.user_id;
+    if (!user || !creatorUserId || creatorUserId.startsWith("demo-") || creatorUserId === user.id) {
+      setHasActiveSubscription(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("id,current_period_end")
+      .eq("creator_id", creatorUserId)
+      .eq("subscriber_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+    const stillValid =
+      !!data && (!data.current_period_end || new Date(data.current_period_end).getTime() > Date.now());
+    setHasActiveSubscription(stillValid);
+  }, [profile?.user_id, user]);
+  useEffect(() => {
+    void refreshActiveSubscription();
+  }, [refreshActiveSubscription]);
   const [ownerMfa, setOwnerMfa] = useState(false);
   const [giftListAvailable, setGiftListAvailable] = useState(false);
   const [demoSubscribed, setDemoSubscribed] = useState(false);
@@ -575,6 +598,14 @@ export function ProfilePage() {
                             setDemoSubscriptionOpen(true);
                             return;
                           }
+                          if (!user) {
+                            navigate({ to: "/login" });
+                            return;
+                          }
+                          if (hasActiveSubscription) {
+                            navigate({ to: "/settings/payments" });
+                            return;
+                          }
                           setSubOpen(true);
                         }}
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -582,7 +613,8 @@ export function ProfilePage() {
                       >
                         {profilePaused
                           ? tr("Conta pausada", "Account paused")
-                          : isDemoProfile && demoSubscribed && !isLeadPreview
+                          : (isDemoProfile && demoSubscribed && !isLeadPreview) ||
+                              (!isDemoProfile && hasActiveSubscription && !isLeadPreview)
                             ? tr("Assinatura ativa", "Active subscription")
                             : t("profile.subscribe")}
                       </Button>
@@ -841,6 +873,7 @@ export function ProfilePage() {
                     creatorName={profile.display_name || profile.username}
                     basePriceCents={profile.subscription_price_cents ?? 0}
                     previewOnly={isLeadPreview}
+                    onSubscribed={() => void refreshActiveSubscription()}
                   />
                 </>
               )}

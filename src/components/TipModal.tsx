@@ -239,6 +239,15 @@ export function TipModal({
             console.error(err);
           }
         }, 4000);
+      } else {
+        // Sem ok:false e sem chargeId = exceção engolida no servidor.
+        console.error("[TipModal] resposta inesperada", res);
+        toast.error(
+          tr(
+            "Não foi possível gerar o Pix. Tente novamente em instantes.",
+            "We couldn't create the Pix charge. Try again shortly.",
+          ),
+        );
       }
     } catch (e) {
       console.error("[TipModal] error", e);

@@ -831,13 +831,15 @@ export function PostCard({
             {commentsCount}
           </button>
         )}
-        <button
-          onClick={() => (previewOnly ? notifyPreviewOnly() : setTipOpen(true))}
-          disabled={accountPaused}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-glow"
-        >
-          <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
-        </button>
+        {!isOwner && (
+          <button
+            onClick={() => (previewOnly ? notifyPreviewOnly() : setTipOpen(true))}
+            disabled={accountPaused}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-glow"
+          >
+            <DollarSign className="h-3.5 w-3.5" /> {t("feed.tip")}
+          </button>
+        )}
       </footer>
       {commentsEnabled && (
         <PostComments
@@ -851,7 +853,7 @@ export function PostCard({
         />
       )}
       <TipModal
-        open={!previewOnly && tipOpen}
+        open={!previewOnly && !isOwner && tipOpen}
         onOpenChange={setTipOpen}
         creatorId={post.creator_id}
         creatorName={post.author.display_name || post.author.username}

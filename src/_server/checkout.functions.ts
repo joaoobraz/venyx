@@ -359,8 +359,18 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
   .validator((input: unknown) => tipPixSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    if (data.creatorId === userId) throw new Error("Você não pode enviar gorjeta para si mesmo");
-    await assertCreatorCanMonetize(data.creatorId, userId);
+    // Erros de negócio voltam estruturados: um throw viraria {} no navegador.
+    if (data.creatorId === userId) {
+      return { ok: false as const, error: "Você não pode enviar mimo para si mesmo." };
+    }
+    try {
+      await assertCreatorCanMonetize(data.creatorId, userId);
+    } catch (error) {
+      return {
+        ok: false as const,
+        error: error instanceof Error ? error.message : "Esta criadora ainda não pode receber pagamentos.",
+      };
+    }
 
     let amountCents = data.amountCents;
     let gift: { id: string; title: string; value_cents: number } | null = null;
@@ -379,7 +389,7 @@ export const createTipPixCharge = createServerFn({ method: "POST" })
         .eq("is_published", true)
         .maybeSingle();
       if (giftError || !item || !list || (item.track_stock && (item.stock_quantity ?? 0) <= 0))
-        throw new Error("Este produto não está mais disponível.");
+        return { ok: false as const, error: "Este produto não está mais disponível." };
       gift = item;
       amountCents = item.value_cents;
     }

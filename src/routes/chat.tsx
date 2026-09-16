@@ -228,7 +228,18 @@ export function ChatPage() {
       user_b: string;
       last_message_at: string;
     }[];
-    if (list.length === 0 && !requestedUserId && !requestedThreadId) {
+    // Fã: criadoras assinadas aparecem na lista mesmo sem conversa iniciada.
+    const { data: subscribedCreatorRows } = isCreator
+      ? { data: [] as { creator_id: string }[] }
+      : await supabase
+          .from("subscriptions")
+          .select("creator_id")
+          .eq("subscriber_id", user.id)
+          .eq("status", "active");
+    const subscribedCreatorIds = Array.from(
+      new Set(((subscribedCreatorRows ?? []) as { creator_id: string }[]).map((row) => row.creator_id)),
+    ).filter((id) => id !== user.id);
+    if (list.length === 0 && subscribedCreatorIds.length === 0 && !requestedUserId && !requestedThreadId) {
       setThreads([]);
       return;
     }
@@ -266,6 +277,7 @@ export function ChatPage() {
       new Set([
         ...list.map((thread) => (thread.user_a === user.id ? thread.user_b : thread.user_a)),
         ...(requestedUserId ? [requestedUserId] : []),
+        ...subscribedCreatorIds,
       ]),
     );
     const [
@@ -380,6 +392,31 @@ export function ChatPage() {
           other_paused: pausedSet.has(other_id),
         };
       });
+
+    // Criadoras assinadas sem conversa: entrada "virtual" (a conversa real é
+    // criada ao clicar, pelo mesmo caminho do ?with=).
+    const threadOtherIds = new Set(nextThreads.map((thread) => thread.other_id));
+    for (const creatorId of subscribedCreatorIds) {
+      if (threadOtherIds.has(creatorId) || blockedSet.has(creatorId) || creatorId === requestedUserId) continue;
+      const p = profMap.get(creatorId);
+      if (!p) continue;
+      nextThreads.push({
+        id: `virtual:${creatorId}`,
+        actor_id: user.id,
+        user_a: user.id < creatorId ? user.id : creatorId,
+        user_b: user.id < creatorId ? creatorId : user.id,
+        last_message_at: new Date(0).toISOString(),
+        other_id: creatorId,
+        other_username: p.username,
+        other_name: p.display_name || p.username,
+        other_avatar: p.avatar_url ?? null,
+        subscribed: true,
+        last_preview: tr("Você assina · toque para conversar", "You subscribe · tap to chat"),
+        unread_count: 0,
+        is_demo: false,
+        other_paused: pausedSet.has(creatorId),
+      });
+    }
 
     if (requestedUserId && requestedUserId !== user.id) {
       let requestedThread = nextThreads.find((thread) => thread.other_id === requestedUserId);
@@ -1169,6 +1206,11 @@ export function ChatPage() {
                 <button
                   key={th.id}
                   onClick={() => {
+                    if (th.id.startsWith("virtual:")) {
+                      // Cria a conversa de verdade e recarrega pela rota.
+                      nav({ to: ".", search: { with: th.other_id } as never, replace: true });
+                      return;
+                    }
                     setActiveId(th.id);
                     setThreads((current) =>
                       current.map((thread) =>
