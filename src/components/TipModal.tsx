@@ -254,9 +254,16 @@ export function TipModal({
       if (e instanceof Response) {
         if (e.status === 401)
           toast.error(tr("Faça login para enviar mimo.", "Sign in to send a tip."));
+        else if (e.status === 403)
+          toast.error(
+            tr(
+              "Confirme sua maioridade (+18) antes de enviar mimo. Abra o botão Assinar para fazer a verificação.",
+              "Confirm you are 18+ before sending a tip. Open the Subscribe button to verify.",
+            ),
+          );
         else {
           const txt = await e.text().catch(() => "");
-          toast.error(txt || `Erro ${e.status}`);
+          toast.error(txt || tr(`Erro ${e.status} ao gerar o Pix.`, `Error ${e.status} creating the Pix.`));
         }
       } else {
         toast.error(
