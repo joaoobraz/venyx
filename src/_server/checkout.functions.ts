@@ -345,7 +345,7 @@ export const createUpsellPixCharge = createServerFn({ method: "POST" })
 const tipPixSchema = z
   .object({
     creatorId: z.string().uuid(),
-    amountCents: z.number().int().min(100).max(1_000_000),
+    amountCents: z.number().int().min(500).max(1_000_000),
     postId: z.string().uuid().optional().nullable(),
     giftItemId: z.string().uuid().optional(),
     message: z.string().max(200).optional().nullable(),

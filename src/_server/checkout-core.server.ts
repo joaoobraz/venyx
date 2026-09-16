@@ -41,6 +41,27 @@ export function gatewayError(
   return { ok: false, code, error, retryable };
 }
 
+/**
+ * Recusa por dados (400/422) com motivo da adquirente: devolve o motivo em
+ * linguagem de usuário. Valores em centavos viram R$.
+ */
+function humanizeProviderRefusal(error: ImpulsePayRequestError): string | null {
+  if (error.status !== 400 && error.status !== 422) return null;
+  const raw = error.providerMessage?.trim();
+  if (!raw) return null;
+  const cents = raw.match(/(\d+)\s*centavos/i);
+  if (/m[ií]nimo/i.test(raw) && cents) {
+    const value = (Number(cents[1]) / 100).toFixed(2).replace(".", ",");
+    return `Valor mínimo por pagamento: R$ ${value}.`;
+  }
+  if (/m[aá]ximo/i.test(raw) && cents) {
+    const value = (Number(cents[1]) / 100).toFixed(2).replace(".", ",");
+    return `Valor máximo por pagamento: R$ ${value}.`;
+  }
+  // Outros motivos: mostra o texto da adquirente, curto e sem dados técnicos.
+  return raw.length <= 140 ? raw.replace(/(\d+)\s*centavos/gi, (_m, c) => `R$ ${(Number(c) / 100).toFixed(2).replace(".", ",")}`) : null;
+}
+
 export async function callImpulsePay(
   userId: string,
   amountCents: number,
@@ -74,7 +95,7 @@ export async function callImpulsePay(
     if (error instanceof ImpulsePayRequestError) {
       return gatewayError(
         error.status === 0 ? "PAYMENT_TIMEOUT" : "PAYMENT_GATEWAY_ERROR",
-        error.message,
+        humanizeProviderRefusal(error) ?? error.message,
         error.retryable,
       );
     }

@@ -27,6 +27,9 @@ export interface ConfirmedTip {
   transactionId: string;
 }
 
+// Piso da adquirente para cobrança Pix (abaixo disso a Impulse Pay recusa).
+export const MIN_TIP_CENTS = 500;
+
 export function TipModal({
   open,
   onOpenChange,
@@ -97,8 +100,8 @@ export function TipModal({
     }
     const finalCents =
       giftItem?.amountCents ?? (custom ? Math.round(parseFloat(custom) * 100) : amount);
-    if (!finalCents || finalCents < 100) {
-      toast.error(tr("Valor mínimo: R$ 1,00", "Minimum amount: R$ 1.00"));
+    if (!finalCents || finalCents < MIN_TIP_CENTS) {
+      toast.error(tr("Valor mínimo do mimo: R$ 5,00.", "Minimum tip: R$ 5.00."));
       return;
     }
     if (isLocalTip) {
@@ -339,9 +342,9 @@ export function TipModal({
                   </label>
                   <Input
                     type="number"
-                    min="1"
+                    min="5"
                     step="0.50"
-                    placeholder={tr("Outro valor...", "Other amount...")}
+                    placeholder={tr("Outro valor (mín. R$ 5)...", "Other amount (min. R$ 5)...")}
                     value={custom}
                     onChange={(e) => setCustom(e.target.value)}
                   />
