@@ -105,6 +105,7 @@ export function Sidebar() {
     plans: creatorDemo ? "/presentation/subscriptions" : "/creator/subscription-plans",
     links: `${creatorPrefix}/links`,
     gifts: `${creatorPrefix}/gifts`,
+    requests: `${creatorPrefix}/requests`,
     mailing: `${creatorPrefix}/mailing`,
     welcome: `${creatorPrefix}/welcome`,
     coupons: `${creatorPrefix}/coupons`,
@@ -195,6 +196,7 @@ export function Sidebar() {
           icon: Users,
         },
         { id: "gifts", to: creatorRoutes.gifts, label: t("nav.gifts"), icon: Gift },
+        { id: "requests", to: creatorRoutes.requests, label: t("nav.requests"), icon: ShoppingBag },
         { id: "loyalty", to: creatorRoutes.loyalty, label: t("nav.loyalty"), icon: Trophy },
         ...(!creatorDemo
           ? [
@@ -374,6 +376,7 @@ export function Sidebar() {
         { id: "client-feed", to: "/feed", label: t("nav.feed"), icon: Home },
         { id: "client-explore", to: "/explore", label: t("nav.explore"), icon: Compass },
         { id: "client-wishlist", to: "/wishlist", label: t("nav.wishlist"), icon: Heart },
+        { id: "client-requests", to: "/requests", label: t("nav.myrequests"), icon: ShoppingBag },
       ],
     },
     {
@@ -456,6 +459,7 @@ export function Sidebar() {
     { id: "chat", to: "/chat", label: t("nav.chat"), icon: MessageCircle },
     { id: "notifications", to: "/notifications", label: t("nav.notifications"), icon: Bell },
     { id: "wishlist", to: "/wishlist", label: t("nav.wishlist"), icon: Heart },
+    { id: "requests", to: "/requests", label: t("nav.myrequests"), icon: ShoppingBag },
     { id: "loyalty", to: "/loyalty", label: t("nav.loyalty"), icon: Trophy },
   ];
 

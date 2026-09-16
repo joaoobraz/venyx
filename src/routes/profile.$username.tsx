@@ -38,6 +38,10 @@ import {
 import { PostCard, type PostWithRelations } from "@/components/PostCard";
 import { fetchPosts } from "@/lib/posts";
 import { TipModal } from "@/components/TipModal";
+import { CustomRequestModal } from "@/components/CustomRequestModal";
+import { Sparkles } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { getCreatorRequestSettings } from "@/_server/custom-requests.functions";
 import { SubscribeModal } from "@/components/SubscribeModal";
 import { SafetyMenu } from "@/components/SafetyMenu";
 import { DEMO_MODE, getDemoCreator } from "@/lib/demo-creators";
@@ -148,6 +152,22 @@ export function ProfilePage() {
   const [tab, setTab] = useState<"posts" | "media" | "about">("posts");
   const [posts, setPosts] = useState<PostWithRelations[]>([]);
   const [tipOpen, setTipOpen] = useState(false);
+
+  // Pedidos personalizados: botão só aparece se a criadora ativou.
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestSettings, setRequestSettings] = useState<{
+    enabled: boolean;
+    min_price_cents: number;
+    instructions: string;
+  } | null>(null);
+  const requestSettingsFn = useServerFn(getCreatorRequestSettings);
+  useEffect(() => {
+    const creatorUserId = profile?.user_id;
+    if (!creatorUserId || creatorUserId.startsWith("demo-") || !user) return;
+    requestSettingsFn({ data: { creatorId: creatorUserId } })
+      .then((settings) => setRequestSettings(settings))
+      .catch(() => setRequestSettings(null));
+  }, [profile?.user_id, user, requestSettingsFn]);
   const [subOpen, setSubOpen] = useState(false);
   const [ownerMfa, setOwnerMfa] = useState(false);
   const [giftListAvailable, setGiftListAvailable] = useState(false);
@@ -506,6 +526,17 @@ export function ProfilePage() {
                     >
                       <Heart className="mr-1.5 h-4 w-4 text-primary" /> {t("profile.tip")}
                     </Button>
+                    {requestSettings?.enabled && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={profilePaused || accountPaused}
+                        onClick={() => (isLeadPreview ? notifyPreviewOnly() : setRequestOpen(true))}
+                      >
+                        <Sparkles className="mr-1.5 h-4 w-4 text-primary" />{" "}
+                        {tr("Pedido personalizado", "Custom request")}
+                      </Button>
+                    )}
                     {profilePaused || accountPaused ? (
                       <Button variant="outline" size="sm" disabled>
                         <MessageCircle className="mr-1.5 h-4 w-4" /> {t("profile.message")}
@@ -785,6 +816,16 @@ export function ProfilePage() {
           )}
           {profile && (
             <>
+              {requestSettings?.enabled && (
+                <CustomRequestModal
+                  open={!isLeadPreview && requestOpen}
+                  onOpenChange={setRequestOpen}
+                  creatorId={profile.user_id}
+                  creatorName={profile.display_name || profile.username}
+                  minPriceCents={requestSettings.min_price_cents}
+                  instructions={requestSettings.instructions}
+                />
+              )}
               <TipModal
                 open={!isLeadPreview && tipOpen}
                 onOpenChange={setTipOpen}

@@ -510,6 +510,38 @@ async function fulfillPpv(charge: PixCharge) {
   });
 }
 
+async function markCustomRequestPaid(charge: PixCharge) {
+  if (!charge.reference_id) return;
+  const { data: updated } = await supabaseAdmin
+    .from("custom_requests" as never)
+    .update({
+      status: "paid",
+      paid_at: charge.paid_at ?? new Date().toISOString(),
+      charge_id: charge.id,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("id", charge.reference_id)
+    .in("status", ["accepted", "pending"])
+    .select("id")
+    .maybeSingle();
+  if (!updated) return;
+  const { data: payer } = await supabaseAdmin
+    .from("profiles")
+    .select("display_name, username")
+    .eq("user_id", charge.payer_id)
+    .maybeSingle();
+  const name = payer?.display_name || payer?.username || "Um fã";
+  const amount = `R$ ${(charge.amount_cents / 100).toFixed(2).replace(".", ",")}`;
+  await supabaseAdmin.from("notifications").insert({
+    user_id: charge.payee_id,
+    type: "custom_request",
+    title: "Pedido personalizado pago 💰",
+    body: `${name} pagou ${amount}. Entregue o conteúdo no chat e marque como entregue.`,
+    link: "/creator/requests",
+    metadata: { request_id: charge.reference_id } as never,
+  });
+}
+
 async function fulfillTip(charge: PixCharge) {
   const metadata = metadataOf(charge);
   const isGiftProduct = metadata.kind === "gift_product" || metadata.kind === "symbolic_gift";
@@ -545,6 +577,12 @@ async function fulfillTip(charge: PixCharge) {
     },
   });
   if (!transactionId) throw new Error("Transação do mimo não encontrada");
+  if (metadata.kind === "custom_request") {
+    // Pedido personalizado: marca como pago e avisa a criadora. Sem o
+    // "enviou um mimo" no chat, que não faz sentido aqui.
+    await markCustomRequestPaid(charge);
+    return;
+  }
   await insertGiftChatConfirmation({
     transactionId,
     payerId: charge.payer_id,

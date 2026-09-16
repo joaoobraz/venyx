@@ -43,6 +43,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RecuperarContrasenaRouteImport } from './routes/recuperar-contrasena'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as RequestsRouteImport } from './routes/requests'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SejaCriadoraRouteImport } from './routes/seja-criadora'
@@ -126,6 +127,7 @@ import { Route as CreatorMediaLibraryRouteImport } from './routes/creator.media-
 import { Route as CreatorModerationRouteImport } from './routes/creator.moderation'
 import { Route as CreatorOnboardingRouteImport } from './routes/creator.onboarding'
 import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
+import { Route as CreatorRequestsRouteImport } from './routes/creator.requests'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
@@ -339,6 +341,11 @@ const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -764,6 +771,11 @@ const CreatorPostsRoute = CreatorPostsRouteImport.update({
   path: '/creator/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorRequestsRoute = CreatorRequestsRouteImport.update({
+  id: '/creator/requests',
+  path: '/creator/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorSubscriptionPlansRoute =
   CreatorSubscriptionPlansRouteImport.update({
     id: '/creator/subscription-plans',
@@ -1029,6 +1041,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-contrasena': typeof RecuperarContrasenaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/registro': typeof RegistroRoute
+  '/requests': typeof RequestsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/seja-criadora': typeof SejaCriadoraRoute
@@ -1109,6 +1122,7 @@ export interface FileRoutesByFullPath {
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/requests': typeof CreatorRequestsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -1192,6 +1206,7 @@ export interface FileRoutesByTo {
   '/recuperar-contrasena': typeof RecuperarContrasenaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/registro': typeof RegistroRoute
+  '/requests': typeof RequestsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/seja-criadora': typeof SejaCriadoraRoute
@@ -1272,6 +1287,7 @@ export interface FileRoutesByTo {
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/requests': typeof CreatorRequestsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -1356,6 +1372,7 @@ export interface FileRoutesById {
   '/recuperar-contrasena': typeof RecuperarContrasenaRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/registro': typeof RegistroRoute
+  '/requests': typeof RequestsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/seja-criadora': typeof SejaCriadoraRoute
@@ -1436,6 +1453,7 @@ export interface FileRoutesById {
   '/creator/moderation': typeof CreatorModerationRoute
   '/creator/onboarding': typeof CreatorOnboardingRoute
   '/creator/posts': typeof CreatorPostsRoute
+  '/creator/requests': typeof CreatorRequestsRoute
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
@@ -1521,6 +1539,7 @@ export interface FileRouteTypes {
     | '/recuperar-contrasena'
     | '/recuperar-senha'
     | '/registro'
+    | '/requests'
     | '/reset-password'
     | '/search'
     | '/seja-criadora'
@@ -1601,6 +1620,7 @@ export interface FileRouteTypes {
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
+    | '/creator/requests'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
@@ -1684,6 +1704,7 @@ export interface FileRouteTypes {
     | '/recuperar-contrasena'
     | '/recuperar-senha'
     | '/registro'
+    | '/requests'
     | '/reset-password'
     | '/search'
     | '/seja-criadora'
@@ -1764,6 +1785,7 @@ export interface FileRouteTypes {
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
+    | '/creator/requests'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
@@ -1847,6 +1869,7 @@ export interface FileRouteTypes {
     | '/recuperar-contrasena'
     | '/recuperar-senha'
     | '/registro'
+    | '/requests'
     | '/reset-password'
     | '/search'
     | '/seja-criadora'
@@ -1927,6 +1950,7 @@ export interface FileRouteTypes {
     | '/creator/moderation'
     | '/creator/onboarding'
     | '/creator/posts'
+    | '/creator/requests'
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
@@ -2011,6 +2035,7 @@ export interface RootRouteChildren {
   RecuperarContrasenaRoute: typeof RecuperarContrasenaRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RegistroRoute: typeof RegistroRoute
+  RequestsRoute: typeof RequestsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   SejaCriadoraRoute: typeof SejaCriadoraRoute
@@ -2091,6 +2116,7 @@ export interface RootRouteChildren {
   CreatorModerationRoute: typeof CreatorModerationRoute
   CreatorOnboardingRoute: typeof CreatorOnboardingRoute
   CreatorPostsRoute: typeof CreatorPostsRoute
+  CreatorRequestsRoute: typeof CreatorRequestsRoute
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
@@ -2377,6 +2403,13 @@ declare module '@tanstack/react-router' {
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -2960,6 +2993,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorPostsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/requests': {
+      id: '/creator/requests'
+      path: '/creator/requests'
+      fullPath: '/creator/requests'
+      preLoaderRoute: typeof CreatorRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator/subscription-plans': {
       id: '/creator/subscription-plans'
       path: '/creator/subscription-plans'
@@ -3318,6 +3358,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarContrasenaRoute: RecuperarContrasenaRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RegistroRoute: RegistroRoute,
+  RequestsRoute: RequestsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   SejaCriadoraRoute: SejaCriadoraRoute,
@@ -3398,6 +3439,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorModerationRoute: CreatorModerationRoute,
   CreatorOnboardingRoute: CreatorOnboardingRoute,
   CreatorPostsRoute: CreatorPostsRoute,
+  CreatorRequestsRoute: CreatorRequestsRoute,
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
