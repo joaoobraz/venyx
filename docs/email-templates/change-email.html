@@ -1,0 +1,16 @@
+{{ if eq .Data.locale "en" }}
+<h2>Confirm your new email</h2>
+<p>You asked to change your Fanlira email from {{ .Email }} to {{ .NewEmail }}. Click below to confirm.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm new email</a></p>
+<p>If you didn't request this, contact support right away.</p>
+{{ else if eq .Data.locale "es" }}
+<h2>Confirma tu nuevo correo</h2>
+<p>Pediste cambiar tu correo de Fanlira de {{ .Email }} a {{ .NewEmail }}. Haz clic para confirmar.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirmar nuevo correo</a></p>
+<p>Si no fuiste tú, contacta al soporte de inmediato.</p>
+{{ else }}
+<h2>Confirme seu novo e-mail</h2>
+<p>Você pediu para trocar o e-mail da sua conta Fanlira de {{ .Email }} para {{ .NewEmail }}. Clique abaixo para confirmar.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirmar novo e-mail</a></p>
+<p>Se não foi você, fale com o suporte imediatamente.</p>
+{{ end }}

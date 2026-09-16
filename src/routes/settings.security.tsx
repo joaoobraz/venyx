@@ -25,7 +25,7 @@ interface FactorEnroll {
 
 export function SecurityPage() {
   const { user, mfaEnabled, refresh, loading } = useAuth();
-  const { tr } = useI18n();
+  const { tr, locale } = useI18n();
   const nav = useNavigate();
   const [enrolling, setEnrolling] = useState<FactorEnroll | null>(null);
   const [code, setCode] = useState("");
@@ -149,6 +149,7 @@ export function SecurityPage() {
     if (!mfaState?.email) return;
     setBusy(true);
     try {
+      await supabase.auth.updateUser({ data: { locale } }).catch(() => undefined);
       const { error } = await supabase.auth.signInWithOtp({ email: mfaState.email, options: { shouldCreateUser: false } });
       if (error) throw error;
       setEmailEnroll(true);

@@ -1,0 +1,16 @@
+{{ if eq .Data.locale "en" }}
+<h2>Confirm your email</h2>
+<p>Welcome to Fanlira! Click the link below to confirm your email address and activate your account.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm my email</a></p>
+<p>If you didn't create an account, you can safely ignore this email.</p>
+{{ else if eq .Data.locale "es" }}
+<h2>Confirma tu correo</h2>
+<p>¡Bienvenido a Fanlira! Haz clic en el enlace para confirmar tu correo y activar tu cuenta.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirmar mi correo</a></p>
+<p>Si no creaste una cuenta, puedes ignorar este mensaje.</p>
+{{ else }}
+<h2>Confirme seu e-mail</h2>
+<p>Bem-vindo(a) à Fanlira! Clique no link abaixo para confirmar seu e-mail e ativar sua conta.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirmar meu e-mail</a></p>
+<p>Se você não criou uma conta, pode ignorar este e-mail com segurança.</p>
+{{ end }}

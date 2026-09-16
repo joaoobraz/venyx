@@ -10,6 +10,7 @@ import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
 import { describeMfaError, getPasswordLoginError } from "@/lib/auth-errors";
 import { useServerFn } from "@tanstack/react-start";
 import { confirmEmailMfaSession, getMyMfaState } from "@/_server/mfa-email.functions";
+import { requestPasswordReset } from "@/_server/auth-email.functions";
 import { localizedPathname } from "@/lib/localized-paths";
 import { trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,7 @@ export function LoginPage() {
   const [resending, setResending] = useState(false);
   const getMfaStateFn = useServerFn(getMyMfaState);
   const confirmEmailMfaFn = useServerFn(confirmEmailMfaSession);
+  const requestResetFn = useServerFn(requestPasswordReset);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
@@ -77,6 +79,8 @@ export function LoginPage() {
   const prepareEmailMfa = async (): Promise<boolean> => {
     const state = await getMfaStateFn();
     if (!state.emailPending || !state.email) return false;
+    // O código sai no idioma que a pessoa está usando agora.
+    await supabase.auth.updateUser({ data: { locale } }).catch(() => undefined);
     const { error } = await supabase.auth.signInWithOtp({
       email: state.email,
       options: { shouldCreateUser: false },
@@ -201,11 +205,13 @@ export function LoginPage() {
     setRecoveryLoading(true);
     setRecoverySent(false);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
-        captchaToken: recoveryCaptchaToken ?? undefined,
-      });
-      if (error) throw error;
+      // Pelo servidor: grava o idioma atual na conta antes de enviar, para o
+      // e-mail sair no idioma que a pessoa está usando neste momento.
+      const result = await requestResetFn({ data: { email: normalizedEmail, locale } });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       setRecoverySent(true);
       toast.success(
         tr(

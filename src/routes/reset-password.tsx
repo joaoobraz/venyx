@@ -12,6 +12,8 @@ import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
 import { isTurnstileEnabled } from "@/lib/turnstile";
 import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
 import { describeMfaError } from "@/lib/auth-errors";
+import { useServerFn } from "@tanstack/react-start";
+import { requestPasswordReset } from "@/_server/auth-email.functions";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/reset-password")({
 
 export function ResetPage() {
   const { t, tr, locale } = useI18n();
+  const requestResetFn = useServerFn(requestPasswordReset);
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,14 +48,15 @@ export function ResetPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}${localizedPathname("/reset-password", locale)}`,
-      captchaToken: captchaToken ?? undefined,
-    });
+    // Pelo servidor: grava o idioma atual antes de enviar (e-mail sai nesse idioma).
+    const result = await requestResetFn({ data: { email: email.trim().toLowerCase(), locale } }).catch(() => null);
     setLoading(false);
     setCaptchaToken(null);
     setCaptchaReset((current) => current + 1);
-    if (error) console.error("[reset-password]", error);
+    if (result && !result.ok) {
+      toast.error(result.error);
+      return;
+    }
     // Mensagem genérica em todos os casos para evitar enumeração de e-mails
     toast.success("Se este e-mail existir em nossa base, enviamos um link de redefinição.");
   };

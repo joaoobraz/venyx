@@ -79,7 +79,9 @@ export function SignupPage() {
           captchaToken: captchaToken ?? undefined,
           // Disponível nos templates do Supabase como {{ .Data.product_name }}.
           // Isso mantém o e-mail de confirmação com a identidade da Fanlira.
-          data: { product_name: "Fanlira", brand_name: "Fanlira" },
+          // locale permite ao template do Supabase escolher o idioma do e-mail
+          // ({{ if eq .Data.locale "en" }} ... {{ end }}).
+          data: { product_name: "Fanlira", brand_name: "Fanlira", locale },
         },
       });
       if (error) throw error;

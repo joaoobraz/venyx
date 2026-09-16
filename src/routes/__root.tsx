@@ -7,6 +7,7 @@ import { localizedPathname } from "@/lib/localized-paths";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { InstallAppPrompt } from "@/components/InstallAppPrompt";
+import { LocaleMetadataSync } from "@/components/LocaleMetadataSync";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ContentProtection } from "@/components/ContentProtection";
 import { Toaster } from "@/components/ui/sonner";
@@ -100,6 +101,7 @@ function RootComponent() {
           <ProductTelemetry />
           <ContentProtection />
           <PwaSetup />
+          <LocaleMetadataSync />
           <Outlet />
           <CookieBanner />
           <InstallAppPrompt />
