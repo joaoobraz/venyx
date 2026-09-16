@@ -43,7 +43,7 @@ const MEDIA_TYPES: Record<string, string> = {
  * fonte de venda de PPV nas plataformas grandes: texto de agradecimento +
  * uma mídia paga logo de cara. O envio acontece no servidor, na ativação.
  */
-function CreatorWelcomePage() {
+export function CreatorWelcomePage() {
   const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();

@@ -33,7 +33,7 @@ const STATUS: Record<Row["status"], { pt: string; en: string; tone: string }> = 
   cancelled: { pt: "Cancelado", en: "Cancelled", tone: "bg-muted text-muted-foreground" },
 };
 
-function MyRequestsPage() {
+export function MyRequestsPage() {
   const { tr } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();

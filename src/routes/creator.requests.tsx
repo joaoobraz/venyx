@@ -41,7 +41,7 @@ const STATUS: Record<Row["status"], { pt: string; en: string; tone: string }> = 
   cancelled: { pt: "Cancelado pelo fã", en: "Cancelled by fan", tone: "bg-muted text-muted-foreground" },
 };
 
-function CreatorRequestsPage() {
+export function CreatorRequestsPage() {
   const { tr } = useI18n();
   const { user, isCreator, loading } = useAuth();
   const nav = useNavigate();
