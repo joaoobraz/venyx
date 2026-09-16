@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n";
 import { verifyTotpCode } from "@/lib/mfa-stepup";
+import { describeMfaError } from "@/lib/auth-errors";
+import { useServerFn } from "@tanstack/react-start";
+import { confirmEmailMfaSession, disableEmailMfa, getMyMfaState } from "@/_server/mfa-email.functions";
 
 export const Route = createFileRoute("/settings/security")({
   component: SecurityPage,
@@ -31,6 +34,24 @@ export function SecurityPage() {
   // Desativar exige reconfirmar o código atual (sessão roubada não basta).
   const [confirmingDisable, setConfirmingDisable] = useState(false);
   const [disableCode, setDisableCode] = useState("");
+  // 2FA por e-mail (aparece só se o dono ligou o flag no painel).
+  type MfaState = Awaited<ReturnType<typeof getMyMfaState>>;
+  const getMfaStateFn = useServerFn(getMyMfaState);
+  const confirmEmailFn = useServerFn(confirmEmailMfaSession);
+  const disableEmailFn = useServerFn(disableEmailMfa);
+  const [mfaState, setMfaState] = useState<MfaState | null>(null);
+  const [emailEnroll, setEmailEnroll] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const loadMfaState = () =>
+    getMfaStateFn()
+      .then(setMfaState)
+      .catch(() => setMfaState(null));
+  useEffect(() => {
+    if (user) void loadMfaState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+  const emailMethodActive = Boolean(mfaState && mfaState.mfaEnabled && mfaState.method === "email" && !mfaState.hasTotp);
+  const effectiveMfaEnabled = mfaEnabled || emailMethodActive;
 
   useEffect(() => {
     if (loading) return;
@@ -63,7 +84,7 @@ export function SecurityPage() {
       if (error) throw error;
       setEnrolling(data as FactorEnroll);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(describeMfaError(e, tr));
     } finally {
       setBusy(false);
     }
@@ -94,15 +115,7 @@ export function SecurityPage() {
       setCode("");
       refresh();
     } catch (e) {
-      const message = e instanceof Error ? e.message : "";
-      toast.error(
-        /invalid totp code entered/i.test(message)
-          ? tr(
-              "Código de autenticação inválido. Confira os 6 dígitos e tente novamente.",
-              "Invalid authentication code. Check the 6 digits and try again.",
-            )
-          : message || tr("Código inválido", "Invalid code"),
-      );
+      toast.error(describeMfaError(e, tr));
     } finally {
       setBusy(false);
     }
@@ -126,7 +139,64 @@ export function SecurityPage() {
       toast.success(tr("2FA desativado", "2FA disabled"));
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(describeMfaError(e, tr));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startEmailEnroll = async () => {
+    if (!mfaState?.email) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email: mfaState.email, options: { shouldCreateUser: false } });
+      if (error) throw error;
+      setEmailEnroll(true);
+      setEmailCode("");
+      toast.success(tr(`Código enviado para ${mfaState.email}.`, `Code sent to ${mfaState.email}.`));
+    } catch (e) {
+      toast.error(describeMfaError(e, tr));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verifyEmailEnroll = async () => {
+    if (!mfaState?.email) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email: mfaState.email, token: emailCode.replace(/\D/g, ""), type: "email" });
+      if (error) throw error;
+      const r = await confirmEmailFn({ data: { enable: true } });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      await supabase.auth.refreshSession();
+      toast.success(tr("2FA por e-mail ativado! A cada login você receberá um código.", "Email 2FA enabled!"));
+      setEmailEnroll(false);
+      setEmailCode("");
+      await loadMfaState();
+      refresh();
+    } catch (e) {
+      toast.error(describeMfaError(e, tr));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disableEmail = async () => {
+    if (!confirm(tr("Desativar o 2FA por e-mail? Sua conta ficará menos protegida.", "Disable email 2FA?"))) return;
+    setBusy(true);
+    try {
+      const r = await disableEmailFn();
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(tr("2FA por e-mail desativado.", "Email 2FA disabled."));
+      await loadMfaState();
+      refresh();
     } finally {
       setBusy(false);
     }
@@ -149,26 +219,40 @@ export function SecurityPage() {
 
         <div className="space-y-4 rounded-2xl bg-card p-5">
           <div className="flex items-start gap-3">
-            <div className={`rounded-full p-2 ${mfaEnabled ? "bg-green-500/20" : "bg-muted"}`}>
-              <ShieldCheck className={`h-5 w-5 ${mfaEnabled ? "text-green-400" : "text-muted-foreground"}`} />
+            <div className={`rounded-full p-2 ${effectiveMfaEnabled ? "bg-green-500/20" : "bg-muted"}`}>
+              <ShieldCheck className={`h-5 w-5 ${effectiveMfaEnabled ? "text-green-400" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">
                 {tr("Autenticação em 2 fatores (2FA)", "Two-factor authentication (2FA)")}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {mfaEnabled
+                {emailMethodActive
                   ? tr(
-                      "Sua conta está protegida. Você precisa do código do app a cada login.",
-                      "Your account is protected. You'll need the app code at each sign-in.",
+                      "Sua conta está protegida. A cada login você recebe um código por e-mail.",
+                      "Your account is protected. You receive a code by email at each sign-in.",
                     )
-                  : tr(
-                      "Use Google Authenticator, Authy ou similar para gerar códigos temporários.",
-                      "Use Google Authenticator, Authy or a similar app to generate temporary codes.",
-                    )}
+                  : mfaEnabled
+                    ? tr(
+                        "Sua conta está protegida. Você precisa do código do app a cada login.",
+                        "Your account is protected. You'll need the app code at each sign-in.",
+                      )
+                    : mfaState?.platformEmailMfaEnabled
+                      ? tr(
+                          "Escolha como receber o código: aplicativo autenticador (recomendado) ou e-mail.",
+                          "Choose how to receive the code: authenticator app (recommended) or email.",
+                        )
+                      : tr(
+                          "Use Google Authenticator, Authy ou similar para gerar códigos temporários.",
+                          "Use Google Authenticator, Authy or a similar app to generate temporary codes.",
+                        )}
               </p>
             </div>
-            {mfaEnabled ? (
+            {emailMethodActive ? (
+              <Button size="sm" variant="outline" onClick={disableEmail} disabled={busy}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Desativar", "Disable")}
+              </Button>
+            ) : mfaEnabled ? (
               confirmingDisable ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
@@ -207,18 +291,51 @@ export function SecurityPage() {
                 </Button>
               )
             ) : (
-              !enrolling && (
-                <Button
-                  size="sm"
-                  onClick={startEnroll}
-                  disabled={busy}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Ativar 2FA", "Enable 2FA")}
-                </Button>
+              !enrolling &&
+              !emailEnroll && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={startEnroll}
+                    disabled={busy}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : mfaState?.platformEmailMfaEnabled ? tr("Usar app autenticador", "Use authenticator app") : tr("Ativar 2FA", "Enable 2FA")}
+                  </Button>
+                  {mfaState?.platformEmailMfaEnabled && (
+                    <Button size="sm" variant="outline" onClick={startEmailEnroll} disabled={busy}>
+                      {tr("Receber código por e-mail", "Get code by email")}
+                    </Button>
+                  )}
+                </div>
               )
             )}
           </div>
+
+          {emailEnroll && (
+            <div className="space-y-3 rounded-xl bg-background p-4">
+              <p className="text-xs text-muted-foreground">
+                {tr(`Digite o código de 6 dígitos que enviamos para ${mfaState?.email ?? "seu e-mail"}.`, `Enter the 6-digit code we sent to ${mfaState?.email ?? "your email"}.`)}
+              </p>
+              <Input
+                placeholder={tr("Digite o código de 6 dígitos", "Enter the 6-digit code")}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ""))}
+                maxLength={6}
+                className="text-center text-lg tracking-widest"
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setEmailEnroll(false)} className="flex-1" disabled={busy}>
+                  {tr("Cancelar", "Cancel")}
+                </Button>
+                <Button onClick={verifyEmailEnroll} disabled={busy || emailCode.length !== 6} className="flex-1 bg-primary text-primary-foreground">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : tr("Confirmar", "Confirm")}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {enrolling && (
             <div className="space-y-3 rounded-xl bg-background p-4">
@@ -253,7 +370,7 @@ export function SecurityPage() {
             </div>
           )}
 
-          {mfaEnabled && (
+          {effectiveMfaEnabled && (
             <div className="flex items-center justify-between border-t border-border pt-4">
               <div>
                 <div className="text-sm font-medium text-foreground">

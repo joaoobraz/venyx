@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEMO_MODE } from "@/lib/demo-creators";
 import { ACCOUNT_PAUSE_CHANGED_EVENT, readDemoAccountPause } from "@/lib/account-pause";
 import { mfaStepUpPending } from "@/lib/mfa-stepup";
+import { getMyMfaState } from "@/_server/mfa-email.functions";
 
 export type AppRole = "subscriber" | "creator" | "admin" | "ambassador" | "seller";
 export type DemoPreviewRole = Extract<AppRole, "subscriber" | "creator" | "admin">;
@@ -208,7 +209,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         onDone?.();
         return;
       }
-      const pending = await mfaStepUpPending().catch(() => false);
+      // App autenticador (aal1 com fator) OU código por e-mail ainda não confirmado nesta sessão.
+      let pending = await mfaStepUpPending().catch(() => false);
+      if (!pending) {
+        pending = await getMyMfaState()
+          .then((state) => Boolean(state.emailPending))
+          .catch(() => false);
+      }
       setMfaPending(pending);
       if (pending) {
         setUser(null);

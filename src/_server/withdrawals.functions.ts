@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction } from "@/_server/admin-audit.server";
 import { recordOperationalEvent } from "@/_server/observability.server";
+import { sessionHasMfa, type SessionClaims } from "@/_server/mfa.server";
 import type { Json } from "@/integrations/supabase/types";
 import { onlyDigits } from "@/lib/cpf";
 import {
@@ -67,7 +68,7 @@ export const upsertPayoutKey = createServerFn({ method: "POST" })
     // como sucesso ("Chave Pix salva" falso). Sempre devolver ok:true/ok:false.
     const fail = (error: string) => ({ ok: false as const, error });
 
-    if ((context.claims as { aal?: string }).aal !== "aal2") {
+    if (!(await sessionHasMfa(context.claims as SessionClaims))) {
       return {
         ok: false as const,
         needsMfa: true as const,

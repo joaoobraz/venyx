@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
 import { isTurnstileEnabled } from "@/lib/turnstile";
 import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
+import { describeMfaError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
@@ -97,9 +98,9 @@ export function ResetPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       toast.error(
-        /aal2|assurance|mfa|code/i.test(message)
-          ? "Código inválido ou expirado. Confira o aplicativo autenticador e tente de novo."
-          : "Não foi possível atualizar a senha. Peça um novo link e tente novamente.",
+        /aal2|assurance|mfa|code|totp/i.test(message)
+          ? describeMfaError(error, tr)
+          : tr("Não foi possível atualizar a senha. Peça um novo link e tente novamente.", "Couldn't update the password. Request a new link and try again."),
       );
     } finally {
       setLoading(false);

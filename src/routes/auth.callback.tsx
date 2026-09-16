@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getOAuthErrorFromUrl, getSafeAuthRedirectPath } from "@/lib/auth-redirect";
+import { getMyMfaState } from "@/_server/mfa-email.functions";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallbackPage,
@@ -50,6 +51,11 @@ function AuthCallbackPage() {
         // e-mail). Sem isto, a senha ou a conta Google sozinha entrava direto.
         const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (aal?.currentLevel === "aal1" && aal?.nextLevel === "aal2") {
+          window.location.replace("/login");
+          return;
+        }
+        const mfaState = await getMyMfaState().catch(() => null);
+        if (mfaState?.emailPending) {
           window.location.replace("/login");
           return;
         }

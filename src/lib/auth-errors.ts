@@ -34,6 +34,33 @@ export function getPasswordLoginError(error: unknown, locale: "pt-BR" | "en" | "
 }
 
 /**
+ * Erros de 2FA (app autenticador ou código por e-mail) em linguagem humana,
+ * no idioma da conta. O Supabase devolve textos técnicos em inglês.
+ */
+export function describeMfaError(error: unknown, tr: (pt: string, en: string) => string): string {
+  const authError = error as AuthErrorLike | null;
+  const code = authError?.code?.toLowerCase() ?? "";
+  const message = authError?.message?.toLowerCase() ?? "";
+  if (
+    code === "mfa_verification_failed" ||
+    code === "otp_expired" ||
+    /invalid totp|invalid.*code|token has expired|otp.*expired|invalid otp|invalid token/.test(message)
+  ) {
+    return tr(
+      "Código inválido ou expirado. Confira os 6 dígitos e tente de novo.",
+      "Invalid or expired code. Check the 6 digits and try again.",
+    );
+  }
+  if (code === "over_request_rate_limit" || code === "over_email_send_rate_limit" || /rate limit|too many/.test(message)) {
+    return tr("Muitas tentativas. Aguarde um minuto e tente novamente.", "Too many attempts. Wait a minute and try again.");
+  }
+  if (/network|fetch|failed to/.test(message)) {
+    return tr("Sem conexão. Verifique sua internet e tente de novo.", "No connection. Check your internet and try again.");
+  }
+  return tr("Não foi possível confirmar o código. Tente novamente.", "Couldn't confirm the code. Try again.");
+}
+
+/**
  * Traduz o erro de senha fraca do Supabase (política do painel: 8+ caracteres
  * com maiúscula, minúscula, número e símbolo) para uma frase compreensível.
  * Devolve null se o erro não for sobre a senha.

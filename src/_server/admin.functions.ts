@@ -450,11 +450,12 @@ export type PlatformSettingsRow = {
   hold_days: number;
   min_withdrawal_cents: number;
   manual_moderation_enabled: boolean;
+  email_mfa_enabled: boolean;
   updated_at: string | null;
 };
 
 const PLATFORM_SETTINGS_COLUMNS =
-  "platform_fee_pct, hold_days, min_withdrawal_cents, manual_moderation_enabled, updated_at";
+  "platform_fee_pct, hold_days, min_withdrawal_cents, manual_moderation_enabled, email_mfa_enabled, updated_at";
 
 export const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseMfa])
@@ -480,6 +481,7 @@ const platformSettingsSchema = z
     hold_days: z.number().int().min(0).max(30).optional(),
     min_withdrawal_cents: z.number().int().min(1).max(100_000_000).optional(),
     manual_moderation_enabled: z.boolean().optional(),
+    email_mfa_enabled: z.boolean().optional(),
   })
   .strict();
 

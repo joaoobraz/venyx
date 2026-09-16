@@ -7,7 +7,9 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
 import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
-import { getPasswordLoginError } from "@/lib/auth-errors";
+import { describeMfaError, getPasswordLoginError } from "@/lib/auth-errors";
+import { useServerFn } from "@tanstack/react-start";
+import { confirmEmailMfaSession, getMyMfaState } from "@/_server/mfa-email.functions";
 import { localizedPathname } from "@/lib/localized-paths";
 import { trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +34,13 @@ export function LoginPage() {
   // automático fica travado; senão a sessão aal1 ia direto para o feed.
   const mfaGateRef = useRef(false);
   const [mfaCode, setMfaCode] = useState("");
+  // 2FA por código de e-mail (quando a pessoa escolheu esse método).
+  const [emailStep, setEmailStep] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [otpEmail, setOtpEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const getMfaStateFn = useServerFn(getMyMfaState);
+  const confirmEmailMfaFn = useServerFn(confirmEmailMfaSession);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [recoveryLoading, setRecoveryLoading] = useState(false);
@@ -64,14 +73,77 @@ export function LoginPage() {
     return true;
   };
 
+  // Método "código por e-mail": o Supabase envia o OTP para o e-mail da conta.
+  const prepareEmailMfa = async (): Promise<boolean> => {
+    const state = await getMfaStateFn();
+    if (!state.emailPending || !state.email) return false;
+    const { error } = await supabase.auth.signInWithOtp({
+      email: state.email,
+      options: { shouldCreateUser: false },
+    });
+    if (error) throw error;
+    setOtpEmail(state.email);
+    setEmailStep(true);
+    return true;
+  };
+
+  const resendEmailCode = async () => {
+    if (!otpEmail) return;
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email: otpEmail, options: { shouldCreateUser: false } });
+      if (error) throw error;
+      toast.success(tr("Novo código enviado.", "New code sent."));
+    } catch (error) {
+      toast.error(describeMfaError(error, tr));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const verifyEmailMfa = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!otpEmail) return;
+    setLoading(true);
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: otpEmail,
+        token: emailCode.replace(/\D/g, ""),
+        type: "email",
+      });
+      if (verifyError) throw verifyError;
+      const confirmed = await confirmEmailMfaFn({ data: {} });
+      if (!confirmed.ok) {
+        toast.error(confirmed.error);
+        return;
+      }
+      // Reaplica a sessão no AuthProvider (agora verificada) antes de navegar.
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) console.warn("[login.email-mfa] session refresh failed", refreshError);
+      mfaGateRef.current = false;
+      navigate({ to: routeTo("/feed") });
+    } catch (error) {
+      toast.error(describeMfaError(error, tr));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Sessão já aberta mas sem o 2FA confirmado (voltou do Google, link de
   // e-mail ou sessão antiga aal1): o AuthProvider trata como deslogado e
   // manda para cá; mostramos o passo do código direto.
   useEffect(() => {
     let cancelled = false;
     prepareMfaChallenge()
-      .then((pending) => {
-        if (pending && !cancelled) mfaGateRef.current = true;
+      .then(async (pending) => {
+        if (cancelled) return;
+        if (pending) {
+          mfaGateRef.current = true;
+          return;
+        }
+        const { data } = await supabase.auth.getSession();
+        if (!data.session || cancelled) return;
+        if (await prepareEmailMfa()) mfaGateRef.current = true;
       })
       .catch(() => undefined);
     return () => {
@@ -99,6 +171,7 @@ export function LoginPage() {
       });
       if (error) throw error;
       if (await prepareMfaChallenge()) return;
+      if (await prepareEmailMfa()) return;
       mfaGateRef.current = false;
       navigate({ to: routeTo("/feed") });
     } catch (error) {
@@ -178,7 +251,7 @@ export function LoginPage() {
 
       navigate({ to: routeTo("/feed") });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Código inválido.");
+      toast.error(describeMfaError(error, tr));
     } finally {
       setLoading(false);
     }
@@ -217,7 +290,7 @@ export function LoginPage() {
         {mfaFactorId ? (
           <form onSubmit={verifyMfa} className="mt-8 space-y-4">
             <div>
-              <Label htmlFor="mfa-code">Código da autenticação em dois fatores</Label>
+              <Label htmlFor="mfa-code">{tr("Código da autenticação em dois fatores", "Two-factor authentication code")}</Label>
               <Input
                 id="mfa-code"
                 inputMode="numeric"
@@ -235,12 +308,44 @@ export function LoginPage() {
               disabled={loading || mfaCode.length !== 6}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {loading ? t("common.loading") : "Confirmar código"}
+              {loading ? t("common.loading") : tr("Confirmar código", "Confirm code")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               <Link to="/help" className="underline hover:text-foreground">
                 {tr("Perdi o acesso ao aplicativo autenticador", "I lost access to my authenticator app")}
               </Link>
+            </p>
+          </form>
+        ) : emailStep ? (
+          <form onSubmit={verifyEmailMfa} className="mt-8 space-y-4">
+            <div>
+              <Label htmlFor="email-mfa-code">{tr("Código enviado para o seu e-mail", "Code sent to your email")}</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tr(`Enviamos um código de 6 dígitos para ${otpEmail ?? "seu e-mail"}. Vale por alguns minutos.`, `We sent a 6-digit code to ${otpEmail ?? "your email"}. It expires in a few minutes.`)}
+              </p>
+              <Input
+                id="email-mfa-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ""))}
+                className="mt-1.5 text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading || emailCode.length !== 6}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {loading ? t("common.loading") : tr("Confirmar código", "Confirm code")}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              <button type="button" onClick={resendEmailCode} disabled={resending} className="underline hover:text-foreground">
+                {resending ? tr("Enviando...", "Sending...") : tr("Não recebeu? Enviar de novo", "Didn't get it? Send again")}
+              </button>
             </p>
           </form>
         ) : (
@@ -291,7 +396,7 @@ export function LoginPage() {
           </form>
         )}
 
-        {loginError && !mfaFactorId && (
+        {loginError && !mfaFactorId && !emailStep && (
           <div
             role="alert"
             className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4"

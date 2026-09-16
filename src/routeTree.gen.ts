@@ -32,6 +32,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as MensagensRouteImport } from './routes/mensagens'
 import { Route as MensajesRouteImport } from './routes/mensajes'
+import { Route as MeusPedidosRouteImport } from './routes/meus-pedidos'
+import { Route as MisPedidosRouteImport } from './routes/mis-pedidos'
 import { Route as NotificacionesRouteImport } from './routes/notificaciones'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -102,6 +104,7 @@ import { Route as ConfiguracoesPrivacidadeRouteImport } from './routes/configura
 import { Route as ConfiguracoesSegurancaRouteImport } from './routes/configuracoes.seguranca'
 import { Route as CreadoraAfiliadosRouteImport } from './routes/creadora.afiliados'
 import { Route as CreadoraBibliotecaRouteImport } from './routes/creadora.biblioteca'
+import { Route as CreadoraBienvenidaRouteImport } from './routes/creadora.bienvenida'
 import { Route as CreadoraCarteraRouteImport } from './routes/creadora.cartera'
 import { Route as CreadoraCuponesRouteImport } from './routes/creadora.cupones'
 import { Route as CreadoraDmcaRouteImport } from './routes/creadora.dmca'
@@ -111,6 +114,7 @@ import { Route as CreadoraMensajesEnMasaRouteImport } from './routes/creadora.me
 import { Route as CreadoraMetricasRouteImport } from './routes/creadora.metricas'
 import { Route as CreadoraModeracionRouteImport } from './routes/creadora.moderacion'
 import { Route as CreadoraOfertasAdicionalesRouteImport } from './routes/creadora.ofertas-adicionales'
+import { Route as CreadoraPedidosRouteImport } from './routes/creadora.pedidos'
 import { Route as CreadoraPlanesRouteImport } from './routes/creadora.planes'
 import { Route as CreadoraPublicacionesRouteImport } from './routes/creadora.publicaciones'
 import { Route as CreadoraRegalosRouteImport } from './routes/creadora.regalos'
@@ -134,6 +138,7 @@ import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
 import { Route as CreatorWelcomeRouteImport } from './routes/creator.welcome'
 import { Route as CriadoraAcervoRouteImport } from './routes/criadora.acervo'
 import { Route as CriadoraAfiliadosRouteImport } from './routes/criadora.afiliados'
+import { Route as CriadoraBoasVindasRouteImport } from './routes/criadora.boas-vindas'
 import { Route as CriadoraCadastroRouteImport } from './routes/criadora.cadastro'
 import { Route as CriadoraCarteiraRouteImport } from './routes/criadora.carteira'
 import { Route as CriadoraCuponsRouteImport } from './routes/criadora.cupons'
@@ -145,6 +150,7 @@ import { Route as CriadoraMetricasRouteImport } from './routes/criadora.metricas
 import { Route as CriadoraMimosRouteImport } from './routes/criadora.mimos'
 import { Route as CriadoraModeracaoRouteImport } from './routes/criadora.moderacao'
 import { Route as CriadoraOfertasAdicionaisRouteImport } from './routes/criadora.ofertas-adicionais'
+import { Route as CriadoraPedidosRouteImport } from './routes/criadora.pedidos'
 import { Route as CriadoraPlanosRouteImport } from './routes/criadora.planos'
 import { Route as CriadoraPublicacoesRouteImport } from './routes/criadora.publicacoes'
 import { Route as EnlacesUsernameRouteImport } from './routes/enlaces.$username'
@@ -286,6 +292,16 @@ const MensagensRoute = MensagensRouteImport.update({
 const MensajesRoute = MensajesRouteImport.update({
   id: '/mensajes',
   path: '/mensajes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusPedidosRoute = MeusPedidosRouteImport.update({
+  id: '/meus-pedidos',
+  path: '/meus-pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MisPedidosRoute = MisPedidosRouteImport.update({
+  id: '/mis-pedidos',
+  path: '/mis-pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificacionesRoute = NotificacionesRouteImport.update({
@@ -645,6 +661,11 @@ const CreadoraBibliotecaRoute = CreadoraBibliotecaRouteImport.update({
   path: '/creadora/biblioteca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreadoraBienvenidaRoute = CreadoraBienvenidaRouteImport.update({
+  id: '/creadora/bienvenida',
+  path: '/creadora/bienvenida',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreadoraCarteraRoute = CreadoraCarteraRouteImport.update({
   id: '/creadora/cartera',
   path: '/creadora/cartera',
@@ -691,6 +712,11 @@ const CreadoraOfertasAdicionalesRoute =
     path: '/creadora/ofertas-adicionales',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CreadoraPedidosRoute = CreadoraPedidosRouteImport.update({
+  id: '/creadora/pedidos',
+  path: '/creadora/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreadoraPlanesRoute = CreadoraPlanesRouteImport.update({
   id: '/creadora/planes',
   path: '/creadora/planes',
@@ -807,6 +833,11 @@ const CriadoraAfiliadosRoute = CriadoraAfiliadosRouteImport.update({
   path: '/criadora/afiliados',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CriadoraBoasVindasRoute = CriadoraBoasVindasRouteImport.update({
+  id: '/criadora/boas-vindas',
+  path: '/criadora/boas-vindas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CriadoraCadastroRoute = CriadoraCadastroRouteImport.update({
   id: '/criadora/cadastro',
   path: '/criadora/cadastro',
@@ -864,6 +895,11 @@ const CriadoraOfertasAdicionaisRoute =
     path: '/criadora/ofertas-adicionais',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CriadoraPedidosRoute = CriadoraPedidosRouteImport.update({
+  id: '/criadora/pedidos',
+  path: '/criadora/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CriadoraPlanosRoute = CriadoraPlanosRouteImport.update({
   id: '/criadora/planos',
   path: '/criadora/planos',
@@ -1030,6 +1066,8 @@ export interface FileRoutesByFullPath {
   '/loyalty': typeof LoyaltyRoute
   '/mensagens': typeof MensagensRoute
   '/mensajes': typeof MensajesRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/mis-pedidos': typeof MisPedidosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
@@ -1097,6 +1135,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
   '/creadora/afiliados': typeof CreadoraAfiliadosRoute
   '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/bienvenida': typeof CreadoraBienvenidaRoute
   '/creadora/cartera': typeof CreadoraCarteraRoute
   '/creadora/cupones': typeof CreadoraCuponesRoute
   '/creadora/dmca': typeof CreadoraDmcaRoute
@@ -1106,6 +1145,7 @@ export interface FileRoutesByFullPath {
   '/creadora/metricas': typeof CreadoraMetricasRoute
   '/creadora/moderacion': typeof CreadoraModeracionRoute
   '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/pedidos': typeof CreadoraPedidosRoute
   '/creadora/planes': typeof CreadoraPlanesRoute
   '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
   '/creadora/regalos': typeof CreadoraRegalosRoute
@@ -1129,6 +1169,7 @@ export interface FileRoutesByFullPath {
   '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/boas-vindas': typeof CriadoraBoasVindasRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
   '/criadora/carteira': typeof CriadoraCarteiraRoute
   '/criadora/cupons': typeof CriadoraCuponsRoute
@@ -1140,6 +1181,7 @@ export interface FileRoutesByFullPath {
   '/criadora/mimos': typeof CriadoraMimosRoute
   '/criadora/moderacao': typeof CriadoraModeracaoRoute
   '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/pedidos': typeof CriadoraPedidosRoute
   '/criadora/planos': typeof CriadoraPlanosRoute
   '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
   '/enlaces/$username': typeof EnlacesUsernameRoute
@@ -1195,6 +1237,8 @@ export interface FileRoutesByTo {
   '/loyalty': typeof LoyaltyRoute
   '/mensagens': typeof MensagensRoute
   '/mensajes': typeof MensajesRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/mis-pedidos': typeof MisPedidosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
@@ -1262,6 +1306,7 @@ export interface FileRoutesByTo {
   '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
   '/creadora/afiliados': typeof CreadoraAfiliadosRoute
   '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/bienvenida': typeof CreadoraBienvenidaRoute
   '/creadora/cartera': typeof CreadoraCarteraRoute
   '/creadora/cupones': typeof CreadoraCuponesRoute
   '/creadora/dmca': typeof CreadoraDmcaRoute
@@ -1271,6 +1316,7 @@ export interface FileRoutesByTo {
   '/creadora/metricas': typeof CreadoraMetricasRoute
   '/creadora/moderacion': typeof CreadoraModeracionRoute
   '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/pedidos': typeof CreadoraPedidosRoute
   '/creadora/planes': typeof CreadoraPlanesRoute
   '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
   '/creadora/regalos': typeof CreadoraRegalosRoute
@@ -1294,6 +1340,7 @@ export interface FileRoutesByTo {
   '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/boas-vindas': typeof CriadoraBoasVindasRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
   '/criadora/carteira': typeof CriadoraCarteiraRoute
   '/criadora/cupons': typeof CriadoraCuponsRoute
@@ -1305,6 +1352,7 @@ export interface FileRoutesByTo {
   '/criadora/mimos': typeof CriadoraMimosRoute
   '/criadora/moderacao': typeof CriadoraModeracaoRoute
   '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/pedidos': typeof CriadoraPedidosRoute
   '/criadora/planos': typeof CriadoraPlanosRoute
   '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
   '/enlaces/$username': typeof EnlacesUsernameRoute
@@ -1361,6 +1409,8 @@ export interface FileRoutesById {
   '/loyalty': typeof LoyaltyRoute
   '/mensagens': typeof MensagensRoute
   '/mensajes': typeof MensajesRoute
+  '/meus-pedidos': typeof MeusPedidosRoute
+  '/mis-pedidos': typeof MisPedidosRoute
   '/notificaciones': typeof NotificacionesRoute
   '/notificacoes': typeof NotificacoesRoute
   '/notifications': typeof NotificationsRoute
@@ -1428,6 +1478,7 @@ export interface FileRoutesById {
   '/configuracoes/seguranca': typeof ConfiguracoesSegurancaRoute
   '/creadora/afiliados': typeof CreadoraAfiliadosRoute
   '/creadora/biblioteca': typeof CreadoraBibliotecaRoute
+  '/creadora/bienvenida': typeof CreadoraBienvenidaRoute
   '/creadora/cartera': typeof CreadoraCarteraRoute
   '/creadora/cupones': typeof CreadoraCuponesRoute
   '/creadora/dmca': typeof CreadoraDmcaRoute
@@ -1437,6 +1488,7 @@ export interface FileRoutesById {
   '/creadora/metricas': typeof CreadoraMetricasRoute
   '/creadora/moderacion': typeof CreadoraModeracionRoute
   '/creadora/ofertas-adicionales': typeof CreadoraOfertasAdicionalesRoute
+  '/creadora/pedidos': typeof CreadoraPedidosRoute
   '/creadora/planes': typeof CreadoraPlanesRoute
   '/creadora/publicaciones': typeof CreadoraPublicacionesRoute
   '/creadora/regalos': typeof CreadoraRegalosRoute
@@ -1460,6 +1512,7 @@ export interface FileRoutesById {
   '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
+  '/criadora/boas-vindas': typeof CriadoraBoasVindasRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
   '/criadora/carteira': typeof CriadoraCarteiraRoute
   '/criadora/cupons': typeof CriadoraCuponsRoute
@@ -1471,6 +1524,7 @@ export interface FileRoutesById {
   '/criadora/mimos': typeof CriadoraMimosRoute
   '/criadora/moderacao': typeof CriadoraModeracaoRoute
   '/criadora/ofertas-adicionais': typeof CriadoraOfertasAdicionaisRoute
+  '/criadora/pedidos': typeof CriadoraPedidosRoute
   '/criadora/planos': typeof CriadoraPlanosRoute
   '/criadora/publicacoes': typeof CriadoraPublicacoesRoute
   '/enlaces/$username': typeof EnlacesUsernameRoute
@@ -1528,6 +1582,8 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/mensagens'
     | '/mensajes'
+    | '/meus-pedidos'
+    | '/mis-pedidos'
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
@@ -1595,6 +1651,7 @@ export interface FileRouteTypes {
     | '/configuracoes/seguranca'
     | '/creadora/afiliados'
     | '/creadora/biblioteca'
+    | '/creadora/bienvenida'
     | '/creadora/cartera'
     | '/creadora/cupones'
     | '/creadora/dmca'
@@ -1604,6 +1661,7 @@ export interface FileRouteTypes {
     | '/creadora/metricas'
     | '/creadora/moderacion'
     | '/creadora/ofertas-adicionales'
+    | '/creadora/pedidos'
     | '/creadora/planes'
     | '/creadora/publicaciones'
     | '/creadora/regalos'
@@ -1627,6 +1685,7 @@ export interface FileRouteTypes {
     | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
+    | '/criadora/boas-vindas'
     | '/criadora/cadastro'
     | '/criadora/carteira'
     | '/criadora/cupons'
@@ -1638,6 +1697,7 @@ export interface FileRouteTypes {
     | '/criadora/mimos'
     | '/criadora/moderacao'
     | '/criadora/ofertas-adicionais'
+    | '/criadora/pedidos'
     | '/criadora/planos'
     | '/criadora/publicacoes'
     | '/enlaces/$username'
@@ -1693,6 +1753,8 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/mensagens'
     | '/mensajes'
+    | '/meus-pedidos'
+    | '/mis-pedidos'
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
@@ -1760,6 +1822,7 @@ export interface FileRouteTypes {
     | '/configuracoes/seguranca'
     | '/creadora/afiliados'
     | '/creadora/biblioteca'
+    | '/creadora/bienvenida'
     | '/creadora/cartera'
     | '/creadora/cupones'
     | '/creadora/dmca'
@@ -1769,6 +1832,7 @@ export interface FileRouteTypes {
     | '/creadora/metricas'
     | '/creadora/moderacion'
     | '/creadora/ofertas-adicionales'
+    | '/creadora/pedidos'
     | '/creadora/planes'
     | '/creadora/publicaciones'
     | '/creadora/regalos'
@@ -1792,6 +1856,7 @@ export interface FileRouteTypes {
     | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
+    | '/criadora/boas-vindas'
     | '/criadora/cadastro'
     | '/criadora/carteira'
     | '/criadora/cupons'
@@ -1803,6 +1868,7 @@ export interface FileRouteTypes {
     | '/criadora/mimos'
     | '/criadora/moderacao'
     | '/criadora/ofertas-adicionais'
+    | '/criadora/pedidos'
     | '/criadora/planos'
     | '/criadora/publicacoes'
     | '/enlaces/$username'
@@ -1858,6 +1924,8 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/mensagens'
     | '/mensajes'
+    | '/meus-pedidos'
+    | '/mis-pedidos'
     | '/notificaciones'
     | '/notificacoes'
     | '/notifications'
@@ -1925,6 +1993,7 @@ export interface FileRouteTypes {
     | '/configuracoes/seguranca'
     | '/creadora/afiliados'
     | '/creadora/biblioteca'
+    | '/creadora/bienvenida'
     | '/creadora/cartera'
     | '/creadora/cupones'
     | '/creadora/dmca'
@@ -1934,6 +2003,7 @@ export interface FileRouteTypes {
     | '/creadora/metricas'
     | '/creadora/moderacion'
     | '/creadora/ofertas-adicionales'
+    | '/creadora/pedidos'
     | '/creadora/planes'
     | '/creadora/publicaciones'
     | '/creadora/regalos'
@@ -1957,6 +2027,7 @@ export interface FileRouteTypes {
     | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
+    | '/criadora/boas-vindas'
     | '/criadora/cadastro'
     | '/criadora/carteira'
     | '/criadora/cupons'
@@ -1968,6 +2039,7 @@ export interface FileRouteTypes {
     | '/criadora/mimos'
     | '/criadora/moderacao'
     | '/criadora/ofertas-adicionais'
+    | '/criadora/pedidos'
     | '/criadora/planos'
     | '/criadora/publicacoes'
     | '/enlaces/$username'
@@ -2024,6 +2096,8 @@ export interface RootRouteChildren {
   LoyaltyRoute: typeof LoyaltyRoute
   MensagensRoute: typeof MensagensRoute
   MensajesRoute: typeof MensajesRoute
+  MeusPedidosRoute: typeof MeusPedidosRoute
+  MisPedidosRoute: typeof MisPedidosRoute
   NotificacionesRoute: typeof NotificacionesRoute
   NotificacoesRoute: typeof NotificacoesRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -2091,6 +2165,7 @@ export interface RootRouteChildren {
   ConfiguracoesSegurancaRoute: typeof ConfiguracoesSegurancaRoute
   CreadoraAfiliadosRoute: typeof CreadoraAfiliadosRoute
   CreadoraBibliotecaRoute: typeof CreadoraBibliotecaRoute
+  CreadoraBienvenidaRoute: typeof CreadoraBienvenidaRoute
   CreadoraCarteraRoute: typeof CreadoraCarteraRoute
   CreadoraCuponesRoute: typeof CreadoraCuponesRoute
   CreadoraDmcaRoute: typeof CreadoraDmcaRoute
@@ -2100,6 +2175,7 @@ export interface RootRouteChildren {
   CreadoraMetricasRoute: typeof CreadoraMetricasRoute
   CreadoraModeracionRoute: typeof CreadoraModeracionRoute
   CreadoraOfertasAdicionalesRoute: typeof CreadoraOfertasAdicionalesRoute
+  CreadoraPedidosRoute: typeof CreadoraPedidosRoute
   CreadoraPlanesRoute: typeof CreadoraPlanesRoute
   CreadoraPublicacionesRoute: typeof CreadoraPublicacionesRoute
   CreadoraRegalosRoute: typeof CreadoraRegalosRoute
@@ -2123,6 +2199,7 @@ export interface RootRouteChildren {
   CreatorWelcomeRoute: typeof CreatorWelcomeRoute
   CriadoraAcervoRoute: typeof CriadoraAcervoRoute
   CriadoraAfiliadosRoute: typeof CriadoraAfiliadosRoute
+  CriadoraBoasVindasRoute: typeof CriadoraBoasVindasRoute
   CriadoraCadastroRoute: typeof CriadoraCadastroRoute
   CriadoraCarteiraRoute: typeof CriadoraCarteiraRoute
   CriadoraCuponsRoute: typeof CriadoraCuponsRoute
@@ -2134,6 +2211,7 @@ export interface RootRouteChildren {
   CriadoraMimosRoute: typeof CriadoraMimosRoute
   CriadoraModeracaoRoute: typeof CriadoraModeracaoRoute
   CriadoraOfertasAdicionaisRoute: typeof CriadoraOfertasAdicionaisRoute
+  CriadoraPedidosRoute: typeof CriadoraPedidosRoute
   CriadoraPlanosRoute: typeof CriadoraPlanosRoute
   CriadoraPublicacoesRoute: typeof CriadoraPublicacoesRoute
   EnlacesUsernameRoute: typeof EnlacesUsernameRoute
@@ -2326,6 +2404,20 @@ declare module '@tanstack/react-router' {
       path: '/mensajes'
       fullPath: '/mensajes'
       preLoaderRoute: typeof MensajesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-pedidos': {
+      id: '/meus-pedidos'
+      path: '/meus-pedidos'
+      fullPath: '/meus-pedidos'
+      preLoaderRoute: typeof MeusPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mis-pedidos': {
+      id: '/mis-pedidos'
+      path: '/mis-pedidos'
+      fullPath: '/mis-pedidos'
+      preLoaderRoute: typeof MisPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notificaciones': {
@@ -2818,6 +2910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreadoraBibliotecaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creadora/bienvenida': {
+      id: '/creadora/bienvenida'
+      path: '/creadora/bienvenida'
+      fullPath: '/creadora/bienvenida'
+      preLoaderRoute: typeof CreadoraBienvenidaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creadora/cartera': {
       id: '/creadora/cartera'
       path: '/creadora/cartera'
@@ -2879,6 +2978,13 @@ declare module '@tanstack/react-router' {
       path: '/creadora/ofertas-adicionales'
       fullPath: '/creadora/ofertas-adicionales'
       preLoaderRoute: typeof CreadoraOfertasAdicionalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creadora/pedidos': {
+      id: '/creadora/pedidos'
+      path: '/creadora/pedidos'
+      fullPath: '/creadora/pedidos'
+      preLoaderRoute: typeof CreadoraPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creadora/planes': {
@@ -3042,6 +3148,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CriadoraAfiliadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/criadora/boas-vindas': {
+      id: '/criadora/boas-vindas'
+      path: '/criadora/boas-vindas'
+      fullPath: '/criadora/boas-vindas'
+      preLoaderRoute: typeof CriadoraBoasVindasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/criadora/cadastro': {
       id: '/criadora/cadastro'
       path: '/criadora/cadastro'
@@ -3117,6 +3230,13 @@ declare module '@tanstack/react-router' {
       path: '/criadora/ofertas-adicionais'
       fullPath: '/criadora/ofertas-adicionais'
       preLoaderRoute: typeof CriadoraOfertasAdicionaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criadora/pedidos': {
+      id: '/criadora/pedidos'
+      path: '/criadora/pedidos'
+      fullPath: '/criadora/pedidos'
+      preLoaderRoute: typeof CriadoraPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/criadora/planos': {
@@ -3347,6 +3467,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoyaltyRoute: LoyaltyRoute,
   MensagensRoute: MensagensRoute,
   MensajesRoute: MensajesRoute,
+  MeusPedidosRoute: MeusPedidosRoute,
+  MisPedidosRoute: MisPedidosRoute,
   NotificacionesRoute: NotificacionesRoute,
   NotificacoesRoute: NotificacoesRoute,
   NotificationsRoute: NotificationsRoute,
@@ -3414,6 +3536,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesSegurancaRoute: ConfiguracoesSegurancaRoute,
   CreadoraAfiliadosRoute: CreadoraAfiliadosRoute,
   CreadoraBibliotecaRoute: CreadoraBibliotecaRoute,
+  CreadoraBienvenidaRoute: CreadoraBienvenidaRoute,
   CreadoraCarteraRoute: CreadoraCarteraRoute,
   CreadoraCuponesRoute: CreadoraCuponesRoute,
   CreadoraDmcaRoute: CreadoraDmcaRoute,
@@ -3423,6 +3546,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreadoraMetricasRoute: CreadoraMetricasRoute,
   CreadoraModeracionRoute: CreadoraModeracionRoute,
   CreadoraOfertasAdicionalesRoute: CreadoraOfertasAdicionalesRoute,
+  CreadoraPedidosRoute: CreadoraPedidosRoute,
   CreadoraPlanesRoute: CreadoraPlanesRoute,
   CreadoraPublicacionesRoute: CreadoraPublicacionesRoute,
   CreadoraRegalosRoute: CreadoraRegalosRoute,
@@ -3446,6 +3570,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorWelcomeRoute: CreatorWelcomeRoute,
   CriadoraAcervoRoute: CriadoraAcervoRoute,
   CriadoraAfiliadosRoute: CriadoraAfiliadosRoute,
+  CriadoraBoasVindasRoute: CriadoraBoasVindasRoute,
   CriadoraCadastroRoute: CriadoraCadastroRoute,
   CriadoraCarteiraRoute: CriadoraCarteiraRoute,
   CriadoraCuponsRoute: CriadoraCuponsRoute,
@@ -3457,6 +3582,7 @@ const rootRouteChildren: RootRouteChildren = {
   CriadoraMimosRoute: CriadoraMimosRoute,
   CriadoraModeracaoRoute: CriadoraModeracaoRoute,
   CriadoraOfertasAdicionaisRoute: CriadoraOfertasAdicionaisRoute,
+  CriadoraPedidosRoute: CriadoraPedidosRoute,
   CriadoraPlanosRoute: CriadoraPlanosRoute,
   CriadoraPublicacoesRoute: CriadoraPublicacoesRoute,
   EnlacesUsernameRoute: EnlacesUsernameRoute,

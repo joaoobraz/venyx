@@ -192,6 +192,40 @@ export function AdminSettingsPage() {
               />
             </Card>
 
+            {/* 2FA por e-mail (gera custo de envio de e-mail) */}
+            <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 font-semibold text-foreground">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  {tr("2FA por e-mail (opção de receber o código por e-mail)", "Email 2FA (receive the code by email)")}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {settings.email_mfa_enabled
+                    ? tr(
+                        "Ligado: em Segurança a pessoa pode escolher entre app autenticador e código por e-mail. Cada login envia um e-mail (custo de envio).",
+                        "On: users can choose between authenticator app and email code. Each login sends an email.",
+                      )
+                    : tr(
+                        "Desligado: só o app autenticador está disponível. Ligue quando o SMTP estiver configurado e você aceitar o custo de envio.",
+                        "Off: only the authenticator app is available. Turn on once SMTP is configured.",
+                      )}
+                </p>
+              </div>
+              <Switch
+                checked={settings.email_mfa_enabled}
+                disabled={saving}
+                onCheckedChange={(next) =>
+                  save(
+                    { email_mfa_enabled: next },
+                    next
+                      ? tr("2FA por e-mail LIGADO. A opção já aparece em Segurança.", "Email 2FA ON.")
+                      : tr("2FA por e-mail desligado.", "Email 2FA off."),
+                  )
+                }
+                aria-label={tr("2FA por e-mail", "Email 2FA")}
+              />
+            </Card>
+
             {/* Modo teste de saque */}
             <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
               <div className="min-w-0 flex-1">
