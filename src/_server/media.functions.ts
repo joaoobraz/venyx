@@ -26,6 +26,27 @@ const multiPostMediaSchema = z.object({
 
 const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
+// Prévia desfocada (arquivo -blur.jpg gerado no envio) para quem pode ver que o
+// post existe mas não tem acesso. A original nunca é assinada aqui.
+async function blurPreviewUrl(post: { id: string; creator_id: string }, viewerId: string): Promise<string | null> {
+  const { data: allowed } = await supabaseAdmin.rpc("can_view_post_metadata", {
+    _post_id: post.id,
+    _viewer_id: viewerId,
+  });
+  if (!allowed) return null;
+  const { data: media } = await supabaseAdmin
+    .from("post_media")
+    .select("blur_storage_path" as never)
+    .eq("post_id", post.id)
+    .order("position", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const path = (media as unknown as { blur_storage_path: string | null } | null)?.blur_storage_path;
+  if (!path || !path.endsWith("-blur.jpg") || !isOwnedMediaPath(post.creator_id, path)) return null;
+  const { data: signed } = await supabaseAdmin.storage.from("posts").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+  return signed?.signedUrl ?? null;
+}
+
 export const getPostMediaUrls = createServerFn({ method: "POST" })
   .middleware([requireAdultVerification])
   .validator((input: unknown) => postMediaSchema.parse(input))
@@ -40,7 +61,10 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
 
     const hasAccess = await checkPostAccess(post, viewerId);
     if (!hasAccess) {
-      return { urls: [] as Array<{ id: string; url: string; mime_type: string }> };
+      return {
+        urls: [] as Array<{ id: string; url: string; mime_type: string }>,
+        preview: await blurPreviewUrl(post, viewerId),
+      };
     }
 
     const { data: media, error } = await supabaseAdmin
@@ -71,7 +95,7 @@ export const getPostMediaUrls = createServerFn({ method: "POST" })
         }
       }),
     );
-    return { urls: urls.filter((u) => u.url) };
+    return { urls: urls.filter((u) => u.url), preview: null as string | null };
   });
 
 /**

@@ -12,6 +12,7 @@ import {
   PinOff,
   Target,
   Users,
+  CalendarClock,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
@@ -74,6 +75,8 @@ export interface PostWithRelations {
   comments_count: number;
   created_at: string;
   is_pinned: boolean;
+  /** Quando o post fica visível; futuro = agendado (só a autora vê). */
+  published_at?: string;
   author: {
     username: string;
     display_name: string | null;
@@ -132,6 +135,8 @@ export function PostCard({
   const ppvFn = useServerFn(createPpvPixCharge);
   const goalFn = useServerFn(createGoalPixCharge);
   const mediaFn = useServerFn(getPostMediaUrls);
+  // Prévia desfocada do conteúdo pago (o servidor só assina o arquivo -blur).
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const likeFn = useServerFn(togglePostLike);
   const isDemoContent = DEMO_MODE && post.creator_id.startsWith("demo-");
 
@@ -161,7 +166,18 @@ export function PostCard({
   // Pega URLs assinadas para a mídia (só se houver acesso, server decide)
   useEffect(() => {
     let cancel = false;
-    if (locked || post.media.length === 0) return;
+    if (post.media.length === 0) return;
+    if (locked) {
+      if (isDemoContent) return;
+      mediaFn({ data: { postId: post.id } })
+        .then((res) => {
+          if (!cancel) setPreviewUrl((res as { preview?: string | null }).preview ?? null);
+        })
+        .catch(() => undefined);
+      return () => {
+        cancel = true;
+      };
+    }
     const localMedia = post.media.filter((item) =>
       /^(\/|blob:|data:)/.test(item.storage_path),
     );
@@ -184,7 +200,7 @@ export function PostCard({
     return () => {
       cancel = true;
     };
-  }, [post.id, locked, post.media, mediaFn]);
+  }, [post.id, locked, post.media, mediaFn, isDemoContent]);
 
   const authHeaders = () =>
     session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
@@ -540,6 +556,17 @@ export function PostCard({
             <Target className="h-3 w-3" /> META
           </span>
         )}
+        {isOwner && post.published_at && new Date(post.published_at).getTime() > Date.now() && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+            <CalendarClock className="h-3 w-3" /> {tr("Agendado", "Scheduled")} ·{" "}
+            {new Date(post.published_at).toLocaleString(locale === "en" ? "en-US" : "pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        )}
       </header>
 
       {/* SECURITY: o texto faz parte do conteúdo pago; só aparece depois de desbloquear. */}
@@ -552,9 +579,19 @@ export function PostCard({
         </div>
       )}
 
-      {(locked || firstMedia) && <div className="relative">
+      {(locked || firstMedia) && <div className="relative overflow-hidden">
         {locked ? (
-          <div className="aspect-square w-full bg-muted" />
+          previewUrl ? (
+            <img
+              src={previewUrl}
+              alt=""
+              aria-hidden
+              draggable={false}
+              className="aspect-square w-full scale-110 select-none object-cover blur-2xl"
+            />
+          ) : (
+            <div className="aspect-square w-full bg-muted" />
+          )
         ) : effectiveImageUrl ? (
           <CreatorWatermark
             username={post.author.username}

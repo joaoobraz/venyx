@@ -15,7 +15,9 @@ import {
   Target,
   Video,
   Zap,
+  CalendarClock,
 } from "lucide-react";
+import { makeBlurPreview } from "@/lib/blur-preview";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +55,8 @@ export function CreatorPostsPage() {
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [pinOnProfile, setPinOnProfile] = useState(false);
   const [priceReais, setPriceReais] = useState("");
+  // Agendamento: vazio = publica agora (valor do input datetime-local, hora local).
+  const [scheduledAt, setScheduledAt] = useState("");
   const [goalTargetReais, setGoalTargetReais] = useState("");
   const [goalUnlockReais, setGoalUnlockReais] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -150,6 +154,16 @@ export function CreatorPostsPage() {
       }
     }
 
+    const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+    if (scheduledDate && Number.isNaN(scheduledDate.getTime())) {
+      toast.error(tr("Data de agendamento inválida.", "Invalid schedule date."));
+      return;
+    }
+    if (scheduledDate && scheduledDate.getTime() < Date.now() - 60_000) {
+      toast.error(tr("A data de agendamento já passou. Escolha um horário futuro.", "The schedule date is in the past. Pick a future time."));
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (DEMO_MODE && demoCreatorMode) {
@@ -211,7 +225,8 @@ export function CreatorPostsPage() {
         body: body.trim() || null,
         visibility,
         price_cents: priceCents,
-      });
+        published_at: (scheduledDate ?? new Date()).toISOString(),
+      } as never);
       if (pe) throw pe;
       const post = { id: postId };
 
@@ -247,14 +262,26 @@ export function CreatorPostsPage() {
           if (coverUploadError) throw coverUploadError;
         }
 
+        // Prévia desfocada para quem ainda não pagou — gerada aqui, a original nunca sai.
+        let blurPath: string | null = null;
+        const blurBlob = await makeBlurPreview(f, coverFile);
+        if (blurBlob) {
+          blurPath = `${user.id}/${post.id}/${i}-blur.jpg`;
+          const { error: blurError } = await supabase.storage
+            .from("posts")
+            .upload(blurPath, blurBlob, { upsert: false, contentType: "image/jpeg" });
+          if (blurError) blurPath = null;
+        }
+
         const mediaPayload = {
           post_id: post.id,
           storage_path: path,
           cover_storage_path: coverPath,
+          blur_storage_path: blurPath,
           mime_type: f.type,
           position: i,
         };
-        let { error: me } = await supabase.from("post_media").insert(mediaPayload);
+        let { error: me } = await supabase.from("post_media").insert(mediaPayload as never);
         if (me && coverPath) {
           // Temporary compatibility while the cover column is not yet applied in staging.
           const fallback = await supabase.from("post_media").insert({
@@ -276,7 +303,15 @@ export function CreatorPostsPage() {
         });
       }
 
-      toast.success(tr("Publicação criada!", "Post published!"));
+      toast.success(
+        scheduledDate
+          ? tr(
+              `Publicação agendada para ${scheduledDate.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}. Só você vê até lá.`,
+              `Post scheduled for ${scheduledDate.toLocaleString("en-US")}. Only you can see it until then.`,
+            )
+          : tr("Publicação criada!", "Post published!"),
+      );
+      setScheduledAt("");
       setBody("");
       setMediaDrafts([]);
       setPostFormat("text");
@@ -529,6 +564,30 @@ export function CreatorPostsPage() {
               </div>
             </div>
           )}
+
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-background p-3">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-foreground">{tr("Agendar publicação", "Schedule post")}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {scheduledAt
+                  ? tr("Ficará visível só na data escolhida. Você vê antes; os fãs, não.", "Visible only from the chosen time. You see it before; fans don't.")
+                  : tr("Deixe em branco para publicar agora.", "Leave blank to publish now.")}
+              </p>
+            </div>
+            <Input
+              type="datetime-local"
+              aria-label={tr("Data e hora da publicação", "Publish date and time")}
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              className="h-9 w-auto bg-card"
+            />
+            {scheduledAt && (
+              <button type="button" onClick={() => setScheduledAt("")} className="text-xs text-muted-foreground underline">
+                {tr("Publicar agora", "Publish now")}
+              </button>
+            )}
+          </div>
 
           {visibility === "goal" && (
             <div className="space-y-2 rounded-xl bg-background p-3">

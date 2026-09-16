@@ -32,6 +32,7 @@ const STATIC_PATHS: LocalizedPath[] = [
   { en: "/creator/posts", pt: "/criadora/publicacoes", es: "/creadora/publicaciones" },
   { en: "/creator/media-library", pt: "/criadora/acervo", es: "/creadora/biblioteca" },
   { en: "/creator/mailing", pt: "/criadora/mensagens-em-massa", es: "/creadora/mensajes-en-masa" },
+  { en: "/creator/welcome", pt: "/criadora/boas-vindas", es: "/creadora/bienvenida" },
   { en: "/creator/subscription-plans", pt: "/criadora/planos", es: "/creadora/planes" },
   { en: "/creator/coupons", pt: "/criadora/cupons", es: "/creadora/cupones" },
   { en: "/creator/gifts", pt: "/criadora/mimos", es: "/creadora/regalos" },

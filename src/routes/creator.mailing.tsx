@@ -49,7 +49,12 @@ export const Route = createFileRoute("/creator/mailing")({
 });
 
 type Segment =
-  "active_subscribers" | "expired_subscribers" | "non_subscribers" | "all_contacts" | "tag";
+  | "active_subscribers"
+  | "expiring_subscribers"
+  | "expired_subscribers"
+  | "non_subscribers"
+  | "all_contacts"
+  | "tag";
 
 interface SubTag {
   id: string;
@@ -145,6 +150,13 @@ const SEGMENT_META: Record<
     icon: UserMinus,
     ptDesc: "Cancelados ou expirados",
     enDesc: "Canceled or expired",
+  },
+  expiring_subscribers: {
+    pt: "Vencendo em 3 dias",
+    en: "Expiring in 3 days",
+    icon: Clock,
+    ptDesc: "Assinatura ativa que vence em até 3 dias — hora de mandar um cupom ou lembrete",
+    enDesc: "Active subscriptions ending within 3 days — send a coupon or reminder",
   },
   non_subscribers: {
     pt: "Leads (não assinantes)",
@@ -286,7 +298,7 @@ export function MailingPage() {
     }
     setPreviewLoading(true);
     const { data, error } = await supabase.rpc("preview_mass_dm_recipients", {
-      _segment: segment,
+      _segment: segment as never,
       _tag_id: (segment === "tag" ? tagId : null) as any,
       _filter_hours: (filterHours === "any" ? null : parseInt(filterHours, 10)) as any,
       _filter_link_clicked: filterClicked,
@@ -484,7 +496,7 @@ export function MailingPage() {
 
     setSending(true);
     const { data, error } = await supabase.rpc("enqueue_mass_dm", {
-      _segment: segment,
+      _segment: segment as never,
       _tag_id: (segment === "tag" ? tagId : null) as any,
       _body: body,
       _media_path: null as any,

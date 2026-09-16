@@ -28,33 +28,16 @@ export async function fetchPosts(opts: {
     comments_count: number;
     created_at: string;
     is_pinned: boolean;
+    published_at: string;
     has_access: boolean;
   };
-  const rpc = await supabase.rpc("list_feed_posts_v2" as never, {
+  const { data, error } = await supabase.rpc("list_feed_posts_v2" as never, {
     _creator_id: postId ? null : (creatorId ?? null),
     _post_id: postId ?? null,
     _limit: postId ? 1 : limit,
   } as never);
-  let posts: FeedPostRow[];
-  if (rpc.error && (rpc.error.code === "PGRST202" || rpc.error.code === "42883")) {
-    // Fallback enquanto a migration 20260915110000 não foi aplicada: leitura
-    // direta (RLS de linha). Remover quando a RPC estiver em produção.
-    let q = supabase
-      .from("posts")
-      .select("id, creator_id, body, visibility, price_cents, likes_count, comments_count, created_at, is_pinned")
-      .is("archived_at", null)
-      .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (postId) q = q.eq("id", postId).limit(1);
-    else if (creatorId) q = q.eq("creator_id", creatorId);
-    const { data, error } = await q;
-    if (error) throw error;
-    posts = ((data ?? []) as Omit<FeedPostRow, "has_access">[]).map((p) => ({ ...p, has_access: true }));
-  } else {
-    if (rpc.error) throw rpc.error;
-    posts = (rpc.data ?? []) as unknown as FeedPostRow[];
-  }
+  if (error) throw error;
+  const posts = (data ?? []) as unknown as FeedPostRow[];
   if (posts.length === 0) return [];
 
   const ids = posts.map((p) => p.id);
@@ -171,6 +154,7 @@ export async function fetchPosts(opts: {
         comments_count: p.comments_count,
         created_at: p.created_at,
         is_pinned: p.is_pinned,
+        published_at: p.published_at,
         author: a,
         media: (mediaByPost.get(p.id) ?? []).sort((a, b) => a.position - b.position),
         unlocked: unlocks.has(p.id),

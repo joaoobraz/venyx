@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendWelcomeMessage } from "@/_server/welcome-message.server";
 import type { Database, Json, Tables } from "@/integrations/supabase/types";
 import { recordOperationalEvent } from "@/_server/observability.server";
 import { pausedAccountIds } from "@/_server/account-pause.server";
@@ -327,6 +328,9 @@ async function fulfillSubscription(charge: PixCharge) {
     _coupon_id: couponId,
   });
   if (subscriptionError) throw subscriptionError;
+
+  // Boas-vindas automáticas da criadora (idempotente; nunca falha a ativação).
+  await sendWelcomeMessage(charge.payee_id, charge.payer_id);
 
   const { error: metadataError } = await supabaseAdmin
     .from("transactions")

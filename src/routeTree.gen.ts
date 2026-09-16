@@ -129,6 +129,7 @@ import { Route as CreatorPostsRouteImport } from './routes/creator.posts'
 import { Route as CreatorSubscriptionPlansRouteImport } from './routes/creator.subscription-plans'
 import { Route as CreatorUpsellsRouteImport } from './routes/creator.upsells'
 import { Route as CreatorWalletRouteImport } from './routes/creator.wallet'
+import { Route as CreatorWelcomeRouteImport } from './routes/creator.welcome'
 import { Route as CriadoraAcervoRouteImport } from './routes/criadora.acervo'
 import { Route as CriadoraAfiliadosRouteImport } from './routes/criadora.afiliados'
 import { Route as CriadoraCadastroRouteImport } from './routes/criadora.cadastro'
@@ -779,6 +780,11 @@ const CreatorWalletRoute = CreatorWalletRouteImport.update({
   path: '/creator/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorWelcomeRoute = CreatorWelcomeRouteImport.update({
+  id: '/creator/welcome',
+  path: '/creator/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CriadoraAcervoRoute = CriadoraAcervoRouteImport.update({
   id: '/criadora/acervo',
   path: '/criadora/acervo',
@@ -1106,6 +1112,7 @@ export interface FileRoutesByFullPath {
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
@@ -1268,6 +1275,7 @@ export interface FileRoutesByTo {
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
@@ -1431,6 +1439,7 @@ export interface FileRoutesById {
   '/creator/subscription-plans': typeof CreatorSubscriptionPlansRoute
   '/creator/upsells': typeof CreatorUpsellsRoute
   '/creator/wallet': typeof CreatorWalletRoute
+  '/creator/welcome': typeof CreatorWelcomeRoute
   '/criadora/acervo': typeof CriadoraAcervoRoute
   '/criadora/afiliados': typeof CriadoraAfiliadosRoute
   '/criadora/cadastro': typeof CriadoraCadastroRoute
@@ -1595,6 +1604,7 @@ export interface FileRouteTypes {
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
     | '/criadora/cadastro'
@@ -1757,6 +1767,7 @@ export interface FileRouteTypes {
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
     | '/criadora/cadastro'
@@ -1919,6 +1930,7 @@ export interface FileRouteTypes {
     | '/creator/subscription-plans'
     | '/creator/upsells'
     | '/creator/wallet'
+    | '/creator/welcome'
     | '/criadora/acervo'
     | '/criadora/afiliados'
     | '/criadora/cadastro'
@@ -2082,6 +2094,7 @@ export interface RootRouteChildren {
   CreatorSubscriptionPlansRoute: typeof CreatorSubscriptionPlansRoute
   CreatorUpsellsRoute: typeof CreatorUpsellsRoute
   CreatorWalletRoute: typeof CreatorWalletRoute
+  CreatorWelcomeRoute: typeof CreatorWelcomeRoute
   CriadoraAcervoRoute: typeof CriadoraAcervoRoute
   CriadoraAfiliadosRoute: typeof CriadoraAfiliadosRoute
   CriadoraCadastroRoute: typeof CriadoraCadastroRoute
@@ -2968,6 +2981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator/welcome': {
+      id: '/creator/welcome'
+      path: '/creator/welcome'
+      fullPath: '/creator/welcome'
+      preLoaderRoute: typeof CreatorWelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/criadora/acervo': {
       id: '/criadora/acervo'
       path: '/criadora/acervo'
@@ -3381,6 +3401,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorSubscriptionPlansRoute: CreatorSubscriptionPlansRoute,
   CreatorUpsellsRoute: CreatorUpsellsRoute,
   CreatorWalletRoute: CreatorWalletRoute,
+  CreatorWelcomeRoute: CreatorWelcomeRoute,
   CriadoraAcervoRoute: CriadoraAcervoRoute,
   CriadoraAfiliadosRoute: CriadoraAfiliadosRoute,
   CriadoraCadastroRoute: CriadoraCadastroRoute,
