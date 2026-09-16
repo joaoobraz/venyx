@@ -237,6 +237,11 @@ export function LoginPage() {
             >
               {loading ? t("common.loading") : "Confirmar código"}
             </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              <Link to="/help" className="underline hover:text-foreground">
+                {tr("Perdi o acesso ao aplicativo autenticador", "I lost access to my authenticator app")}
+              </Link>
+            </p>
           </form>
         ) : (
           <form onSubmit={onSubmit} className="mt-8 space-y-4">

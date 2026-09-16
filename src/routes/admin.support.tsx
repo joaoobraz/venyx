@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Headphones, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { requireAdminServer } from "@/_server/admin.functions";
-import { listAdminServiceRequests, updateAdminServiceRequest } from "@/_server/support.functions";
+import { adminResetUserMfa, listAdminServiceRequests, updateAdminServiceRequest } from "@/_server/support.functions";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ export function AdminSupportPage() {
   const { tr, locale } = useI18n();
   const listFn = useServerFn(listAdminServiceRequests);
   const updateFn = useServerFn(updateAdminServiceRequest);
+  const resetMfaFn = useServerFn(adminResetUserMfa);
   const [data, setData] = useState<{ support: AnyRow[]; recovery: AnyRow[]; privacy: AnyRow[] }>({ support: [], recovery: [], privacy: [] });
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Selection | null>(null);
@@ -73,6 +74,18 @@ export function AdminSupportPage() {
     if (!selected || note.trim().length < 3) return;
     setBusy(true);
     try {
+      if (selected.kind === "recovery" && selected.status === "reset_mfa") {
+        // Remove de fato os fatores TOTP da conta e aprova o pedido.
+        const r = await resetMfaFn({ data: { requestId: selected.row.id, note: note.trim() } });
+        if (!r.ok) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success(tr(`2FA removido (${r.removed} fator(es)). A pessoa já consegue entrar só com e-mail e senha.`, `2FA removed (${r.removed} factor(s)).`));
+        setSelected(null);
+        await load();
+        return;
+      }
       await updateFn({ data: { requestKind: selected.kind, requestId: selected.row.id, status: selected.status, note: note.trim() } });
       toast.success(tr("Solicitação atualizada.", "Request updated."));
       setSelected(null);
@@ -107,7 +120,7 @@ export function AdminSupportPage() {
               {data.support.map((row) => <RequestCard key={row.id} row={row} locale={locale} title={String(row.subject ?? row.protocol)} description={`${String(row.category ?? "")} · ${String(row.message ?? "")}`} actions={supportActions(row.status).map((action) => ({ ...action, onClick: () => openUpdate("support", row, action.status) }))} />)}
             </TabsContent>
             <TabsContent value="recovery" className="space-y-3">
-              {data.recovery.map((row) => <RequestCard key={row.id} row={row} locale={locale} title={`${String(row.issue_type)} · ${String(row.login_email)}`} description={`${tr("Contato", "Contact")}: ${String(row.contact_email)} · ${String(row.details)}`} icon={KeyRound} actions={recoveryActions(row.status).map((action) => ({ ...action, onClick: () => openUpdate("recovery", row, action.status) }))} />)}
+              {data.recovery.map((row) => <RequestCard key={row.id} row={row} locale={locale} title={`${String(row.issue_type)} · ${String(row.login_email)}`} description={`${tr("Contato", "Contact")}: ${String(row.contact_email)} · ${String(row.details)}`} icon={KeyRound} actions={recoveryActions(row.status, String(row.issue_type)).map((action) => ({ ...action, onClick: () => openUpdate("recovery", row, action.status) }))} />)}
             </TabsContent>
             <TabsContent value="privacy" className="space-y-3">
               {data.privacy.map((row) => <RequestCard key={row.id} row={row} locale={locale} title={`${String(row.request_type)} · ${row.protocol}`} description={`${tr("Usuário", "User")}: ${String(row.user_id)}${row.user_note ? ` · ${String(row.user_note)}` : ""}`} icon={ShieldCheck} actions={privacyActions(row.status).map((action) => ({ ...action, onClick: () => openUpdate("privacy", row, action.status) }))} />)}
@@ -122,10 +135,18 @@ export function AdminSupportPage() {
             <DialogTitle>{tr("Atualizar solicitação", "Update request")}</DialogTitle>
             <DialogDescription>{selected?.row.protocol} · {selected?.status}</DialogDescription>
           </DialogHeader>
-          <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={5} maxLength={4000} placeholder={tr("Registre a providência tomada", "Record the action taken")} />
+          {selected?.status === "reset_mfa" && (
+            <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-foreground">
+              {tr(
+                "Antes de confirmar, verifique a identidade: e-mail de contato coerente, dados que só a pessoa saberia e, para criadoras, selfie com documento comparada ao KYC. Registre abaixo o que foi conferido — fica na auditoria.",
+                "Before confirming, verify identity (contact email, personal details, and for creators a selfie with ID matched against KYC). Record what you checked below — it goes to the audit trail.",
+              )}
+            </p>
+          )}
+          <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={5} maxLength={4000} placeholder={selected?.status === "reset_mfa" ? tr("O que você conferiu para ter certeza de que é a pessoa (mín. 10 caracteres)", "What you verified (min. 10 chars)") : tr("Registre a providência tomada", "Record the action taken")} />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setSelected(null)}>{tr("Cancelar", "Cancel")}</Button>
-            <Button onClick={submit} disabled={busy || note.trim().length < 3}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{tr("Confirmar", "Confirm")}</Button>
+            <Button onClick={submit} disabled={busy || note.trim().length < (selected?.status === "reset_mfa" ? 10 : 3)}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{tr("Confirmar", "Confirm")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -139,9 +160,15 @@ function supportActions(status: string): Action[] {
   if (["resolved", "closed"].includes(status)) return [];
   return [{ label: "Em atendimento", status: "in_progress" }, { label: "Aguardando usuário", status: "waiting_user" }, { label: "Resolver", status: "resolved" }];
 }
-function recoveryActions(status: string): Action[] {
+function recoveryActions(status: string, issueType = ""): Action[] {
   if (["approved", "rejected", "closed"].includes(status)) return [];
-  return [{ label: "Verificar identidade", status: "verifying" }, { label: "Aprovar", status: "approved" }, { label: "Rejeitar", status: "rejected" }];
+  const actions: Action[] = [{ label: "Verificar identidade", status: "verifying" }];
+  if (issueType === "lost_2fa" || issueType === "locked_out") {
+    // Só aparece para perda de 2FA: remove os fatores e aprova num passo só.
+    actions.push({ label: "Remover 2FA e aprovar", status: "reset_mfa" });
+  }
+  actions.push({ label: "Aprovar", status: "approved" }, { label: "Rejeitar", status: "rejected" });
+  return actions;
 }
 function privacyActions(status: string): Action[] {
   if (["completed", "rejected", "canceled"].includes(status)) return [];
