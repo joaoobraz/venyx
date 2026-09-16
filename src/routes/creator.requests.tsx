@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { describeError } from "@/lib/error-message";
 import {
   getCreatorRequestSettings,
   listCreatorCustomRequests,
@@ -31,6 +32,8 @@ type Tab = "pending" | "accepted" | "paid" | "done";
 
 const fmt = (cents: number) => `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 const toCents = (s: string) => Math.round(Number.parseFloat(s.replace(",", ".")) * 100);
+// Mesmo teto do servidor (zod): acima disso o pedido seria recusado em silêncio.
+const MAX_CENTS = 1_000_000;
 
 const STATUS: Record<Row["status"], { pt: string; en: string; tone: string }> = {
   pending: { pt: "Aguardando sua resposta", en: "Awaiting your reply", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
@@ -84,8 +87,8 @@ export function CreatorRequestsPage() {
 
   const saveSettings = async () => {
     const min = toCents(minStr);
-    if (Number.isNaN(min) || min < 100) {
-      toast.error(tr("Valor mínimo deve ser de pelo menos R$ 1,00.", "Minimum must be at least R$ 1.00."));
+    if (Number.isNaN(min) || min < 100 || min > MAX_CENTS) {
+      toast.error(tr("O valor mínimo deve ficar entre R$ 1,00 e R$ 10.000,00.", "Minimum must be between R$ 1.00 and R$ 10,000.00."));
       return;
     }
     setSavingSettings(true);
@@ -98,6 +101,8 @@ export function CreatorRequestsPage() {
             ? tr("Pedidos personalizados ATIVADOS. O botão já aparece no seu perfil.", "Custom requests ON. The button is live on your profile.")
             : tr("Pedidos personalizados desativados.", "Custom requests off."),
         );
+    } catch (e) {
+      toast.error(describeError(e, tr));
     } finally {
       setSavingSettings(false);
     }
@@ -112,8 +117,8 @@ export function CreatorRequestsPage() {
   const sendReply = async () => {
     if (!replying) return;
     const price = replying.action === "accept" ? toCents(priceStr) : undefined;
-    if (replying.action === "accept" && (Number.isNaN(price!) || price! < 100)) {
-      toast.error(tr("Valor inválido.", "Invalid amount."));
+    if (replying.action === "accept" && (Number.isNaN(price!) || price! < 100 || price! > MAX_CENTS)) {
+      toast.error(tr("O valor deve ficar entre R$ 1,00 e R$ 10.000,00.", "Amount must be between R$ 1.00 and R$ 10,000.00."));
       return;
     }
     setBusy(replying.id);
@@ -130,6 +135,8 @@ export function CreatorRequestsPage() {
         );
       setReplying(null);
       await load();
+    } catch (e) {
+      toast.error(describeError(e, tr));
     } finally {
       setBusy(null);
     }
@@ -143,6 +150,8 @@ export function CreatorRequestsPage() {
       if (!r.ok) toast.error(r.error);
       else toast.success(tr("Marcado como entregue.", "Marked as delivered."));
       await load();
+    } catch (e) {
+      toast.error(describeError(e, tr));
     } finally {
       setBusy(null);
     }

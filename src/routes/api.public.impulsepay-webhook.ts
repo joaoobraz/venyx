@@ -69,7 +69,7 @@ async function processTransaction(payload: z.infer<typeof transactionSchema>) {
   }
 
   let verified;
-  let rawTransaction: Awaited<ReturnType<typeof getImpulsePayTransaction>> | null = null;
+  let rawTransaction: Awaited<ReturnType<typeof getImpulsePayTransaction>>;
   try {
     rawTransaction = await getImpulsePayTransaction(payload.transaction.id);
     verified = normalizeGatewayCharge(rawTransaction);
@@ -108,10 +108,11 @@ async function processTransaction(payload: z.infer<typeof transactionSchema>) {
         ? rawTransaction.fee
         : rawTransaction.amount - (rawTransaction.net_amount ?? rawTransaction.amount);
       const net = typeof rawTransaction.net_amount === "number" ? rawTransaction.net_amount : rawTransaction.amount - fee;
-      const { error: feeError } = await supabaseAdmin
+      const feeLooksSane = Number.isInteger(fee) && fee >= 0 && fee <= rawTransaction.amount && net >= 0 && net <= rawTransaction.amount;
+      const { error: feeError } = feeLooksSane ? await supabaseAdmin
         .from("pix_charges")
         .update({ gateway_fee_cents: fee, gateway_net_amount_cents: net } as never)
-        .eq("id", charge.id);
+        .eq("id", charge.id) : { error: null };
       if (feeError) console.error("[impulsepay-webhook] fee persistence failed", feeError.code);
     }
     return jsonResponse({ ok: true, fulfilled: !result.alreadyFulfilled });

@@ -29,11 +29,11 @@ const SIGNED_URL_TTL_SECONDS = 5 * 60;
 // Prévia desfocada (arquivo -blur.jpg gerado no envio) para quem pode ver que o
 // post existe mas não tem acesso. A original nunca é assinada aqui.
 async function blurPreviewUrl(post: { id: string; creator_id: string }, viewerId: string): Promise<string | null> {
-  const { data: allowed } = await supabaseAdmin.rpc("can_view_post_metadata", {
-    _post_id: post.id,
-    _viewer_id: viewerId,
-  });
-  if (!allowed) return null;
+  const [{ data: allowed }, { data: blocked }] = await Promise.all([
+    supabaseAdmin.rpc("can_view_post_metadata", { _post_id: post.id, _viewer_id: viewerId }),
+    supabaseAdmin.rpc("users_are_blocked", { _user_a: post.creator_id, _user_b: viewerId }),
+  ]);
+  if (!allowed || blocked) return null;
   const { data: media } = await supabaseAdmin
     .from("post_media")
     .select("blur_storage_path" as never)
@@ -218,6 +218,24 @@ export const getFirstMediaForPosts = createServerFn({ method: "POST" })
   });
 
 async function checkPostAccess(
+  post: { id: string; creator_id: string; visibility: string; moderation_status: string },
+  viewerId: string | null,
+): Promise<boolean> {
+  if (!viewerId) return false;
+  // Mesma regra das policies do banco: +18, moderação, agendamento
+  // (published_at), conta pausada, visibilidade do perfil, assinatura/PPV/meta.
+  // O ramo service_role de can_view_post honra _viewer_id.
+  const [{ data: allowed, error }, { data: blocked }] = await Promise.all([
+    supabaseAdmin.rpc("can_view_post", { _post_id: post.id, _viewer_id: viewerId }),
+    supabaseAdmin.rpc("users_are_blocked", { _user_a: post.creator_id, _user_b: viewerId }),
+  ]);
+  if (!error) return Boolean(allowed) && !blocked;
+  console.error("[media] can_view_post failed, using fallback", error.code);
+  if (blocked) return false;
+  return checkPostAccessFallback(post, viewerId);
+}
+
+async function checkPostAccessFallback(
   post: { id: string; creator_id: string; visibility: string; moderation_status: string },
   viewerId: string | null,
 ): Promise<boolean> {

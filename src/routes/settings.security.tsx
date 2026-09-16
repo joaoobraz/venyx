@@ -12,7 +12,7 @@ import { useI18n } from "@/lib/i18n";
 import { verifyTotpCode } from "@/lib/mfa-stepup";
 import { describeMfaError } from "@/lib/auth-errors";
 import { useServerFn } from "@tanstack/react-start";
-import { confirmEmailMfaSession, disableEmailMfa, getMyMfaState } from "@/_server/mfa-email.functions";
+import { confirmEmailMfaSession, disableEmailMfa, getMyMfaState, sendEmailMfaCode } from "@/_server/mfa-email.functions";
 
 export const Route = createFileRoute("/settings/security")({
   component: SecurityPage,
@@ -39,6 +39,7 @@ export function SecurityPage() {
   const getMfaStateFn = useServerFn(getMyMfaState);
   const confirmEmailFn = useServerFn(confirmEmailMfaSession);
   const disableEmailFn = useServerFn(disableEmailMfa);
+  const sendEmailCodeFn = useServerFn(sendEmailMfaCode);
   const [mfaState, setMfaState] = useState<MfaState | null>(null);
   const [emailEnroll, setEmailEnroll] = useState(false);
   const [emailCode, setEmailCode] = useState("");
@@ -149,9 +150,11 @@ export function SecurityPage() {
     if (!mfaState?.email) return;
     setBusy(true);
     try {
-      await supabase.auth.updateUser({ data: { locale } }).catch(() => undefined);
-      const { error } = await supabase.auth.signInWithOtp({ email: mfaState.email, options: { shouldCreateUser: false } });
-      if (error) throw error;
+      const sent = await sendEmailCodeFn({ data: { locale, forEnroll: true } });
+      if (!sent.ok) {
+        toast.error(sent.error);
+        return;
+      }
       setEmailEnroll(true);
       setEmailCode("");
       toast.success(tr(`Código enviado para ${mfaState.email}.`, `Code sent to ${mfaState.email}.`));
@@ -198,6 +201,8 @@ export function SecurityPage() {
       toast.success(tr("2FA por e-mail desativado.", "Email 2FA disabled."));
       await loadMfaState();
       refresh();
+    } catch (e) {
+      toast.error(describeMfaError(e, tr));
     } finally {
       setBusy(false);
     }
@@ -352,7 +357,7 @@ export function SecurityPage() {
               <Input
                 placeholder={tr("Digite o código de 6 dígitos", "Enter the 6-digit code")}
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 maxLength={6}
                 className="text-center text-lg tracking-widest"
               />

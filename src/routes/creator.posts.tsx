@@ -320,10 +320,11 @@ export function CreatorPostsPage() {
       setPriceReais("");
       setGoalTargetReais("");
       setGoalUnlockReais("");
-      nav({
-        to: "/profile/$username",
-        params: { username: profile?.username ?? "aline" },
-      });
+      if (profile?.username) {
+        nav({ to: "/profile/$username", params: { username: profile.username } });
+      } else {
+        nav({ to: "/settings/profile" });
+      }
     } catch (e) {
       toast.error(describeError(e, tr));
     } finally {

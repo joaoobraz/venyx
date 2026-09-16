@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { PixCheckoutModal, type PixCharge } from "@/components/PixCheckoutModal";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { describeError } from "@/lib/error-message";
 import {
   cancelCustomRequest,
   createCustomRequestPixCharge,
@@ -77,7 +78,7 @@ export function MyRequestsPage() {
       setPayingId(row.id);
       setCharge({ chargeId: res.chargeId, qrCode: res.qrCode, qrCodeBase64: res.qrCodeBase64, amountCents: res.amountCents });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : tr("Não foi possível gerar o Pix.", "Couldn't create the Pix charge."));
+      toast.error(describeError(e, tr));
     } finally {
       setBusy(null);
     }
@@ -91,6 +92,8 @@ export function MyRequestsPage() {
       if (!res.ok) toast.error(res.error);
       else toast.success(tr("Pedido cancelado.", "Request cancelled."));
       await load();
+    } catch (e) {
+      toast.error(describeError(e, tr));
     } finally {
       setBusy(null);
     }

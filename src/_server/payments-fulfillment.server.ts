@@ -273,6 +273,20 @@ export async function reconcileRefundedCharge(opts: {
     return { ok: false, reason: "Falha ao reconciliar estorno" };
   }
   const result = data as { already_refunded?: boolean } | null;
+  // Pedido personalizado estornado volta para o fã como 'refunded'.
+  const { data: chargeRow } = await supabaseAdmin
+    .from("pix_charges")
+    .select("reference_id, metadata")
+    .eq("id", opts.chargeId)
+    .maybeSingle();
+  const kind = (metadataOf((chargeRow ?? {}) as PixCharge) as { kind?: unknown }).kind;
+  if (kind === "custom_request" && chargeRow?.reference_id) {
+    await supabaseAdmin
+      .from("custom_requests" as never)
+      .update({ status: "refunded", updated_at: new Date().toISOString() } as never)
+      .eq("id", chargeRow.reference_id)
+      .in("status", ["paid", "delivered"]);
+  }
   return { ok: true, alreadyRefunded: result?.already_refunded === true };
 }
 
@@ -521,10 +535,21 @@ async function markCustomRequestPaid(charge: PixCharge) {
       updated_at: new Date().toISOString(),
     } as never)
     .eq("id", charge.reference_id)
-    .in("status", ["accepted", "pending"])
+    .in("status", ["accepted", "cancelled"])
     .select("id")
     .maybeSingle();
-  if (!updated) return;
+  if (!updated) {
+    // Pagamento chegou fora do estado esperado (pedido recusado/já pago):
+    // o dinheiro entrou como mimo; fica registrado para estorno manual.
+    await recordOperationalEvent({
+      eventKind: "error",
+      eventName: "custom_request_paid_out_of_state",
+      severity: "warning",
+      userId: charge.payer_id,
+      metadata: { request_id: charge.reference_id, charge_id: charge.id, amount_cents: charge.amount_cents },
+    });
+    return;
+  }
   const { data: payer } = await supabaseAdmin
     .from("profiles")
     .select("display_name, username")

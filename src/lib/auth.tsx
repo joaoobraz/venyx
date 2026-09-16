@@ -195,7 +195,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // SECURITY: sessão aal1 de uma conta com 2FA ativo é um login incompleto.
     // Tratamos como deslogado (user = null) até o código ser confirmado; senão
     // quem tivesse só a senha entrava em tudo que o RLS libera.
+    // Guarda de sequência: eventos chegam em rajada (SIGNED_IN, TOKEN_REFRESHED…)
+    // e cada um consulta o servidor. Só o resultado do último evento pode
+    // escrever o estado; senão uma resposta atrasada deixava user=null com
+    // sessão válida ("deslogado fantasma").
+    let latestApply = 0;
     const applySession = async (sess: Session | null, onDone?: () => void) => {
+      const myApply = ++latestApply;
+      const stale = () => myApply !== latestApply;
       setSession(sess);
       if (!sess?.user) {
         setMfaPending(false);
@@ -212,9 +219,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // App autenticador (aal1 com fator) OU código por e-mail ainda não confirmado nesta sessão.
       let pending = await mfaStepUpPending().catch(() => false);
       if (!pending) {
-        pending = await getMyMfaState()
-          .then((state) => Boolean(state.emailPending))
-          .catch(() => false);
+        const check = () => getMyMfaState().then((state) => Boolean(state.emailPending));
+        pending = await check().catch(() => check().catch(() => false));
+      }
+      if (stale()) {
+        onDone?.();
+        return;
       }
       setMfaPending(pending);
       if (pending) {
@@ -226,16 +236,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadUserData(sess.user.id).finally(() => onDone?.());
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      // USER_UPDATED (ex.: troca de idioma nos metadados) não muda sessão nem
+      // 2FA: só atualiza o objeto, sem reconsultar servidor/banco.
+      if (event === "USER_UPDATED") {
+        setSession(sess);
+        return;
+      }
       // Fora do callback síncrono para não travar o lock interno do supabase-js.
       setTimeout(() => {
         void applySession(sess);
       }, 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      void applySession(sess, () => setLoading(false));
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: sess } }) => {
+        void applySession(sess, () => setLoading(false));
+      })
+      .catch((error) => {
+        console.error("[auth.getSession]", error instanceof Error ? error.name : "unknown");
+        setLoading(false);
+      });
 
     return () => sub.subscription.unsubscribe();
   }, [loadUserData]);

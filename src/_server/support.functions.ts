@@ -276,6 +276,15 @@ export const adminResetUserMfa = createServerFn({ method: "POST" })
 
     const userId = await findUserIdByEmail(request.login_email);
     if (!userId) return fail(`Nenhuma conta encontrada com o e-mail ${request.login_email}.`);
+    // Contas de administrador não podem ter o 2FA removido por este fluxo
+    // (um admin comprometido zeraria o 2FA dos outros). Só pelo dono, no painel.
+    const { data: targetAdmin } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (targetAdmin) return fail("Contas de administrador não podem ter o 2FA removido por aqui. Fale com o dono da plataforma.");
 
     const { data: factors, error: listError } = await supabaseAdmin.auth.admin.mfa.listFactors({ userId });
     if (listError) {
@@ -294,7 +303,9 @@ export const adminResetUserMfa = createServerFn({ method: "POST" })
 
     await supabaseAdmin
       .from("security_settings")
-      .upsert({ user_id: userId, mfa_enabled: false }, { onConflict: "user_id" });
+      .upsert({ user_id: userId, mfa_enabled: false, mfa_method: "totp" } as never, { onConflict: "user_id" });
+    // Sessões verificadas por e-mail também caem.
+    await supabaseAdmin.from("email_mfa_sessions" as never).delete().eq("user_id", userId);
 
     const now = new Date().toISOString();
     await supabaseAdmin

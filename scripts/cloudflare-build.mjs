@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 // *.functions.ts; o valor não vai junto porque process.env é {} no navegador.)
 const CLIENT_BUNDLE_FORBIDDEN = [
   "sb_secret_W", // prefixo + 1º caractere da service role atual, sem expor o resto
-  "IMPULSEPAY_API_KEY",
+  "IMPULSEPAY_SECRET_KEY",
   "IMPULSEPAY_WEBHOOK_TOKEN",
   "IMPULSEPAY_WITHDRAWAL_KEY",
   "api.impulse-pay.com", // integração é 100% servidor

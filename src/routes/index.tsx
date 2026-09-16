@@ -1061,6 +1061,7 @@ function Landing() {
             <Link to={routeTo("/terms")} className="transition-colors hover:text-primary">{tr("Termos", "Terms")}</Link>
             <Link to={routeTo("/privacy")} className="transition-colors hover:text-primary">{tr("Privacidade", "Privacy")}</Link>
             <Link to="/content-policy" className="transition-colors hover:text-primary">{tr("Conteúdo e segurança", "Content and safety")}</Link>
+            <Link to="/dmca" className="transition-colors hover:text-primary">DMCA</Link>
             <Link to={routeTo("/help")} className="transition-colors hover:text-primary">{tr("Ajuda", "Help")}</Link>
           </nav>
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">

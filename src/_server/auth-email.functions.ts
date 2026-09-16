@@ -3,15 +3,10 @@ import { getRequest } from "@tanstack/react-start/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { clientIpKey, tryRateLimit } from "@/_server/rate-limit.server";
+import { assertRateLimit, clientIpKey } from "@/_server/rate-limit.server";
 import { findUserIdByEmail, setUserLocale } from "@/_server/auth-admin.server";
 
-const ALLOWED_ORIGINS = new Set([
-  "https://fanlira.com.br",
-  "https://www.fanlira.com.br",
-  "http://localhost:8080",
-  "http://localhost:5173",
-]);
+const ALLOWED_ORIGINS = new Set(["https://fanlira.com.br", "https://www.fanlira.com.br"]);
 
 const RESET_PATH: Record<"pt-BR" | "en" | "es", string> = {
   "pt-BR": "/recuperar-senha",
@@ -39,11 +34,12 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     const request = getRequest();
     const ip = clientIpKey(request);
 
-    const [ipOk, emailOk] = await Promise.all([
-      tryRateLimit(`pwreset:ip:${ip}`, 10, 60 * 60),
-      tryRateLimit(`pwreset:email:${emailHash}`, 3, 60 * 60),
-    ]);
-    if (!ipOk || !emailOk) {
+    // Fail-closed: se o contador de rate limit falhar, o pedido é recusado
+    // (é o único freio deste endpoint, que dispensa captcha).
+    try {
+      await assertRateLimit(`pwreset:ip:${ip}`, 10, 60 * 60);
+      await assertRateLimit(`pwreset:email:${emailHash}`, 3, 60 * 60);
+    } catch {
       return {
         ok: false as const,
         error: "Muitos pedidos em pouco tempo. Aguarde uma hora e tente novamente.",

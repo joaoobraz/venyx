@@ -44,7 +44,7 @@ export function ResetPage() {
   const sendLink = async (e: FormEvent) => {
     e.preventDefault();
     if (captchaRequired && !captchaToken) {
-      toast.error("Conclua a verificação de segurança.");
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
       return;
     }
     setLoading(true);
@@ -58,7 +58,7 @@ export function ResetPage() {
       return;
     }
     // Mensagem genérica em todos os casos para evitar enumeração de e-mails
-    toast.success("Se este e-mail existir em nossa base, enviamos um link de redefinição.");
+    toast.success(tr("Se este e-mail existir em nossa base, enviamos um link de redefinição.", "If this email exists in our records, we sent a reset link."));
   };
 
   const updatePassword = async (e: FormEvent) => {
@@ -90,14 +90,14 @@ export function ResetPage() {
           const factor = factors?.totp.find((item) => item.status === "verified");
           if (factor) {
             setMfaFactorId(factor.id);
-            toast.message("Digite o código do seu aplicativo autenticador para concluir.");
+            toast.message(tr("Digite o código do seu aplicativo autenticador para concluir.", "Enter the code from your authenticator app to finish."));
             return;
           }
         }
       }
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("Senha atualizada!");
+      toast.success(tr("Senha atualizada!", "Password updated!"));
       window.location.href = localizedPathname("/feed", locale);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";

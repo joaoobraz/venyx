@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { createCustomRequest } from "@/_server/custom-requests.functions";
+import { describeError } from "@/lib/error-message";
 
 const fmt = (cents: number) => `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 
@@ -73,6 +74,10 @@ export function CustomRequestModal({
       toast.error(tr(`Valor mínimo: ${fmt(minPriceCents)}.`, `Minimum: ${fmt(minPriceCents)}.`));
       return;
     }
+    if (cents > 1_000_000) {
+      toast.error(tr("Valor máximo por pedido: R$ 10.000,00.", "Maximum per request: R$ 10,000.00."));
+      return;
+    }
     setBusy(true);
     try {
       const res = await createFn({ data: { creatorId, description: text, amountCents: cents } });
@@ -88,7 +93,7 @@ export function CustomRequestModal({
       );
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : tr("Não foi possível enviar o pedido.", "Couldn't send the request."));
+      toast.error(describeError(e, tr));
     } finally {
       setBusy(false);
     }

@@ -1,9 +1,5 @@
-// Service worker mínimo da Fanlira: torna o site instalável (PWA) sem cachear
-// conteúdo — tudo é sempre buscado na rede, então nada fica desatualizado e
-// nenhuma mídia paga fica guardada no dispositivo.
+// Service worker mínimo da Fanlira: existe só para o site ser instalável (PWA).
+// Sem cache e sem interceptar requisições — nada de mídia paga fica no
+// dispositivo e vídeos/streaming (Range) não passam por aqui.
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request));
-});

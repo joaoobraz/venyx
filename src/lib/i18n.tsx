@@ -643,22 +643,42 @@ interface I18nCtx {
 
 const Ctx = createContext<I18nCtx | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
+export function I18nProvider({
+  children,
+  initialPathname,
+}: {
+  children: ReactNode;
+  initialPathname?: string;
+}) {
+  // O estado inicial precisa ser IGUAL no servidor e no navegador (senão o
+  // React acusa hydration mismatch, erro #418). Só a URL é conhecida nos dois
+  // lados; a escolha manual (localStorage) e o idioma do navegador entram no
+  // efeito abaixo, depois de montar.
   const [locale, setLocaleState] = useState<Locale>(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(LOCALE_STORAGE_KEY) : null;
-    const source = typeof window !== "undefined" ? localStorage.getItem(LOCALE_SOURCE_KEY) : null;
-    // Only a deliberate choice in the language menu overrides detection. This
-    // lets older sessions that stored the old default locale migrate safely.
-    if (source === "manual" && isLocale(saved)) return saved;
-    if (typeof window !== "undefined") {
-      const pathLocale = localeFromPathname(window.location.pathname);
-      // Portuguese and Spanish URLs are explicit, localized links. English
-      // URLs are the canonical fallback, so they still adapt to the browser.
-      if (pathLocale === "pt-BR" || pathLocale === "es") return pathLocale;
-      return localeFromBrowser();
-    }
-    return "pt-BR";
+    const pathLocale = initialPathname ? localeFromPathname(initialPathname) : null;
+    return pathLocale === "pt-BR" || pathLocale === "es" ? pathLocale : "pt-BR";
   });
+
+  useEffect(() => {
+    let saved: string | null = null;
+    let source: string | null = null;
+    try {
+      saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+      source = localStorage.getItem(LOCALE_SOURCE_KEY);
+    } catch {
+      // sem storage: fica na detecção por URL/navegador
+    }
+    // Only a deliberate choice in the language menu overrides detection.
+    if (source === "manual" && isLocale(saved)) {
+      setLocaleState(saved);
+      return;
+    }
+    const pathLocale = localeFromPathname(window.location.pathname);
+    // Portuguese and Spanish URLs are explicit, localized links. English
+    // URLs are the canonical fallback, so they still adapt to the browser.
+    if (pathLocale === "pt-BR" || pathLocale === "es") return;
+    setLocaleState(localeFromBrowser());
+  }, []);
 
   useEffect(() => {
     if (typeof document !== "undefined") document.documentElement.lang = locale;

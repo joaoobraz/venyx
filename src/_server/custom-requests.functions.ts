@@ -247,6 +247,30 @@ export const createCustomRequestPixCharge = createServerFn({ method: "POST" })
       return fail(e instanceof Error ? e.message : "A criadora não pode receber pagamentos agora.");
     }
 
+    // Uma cobrança viva por pedido: se já existe Pix pendente e não expirado,
+    // devolve o mesmo QR em vez de gerar outro (evita dois pagamentos).
+    const { data: open } = await supabaseAdmin
+      .from("pix_charges")
+      .select("id, external_id, qr_code, qr_code_base64, expires_at, amount_cents")
+      .eq("reference_id", req.id)
+      .eq("purpose", "tip")
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (open && open.amount_cents === req.amount_cents) {
+      return {
+        ok: true as const,
+        chargeId: open.id,
+        externalId: open.external_id,
+        qrCode: open.qr_code,
+        qrCodeBase64: open.qr_code_base64,
+        expiresAt: open.expires_at,
+        amountCents: req.amount_cents,
+      };
+    }
+
     const externalId = `req_${fanId.slice(0, 8)}_${Date.now()}`;
     const gateway = await callImpulsePay(fanId, req.amount_cents, `Pedido personalizado ${fmtBRL(req.amount_cents)}`, externalId);
     if (!gateway.ok) return gateway;
@@ -324,6 +348,13 @@ export const cancelCustomRequest = createServerFn({ method: "POST" })
       .eq("id", req.id)
       .in("status", ["pending", "accepted"]);
     if (error) return fail("Não foi possível cancelar o pedido.");
+    // Cobranças Pix pendentes deste pedido deixam de ser aceitas pelo sistema.
+    await supabaseAdmin
+      .from("pix_charges")
+      .update({ status: "cancelled" })
+      .eq("reference_id", req.id)
+      .eq("purpose", "tip")
+      .eq("status", "pending");
     return { ok: true as const };
   });
 

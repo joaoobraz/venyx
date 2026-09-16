@@ -46,11 +46,15 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Fanlira — Plataforma de criadoras +18" },
       { property: "og:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://fanlira.com.br" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:title", content: "Fanlira — Plataforma de criadoras +18" },
       { name: "twitter:description", content: "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas na Fanlira." },
-      { property: "og:image", content: "/fanlira-social-card.svg" },
-      { name: "twitter:image", content: "/fanlira-social-card.svg" },
+      // PNG absoluto: WhatsApp/Facebook/X não renderizam SVG nem caminho relativo.
+      { property: "og:image", content: "https://fanlira.com.br/fanlira-social-card.png" },
+      { name: "twitter:image", content: "https://fanlira.com.br/fanlira-social-card.png" },
       // Rótulo padrão de conteúdo adulto (RTA), lido por controles parentais.
       { name: "rating", content: "RTA-5042-1996-1400-1577-RTA" },
       { name: "rating", content: "adult" },
@@ -93,9 +97,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  // Mesmo idioma inicial no servidor e no cliente (derivado da URL).
+  const location = useLocation();
   return (
     <ThemeProvider>
-      <I18nProvider>
+      <I18nProvider initialPathname={location.pathname}>
         <LocalizedUrlSync />
         <AuthProvider>
           <ProductTelemetry />

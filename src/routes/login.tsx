@@ -9,7 +9,7 @@ import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
 import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
 import { describeMfaError, getPasswordLoginError } from "@/lib/auth-errors";
 import { useServerFn } from "@tanstack/react-start";
-import { confirmEmailMfaSession, getMyMfaState } from "@/_server/mfa-email.functions";
+import { confirmEmailMfaSession, getMyMfaState, sendEmailMfaCode } from "@/_server/mfa-email.functions";
 import { requestPasswordReset } from "@/_server/auth-email.functions";
 import { localizedPathname } from "@/lib/localized-paths";
 import { trackProductEvent } from "@/lib/telemetry";
@@ -42,6 +42,7 @@ export function LoginPage() {
   const [resending, setResending] = useState(false);
   const getMfaStateFn = useServerFn(getMyMfaState);
   const confirmEmailMfaFn = useServerFn(confirmEmailMfaSession);
+  const sendEmailCodeFn = useServerFn(sendEmailMfaCode);
   const requestResetFn = useServerFn(requestPasswordReset);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -76,16 +77,29 @@ export function LoginPage() {
   };
 
   // Método "código por e-mail": o Supabase envia o OTP para o e-mail da conta.
+  const OTP_SENT_KEY = "fanlira:email-otp-sent-at";
   const prepareEmailMfa = async (): Promise<boolean> => {
     const state = await getMfaStateFn();
     if (!state.emailPending || !state.email) return false;
-    // O código sai no idioma que a pessoa está usando agora.
-    await supabase.auth.updateUser({ data: { locale } }).catch(() => undefined);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: state.email,
-      options: { shouldCreateUser: false },
-    });
-    if (error) throw error;
+    // A tela de login pode montar duas vezes (redirect localizado); não
+    // reenviar dentro de 60 s — mostra o passo do código com o envio anterior.
+    const lastSent = (() => {
+      try {
+        return Number(sessionStorage.getItem(OTP_SENT_KEY) ?? 0);
+      } catch {
+        return 0;
+      }
+    })();
+    if (Date.now() - lastSent > 60_000) {
+      // Enviado pelo servidor (dispensa captcha) no idioma atual da pessoa.
+      const sent = await sendEmailCodeFn({ data: { locale } });
+      if (!sent.ok) throw new Error(sent.error);
+      try {
+        sessionStorage.setItem(OTP_SENT_KEY, String(Date.now()));
+      } catch {
+        // sem storage: segue
+      }
+    }
     setOtpEmail(state.email);
     setEmailStep(true);
     return true;
@@ -95,8 +109,16 @@ export function LoginPage() {
     if (!otpEmail) return;
     setResending(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email: otpEmail, options: { shouldCreateUser: false } });
-      if (error) throw error;
+      const sent = await sendEmailCodeFn({ data: { locale } });
+      if (!sent.ok) {
+        toast.error(sent.error);
+        return;
+      }
+      try {
+        sessionStorage.setItem(OTP_SENT_KEY, String(Date.now()));
+      } catch {
+        // sem storage: segue
+      }
       toast.success(tr("Novo código enviado.", "New code sent."));
     } catch (error) {
       toast.error(describeMfaError(error, tr));
@@ -179,6 +201,19 @@ export function LoginPage() {
       mfaGateRef.current = false;
       navigate({ to: routeTo("/feed") });
     } catch (error) {
+      // Senha certa mas o passo de 2FA falhou (rede etc.): a sessão está aberta
+      // e pendente. Mantém o gate e explica — em vez de "login falhou".
+      const { data: opened } = await supabase.auth.getSession();
+      if (opened.session) {
+        mfaGateRef.current = true;
+        toast.error(
+          tr(
+            "Não foi possível iniciar a verificação em dois fatores. Tente novamente em instantes.",
+            "Couldn't start two-factor verification. Try again in a moment.",
+          ),
+        );
+        return;
+      }
       mfaGateRef.current = false;
       trackProductEvent("login_failed", {
         method: "password",
@@ -317,7 +352,7 @@ export function LoginPage() {
               {loading ? t("common.loading") : tr("Confirmar código", "Confirm code")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              <Link to="/help" className="underline hover:text-foreground">
+              <Link to={routeTo("/help")} className="underline hover:text-foreground">
                 {tr("Perdi o acesso ao aplicativo autenticador", "I lost access to my authenticator app")}
               </Link>
             </p>
