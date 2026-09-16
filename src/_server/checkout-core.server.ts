@@ -112,7 +112,7 @@ export async function assertCreatorCanMonetize(creatorId: string, payerId?: stri
     // Anti-abuso: evita spam de cobranças na ImpulsePay por uma única conta.
     await assertRateLimit(
       `charge:${payerId}`,
-      10,
+      30,
       10 * 60,
       "Você gerou muitas cobranças em pouco tempo. Aguarde alguns minutos.",
     );

@@ -1289,7 +1289,17 @@ export function ChatPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    {active.other_name}
+                    {active.is_demo ? (
+                      active.other_name
+                    ) : (
+                      <Link
+                        to="/profile/$username"
+                        params={{ username: active.other_username }}
+                        className="hover:text-primary hover:underline"
+                      >
+                        {active.other_name}
+                      </Link>
+                    )}
                     {active.subscribed && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
                         <Crown className="h-3 w-3" /> {t("chat.activeSubscriber")}
@@ -1317,7 +1327,17 @@ export function ChatPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>@{active.other_username}</span>
+                    {active.is_demo ? (
+                      <span>@{active.other_username}</span>
+                    ) : (
+                      <Link
+                        to="/profile/$username"
+                        params={{ username: active.other_username }}
+                        className="hover:text-primary hover:underline"
+                      >
+                        @{active.other_username}
+                      </Link>
+                    )}
                     <span aria-hidden>·</span>
                     <span className={otherTyping || otherOnline ? "text-emerald-500" : ""}>
                       {otherTyping
