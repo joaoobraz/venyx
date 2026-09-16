@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface StoryItem {
@@ -35,6 +35,14 @@ export function StoryViewer({
   const story = group?.stories[sIdx];
 
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     setProgress(0);
     if (!story || story.mime.startsWith("video/")) return;
     const start = Date.now();
@@ -66,13 +74,23 @@ export function StoryViewer({
     }
   };
 
+  const closeViewer = (event: SyntheticEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClose();
+  };
+
   if (!group || !story) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95">
       <button
-        onClick={onClose}
-        className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+        type="button"
+        aria-label="Fechar story"
+        onPointerUp={closeViewer}
+        onClick={closeViewer}
+        className="absolute right-4 z-[120] touch-manipulation rounded-full bg-black/60 p-3 text-white shadow-lg hover:bg-black/80"
+        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
       >
         <X className="h-5 w-5" />
       </button>
@@ -91,7 +109,7 @@ export function StoryViewer({
 
       <div className="relative h-full max-h-[100dvh] w-full max-w-md">
         {/* Progress bars */}
-        <div className="absolute left-0 right-0 top-0 z-10 flex gap-1 p-2">
+        <div className="absolute left-0 right-0 top-0 z-20 flex gap-1 p-2">
           {group.stories.map((_, i) => (
             <div key={i} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/30">
               <div
@@ -105,7 +123,7 @@ export function StoryViewer({
         </div>
 
         {/* Header */}
-        <div className="absolute left-0 right-0 top-4 z-10 flex items-center gap-2 px-4 pt-2">
+        <div className="absolute left-0 right-0 top-4 z-20 flex items-center gap-2 px-4 pt-2">
           <div className="h-9 w-9 overflow-hidden rounded-full border border-white/30 bg-muted">
             {group.avatar_url ? (
               <img src={group.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -135,8 +153,8 @@ export function StoryViewer({
           ) : (
             <img src={story.url} alt="" className="h-full w-full object-contain" />
           )}
-          <button onClick={prev} className="absolute left-0 top-0 h-full w-1/3" aria-label="prev" />
-          <button onClick={next} className="absolute right-0 top-0 h-full w-1/3" aria-label="next" />
+          <button type="button" onClick={prev} className="absolute left-0 top-0 z-10 h-full w-1/3" aria-label="Story anterior" />
+          <button type="button" onClick={next} className="absolute right-0 top-0 z-10 h-full w-1/3" aria-label="Próximo story" />
         </div>
       </div>
     </div>

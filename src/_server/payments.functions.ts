@@ -8,10 +8,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * o que permitia a qualquer usuário autenticado desbloquear conteúdo, fingir
  * assinatura ou enviar gorjeta sem pagar. Foram DESATIVADOS.
  *
- * Todo fluxo de pagamento agora exige uma cobrança Pix real via NexusPag —
+ * Todo fluxo de pagamento agora exige uma cobrança Pix real via Impulse Pay —
  * use as funções em `src/_server/checkout.functions.ts` (createSubscriptionPixCharge,
  * createTipPixCharge, etc.). A liberação do conteúdo é feita pelo webhook
- * (`/api/public/nexuspag-webhook`) ou pelo polling de `getChargeStatus`,
+ * (`/api/public/impulsepay-webhook`) ou pelo polling de `getChargeStatus`,
  * que chamam `fulfillPaidCharge` em `payments-fulfillment.server.ts`.
  *
  * As funções abaixo continuam exportadas só para que componentes que ainda
@@ -30,7 +30,7 @@ const ppvSchema = z.object({
 
 export const unlockPpvServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => ppvSchema.parse(input))
+  .validator((input: unknown) => ppvSchema.parse(input))
   .handler(async (): Promise<{ ok: true; alreadyUnlocked: boolean }> => {
     throw new Error(DISABLED_MSG);
   });
@@ -46,7 +46,7 @@ const tipSchema = z.object({
 
 export const tipServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => tipSchema.parse(input))
+  .validator((input: unknown) => tipSchema.parse(input))
   .handler(async () => {
     throw new Error(DISABLED_MSG);
   });
@@ -59,7 +59,7 @@ const goalSchema = z.object({
 
 export const contributeGoalServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => goalSchema.parse(input))
+  .validator((input: unknown) => goalSchema.parse(input))
   .handler(async () => {
     throw new Error(DISABLED_MSG);
   });
@@ -75,7 +75,7 @@ const subSchema = z.object({
 
 export const subscribeServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => subSchema.parse(input))
+  .validator((input: unknown) => subSchema.parse(input))
   .handler(async () => {
     throw new Error(DISABLED_MSG);
   });
@@ -88,7 +88,7 @@ const chatPpvSchema = z.object({
 
 export const unlockChatPpvServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => chatPpvSchema.parse(input))
+  .validator((input: unknown) => chatPpvSchema.parse(input))
   .handler(async (): Promise<{ ok: true; alreadyUnlocked: boolean }> => {
     throw new Error(DISABLED_MSG);
   });

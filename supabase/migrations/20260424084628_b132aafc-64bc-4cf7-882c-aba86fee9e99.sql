@@ -55,22 +55,34 @@ UPDATE storage.buckets SET public = true WHERE id IN ('avatars', 'covers');
 -- ============================================================
 -- 4) REALTIME: trocar ELSE permissivo por WHEN explícito
 -- ============================================================
-DROP POLICY IF EXISTS "Realtime: participantes do thread leem broadcasts" ON realtime.messages;
-
-CREATE POLICY "Realtime: somente participantes do thread"
-  ON realtime.messages FOR SELECT
-  TO authenticated
-  USING (
-    CASE
-      WHEN realtime.topic() LIKE 'thread:%' THEN
-        EXISTS (
-          SELECT 1 FROM public.chat_threads t
-          WHERE t.id::text = substring(realtime.topic() FROM 8)
-            AND (t.user_a = auth.uid() OR t.user_b = auth.uid())
-        )
-      ELSE false
-    END
-  );
+DO $realtime_policy$
+BEGIN
+  IF to_regclass('realtime.messages') IS NOT NULL THEN
+    BEGIN
+      EXECUTE 'DROP POLICY IF EXISTS "Realtime: participantes do thread leem broadcasts" ON realtime.messages';
+      EXECUTE $policy$
+        CREATE POLICY "Realtime: somente participantes do thread"
+          ON realtime.messages FOR SELECT
+          TO authenticated
+          USING (
+            CASE
+              WHEN realtime.topic() LIKE 'thread:%' THEN
+                EXISTS (
+                  SELECT 1 FROM public.chat_threads t
+                  WHERE t.id::text = substring(realtime.topic() FROM 8)
+                    AND (t.user_a = auth.uid() OR t.user_b = auth.uid())
+                )
+              ELSE false
+            END
+          )
+      $policy$;
+    EXCEPTION
+      WHEN insufficient_privilege OR undefined_function OR undefined_table THEN
+        RAISE NOTICE 'Skipping realtime.messages policy: platform-managed or unavailable';
+    END;
+  END IF;
+END
+$realtime_policy$;
 
 -- ============================================================
 -- 5) Restringir SELECT público amplo em tabelas com info sensível

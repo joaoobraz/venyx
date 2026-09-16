@@ -51,7 +51,8 @@ ALTER TABLE public.profiles
 ALTER TABLE public.subscriptions
   ADD COLUMN IF NOT EXISTS is_trial boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS plan_id uuid,
-  ADD COLUMN IF NOT EXISTS months integer;
+  ADD COLUMN IF NOT EXISTS months integer,
+  ADD COLUMN IF NOT EXISTS current_period_start timestamptz;
 
 CREATE TABLE public.subscription_trials_used (
   user_id uuid NOT NULL,

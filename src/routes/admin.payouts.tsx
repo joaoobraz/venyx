@@ -1,22 +1,15 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { requireAdminServer } from "@/_server/admin.functions";
 import { useEffect, useState, useCallback } from "react";
-import { ArrowDownToLine, Copy, Check, ExternalLink } from "lucide-react";
+import { ArrowDownToLine, Copy, ExternalLink, RefreshCw, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -27,12 +20,17 @@ import {
 } from "@/components/ui/dialog";
 import {
   approveWithdrawal,
-  markWithdrawalPaid,
+  getImpulsePayOperationalBalance,
+  getGatewayFeeSummary,
+  refreshGatewayFees,
   rejectWithdrawal,
 } from "@/_server/withdrawals.functions";
+import { useI18n, type Locale } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/payouts")({
   beforeLoad: async () => {
+    // O guard só faz sentido no navegador; no SSR não há sessão no pedido.
+    if (typeof window === "undefined") return;
     try {
       await requireAdminServer({ data: { path: "/admin/payouts" } });
     } catch {
@@ -46,6 +44,7 @@ interface WithdrawalRow {
   id: string;
   creator_id: string;
   amount_cents: number;
+  fanlira_withdrawal_fee_cents: number;
   pix_key: string;
   pix_key_type: string;
   holder_name: string;
@@ -56,6 +55,11 @@ interface WithdrawalRow {
   created_at: string;
   paid_at: string | null;
   reviewed_at: string | null;
+  gateway_transfer_id: string | null;
+  gateway_status: string | null;
+  gateway_fee_cents: number | null;
+  gateway_net_amount_cents: number | null;
+  gateway_end_to_end: string | null;
 }
 
 interface CreatorMini {
@@ -64,25 +68,67 @@ interface CreatorMini {
   display_name: string | null;
 }
 
-const fmt = (cents: number) =>
-  `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+interface ProviderBalance {
+  configured: boolean;
+  available: number;
+  reserved: number;
+}
 
-function AdminPayoutsPage() {
+const fmt = (cents: number, locale: Locale) =>
+  `R$ ${(cents / 100).toLocaleString(locale, { minimumFractionDigits: 2 })}`;
+
+export function AdminPayoutsPage() {
+  const { locale, tr } = useI18n();
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [items, setItems] = useState<WithdrawalRow[]>([]);
   const [creators, setCreators] = useState<Record<string, CreatorMini>>({});
+  const [providerBalance, setProviderBalance] = useState<ProviderBalance | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  // Taxas que a Impulse Pay cobra de nós (cobranças + saques), lidas do banco.
+  type FeeSummary = Awaited<ReturnType<typeof getGatewayFeeSummary>>;
+  const [feeSummary, setFeeSummary] = useState<FeeSummary | null>(null);
+  const [feeLoading, setFeeLoading] = useState(false);
   const [tab, setTab] = useState<"pending" | "approved" | "paid" | "rejected">("pending");
 
-  const [paying, setPaying] = useState<WithdrawalRow | null>(null);
   const [rejecting, setRejecting] = useState<WithdrawalRow | null>(null);
   const [reason, setReason] = useState("");
-  const [receipt, setReceipt] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const approveFn = useServerFn(approveWithdrawal);
-  const payFn = useServerFn(markWithdrawalPaid);
+  const getBalanceFn = useServerFn(getImpulsePayOperationalBalance);
+  const getFeeSummaryFn = useServerFn(getGatewayFeeSummary);
+  const refreshFeesFn = useServerFn(refreshGatewayFees);
+
+  const loadFeeSummary = useCallback(async () => {
+    try {
+      setFeeSummary(await getFeeSummaryFn());
+    } catch {
+      setFeeSummary(null);
+    }
+  }, [getFeeSummaryFn]);
+
+  const refreshFees = async () => {
+    setFeeLoading(true);
+    try {
+      const r = await refreshFeesFn();
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(
+        r.updated > 0
+          ? tr(`Taxas atualizadas em ${r.updated} cobrança(s).`, `Fees updated for ${r.updated} charge(s).`)
+          : tr("Todas as cobranças pagas já têm a taxa registrada.", "All paid charges already have their fee recorded."),
+      );
+      await loadFeeSummary();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : tr("Não foi possível buscar as taxas.", "Couldn't fetch fees."));
+    } finally {
+      setFeeLoading(false);
+    }
+  };
   const rejectFn = useServerFn(rejectWithdrawal);
 
   useEffect(() => {
@@ -124,9 +170,31 @@ function AdminPayoutsPage() {
     }
   }, []);
 
+  const loadProviderBalance = useCallback(async () => {
+    setBalanceLoading(true);
+    try {
+      setProviderBalance(await getBalanceFn());
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tr(
+              "Não foi possível consultar o saldo da Impulse Pay.",
+              "Could not load Impulse Pay balance.",
+            ),
+      );
+    } finally {
+      setBalanceLoading(false);
+    }
+  }, [getBalanceFn, tr]);
+
   useEffect(() => {
-    if (isAdmin) load();
-  }, [isAdmin, load]);
+    if (isAdmin) {
+      load();
+      loadProviderBalance();
+      void loadFeeSummary();
+    }
+  }, [isAdmin, load, loadProviderBalance, loadFeeSummary]);
 
   if (!isAdmin) return null;
 
@@ -140,32 +208,15 @@ function AdminPayoutsPage() {
   const handleApprove = async (id: string) => {
     try {
       await approveFn({ data: { withdrawal_id: id, notes: null } });
-      toast.success("Aprovado. Agora pague o PIX e marque como pago.");
+      toast.success(
+        tr(
+          "Saque aprovado e enviado à Impulse Pay.",
+          "Withdrawal approved and submitted to Impulse Pay.",
+        ),
+      );
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  };
-
-  const handlePay = async () => {
-    if (!paying) return;
-    setSubmitting(true);
-    try {
-      await payFn({
-        data: {
-          withdrawal_id: paying.id,
-          receipt_url: receipt || null,
-          notes: null,
-        },
-      });
-      toast.success("Saque marcado como pago");
-      setPaying(null);
-      setReceipt("");
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    } finally {
-      setSubmitting(false);
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     }
   };
 
@@ -174,12 +225,12 @@ function AdminPayoutsPage() {
     setSubmitting(true);
     try {
       await rejectFn({ data: { withdrawal_id: rejecting.id, reason: reason.trim() } });
-      toast.success("Saque rejeitado");
+      toast.success(tr("Saque rejeitado", "Withdrawal rejected"));
       setRejecting(null);
       setReason("");
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : tr("Erro", "Error"));
     } finally {
       setSubmitting(false);
     }
@@ -187,7 +238,7 @@ function AdminPayoutsPage() {
 
   const copy = (txt: string) => {
     navigator.clipboard.writeText(txt);
-    toast.success("Copiado");
+    toast.success(tr("Copiado", "Copied"));
   };
 
   return (
@@ -195,25 +246,98 @@ function AdminPayoutsPage() {
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center gap-2">
           <ArrowDownToLine className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-bold">Saques (Admin)</h1>
+          <h1 className="text-2xl font-bold">{tr("Saques (Admin)", "Withdrawals (Admin)")}</h1>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4">
+          <div className="flex items-center gap-3">
+            <WalletCards className="h-5 w-5 text-primary" />
+            <div>
+              <div className="text-sm font-semibold">
+                {tr("Saldo Impulse Pay", "Impulse Pay balance")}
+              </div>
+              {providerBalance?.configured ? (
+                <div className="text-xs text-muted-foreground">
+                  {tr("Disponível", "Available")}: {fmt(providerBalance.available, locale)} ·{" "}
+                  {tr("Reservado", "Reserved")}: {fmt(providerBalance.reserved, locale)}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  {providerBalance
+                    ? tr(
+                        "Credenciais ainda não configuradas.",
+                        "Credentials are not configured yet.",
+                      )
+                    : tr("Consultando saldo...", "Loading balance...")}
+                </div>
+              )}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={loadProviderBalance}
+            disabled={balanceLoading}
+          >
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${balanceLoading ? "animate-spin" : ""}`} />
+            {tr("Atualizar", "Refresh")}
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4">
+          <div>
+            <div className="text-sm font-semibold">{tr("Taxas da Impulse Pay (o que ela cobra de nós)", "Impulse Pay fees (what they charge us)")}</div>
+            {feeSummary ? (
+              <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                <div>
+                  {tr("Cobranças pagas", "Paid charges")}: {feeSummary.charges.paidCount} ·{" "}
+                  {tr("com taxa registrada", "with fee recorded")}: {feeSummary.charges.withFeeCount}
+                  {feeSummary.charges.withFeeCount > 0 && (
+                    <>
+                      {" "}· {tr("bruto", "gross")} {fmt(feeSummary.charges.grossCents, locale)} · {tr("taxa", "fee")}{" "}
+                      <span className="font-semibold text-foreground">{fmt(feeSummary.charges.feeCents, locale)}</span>
+                      {feeSummary.charges.feePct !== null && <> ({feeSummary.charges.feePct}%)</>}
+                    </>
+                  )}
+                </div>
+                <div>
+                  {tr("Saques pagos", "Paid withdrawals")}: {feeSummary.payouts.paidCount} · {tr("taxa", "fee")}{" "}
+                  <span className="font-semibold text-foreground">{fmt(feeSummary.payouts.feeCents, locale)}</span>
+                </div>
+                {feeSummary.charges.withFeeCount < feeSummary.charges.paidCount && (
+                  <div>{tr("Clique em “Buscar taxas” para consultar as cobranças antigas na Impulse Pay.", "Click “Fetch fees” to query older charges at Impulse Pay.")}</div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1 text-xs text-muted-foreground">{tr("Carregando...", "Loading...")}</div>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={refreshFees} disabled={feeLoading}>
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${feeLoading ? "animate-spin" : ""}`} />
+            {tr("Buscar taxas", "Fetch fees")}
+          </Button>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
             <TabsTrigger value="pending">
-              Pendentes ({items.filter((w) => w.status === "pending").length})
+              {tr("Pendentes", "Pending")} ({items.filter((w) => w.status === "pending").length})
             </TabsTrigger>
             <TabsTrigger value="approved">
-              Em pagamento (
+              {tr("Em pagamento", "Processing")} (
               {items.filter((w) => w.status === "approved" || w.status === "processing").length})
             </TabsTrigger>
-            <TabsTrigger value="paid">Pagos</TabsTrigger>
-            <TabsTrigger value="rejected">Rejeitados/Cancelados</TabsTrigger>
+            <TabsTrigger value="paid">{tr("Pagos", "Paid")}</TabsTrigger>
+            <TabsTrigger value="rejected">
+              {tr("Rejeitados/Cancelados", "Rejected/Canceled")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4 space-y-3">
             {filtered.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum item nesta lista.</p>
+              <p className="text-sm text-muted-foreground">
+                {tr("Nenhum item nesta lista.", "No items in this list.")}
+              </p>
             )}
             {filtered.map((w) => {
               const c = creators[w.creator_id];
@@ -221,30 +345,41 @@ function AdminPayoutsPage() {
                 <div key={w.id} className="rounded-xl bg-card p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="text-lg font-bold text-foreground">{fmt(w.amount_cents)}</div>
+                      <div className="text-lg font-bold text-foreground">
+                        {tr("Solicitado", "Requested")}: {fmt(w.amount_cents, locale)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {c ? `@${c.username}` : w.creator_id} ·{" "}
-                        {new Date(w.created_at).toLocaleString("pt-BR")}
+                        {new Date(w.created_at).toLocaleString(locale)}
                       </div>
                     </div>
                     <div className="flex gap-2">
                       {w.status === "pending" && (
                         <>
                           <Button size="sm" onClick={() => handleApprove(w.id)}>
-                            Aprovar
+                            {tr("Aprovar", "Approve")}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setRejecting(w)}
-                          >
-                            Rejeitar
+                          <Button size="sm" variant="outline" onClick={() => setRejecting(w)}>
+                            {tr("Rejeitar", "Reject")}
                           </Button>
                         </>
                       )}
                       {(w.status === "approved" || w.status === "processing") && (
-                        <Button size="sm" onClick={() => setPaying(w)}>
-                          <Check className="mr-1 h-3.5 w-3.5" /> Marcar como pago
+                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+                          {w.gateway_status ?? tr("Enviado à Impulse Pay", "Sent to Impulse Pay")}
+                        </span>
+                      )}
+                      {w.status === "processing" && /FAIL|REFUS|CANCEL|REJECT|ERROR/i.test(w.gateway_status ?? "") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title={tr(
+                            "Confirme no painel da Impulse Pay que a transferência falhou antes de rejeitar; isso devolve o saldo à criadora.",
+                            "Confirm in the Impulse Pay dashboard that the transfer failed before rejecting; this returns the balance to the creator.",
+                          )}
+                          onClick={() => setRejecting(w)}
+                        >
+                          {tr("Rejeitar (falha confirmada)", "Reject (failure confirmed)")}
                         </Button>
                       )}
                       {w.status === "paid" && w.receipt_url && (
@@ -254,31 +389,63 @@ function AdminPayoutsPage() {
                           rel="noreferrer"
                           className="text-xs text-primary underline flex items-center gap-1"
                         >
-                          Comprovante <ExternalLink className="h-3 w-3" />
+                          {tr("Comprovante", "Receipt")} <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                     </div>
                   </div>
 
                   <div className="mt-3 grid gap-2 rounded-lg bg-background p-3 text-xs sm:grid-cols-2">
-                    <Field label="Tipo" value={w.pix_key_type.toUpperCase()} />
-                    <Field label="Chave PIX" value={w.pix_key} onCopy={() => copy(w.pix_key)} />
-                    <Field label="Titular" value={w.holder_name} />
+                    <Field
+                      label={tr("Taxa Fanlira", "Fanlira fee")}
+                      value={fmt(w.fanlira_withdrawal_fee_cents, locale)}
+                    />
+                    <Field
+                      label={tr("Pix a transferir/transferido", "Pix to transfer/transferred")}
+                      value={fmt(w.gateway_net_amount_cents ?? w.amount_cents, locale)}
+                    />
+                    {w.gateway_fee_cents !== null && (
+                      <Field
+                        label={tr("Taxa Impulse Pay absorvida", "Absorbed Impulse Pay fee")}
+                        value={fmt(w.gateway_fee_cents, locale)}
+                      />
+                    )}
+                    <Field label={tr("Tipo", "Type")} value={w.pix_key_type.toUpperCase()} />
+                    <Field
+                      label={tr("Chave Pix", "Pix key")}
+                      value={w.pix_key}
+                      onCopy={() => copy(w.pix_key)}
+                    />
+                    <Field label={tr("Titular", "Account holder")} value={w.holder_name} />
                     <Field
                       label="CPF/CNPJ"
                       value={w.holder_document}
                       onCopy={() => copy(w.holder_document)}
                     />
+                    {w.gateway_transfer_id && (
+                      <Field
+                        label={tr("ID Impulse Pay", "Impulse Pay ID")}
+                        value={w.gateway_transfer_id}
+                        onCopy={() => copy(w.gateway_transfer_id ?? "")}
+                      />
+                    )}
+                    {w.gateway_end_to_end && (
+                      <Field
+                        label="End-to-end"
+                        value={w.gateway_end_to_end}
+                        onCopy={() => copy(w.gateway_end_to_end ?? "")}
+                      />
+                    )}
                   </div>
 
                   {w.rejection_reason && (
                     <div className="mt-2 text-xs text-destructive">
-                      Rejeição: {w.rejection_reason}
+                      {tr("Rejeição", "Rejection")}: {w.rejection_reason}
                     </div>
                   )}
                   {w.paid_at && (
                     <div className="mt-2 text-xs text-green-600">
-                      Pago em {new Date(w.paid_at).toLocaleString("pt-BR")}
+                      {tr("Pago em", "Paid on")} {new Date(w.paid_at).toLocaleString(locale)}
                     </div>
                   )}
                 </div>
@@ -288,60 +455,37 @@ function AdminPayoutsPage() {
         </Tabs>
       </div>
 
-      {/* Modal pagar */}
-      <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Marcar como pago</DialogTitle>
-            <DialogDescription>
-              Confirme que você enviou o PIX de {paying && fmt(paying.amount_cents)} para{" "}
-              <strong>{paying?.pix_key}</strong>. Isso debita o saldo da criadora.
-            </DialogDescription>
-          </DialogHeader>
-          <div>
-            <Label>Link do comprovante (opcional)</Label>
-            <Input
-              value={receipt}
-              onChange={(e) => setReceipt(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPaying(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={handlePay} disabled={submitting}>
-              Confirmar pagamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Modal rejeitar */}
       <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rejeitar saque</DialogTitle>
+            <DialogTitle>{tr("Rejeitar saque", "Reject withdrawal")}</DialogTitle>
             <DialogDescription>
-              Informe o motivo. A criadora verá esse texto no histórico.
+              {tr(
+                "Informe o motivo. A criadora verá esse texto no histórico.",
+                "Enter a reason. The creator will see it in their history.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Ex: chave PIX não bate com o nome do KYC"
+            placeholder={tr(
+              "Ex.: a chave Pix não corresponde ao nome do KYC",
+              "E.g. Pix key does not match the KYC name",
+            )}
             rows={4}
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRejecting(null)}>
-              Cancelar
+              {tr("Cancelar", "Cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleReject}
               disabled={submitting || reason.trim().length < 3}
             >
-              Rejeitar
+              {tr("Rejeitar", "Reject")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -350,15 +494,7 @@ function AdminPayoutsPage() {
   );
 }
 
-function Field({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  onCopy?: () => void;
-}) {
+function Field({ label, value, onCopy }: { label: string; value: string; onCopy?: () => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">

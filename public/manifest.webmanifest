@@ -1,0 +1,19 @@
+{
+  "name": "Fanlira",
+  "short_name": "Fanlira",
+  "description": "Assine, troque mensagens e desbloqueie conteúdos exclusivos das suas criadoras favoritas.",
+  "id": "/",
+  "start_url": "/feed",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17101a",
+  "theme_color": "#17101a",
+  "lang": "pt-BR",
+  "categories": ["social", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

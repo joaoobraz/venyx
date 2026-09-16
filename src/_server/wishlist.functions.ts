@@ -9,7 +9,7 @@ const ToggleSchema = z.object({
 
 export const toggleWishlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => ToggleSchema.parse(input))
+  .validator((input) => ToggleSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -50,13 +50,7 @@ export const listMyWishlist = createServerFn({ method: "GET" })
     const creatorIds = list.filter((i) => i.target_type === "creator").map((i) => i.target_id);
     const postIds = list.filter((i) => i.target_type === "post").map((i) => i.target_id);
 
-    const [{ data: creators }, { data: posts }, { data: mediaRecords }] = await Promise.all([
-      creatorIds.length
-        ? supabase
-            .from("profiles")
-            .select("user_id, username, display_name, avatar_url, subscription_price_cents")
-            .in("user_id", creatorIds)
-        : Promise.resolve({ data: [] as any[] }),
+    const [{ data: posts }, { data: mediaRecords }] = await Promise.all([
       postIds.length
         ? supabase
             .from("posts")
@@ -72,6 +66,20 @@ export const listMyWishlist = createServerFn({ method: "GET" })
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
+    const allCreatorIds = Array.from(
+      new Set([
+        ...creatorIds,
+        ...(posts ?? []).map((post) => post.creator_id),
+      ]),
+    );
+    const { data: profiles } = allCreatorIds.length
+      ? await supabase
+          .from("profiles")
+          .select("user_id, username, display_name, avatar_url, subscription_price_cents, is_verified")
+          .in("user_id", allCreatorIds)
+      : { data: [] };
+    const profileById = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
+
     // Build a map of media by post_id, taking the first (position 0)
     const mediaByPost: Record<string, { path: string; type: string }> = {};
     (mediaRecords ?? []).forEach((m) => {
@@ -81,20 +89,46 @@ export const listMyWishlist = createServerFn({ method: "GET" })
     });
 
     return {
-      creators: (creators ?? []) as Array<{
+      creators: creatorIds
+        .map((id) => profileById.get(id))
+        .filter((creator): creator is NonNullable<typeof creator> => Boolean(creator)) as Array<{
         user_id: string;
         username: string;
         display_name: string | null;
         avatar_url: string | null;
         subscription_price_cents: number | null;
+        is_verified: boolean;
       }>,
-      posts: (posts ?? []) as Array<{
+      posts: postIds
+        .map((id) => (posts ?? []).find((post) => post.id === id))
+        .filter((post): post is NonNullable<typeof post> => Boolean(post))
+        .map((post) => {
+          const author = profileById.get(post.creator_id);
+          return {
+            ...post,
+            author: author
+              ? {
+                  username: author.username,
+                  display_name: author.display_name,
+                  avatar_url: author.avatar_url,
+                  is_verified: author.is_verified,
+                }
+              : null,
+          };
+        })
+        .filter((post) => post.author !== null) as Array<{
         id: string;
         creator_id: string;
         body: string | null;
         visibility: string;
         price_cents: number;
         created_at: string;
+        author: {
+          username: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          is_verified: boolean;
+        };
       }>,
       mediaByPostId: mediaByPost,
     };

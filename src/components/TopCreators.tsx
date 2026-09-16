@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crown, Trophy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { listPublicCreators } from "@/_server/discovery.functions";
+import { DEMO_CREATORS, DEMO_MODE } from "@/lib/demo-creators";
+import { useI18n } from "@/lib/i18n";
 
 interface TopCreator {
   user_id: string;
@@ -10,66 +12,99 @@ interface TopCreator {
   avatar_url: string | null;
   is_verified: boolean;
   score: number;
+  rank?: number;
+  status?: "online" | "recent";
 }
 
-export function TopCreators({ limit = 50, compact = false }: { limit?: number; compact?: boolean }) {
+const MAX_RANKING_SIZE = 15;
+const RANKING_CACHE_MS = 6 * 60 * 60 * 1000;
+const RANKING_CACHE_KEY = "venyx:top-creators:v3";
+
+export function TopCreators({
+  limit = 15,
+  compact = false,
+  hideHeading = false,
+}: {
+  limit?: number;
+  compact?: boolean;
+  hideHeading?: boolean;
+}) {
+  const { t } = useI18n();
   const [creators, setCreators] = useState<TopCreator[]>([]);
   const [loading, setLoading] = useState(true);
+  const safeLimit = Math.min(MAX_RANKING_SIZE, Math.max(1, limit));
 
   useEffect(() => {
     (async () => {
-      // Buscar criadoras (quem tem role 'creator')
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "creator");
-      const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
-      if (ids.length === 0) {
+      if (DEMO_MODE) {
+        setCreators(DEMO_CREATORS.slice(0, safeLimit));
         setLoading(false);
         return;
       }
-      const [{ data: profs }, { data: followsRows }, { data: postsRows }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("user_id, username, display_name, avatar_url, is_verified")
-          .in("user_id", ids),
-        supabase.from("follows").select("followee_id").in("followee_id", ids),
-        supabase.from("posts").select("creator_id, likes_count").in("creator_id", ids),
-      ]);
 
-      const followCount = new Map<string, number>();
-      (followsRows ?? []).forEach((r: { followee_id: string }) => {
-        followCount.set(r.followee_id, (followCount.get(r.followee_id) ?? 0) + 1);
-      });
-      const likesSum = new Map<string, number>();
-      (postsRows ?? []).forEach((p: { creator_id: string; likes_count: number }) => {
-        likesSum.set(p.creator_id, (likesSum.get(p.creator_id) ?? 0) + p.likes_count);
-      });
+      try {
+        const cached = localStorage.getItem(RANKING_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached) as { savedAt: number; creators: TopCreator[] };
+          if (Date.now() - parsed.savedAt < RANKING_CACHE_MS) {
+            setCreators(parsed.creators.slice(0, safeLimit));
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Cache is only an optimization.
+      }
 
-      const ranked: TopCreator[] = (profs ?? [])
-        .map((p) => ({
-          ...p,
-          score:
-            (followCount.get(p.user_id) ?? 0) * 100 +
-            (likesSum.get(p.user_id) ?? 0) +
-            (p.is_verified ? 500 : 0),
-        }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      let ranked: TopCreator[] = [];
+      try {
+        const { creators: publicCreators } = await listPublicCreators({
+          data: { limit: MAX_RANKING_SIZE },
+        });
+        ranked = publicCreators
+          .map((p) => ({
+            user_id: p.user_id,
+            username: p.username,
+            display_name: p.display_name,
+            avatar_url: p.avatar_url,
+            is_verified: p.is_verified,
+            score: p.score,
+          }))
+          .slice(0, safeLimit);
+      } catch (error) {
+        console.error("[TopCreators]", error);
+      }
       setCreators(ranked);
+      try {
+        localStorage.setItem(
+          RANKING_CACHE_KEY,
+          JSON.stringify({ savedAt: Date.now(), creators: ranked }),
+        );
+      } catch {
+        // Cache is only an optimization.
+      }
       setLoading(false);
     })();
-  }, [limit]);
+  }, [safeLimit]);
 
   if (loading) return null;
-  if (creators.length === 0) return null;
+  if (creators.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-border p-6 text-center">
+        <h2 className="font-display text-lg font-semibold text-foreground">{t("top.empty.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("top.empty.body")}</p>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-        <Trophy className="h-5 w-5 text-primary" />
-        <span className="text-gradient-gold font-display">Top {limit} Criadoras</span>
-      </h2>
+      {!hideHeading && (
+        <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+          <Trophy className="h-5 w-5 text-primary" />
+          <span className="text-gradient-gold font-display">{t("top.title")}</span>
+        </h2>
+      )}
       <div className={compact ? "flex gap-3 overflow-x-auto pb-2" : "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5"}>
         {creators.map((c, idx) => (
           <Link
@@ -81,7 +116,7 @@ export function TopCreators({ limit = 50, compact = false }: { limit?: number; c
             }`}
           >
             <div className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-xs font-bold text-primary backdrop-blur">
-              #{idx + 1}
+              #{c.rank ?? idx + 1}
             </div>
             <div className="aspect-square overflow-hidden">
               {c.avatar_url ? (
@@ -94,6 +129,12 @@ export function TopCreators({ limit = 50, compact = false }: { limit?: number; c
                 <div className="flex h-full w-full items-center justify-center bg-muted text-3xl font-bold text-primary">
                   {c.username[0]?.toUpperCase()}
                 </div>
+              )}
+              {c.status === "online" && (
+                <span
+                  className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-background bg-emerald-500"
+                  aria-label="online"
+                />
               )}
             </div>
             <div className="p-2.5">

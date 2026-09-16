@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction } from "@/_server/admin-audit.server";
 
@@ -18,8 +18,8 @@ async function assertAdmin(userId: string) {
 }
 
 export const listUsersAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) =>
     z
       .object({
         search: z.string().trim().max(100).optional(),
@@ -77,8 +77,8 @@ export const listUsersAdmin = createServerFn({ method: "POST" })
   });
 
 export const updateUserRoleAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) =>
     z
       .object({
         targetUserId: z.string().uuid(),
@@ -126,7 +126,7 @@ export const updateUserRoleAdmin = createServerFn({ method: "POST" })
   });
 
 export const adminDashboardStats = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
 
@@ -135,6 +135,8 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
       { count: totalCreators },
       { count: totalSellers },
       { count: pendingKyc },
+      { count: pendingAgeChecks },
+      { count: pendingManualMedia },
       { count: pendingDmca },
       { count: pendingWithdrawals },
     ] = await Promise.all([
@@ -152,6 +154,15 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
       supabaseAdmin
+        .from("identity_verifications")
+        .select("*", { count: "exact", head: true })
+        .eq("method", "manual_document_review")
+        .eq("status", "pending"),
+      supabaseAdmin
+        .from("manual_media_reviews")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabaseAdmin
         .from("dmca_reports")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
@@ -166,7 +177,8 @@ export const adminDashboardStats = createServerFn({ method: "GET" })
       totalUsers: totalUsers ?? 0,
       totalCreators: totalCreators ?? 0,
       totalSellers: totalSellers ?? 0,
-      pendingKyc: pendingKyc ?? 0,
+      pendingKyc: (pendingKyc ?? 0) + (pendingAgeChecks ?? 0),
+      pendingManualMedia: pendingManualMedia ?? 0,
       pendingDmca: pendingDmca ?? 0,
       pendingWithdrawals: pendingWithdrawals ?? 0,
     };

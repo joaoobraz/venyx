@@ -1,58 +1,151 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { createOAuthCallbackUrl } from "@/lib/auth-redirect";
+import { ensureGoogleAuthIsEnabled } from "@/lib/google-auth";
+import { localizedPathname } from "@/lib/localized-paths";
+import { trackClientError, trackProductEvent } from "@/lib/telemetry";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
+import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
+import { getWeakPasswordError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-function SignupPage() {
-  const { t } = useI18n();
+export function SignupPage() {
+  const { t, tr, locale } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const captchaRequired = isTurnstileEnabled();
+  const routeTo = (pathname: string) => localizedPathname(pathname, locale) as never;
+  const feedRoute = routeTo("/feed");
 
   useEffect(() => {
-    if (user) navigate({ to: "/feed" });
-  }, [user, navigate]);
+    if (user) navigate({ to: feedRoute });
+  }, [user, navigate, feedRoute]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/feed` },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    if (captchaRequired && !captchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
       return;
     }
-    toast.success("Conta criada! Você já pode entrar.");
-    navigate({ to: "/feed" });
+    if (!acceptedTerms) {
+      toast.error(
+        tr(
+          "Confirme que você tem 18 anos ou mais e aceita os Termos e a Política de Privacidade.",
+          "Confirm you are 18 or older and accept the Terms and Privacy Policy.",
+        ),
+      );
+      return;
+    }
+    const passwordProblem = passwordPolicyMessage(password, tr);
+    if (passwordProblem) {
+      toast.error(passwordProblem);
+      return;
+    }
+    if (password !== passwordConfirmation) {
+      toast.error(tr("As senhas não coincidem.", "The passwords do not match."));
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: createOAuthCallbackUrl(window.location.origin),
+          captchaToken: captchaToken ?? undefined,
+          // Disponível nos templates do Supabase como {{ .Data.product_name }}.
+          // Isso mantém o e-mail de confirmação com a identidade da Fanlira.
+          // locale permite ao template do Supabase escolher o idioma do e-mail
+          // ({{ if eq .Data.locale "en" }} ... {{ end }}).
+          data: { product_name: "Fanlira", brand_name: "Fanlira", locale },
+        },
+      });
+      if (error) throw error;
+
+      if (data.session) {
+        trackProductEvent("signup_completed", { method: "password", confirmationRequired: false });
+        toast.success(tr("Conta criada!", "Account created!"));
+        navigate({ to: routeTo("/feed") });
+        return;
+      }
+
+      setConfirmationEmail(email);
+      trackProductEvent("signup_completed", { method: "password", confirmationRequired: true });
+      setPassword("");
+      setPasswordConfirmation("");
+      toast.success(
+        tr(
+          "Confira seu e-mail para confirmar a conta.",
+          "Check your email to confirm the account.",
+        ),
+      );
+    } catch (error) {
+      trackClientError("client_error", error, { flow: "signup", method: "password" });
+      const errorMessage = error instanceof Error ? error.message : "";
+      const normalizedError = errorMessage.toLowerCase();
+      const weakPassword = getWeakPasswordError(error, locale);
+      toast.error(
+        normalizedError.includes("email rate limit exceeded") ||
+          normalizedError.includes("rate limit")
+          ? tr(
+              "Muitas solicitações em pouco tempo. Aguarde alguns minutos e tente novamente.",
+              "Too many requests in a short time. Wait a few minutes and try again.",
+            )
+          : (weakPassword ?? errorMessage ?? tr("Não foi possível criar a conta.", "Unable to create the account.")),
+      );
+    } finally {
+      setLoading(false);
+      setCaptchaToken(null);
+      setCaptchaReset((current) => current + 1);
+    }
   };
 
   const onGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
+    setGoogleLoading(true);
+    try {
+      await ensureGoogleAuthIsEnabled();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: createOAuthCallbackUrl(window.location.origin),
+          queryParams: { prompt: "select_account" },
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("O Google não retornou uma página de login.");
+      window.location.assign(data.url);
+    } catch (error) {
+      trackClientError("client_error", error, { flow: "signup", method: "google" });
+      setGoogleLoading(false);
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível abrir o login do Google.",
+      );
     }
-    if (result.redirected) return;
-    navigate({ to: "/feed" });
   };
 
   return (
@@ -62,38 +155,126 @@ function SignupPage() {
         <h1 className="text-3xl font-bold text-foreground">{t("auth.signup.title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("auth.signup.subtitle")}</p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          <div>
-            <Label htmlFor="email">{t("auth.email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5"
-            />
+        {confirmationEmail && (
+          <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/10 p-6 text-center">
+            <h2 className="text-xl font-bold text-foreground">
+              {tr("Confirme sua conta", "Confirm your account")}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tr(
+                `Enviamos as instruções para ${confirmationEmail}. Depois da confirmação, volte para entrar.`,
+                `We sent instructions to ${confirmationEmail}. Return to sign in after confirming.`,
+              )}
+            </p>
+            <Button asChild className="mt-5 w-full">
+              <Link to={routeTo("/login")}>{tr("Voltar para o login", "Back to sign in")}</Link>
+            </Button>
+            <Link
+              to={routeTo("/reset-password")}
+              className="mt-3 inline-block text-sm text-muted-foreground hover:text-primary"
+            >
+              {tr("Já tinha conta? Redefinir senha", "Already had an account? Reset password")}
+            </Link>
           </div>
-          <div>
-            <Label htmlFor="password">{t("auth.password")}</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5"
+        )}
+
+        {!confirmationEmail && (
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
+            <div>
+              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">{t("auth.password")}</Label>
+              <div className="relative mt-1.5">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={PASSWORD_MIN_LENGTH}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? tr("Ocultar senha", "Hide password") : tr("Mostrar senha", "Show password")}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{passwordPolicyHint(tr)}</p>
+            </div>
+            <div>
+              <Label htmlFor="password-confirmation">
+                {tr("Confirme sua senha", "Confirm your password")}
+              </Label>
+              <div className="relative mt-1.5">
+                <Input
+                  id="password-confirmation"
+                  type={showPasswordConfirmation ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={passwordConfirmation}
+                  onChange={(e) => setPasswordConfirmation(e.target.value)}
+                  className="pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirmation((visible) => !visible)}
+                  aria-label={showPasswordConfirmation ? tr("Ocultar confirmação", "Hide confirmation") : tr("Mostrar confirmação", "Show confirmation")}
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPasswordConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <label className="flex items-start gap-3 rounded-xl border border-border bg-card/60 p-3 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+              />
+              <span>
+                {tr("Tenho 18 anos ou mais e aceito os ", "I am 18 or older and I accept the ")}
+                <Link to="/terms" className="font-medium text-primary underline-offset-2 hover:underline">
+                  {tr("Termos de Uso", "Terms of Use")}
+                </Link>
+                {tr(" e a ", " and the ")}
+                <Link to="/privacy" className="font-medium text-primary underline-offset-2 hover:underline">
+                  {tr("Política de Privacidade", "Privacy Policy")}
+                </Link>
+                .
+              </span>
+            </label>
+            <TurnstileCaptcha
+              action="signup"
+              onTokenChange={setCaptchaToken}
+              resetSignal={captchaReset}
             />
-          </div>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {loading ? t("common.loading") : t("auth.signup.button")}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              disabled={loading || !acceptedTerms || (captchaRequired && !captchaToken)}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {loading ? t("common.loading") : t("auth.signup.button")}
+            </Button>
+          </form>
+        )}
 
         <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
@@ -101,13 +282,19 @@ function SignupPage() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <Button variant="outline" onClick={onGoogle} className="w-full">
-          {t("auth.google")}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onGoogle}
+          disabled={googleLoading}
+          className="w-full"
+        >
+          {googleLoading ? t("common.loading") : t("auth.google")}
         </Button>
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           {t("auth.signup.haveAccount")}{" "}
-          <Link to="/login" className="font-medium text-primary hover:underline">
+          <Link to={routeTo("/login")} className="font-medium text-primary hover:underline">
             {t("nav.login")}
           </Link>
         </p>

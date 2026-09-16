@@ -32,14 +32,14 @@ interface ChecklistItem {
   label: string;
   cta: string;
   icon: typeof Camera;
-  to: "/settings/profile" | "/creator/posts";
+  to: "/settings/profile" | "/creator/posts" | "/creator/subscription-plans";
 }
 
 const ITEMS: ChecklistItem[] = [
   { key: "has_avatar", label: "Adicione sua foto de perfil", cta: "Adicionar foto", icon: Camera, to: "/settings/profile" },
   { key: "has_cover", label: "Adicione uma foto de capa", cta: "Adicionar capa", icon: ImageIcon, to: "/settings/profile" },
   { key: "has_bio", label: "Escreva uma bio (10+ caracteres)", cta: "Escrever bio", icon: FileText, to: "/settings/profile" },
-  { key: "has_price", label: "Defina o preço de assinatura", cta: "Definir preço", icon: DollarSign, to: "/settings/profile" },
+  { key: "has_price", label: "Defina o preço de assinatura", cta: "Definir preço", icon: DollarSign, to: "/creator/subscription-plans" },
   { key: "has_first_post", label: "Publique seu 1º post", cta: "Criar primeiro post", icon: PenSquare, to: "/creator/posts" },
   { key: "has_first_ppv", label: "Publique seu 1º PPV", cta: "Publicar primeiro PPV", icon: Lock, to: "/creator/posts" },
   { key: "has_shared_link", label: "Compartilhe seu link de perfil", cta: "Copiar meu link", icon: Share2, to: "/settings/profile" },

@@ -3,21 +3,34 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
+import { localizedPathname } from "@/lib/localized-paths";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TurnstileCaptcha } from "@/components/TurnstileCaptcha";
+import { isTurnstileEnabled } from "@/lib/turnstile";
+import { PASSWORD_MIN_LENGTH, passwordPolicyHint, passwordPolicyMessage } from "@/lib/password-policy";
+import { describeMfaError } from "@/lib/auth-errors";
+import { useServerFn } from "@tanstack/react-start";
+import { requestPasswordReset } from "@/_server/auth-email.functions";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
 });
 
-function ResetPage() {
-  const { t } = useI18n();
+export function ResetPage() {
+  const { t, tr, locale } = useI18n();
+  const requestResetFn = useServerFn(requestPasswordReset);
   const [recovery, setRecovery] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const captchaRequired = isTurnstileEnabled();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -30,25 +43,71 @@ function ResetPage() {
 
   const sendLink = async (e: FormEvent) => {
     e.preventDefault();
+    if (captchaRequired && !captchaToken) {
+      toast.error(tr("Conclua a verificação de segurança.", "Complete the security check."));
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    // Pelo servidor: grava o idioma atual antes de enviar (e-mail sai nesse idioma).
+    const result = await requestResetFn({ data: { email: email.trim().toLowerCase(), locale } }).catch(() => null);
     setLoading(false);
-    if (error) console.error("[reset-password]", error);
+    setCaptchaToken(null);
+    setCaptchaReset((current) => current + 1);
+    if (result && !result.ok) {
+      toast.error(result.error);
+      return;
+    }
     // Mensagem genérica em todos os casos para evitar enumeração de e-mails
-    toast.success("Se este e-mail existir em nossa base, enviamos um link de redefinição.");
+    toast.success(tr("Se este e-mail existir em nossa base, enviamos um link de redefinição.", "If this email exists in our records, we sent a reset link."));
   };
 
   const updatePassword = async (e: FormEvent) => {
     e.preventDefault();
+    const passwordProblem = passwordPolicyMessage(password, tr);
+    if (passwordProblem) {
+      toast.error(passwordProblem);
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Senha atualizada!");
-      window.location.href = "/feed";
+    try {
+      // Conta com 2FA: o link de recuperação abre uma sessão aal1 e o Supabase
+      // exige aal2 para trocar a senha. Pedimos o código do autenticador antes.
+      if (mfaFactorId) {
+        const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: mfaFactorId,
+        });
+        if (challengeError) throw challengeError;
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: mfaFactorId,
+          challengeId: challenge.id,
+          code: mfaCode.replace(/\D/g, ""),
+        });
+        if (verifyError) throw verifyError;
+      } else {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const factor = factors?.totp.find((item) => item.status === "verified");
+          if (factor) {
+            setMfaFactorId(factor.id);
+            toast.message(tr("Digite o código do seu aplicativo autenticador para concluir.", "Enter the code from your authenticator app to finish."));
+            return;
+          }
+        }
+      }
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      toast.success(tr("Senha atualizada!", "Password updated!"));
+      window.location.href = localizedPathname("/feed", locale);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      toast.error(
+        /aal2|assurance|mfa|code|totp/i.test(message)
+          ? describeMfaError(error, tr)
+          : tr("Não foi possível atualizar a senha. Peça um novo link e tente novamente.", "Couldn't update the password. Request a new link and try again."),
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,14 +125,32 @@ function ResetPage() {
                 id="np"
                 type="password"
                 required
-                minLength={6}
+                minLength={PASSWORD_MIN_LENGTH}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1.5"
               />
+              <p className="mt-1 text-xs text-muted-foreground">{passwordPolicyHint(tr)}</p>
             </div>
+            {mfaFactorId && (
+              <div>
+                <Label htmlFor="mfa-code">Código do autenticador (2FA)</Label>
+                <Input
+                  id="mfa-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  minLength={6}
+                  maxLength={8}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  className="mt-1.5"
+                />
+              </div>
+            )}
             <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              {t("auth.reset.update")}
+              {mfaFactorId ? "Confirmar código e atualizar senha" : t("auth.reset.update")}
             </Button>
           </form>
         ) : (
@@ -82,7 +159,12 @@ function ResetPage() {
               <Label htmlFor="em">{t("auth.email")}</Label>
               <Input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" />
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+            <TurnstileCaptcha
+              action="password_recovery"
+              onTokenChange={setCaptchaToken}
+              resetSignal={captchaReset}
+            />
+            <Button type="submit" disabled={loading || (captchaRequired && !captchaToken)} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
               {t("auth.reset.send")}
             </Button>
           </form>

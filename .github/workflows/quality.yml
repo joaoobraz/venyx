@@ -1,0 +1,42 @@
+name: Quality gates
+
+on:
+  pull_request:
+    branches: [main, demo-investidores]
+  push:
+    branches: [main, demo-investidores]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:secrets
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm lint
+      - run: pnpm build:cloudflare
+        env:
+          VITE_APP_ENV: production
+          VITE_ENABLE_DEMO_CREATORS: "false"
+          VITE_ENABLE_DEMO_PREVIEW: "false"
+          VITE_ENABLE_LOCAL_PREVIEW_ACCESS: "false"
+          VITE_SUPABASE_PROJECT_ID: hwegqezdbxgqqjabqknq
+          VITE_SUPABASE_URL: https://hwegqezdbxgqqjabqknq.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_HFpvc_vV6jfWb-Fj2Am6RA_Ezz9wnpb
+          # Cloudflare's public always-pass test key validates the SPA integration in CI.
+          VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA

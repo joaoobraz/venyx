@@ -1,19 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getRequest } from "@tanstack/react-start/server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseMfa } from "@/_server/access-control.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logAdminAction as auditLog } from "@/_server/admin-audit.server";
+import { clientIpKey } from "@/_server/rate-limit.server";
 
+// Atrás do Cloudflare, x-forwarded-for é controlado pelo cliente; clientIpKey
+// prioriza cf-connecting-ip para a trilha de auditoria não ser envenenada.
 function getClientIp(req: Request | undefined): string | null {
-  if (!req?.headers) return null;
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return (
-    req.headers.get("cf-connecting-ip") ||
-    req.headers.get("x-real-ip") ||
-    null
-  );
+  const ip = clientIpKey(req);
+  return ip === "unknown" ? null : ip;
 }
 
 const adminGuardSchema = z.object({
@@ -25,10 +22,8 @@ const adminGuardSchema = z.object({
  * Registra cada tentativa (concedida ou negada) em admin_access_audit.
  */
 export const requireAdminServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    adminGuardSchema.parse(input ?? {})
-  )
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => adminGuardSchema.parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const req = getRequest();
@@ -70,8 +65,8 @@ const decisionSchema = z.object({
 });
 
 export const recordModerationDecision = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => decisionSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => decisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -82,18 +77,16 @@ export const recordModerationDecision = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { error } = await supabaseAdmin
-      .from("moderation_decisions")
-      .upsert(
-        {
-          log_id: data.logId,
-          decision: data.decision,
-          decided_by: userId,
-          decided_at: new Date().toISOString(),
-          note: data.note,
-        },
-        { onConflict: "log_id" }
-      );
+    const { error } = await supabaseAdmin.from("moderation_decisions").upsert(
+      {
+        log_id: data.logId,
+        decision: data.decision,
+        decided_by: userId,
+        decided_at: new Date().toISOString(),
+        note: data.note,
+      },
+      { onConflict: "log_id" },
+    );
     if (error) {
       console.error("[admin.recordModerationDecision]", error);
       throw new Error("Não foi possível registrar a decisão. Tente novamente.");
@@ -102,7 +95,7 @@ export const recordModerationDecision = createServerFn({ method: "POST" })
   });
 
 export const listModerationDecisions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseMfa])
   .handler(async ({ context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -113,9 +106,7 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { data } = await supabaseAdmin
-      .from("moderation_decisions")
-      .select("*");
+    const { data } = await supabaseAdmin.from("moderation_decisions").select("*");
     return { decisions: data ?? [] };
   });
 
@@ -125,10 +116,8 @@ export const listModerationDecisions = createServerFn({ method: "GET" })
  * impedindo bypass das guards de rota via cliente.
  */
 export const getKycSignedUrlServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ path: z.string().min(1).max(500) }).parse(input)
-  )
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roleRow } = await supabaseAdmin
@@ -139,14 +128,20 @@ export const getKycSignedUrlServer = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!roleRow) throw new Error("forbidden");
 
-    const { data: signed, error } = await supabaseAdmin
-      .storage
+    const { data: signed, error } = await supabaseAdmin.storage
       .from("kyc")
       .createSignedUrl(data.path, 300);
     if (error || !signed) {
       console.error("[admin.getKycSignedUrl]", error);
       throw new Error("Não foi possível abrir o documento");
     }
+    // LGPD: acesso a documento de identidade fica registrado.
+    await auditLog({
+      adminId: userId,
+      actionType: "kyc_document_viewed",
+      targetType: "kyc_document",
+      targetId: data.path,
+    });
     return { url: signed.signedUrl };
   });
 
@@ -163,8 +158,6 @@ async function assertAdmin(userId: string) {
   if (!roleRow) throw new Error("forbidden");
 }
 
-
-
 const kycDecisionSchema = z.object({
   kycId: z.string().uuid(),
   decision: z.enum(["approved", "rejected"]),
@@ -176,8 +169,8 @@ const kycDecisionSchema = z.object({
  * e marca o profile como verificado. Tudo via service role no servidor.
  */
 export const reviewKycServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => kycDecisionSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => kycDecisionSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     await assertAdmin(userId);
@@ -232,16 +225,48 @@ export const reviewKycServer = createServerFn({ method: "POST" })
 
     const { error: e2 } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: kyc.user_id, role: "creator" });
-    if (e2 && !e2.message.toLowerCase().includes("duplicate")) {
-      console.error("[admin.reviewKyc.promote]", e2);
-      throw new Error("KYC aprovado, mas não foi possível promover a criadora.");
+      .upsert({ user_id: kyc.user_id, role: "creator" }, { onConflict: "user_id,role" });
+    if (e2) console.error("[admin.reviewKyc.promote]", e2);
+
+    // Sem o papel gravado a criadora não publica nem edita o perfil (a RLS
+    // exige has_role(creator)). Confirmar é o que impede um "aprovado" que não
+    // libera nada — foi o que aconteceu com a primeira criadora real.
+    const { data: creatorRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", kyc.user_id)
+      .eq("role", "creator")
+      .maybeSingle();
+    if (!creatorRole) {
+      throw new Error(
+        "KYC aprovado, mas a conta não foi promovida a criadora. Conceda o papel em Administrador → Usuários e avise o suporte.",
+      );
     }
 
-    await supabaseAdmin
-      .from("profiles")
-      .update({ is_verified: true })
-      .eq("user_id", kyc.user_id);
+    await supabaseAdmin.from("profiles").update({ is_verified: true }).eq("user_id", kyc.user_id);
+
+    // O cadastro de criadora grava CPF e os mesmos documentos em
+    // identity_verifications (pendente). Como o admin acabou de revisar esses
+    // documentos, a identidade é concluída aqui — sem isso a criadora fica
+    // aprovada mas não consegue salvar a chave Pix nem publicar conteúdo pago.
+    const now = new Date().toISOString();
+    const { error: identityError } = await supabaseAdmin
+      .from("identity_verifications")
+      .update({
+        status: "verified",
+        rejection_reason: null,
+        reviewed_by: userId,
+        reviewed_at: now,
+        verified_at: now,
+        updated_at: now,
+      })
+      .eq("user_id", kyc.user_id)
+      .eq("status", "pending")
+      .eq("method", "manual_document_review");
+    if (identityError) {
+      // Não desfaz a aprovação: o admin ainda pode decidir a identidade na fila.
+      console.error("[admin.reviewKyc.identity]", identityError.code, identityError.message);
+    }
 
     await auditLog({
       adminId: userId,
@@ -255,6 +280,70 @@ export const reviewKycServer = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const identityDecisionSchema = z.object({
+  verificationId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+  rejectionReason: z.string().min(3).max(500).optional(),
+});
+
+/**
+ * Revisao humana de identidade/maioridade do cliente no MVP sem fornecedor.
+ * Aprovacao libera o gate +18, mas nunca concede o papel de criadora.
+ */
+export const reviewIdentityVerificationServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => identityDecisionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    await assertAdmin(userId);
+
+    const { data: verification, error: lookupError } = await supabaseAdmin
+      .from("identity_verifications")
+      .select("id, user_id, status, method, document_front_url, selfie_url")
+      .eq("id", data.verificationId)
+      .maybeSingle();
+    if (lookupError || !verification) throw new Error("Verificação não encontrada");
+    if (verification.method !== "manual_document_review") {
+      throw new Error("Esta verificação não pertence à fila manual.");
+    }
+    if (!verification.document_front_url || !verification.selfie_url) {
+      throw new Error("Documento e selfie são obrigatórios para a decisão.");
+    }
+
+    const approved = data.decision === "approved";
+    if (!approved && !data.rejectionReason) throw new Error("Motivo obrigatório");
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("identity_verifications")
+      .update({
+        status: approved ? "verified" : "rejected",
+        rejection_reason: approved ? null : data.rejectionReason,
+        reviewed_by: userId,
+        reviewed_at: now,
+        verified_at: approved ? now : null,
+        updated_at: now,
+      })
+      .eq("id", data.verificationId);
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Este CPF já está aprovado em outra conta.");
+      }
+      console.error("[admin.reviewIdentityVerification]", error);
+      throw new Error("Não foi possível salvar a decisão.");
+    }
+
+    await auditLog({
+      adminId: userId,
+      actionType: approved ? "age_verification_approved" : "age_verification_rejected",
+      targetType: "identity_verification",
+      targetId: data.verificationId,
+      targetUserId: verification.user_id,
+      metadata: approved ? { method: "manual_document_review" } : { reason: data.rejectionReason },
+    });
+
+    return { ok: true };
+  });
+
 const dmcaSchema = z.object({
   reportId: z.string().uuid(),
   status: z.enum(["notified", "resolved", "rejected"]),
@@ -262,8 +351,8 @@ const dmcaSchema = z.object({
 });
 
 export const updateDmcaReportServer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => dmcaSchema.parse(input))
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => dmcaSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: report } = await supabaseAdmin
@@ -297,21 +386,24 @@ export const updateDmcaReportServer = createServerFn({ method: "POST" })
  * Lista as últimas ações administrativas registradas (para a tela de auditoria).
  */
 export const listAdminActionsAudit = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) =>
     z
       .object({
         actionType: z.string().max(64).optional(),
         limit: z.number().int().min(1).max(500).optional(),
       })
-      .parse(input ?? {})
+      .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const limit = data.limit ?? 200;
 
-    let query = (supabaseAdmin.from("admin_action_audit") as any)
-      .select("id, admin_id, action_type, target_type, target_id, target_user_id, metadata, created_at")
+    let query = supabaseAdmin
+      .from("admin_action_audit")
+      .select(
+        "id, admin_id, action_type, target_type, target_id, target_user_id, metadata, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(limit);
     if (data.actionType) query = query.eq("action_type", data.actionType);
@@ -323,7 +415,7 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
     }
 
     const userIds = new Set<string>();
-    (rows ?? []).forEach((r: any) => {
+    (rows ?? []).forEach((r) => {
       if (r.admin_id) userIds.add(r.admin_id);
       if (r.target_user_id) userIds.add(r.target_user_id);
     });
@@ -339,11 +431,103 @@ export const listAdminActionsAudit = createServerFn({ method: "POST" })
       });
     }
 
-    const enriched = (rows ?? []).map((r: any) => ({
+    const enriched = (rows ?? []).map((r) => ({
       ...r,
       admin_username: profilesById.get(r.admin_id)?.username ?? null,
-      target_username: r.target_user_id ? (profilesById.get(r.target_user_id)?.username ?? null) : null,
+      target_username: r.target_user_id
+        ? (profilesById.get(r.target_user_id)?.username ?? null)
+        : null,
     }));
 
     return { rows: enriched };
+  });
+
+// ===================== Configurações da plataforma =====================
+// Chavinhas operacionais editáveis pelo admin (2FA obrigatório, com auditoria).
+// A leitura pública para o app fica na RPC get_public_platform_settings.
+export type PlatformSettingsRow = {
+  platform_fee_pct: number;
+  hold_days: number;
+  min_withdrawal_cents: number;
+  manual_moderation_enabled: boolean;
+  email_mfa_enabled: boolean;
+  updated_at: string | null;
+};
+
+const PLATFORM_SETTINGS_COLUMNS =
+  "platform_fee_pct, hold_days, min_withdrawal_cents, manual_moderation_enabled, email_mfa_enabled, updated_at";
+
+export const getPlatformSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("platform_settings")
+      .select(PLATFORM_SETTINGS_COLUMNS)
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) {
+      console.error("[admin.getPlatformSettings]", error?.code, error?.message);
+      return { ok: false as const, error: "Não foi possível carregar as configurações." };
+    }
+    return { ok: true as const, settings: data as unknown as PlatformSettingsRow };
+  });
+
+// Mesmas faixas dos CHECKs do banco (migration 20260915100000), para o erro
+// aparecer em português antes de chegar ao Postgres.
+const platformSettingsSchema = z
+  .object({
+    platform_fee_pct: z.number().int().min(0).max(50).optional(),
+    hold_days: z.number().int().min(0).max(30).optional(),
+    min_withdrawal_cents: z.number().int().min(1).max(100_000_000).optional(),
+    manual_moderation_enabled: z.boolean().optional(),
+    email_mfa_enabled: z.boolean().optional(),
+  })
+  .strict();
+
+export const updatePlatformSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseMfa])
+  .validator((input: unknown) => {
+    const parsed = platformSettingsSchema.safeParse(input);
+    // Nunca lançar do validator: viraria {} no cliente. Devolve um marcador.
+    return parsed.success ? parsed.data : { __invalid: true as const };
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if ("__invalid" in data) {
+      return {
+        ok: false as const,
+        error:
+          "Valores fora do permitido: taxa 0–50%, retenção 0–30 dias, saque mínimo entre R$ 0,01 e R$ 1.000.000,00.",
+      };
+    }
+    if (Object.keys(data).length === 0) {
+      return { ok: false as const, error: "Nada para salvar." };
+    }
+
+    const { data: before } = await supabaseAdmin
+      .from("platform_settings")
+      .select(PLATFORM_SETTINGS_COLUMNS)
+      .eq("id", 1)
+      .maybeSingle();
+
+    const { data: after, error } = await supabaseAdmin
+      .from("platform_settings")
+      .update({ ...data, updated_at: new Date().toISOString() } as never)
+      .eq("id", 1)
+      .select(PLATFORM_SETTINGS_COLUMNS)
+      .maybeSingle();
+    if (error || !after) {
+      console.error("[admin.updatePlatformSettings]", error?.code, error?.message);
+      return { ok: false as const, error: "Não foi possível salvar as configurações." };
+    }
+
+    await auditLog({
+      adminId: context.userId,
+      actionType: "platform_settings_updated",
+      targetType: "platform_settings",
+      targetId: "1",
+      metadata: { before: before ?? null, changes: data },
+    });
+    return { ok: true as const, settings: after as unknown as PlatformSettingsRow };
   });

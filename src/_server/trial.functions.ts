@@ -1,16 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdultVerification } from "@/_server/access-control.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const StartTrialSchema = z.object({ creatorId: z.string().uuid() });
 
 export const startTrial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => StartTrialSchema.parse(input))
+  .middleware([requireAdultVerification])
+  .validator((input) => StartTrialSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: result, error } = await supabase.rpc("start_creator_trial", {
+    const { data: result, error } = await supabaseAdmin.rpc("start_creator_trial", {
       _creator_id: data.creatorId,
+      _subscriber_id: context.userId,
     });
     if (error) throw new Error(error.message);
     const obj = result as { error?: string; subscription_id?: string; trial_days?: number };
@@ -28,8 +29,8 @@ export const startTrial = createServerFn({ method: "POST" })
   });
 
 export const checkTrialEligibility = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => StartTrialSchema.parse(input))
+  .middleware([requireAdultVerification])
+  .validator((input) => StartTrialSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: prof } = await supabase

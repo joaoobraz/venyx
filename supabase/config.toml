@@ -1,6 +1,6 @@
-project_id = "lsiwbxgixcgnsyzdbmkx"
+project_id = "hwegqezdbxgqqjabqknq"
 
-[functions.moderate-media]
+[functions.moderate-media-v2]
 verify_jwt = true
 
 [functions.translate-message]
