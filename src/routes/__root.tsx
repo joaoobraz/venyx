@@ -6,6 +6,7 @@ import { I18nProvider, useI18n } from "@/lib/i18n";
 import { localizedPathname } from "@/lib/localized-paths";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
+import { InstallAppPrompt } from "@/components/InstallAppPrompt";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ContentProtection } from "@/components/ContentProtection";
 import { Toaster } from "@/components/ui/sonner";
@@ -52,8 +53,19 @@ export const Route = createRootRoute({
       // Rótulo padrão de conteúdo adulto (RTA), lido por controles parentais.
       { name: "rating", content: "RTA-5042-1996-1400-1577-RTA" },
       { name: "rating", content: "adult" },
+      // PWA: instalável na tela inicial (Android/desktop via manifest; iOS via meta).
+      { name: "theme-color", content: "#17101a" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Fanlira" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png", sizes: "180x180" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -87,13 +99,24 @@ function RootComponent() {
         <AuthProvider>
           <ProductTelemetry />
           <ContentProtection />
+          <PwaSetup />
           <Outlet />
           <CookieBanner />
+          <InstallAppPrompt />
           <Toaster />
         </AuthProvider>
       </I18nProvider>
     </ThemeProvider>
   );
+}
+
+// Registra o service worker (necessário para o navegador oferecer "Instalar").
+function PwaSetup() {
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  }, []);
+  return null;
 }
 
 function LocalizedUrlSync() {
